@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- LIFF 初始化 ---
     // 請記得去 LINE Developers Console 取得你的 LIFF ID 並替換下面的字串
-    const myLiffId = "https://liff.line.me/2008076323-GN1e7naW"; 
+    const myLiffId = "2008076323-GN1e7naW"; 
     
     liff.init({
         liffId: myLiffId
