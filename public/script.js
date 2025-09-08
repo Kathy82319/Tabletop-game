@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const myLiffId = "YOUR_LIFF_ID"; // 請確保這裡是你自己的 LIFF ID
+    const myLiffId = "2008076323-GN1e7naW"; // 請確保這裡是你自己的 LIFF ID
     
     liff.init({
         liffId: myLiffId
