@@ -23,8 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function fetchUserProfile() {
         liff.getProfile().then(profile => {
             console.log("成功取得 Profile:", profile);
-            alert("我的 User ID 是：" + profile.userId); 
-            
+           
             // 將資料顯示在畫面上
             document.getElementById('display-name').textContent = profile.displayName;
             document.getElementById('status-message').textContent = profile.statusMessage || ''; // 狀態消息可能不存在
