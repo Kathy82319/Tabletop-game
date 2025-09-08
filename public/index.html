@@ -28,8 +28,13 @@
                   <p id="status-message" style="color: #aaa;"></p>
                 </div>
 
-                  <div style="margin-top: 30px;">
-                 <p>等級：<span id="user-level">--</span></p>
+                <div id="qrcode-container" style="background-color: white; padding: 20px; margin: 25px auto; width: 200px; height: 200px;">
+                    <div id="qrcode" style="width:200px; height:200px;"></div>
+                </div>
+
+
+                  <div style="margin-top: 10px;">
+                    <p>職業：<span id="user-class">--</span></p> <p>等級：<span id="user-level">--</span></p>
                     <p>經驗值：<span id="user-exp">-- / ----</span></p>
                 </div>
         </div>
@@ -54,6 +59,7 @@
     </nav>
 
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

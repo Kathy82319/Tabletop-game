@@ -1,9 +1,23 @@
-// 正式版本：處理 /api/user 的 POST 請求並查詢資料庫
+// /functions/api/user.js
+
+// --- 假資料區 ---
+// 為了與 add-exp.js 的假資料同步，我們在這裡也使用同樣的資料
+const MOCK_USER_DATA = {
+    userId: "U1234567890abcdefghijklmnopqrstu",
+    class: "初心者", // 新增「職業」欄位
+    level: 5,
+    exp: 250,
+    expToNextLevel: 750, // 5 * 150 = 750
+    isNewUser: false
+};
+// --- 假資料區結束 ---
+
+
+// 正式版本：處理 /api/user 的 POST 請求並回傳假資料
 export const onRequestPost = async (context) => {
-    const { request, env } = context;
+    const { request } = context;
     
     try {
-        const db = env.DB; // 取得綁定的 D1 資料庫
         const body = await request.json();
         const userId = body.userId;
 
@@ -11,28 +25,9 @@ export const onRequestPost = async (context) => {
             return new Response('User ID is required', { status: 400 });
         }
 
-        const stmt = db.prepare('SELECT * FROM Users WHERE user_id = ?').bind(userId);
-        const { results } = await stmt.all();
-
-        let userData;
-        if (results.length > 0) {
-            const dbUser = results[0];
-            userData = {
-                level: dbUser.level,
-                exp: dbUser.current_exp,
-                expToNextLevel: dbUser.level * 150,
-                isNewUser: false
-            };
-        } else {
-            userData = {
-                level: 1,
-                exp: 0,
-                expToNextLevel: 100,
-                isNewUser: true
-            };
-        }
-
-        return new Response(JSON.stringify(userData), {
+        // 注意：這裡不再查詢資料庫，而是直接回傳上面定義好的假資料
+        // 這樣可以確保前端拿到的資料，和我們用 add-exp 測試的資料來源一致
+        return new Response(JSON.stringify(MOCK_USER_DATA), {
             headers: { 'Content-Type': 'application/json' },
         });
 
