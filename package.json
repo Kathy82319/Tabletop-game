@@ -1,0 +1,9 @@
+{
+  "name": "tabletop-game",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "echo 'No build step required'",
+    "deploy": "wrangler pages deploy ./public"
+  }
+}
