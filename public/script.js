@@ -32,33 +32,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function fetchGameData(userId) {
-        try {
-            const response = await fetch('/api/user', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ userId: userId }),
-            });
+    // --- 偵錯專用版本 ---
+async function fetchGameData(userId) {
+    try {
+        console.log("正在向 /api/user 發出 POST 請求...");
+        const response = await fetch('/api/user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userId }),
+        });
 
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
+        // 取得後端回傳的原始文字內容
+        const responseText = await response.text();
+        console.log("收到後端回應:", responseText);
 
-            const gameData = await response.json();
-            console.log("成功取得後端遊戲資料:", gameData);
+        // 用 alert 顯示收到的所有情報，這樣我們在手機上也能清楚看到
+        alert("來自後端的偵錯情報：\n" + responseText);
 
-            // 將後端回傳的遊戲資料更新到畫面上
-            document.getElementById('user-level').textContent = gameData.level;
-            document.getElementById('user-exp').textContent = `${gameData.exp} / ${gameData.expToNextLevel}`;
-
-        } catch (error) {
-            console.error('呼叫後端 API 失敗:', error);
-            document.getElementById('user-level').textContent = '讀取失敗';
-            document.getElementById('user-exp').textContent = '讀取失敗';
-        }
+    } catch (error) {
+        console.error('呼叫後端 API 失敗:', error);
+        alert('呼叫後端 API 失敗: ' + error.toString());
     }
+}
 
     const tabBar = document.getElementById('tab-bar');
     tabBar.addEventListener('click', (event) => {
