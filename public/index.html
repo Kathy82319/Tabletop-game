@@ -20,8 +20,18 @@
         </div>
 
         <div id="page-profile" class="page">
-            <h1>冒險者資料</h1>
-            <p>你的個人狀態、QR Code (公會紋章)、等級和技能都會顯示在這裡。</p>
+             <h1>冒險者資料</h1>
+    
+               <div id="profile-info" style="text-align: center; margin-top: 20px;">
+                  <img id="profile-picture" src="" alt="Profile Picture" style="width: 100px; height: 100px; border-radius: 50%;">
+                  <h2 id="display-name" style="margin-top: 10px;"></h2>
+                  <p id="status-message" style="color: #aaa;"></p>
+                </div>
+
+                  <div style="margin-top: 30px;">
+                 <p>等級：<span id="user-level">--</span></p>
+                    <p>經驗值：<span id="user-exp">-- / ----</span></p>
+                </div>
         </div>
 
         <div id="page-booking" class="page">
