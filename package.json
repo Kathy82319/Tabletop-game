@@ -1,9 +1,11 @@
 {
-  "name": "tabletop-game",
+  "name": "tabletop-game-liff",
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "echo 'No build step required'",
     "deploy": "wrangler pages deploy ./public"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
   }
 }

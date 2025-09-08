@@ -1,11 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My LIFF App</title>
+    <title>冒險者公會</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Hello, LIFF from GitHub Web!</h1>
+
+    <main id="app-content">
+        <div id="page-home" class="page active">
+            <h1>最新情報</h1>
+            <p>這裡是公會佈告欄，將來會顯示最新活動與公告。</p>
+        </div>
+
+        <div id="page-games" class="page">
+            <h1>桌遊圖鑑</h1>
+            <p>所有店內的桌遊都會在這裡列出，讓你可以盡情探索。</p>
+        </div>
+
+        <div id="page-profile" class="page">
+            <h1>冒險者資料</h1>
+            <p>你的個人狀態、QR Code (公會紋章)、等級和技能都會顯示在這裡。</p>
+        </div>
+
+        <div id="page-booking" class="page">
+            <h1>場地預約</h1>
+            <p>需要作戰室或集會所？在這裡預約你的下一次冒險！</p>
+        </div>
+
+        <div id="page-info" class="page">
+            <h1>店家資訊</h1>
+            <p>這裡有公會的規章、位置和聯繫方式。</p>
+        </div>
+    </main>
+
+    <nav id="tab-bar">
+        <button class="tab-button active" data-target="page-home">最新情報</button>
+        <button class="tab-button" data-target="page-games">桌遊圖鑑</button>
+        <button class="tab-button" data-target="page-profile">冒險者資料</button>
+        <button class="tab-button" data-target="page-booking">場地預約</button>
+        <button class="tab-button" data-target="page-info">店家資訊</button>
+    </nav>
+
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
