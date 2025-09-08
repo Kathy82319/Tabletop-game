@@ -5,41 +5,61 @@ document.addEventListener('DOMContentLoaded', () => {
         liffId: myLiffId
     }).then(() => {
         console.log("LIFF 初始化成功");
-        
-        // 檢查使用者是否登入
         if (!liff.isLoggedIn()) {
-            // 如果沒登入，就引導使用者登入
             liff.login();
         } else {
-            // 如果已登入，就去取得使用者資料
             fetchUserProfile();
         }
-
     }).catch((err) => {
         console.error("LIFF 初始化失敗", err);
     });
 
-    // --- 新增的函式：取得並顯示使用者資料 ---
     function fetchUserProfile() {
         liff.getProfile().then(profile => {
-            console.log("成功取得 Profile:", profile);
-            alert("我的 User ID 是：" + profile.userId); 
-           
-            // 將資料顯示在畫面上
+            // 更新畫面上的 LINE Profile
             document.getElementById('display-name').textContent = profile.displayName;
-            document.getElementById('status-message').textContent = profile.statusMessage || ''; // 狀態消息可能不存在
-            
+            document.getElementById('status-message').textContent = profile.statusMessage || '';
             const profilePicture = document.getElementById('profile-picture');
             if (profile.pictureUrl) {
                 profilePicture.src = profile.pictureUrl;
-            } else {
-                // 如果使用者沒有頭像，可以給一個預設圖片
-                profilePicture.src = 'default-avatar.png'; 
             }
+
+            // --- 新增的程式碼：接著呼叫我們的後端 API ---
+            fetchGameData(profile.userId);
 
         }).catch((err) => {
             console.error("取得 Profile 失敗", err);
         });
+    }
+
+    // --- 新增的函式：從我們的後端取得遊戲資料 ---
+    async function fetchGameData(userId) {
+        try {
+            const response = await fetch('/api/user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ userId: userId }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const gameData = await response.json();
+            console.log("成功取得後端遊戲資料:", gameData);
+
+            // 將後端回傳的遊戲資料更新到畫面上
+            document.getElementById('user-level').textContent = gameData.level;
+            document.getElementById('user-exp').textContent = `${gameData.exp} / ${gameData.expToNextLevel}`;
+            alert('從後端收到的等級：' + gameData.level); 
+
+        } catch (error) {
+            console.error('呼叫後端 API 失敗:', error);
+            document.getElementById('user-level').textContent = '讀取失敗';
+            document.getElementById('user-exp').textContent = '讀取失敗';
+        }
     }
 
     // --- Tab Bar 頁面切換邏輯 (維持不變) ---
@@ -49,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (button) {
             const targetPageId = button.dataset.target;
             showPage(targetPageId);
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+d            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
         }
     });
@@ -62,6 +82,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // 預設顯示第一個頁面
     showPage('page-home');
 });

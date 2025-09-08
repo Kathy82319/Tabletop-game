@@ -1,4 +1,4 @@
-export default {
+成功取得後端遊戲資料export default {
     async fetch(request, env, ctx) {
         // env.DB 就是我們在第三步綁定的 D1 資料庫
         const db = env.DB;
