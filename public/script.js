@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const myLiffId = "2008076323-GN1e7naW"; // 請確保這裡是你自己的 LIFF ID
+    const myLiffId = "YOUR_LIFF_ID"; // 請確保這裡是你自己的 LIFF ID
     
     liff.init({
         liffId: myLiffId
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 profilePicture.src = profile.pictureUrl;
             }
 
-            // --- 新增的程式碼：接著呼叫我們的後端 API ---
+            // 接著呼叫我們的後端 API
             fetchGameData(profile.userId);
 
         }).catch((err) => {
@@ -32,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- 新增的函式：從我們的後端取得遊戲資料 ---
     async function fetchGameData(userId) {
         try {
             const response = await fetch('/api/user', {
@@ -53,7 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // 將後端回傳的遊戲資料更新到畫面上
             document.getElementById('user-level').textContent = gameData.level;
             document.getElementById('user-exp').textContent = `${gameData.exp} / ${gameData.expToNextLevel}`;
-            alert('從後端收到的等級：' + gameData.level); 
 
         } catch (error) {
             console.error('呼叫後端 API 失敗:', error);
@@ -62,14 +60,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Tab Bar 頁面切換邏輯 (維持不變) ---
     const tabBar = document.getElementById('tab-bar');
     tabBar.addEventListener('click', (event) => {
         const button = event.target.closest('.tab-button');
         if (button) {
             const targetPageId = button.dataset.target;
             showPage(targetPageId);
-d            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            // --- 這裡已經修正 ---
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
         }
     });
