@@ -134,3 +134,95 @@ body, html {
     display: inline-flex;
     align-items: center;
 }
+
+/* --- 篩選器樣式 --- */
+#filter-controls {
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin: 0 20px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#keyword-search {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+.filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.filter-group button {
+    padding: 8px 15px;
+    font-size: 0.9rem;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-group button:hover {
+    background-color: #f0f0f0;
+}
+
+/* 按鈕被選中時的樣式 */
+.filter-group button.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+#clear-filters {
+    padding: 10px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    align-self: flex-start; /* 讓按鈕寬度自適應內容 */
+}
+
+/* --- 卡片排版與標籤樣式 --- */
+
+/* 卡片列表容器 - 修改為兩列 */
+#game-list-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 固定為兩列 */
+    gap: 24px;
+    padding: 20px;
+}
+
+/* 卡片上的標籤容器 */
+.game-tags {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+}
+
+/* 單個標籤樣式 */
+.game-tag {
+    display: inline-block;
+    background-color: #e9ecef;
+    color: #495057;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    margin-right: 6px;
+    margin-bottom: 6px;
+}
+
+/* 在手機等小螢幕上，改為單列顯示 */
+@media (max-width: 768px) {
+    #game-list-container {
+        grid-template-columns: 1fr;
+    }
+}

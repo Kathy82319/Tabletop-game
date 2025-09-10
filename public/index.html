@@ -14,12 +14,22 @@
             <p>這裡是公會佈告欄，將來會顯示最新活動與公告。</p>
         </div>
 
-        <div id="page-games" class="page">
-            <h1>桌遊圖鑑</h1>
-            <div id="game-list-container">
-                <p>正在載入桌遊資料...</p>
-            </div>
+<div id="page-games" class="page">
+    <h1>桌遊圖鑑</h1>
+    
+    <div id="filter-controls">
+        <input type="search" id="keyword-search" placeholder="搜尋關鍵字 (遊戲名稱、描述)...">
+        <div id="tag-filter-container">
+            <strong>標籤篩選：</strong>
+            <div id="tag-filters" class="filter-group">
+                </div>
         </div>
+        <button id="clear-filters">清除所有篩選</button>
+    </div>
+    <div id="game-list-container">
+        <p>正在載入桌遊資料...</p>
+    </div>
+</div>
 
         <div id="page-profile" class="page">
              <h1>冒險者資料</h1>
