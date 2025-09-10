@@ -1,86 +1,57 @@
-// /functions/api/add-exp.js
+// functions/api/add-exp.js
 
-// --- 假資料區 ---
-// 在真實情況下，這些資料會從 D1 資料庫讀取
-// 目前我們用這個假資料來模擬一位玩家的狀態
-const MOCK_USER_DATA = {
-    userId: "U1234567890abcdefghijklmnopqrstu",
-    class: "無",
-    level: 5,
-    current_exp: 250,
-};
-
-// 等級提升所需經驗值的計算公式
-const calculateExpToNextLevel = (level) => {
-    // 這裡我們用一個簡單的公式：每級所需經驗值 = 當前等級 * 150
-    // 例如 Lv.5 -> Lv.6 需要 5 * 150 = 750 EXP
-    return level * 150;
-};
-// --- 假資料區結束 ---
-
-export const onRequestPost = async (context) => {
-    const { request, env } = context;
-    try {
-        const db = env.DB;
-        const body = await request.json();
-        const { userId, amount } = body;
-
-        if (!userId || typeof amount !== 'number' || amount <= 0) {
-            return new Response('User ID and a positive amount are required', { status: 400 });
-        }
-
-        // 從資料庫取得使用者目前的資料
-        const userStmt = db.prepare('SELECT * FROM Users WHERE user_id = ?').bind(userId);
-        const userResult = await userStmt.first();
-
-        if (!userResult) {
-            return new Response('User not found', { status: 404 });
-        }
-
-        let user = { ...userResult };
-        const originalLevel = user.level;
-        const expGained = Math.floor(amount);
-        user.current_exp += expGained;
-
-        let leveledUp = false;
-        let expToNextLevel = calculateExpToNextLevel(user.level);
-
-        while (user.current_exp >= expToNextLevel) {
-            leveledUp = true;
-            user.level += 1;
-            user.current_exp -= expToNextLevel;
-            expToNextLevel = calculateExpToNextLevel(user.level);
-        }
-
-        // 將更新後的資料寫回資料庫
-        const updateStmt = db.prepare(
-            'UPDATE Users SET level = ?, current_exp = ? WHERE user_id = ?'
-        ).bind(user.level, user.current_exp, userId);
-        await updateStmt.run();
-
-        const responsePayload = {
-            success: true,
-            message: `成功為 ${userId} 新增 ${expGained} 點經驗值。`,
-            leveledUp: leveledUp,
-            originalLevel: originalLevel,
-            newLevel: user.level,
-            newExp: user.current_exp,
-            expToNextLevel: expToNextLevel,
-        };
-
-        return new Response(JSON.stringify(responsePayload), {
-            headers: { 'Content-Type': 'application/json' },
-        });
-
-    } catch (error) {
-        console.error("Add EXP Error:", error);
-        return new Response('Internal Server Error: ' + error.message, { status: 500 });
-    }
-};
-
-export const onRequest = (context) => {
+export async function onRequest(context) {
+  try {
+    // 1. 檢查請求方法是否為 POST
     if (context.request.method !== 'POST') {
-        return new Response('Method Not Allowed', { status: 405 });
+      return new Response('Invalid request method.', { status: 405 });
     }
-    return onRequestPost(context);
-};
+
+    // 2. 解析傳入的 JSON 資料
+    const { userId, amount } = await context.request.json();
+
+    // 3. 驗證資料是否齊全且正確
+    if (!userId || typeof amount !== 'number' || amount <= 0) {
+      return new Response(JSON.stringify({ error: '無效的使用者 ID 或金額。' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 4. 計算要增加的經驗值 (目前規則 1 元 = 1 EXP)
+    const expToAdd = Math.floor(amount);
+
+    // 5. 準備並執行 D1 資料庫更新指令
+    const db = context.env.DB;
+    const stmt = db.prepare(
+      'UPDATE Users SET current_exp = current_exp + ? WHERE user_id = ?'
+    );
+    const result = await stmt.bind(expToAdd, userId).run();
+
+    // 6. 檢查是否有成功更新到資料
+    if (result.meta.changes === 0) {
+      // 如果 a.meta.changes 為 0，代表 WHERE user_id = ? 條件沒有找到任何匹配的紀錄
+      return new Response(JSON.stringify({ error: `找不到使用者 ID: ${userId}` }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 7. 回傳成功訊息
+    return new Response(JSON.stringify({ 
+        success: true, 
+        message: `成功為使用者 ${userId} 新增 ${expToAdd} 點經驗值。` 
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+  } catch (error) {
+    console.error('Error in add-exp API:', error);
+    const errorResponse = { error: '伺服器內部錯誤，新增經驗值失敗。', details: error.message };
+    return new Response(JSON.stringify(errorResponse), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}
