@@ -210,13 +210,6 @@ h1, h3 {
     padding-top: 10px;
 }
 
-/* 在手機等小螢幕上，改為單欄顯示 */
-@media (max-width: 768px) {
-    #game-list-container {
-        grid-template-columns: 1fr; /* 在手機上變回單欄 */
-    }
-}
-
 /* --- 個人資料頁面微調 (使其符合主題) --- */
 #profile-info {
     color: var(--text-color);
