@@ -36,10 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             console.log("QR Code 已產生，內容為:", profile.userId);
 
-
-            // 呼叫後端取得遊戲資料
-            fetchGameData(profile.userId);
-
         }).catch((err) => {
             console.error("取得 Profile 失敗", err);
         });
