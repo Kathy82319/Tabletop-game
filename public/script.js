@@ -54,34 +54,76 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchGames() {
-        try {
-            const response = await fetch('/api/games');
-            if (!response.ok) { throw new Error('無法取得桌遊資料'); }
-            const games = await response.json();
-            console.log('從 API 收到的資料:', games); 
-            const container = document.getElementById('game-list-container');
-            container.innerHTML = ''; 
+    try {
+        const response = await fetch('/api/games'); // 確認你的 API 路徑是否正確
+        if (!response.ok) {
+            throw new Error('無法取得桌遊資料');
+        }
+        const games = await response.json();
+        
+        console.log('從 API 收到的資料:', games); // 這行可以保留，方便未來除錯
 
-            if (games.length === 0) {
-                container.innerHTML = '<p>目前店內沒有可顯示的桌遊。</p>';
+        const container = document.getElementById('game-list-container');
+        // 清空原本 "正在載入..." 的訊息
+        container.innerHTML = ''; 
+
+        // 遍歷每一筆遊戲資料
+        games.forEach(game => {
+            // 如果 is_visible 不是 TRUE，就跳過這筆資料不顯示
+            if (game.is_visible !== 'TRUE') {
                 return;
             }
 
-            games.forEach(game => {
-                const card = document.createElement('div');
-                card.className = 'game-card';
-                card.innerHTML = `
-                    <h3>${game.name}</h3>
-                    <p>人數：${game.min_players} - ${game.max_players} 人</p>
-                    <p>標籤：${game.tags}</p>
-                `;
-                container.appendChild(card);
-            });
-        } catch (error) {
-            console.error('呼叫桌遊 API 失敗:', error);
-            document.getElementById('game-list-container').innerHTML = '<p>讀取桌遊資料失敗。</p>';
-        }
+            // 建立卡片的整體容器
+            const gameCard = document.createElement('div');
+            gameCard.className = 'game-card';
+
+            // 建立圖片
+            const img = document.createElement('img');
+            img.src = game.image_url; // 使用 "image_url" 欄位
+            img.alt = game.name;      // 使用 "name" 欄位
+            img.className = 'game-image';
+
+            // 建立卡片內容的容器
+            const infoContainer = document.createElement('div');
+            infoContainer.className = 'game-info';
+
+            // 建立標題
+            const title = document.createElement('h3');
+            title.className = 'game-title';
+            title.textContent = game.name; // 使用 "name" 欄位
+
+            // 建立描述
+            const description = document.createElement('p');
+            description.className = 'game-description';
+            description.textContent = game.description; // 使用 "description" 欄位
+
+            // 建立遊戲細節的容器 (人數、難度等)
+            const detailsContainer = document.createElement('div');
+            detailsContainer.className = 'game-details';
+            detailsContainer.innerHTML = `
+                <span>👥 ${game.min_players}-${game.max_players} 人</span>
+                <span>⭐ 難度: ${game.difficulty}</span>
+            `;
+
+            // 按照順序將所有元素組合起來
+            infoContainer.appendChild(title);
+            infoContainer.appendChild(description);
+            infoContainer.appendChild(detailsContainer);
+
+            gameCard.appendChild(img);
+            gameCard.appendChild(infoContainer);
+
+            // 將完成的卡片加到頁面上
+            container.appendChild(gameCard);
+        });
+
+    } catch (error) {
+        console.error('呼叫桌遊 API 失敗:', error);
+        const container = document.getElementById('game-list-container');
+        container.innerHTML = '<p style="color: red;">讀取桌遊資料失敗。</p>';
     }
+}
 
     const tabBar = document.getElementById('tab-bar');
     tabBar.addEventListener('click', (event) => {

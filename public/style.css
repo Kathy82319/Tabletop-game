@@ -57,3 +57,80 @@ body, html {
     color: #fff;
     font-weight: bold;
 }
+
+/* --- 桌遊圖鑑卡片樣式 --- */
+
+/* 卡片列表容器 - 使用 Grid 排版，會自動換行 */
+#game-list-container {
+    display: grid;
+    /* 讓每張卡片寬度在 280px 到 1fr (自動撐滿) 之間，達到響應式效果 */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px; /* 卡片之間的間距 */
+    padding: 20px;
+}
+
+/* 單張遊戲卡片樣式 */
+.game-card {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden; /* 確保圖片圓角生效 */
+    display: flex;
+    flex-direction: column; /* 讓內容由上到下排列 */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+/* 滑鼠移到卡片上時的互動效果 */
+.game-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* 卡片圖片樣式 */
+.game-image {
+    width: 100%;
+    height: 200px; /* 固定圖片高度 */
+    object-fit: cover; /* 讓圖片填滿容器且不變形 */
+}
+
+/* 卡片文字內容容器 */
+.game-info {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* 讓這個區塊填滿卡片剩餘空間 */
+}
+
+/* 遊戲標題 */
+.game-title {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 1.25rem;
+    color: #333;
+}
+
+/* 遊戲描述 */
+.game-description {
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.5;
+    flex-grow: 1; /* 讓描述區塊盡量伸展，把細節推到最下方 */
+    margin-bottom: 16px;
+}
+
+/* 遊戲細節 (人數、難度) */
+.game-details {
+    display: flex;
+    justify-content: space-between; /* 讓左右兩項資訊分開 */
+    align-items: center;
+    font-size: 0.8rem;
+    color: #888;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 12px;
+    margin-top: auto; /* 將此區塊推至卡片底部 */
+}
+
+.game-details span {
+    display: inline-flex;
+    align-items: center;
+}
