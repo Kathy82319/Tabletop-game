@@ -154,13 +154,13 @@ h1, h3 {
 /* 卡片圖片樣式 (上方) */
 .game-image {
     width: 100%; /* 寬度撐滿卡片 */
-    height: 180px; /* 固定圖片高度，可依喜好調整 */
+    height: 120px; /* 固定圖片高度，可依喜好調整 */
     object-fit: cover; /* 讓圖片填滿容器且不變形 */
 }
 
 /* 卡片文字內容容器 (下方) */
 .game-info {
-    padding: 15px;
+    padding: 5px;
     display: flex;
     flex-direction: column;
     flex-grow: 1; /* 讓這個區塊填滿卡片剩餘空間，確保卡片等高 */
@@ -169,7 +169,7 @@ h1, h3 {
 /* 遊戲標題 */
 .game-title {
     margin-top: 0;
-    margin-bottom: 8px;
+    margin-bottom: 2px;
     font-size: 1.1rem;
 }
 
@@ -179,7 +179,7 @@ h1, h3 {
     color: #666;
     line-height: 1.5;
     flex-grow: 1; /* 讓描述區塊盡量伸展，把標籤和細節推到最下方 */
-    margin-bottom: 12px;
+    margin-bottom: 3px;
 }
 
 /* 卡片上的標籤容器 */
