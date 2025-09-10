@@ -1,15 +1,12 @@
 {
-  "name": "google-sheet-api-example",
+  "name": "tabletop-game-liff",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "start": "node api/games.js"
-  },
-  "author": "",
-  "license": "ISC",
+  "private": true,
   "dependencies": {
-    "google-auth-library": "^9.11.0",
-    "google-spreadsheet": "^4.1.1"
+    "google-spreadsheet": "^4.1.1",
+    "google-auth-library": "^9.11.0"
+  },
+  "devDependencies": {
+    "some-other-package": "^1.2.3"
   }
 }
