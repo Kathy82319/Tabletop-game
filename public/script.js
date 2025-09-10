@@ -1,19 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
     const myLiffId = "2008076323-GN1e7naW"; // 你的 LIFF ID
-    
-    liff.init({
-        liffId: myLiffId
-    }).then(() => {
-        console.log("LIFF 初始化成功");
-        if (!liff.isLoggedIn()) {
-            liff.login();
-        } else {
-            fetchUserProfile();
-        }
-    }).catch((err) => {
-        console.error("LIFF 初始化失敗", err);
-    });
 
+    liff.init({ liffId: myLiffId })
+        .then(() => {
+            console.log("LIFF 初始化成功");
+            if (!liff.isLoggedIn()) {
+                liff.login();
+            } else {
+                // 初始化成功後，執行這兩個函式
+                fetchUserProfile();
+                fetchGames(); // <--- 新增的呼叫
+            }
+        })
+        .catch((err) => { console.error("LIFF 初始化失敗", err); });
+        
     function fetchUserProfile() {
         liff.getProfile().then(profile => {
             // 更新 LINE 個人資料
@@ -45,30 +45,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 正式版本：呼叫後端 API 並更新畫面
-    async function fetchGameData(userId) {
+// --- 新增的函式：取得並顯示桌遊列表 ---
+    async function fetchGames() {
         try {
-            const response = await fetch('/api/user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: userId }),
-            });
+            const response = await fetch('/api/games'); // 發出 GET 請求
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                throw new Error('無法取得桌遊資料');
             }
-            const gameData = await response.json();
-            console.log("成功取得後端遊戲資料:", gameData);
+            const games = await response.json();
+            const container = document.getElementById('game-list-container');
 
-            // 更新畫面上的遊戲資料
-            document.getElementById('user-class').textContent = gameData.class; // 【新增】更新職業
-            document.getElementById('user-level').textContent = gameData.level;
-            document.getElementById('user-exp').textContent = `${gameData.exp} / ${gameData.expToNextLevel}`;
+            // 清空載入中的訊息
+            container.innerHTML = ''; 
+
+            // 遍歷每一款遊戲，並建立顯示卡片
+            games.forEach(game => {
+                const card = document.createElement('div');
+                card.className = 'game-card'; // 方便未來用 CSS 美化
+                card.innerHTML = `
+                    <h3>${game.name}</h3>
+                    <p>人數：${game.min_players} - ${game.max_players} 人</p>
+                    <p>標籤：${game.tags}</p>
+                `;
+                container.appendChild(card);
+            });
 
         } catch (error) {
-            console.error('呼叫後端 API 失敗:', error);
-            document.getElementById('user-class').textContent = '讀取失敗'; // 【新增】更新職業
-            document.getElementById('user-level').textContent = '讀取失敗';
-            document.getElementById('user-exp').textContent = '讀取失敗';
+            console.error('呼叫桌遊 API 失敗:', error);
+            document.getElementById('game-list-container').innerHTML = '<p>讀取桌遊資料失敗。</p>';
         }
     }
 
