@@ -6,6 +6,8 @@
     "deploy": "wrangler pages deploy ./public"
   },
   "devDependencies": {
-    "wrangler": "^3.0.0"
+    "some-other-package": "^1.2.3",
+    "google-spreadsheet": "^4.1.1",
+    "google-auth-library": "^9.11.0"
   }
 }
