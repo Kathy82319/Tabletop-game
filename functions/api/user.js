@@ -13,11 +13,11 @@ const MOCK_USER_DATA = {
 // --- 假資料區結束 ---
 
 
-// 正式版本：處理 /api/user 的 POST 請求並回傳假資料
+// /functions/api/user.js
 export const onRequestPost = async (context) => {
-    const { request } = context;
-    
+    const { request, env } = context;
     try {
+        const db = env.DB;
         const body = await request.json();
         const userId = body.userId;
 
@@ -25,9 +25,36 @@ export const onRequestPost = async (context) => {
             return new Response('User ID is required', { status: 400 });
         }
 
-        // 注意：這裡不再查詢資料庫，而是直接回傳上面定義好的假資料
-        // 這樣可以確保前端拿到的資料，和我們用 add-exp 測試的資料來源一致
-        return new Response(JSON.stringify(MOCK_USER_DATA), {
+        const stmt = db.prepare('SELECT * FROM Users WHERE user_id = ?').bind(userId);
+        const { results } = await stmt.all();
+
+        let userData;
+        if (results.length > 0) {
+            const dbUser = results[0];
+            userData = {
+                class: dbUser.class,
+                level: dbUser.level,
+                exp: dbUser.current_exp,
+                expToNextLevel: dbUser.level * 150,
+                isNewUser: false
+            };
+        } else {
+            // 如果是新使用者，除了回傳預設值，也同時在資料庫建立一筆新紀錄
+            const newUserStmt = db.prepare(
+                'INSERT INTO Users (user_id, line_display_name) VALUES (?, ?)'
+            ).bind(userId, "新來的冒險者"); // 這裡可以從前端拿到 displayName
+            await newUserStmt.run();
+
+            userData = {
+                class: "無",
+                level: 1,
+                exp: 0,
+                expToNextLevel: 100,
+                isNewUser: true
+            };
+        }
+
+        return new Response(JSON.stringify(userData), {
             headers: { 'Content-Type': 'application/json' },
         });
 
@@ -37,10 +64,9 @@ export const onRequestPost = async (context) => {
     }
 };
 
-// 為了安全，如果不是 POST，我們回傳一個錯誤
 export const onRequest = (context) => {
     if (context.request.method !== 'POST') {
         return new Response('Method Not Allowed', { status: 405 });
     }
     return onRequestPost(context);
-}
+};

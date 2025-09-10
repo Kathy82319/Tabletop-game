@@ -7,16 +7,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!liff.isLoggedIn()) {
                 liff.login();
             } else {
-                // 初始化成功後，執行這兩個函式
                 fetchUserProfile();
-                fetchGames(); // <--- 新增的呼叫
+                fetchGames(); // 呼叫取得桌遊列表
             }
         })
         .catch((err) => { console.error("LIFF 初始化失敗", err); });
         
     function fetchUserProfile() {
         liff.getProfile().then(profile => {
-            // 更新 LINE 個人資料
             document.getElementById('display-name').textContent = profile.displayName;
             document.getElementById('status-message').textContent = profile.statusMessage || '';
             const profilePicture = document.getElementById('profile-picture');
@@ -24,40 +22,53 @@ document.addEventListener('DOMContentLoaded', () => {
                 profilePicture.src = profile.pictureUrl;
             }
 
-            // 【新增】產生 QR Code
-            // 我們將使用者的 userId 作為 QR Code 的內容
-            // 當店家掃描這個 QR Code 時，就能得到這個 userId，進而操作後端
+            fetchGameData(profile.userId); // 呼叫 fetchGameData 來取得會員遊戲資料
+
             const qrcodeElement = document.getElementById('qrcode');
-            qrcodeElement.innerHTML = ''; // 先清空舊的 QR Code
+            qrcodeElement.innerHTML = '';
             new QRCode(qrcodeElement, {
                 text: profile.userId,
                 width: 200,
                 height: 200,
             });
-            console.log("QR Code 已產生，內容為:", profile.userId);
-
         }).catch((err) => {
             console.error("取得 Profile 失敗", err);
         });
     }
 
-// --- 新增的函式：取得並顯示桌遊列表 ---
+    async function fetchGameData(userId) {
+        try {
+            const response = await fetch('/api/user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: userId }),
+            });
+            if (!response.ok) { throw new Error('無法取得會員遊戲資料'); }
+            const gameData = await response.json();
+            document.getElementById('user-class').textContent = gameData.class;
+            document.getElementById('user-level').textContent = gameData.level;
+            document.getElementById('user-exp').textContent = `${gameData.exp} / ${gameData.expToNextLevel}`;
+        } catch (error) {
+            console.error('呼叫會員 API 失敗:', error);
+        }
+    }
+
     async function fetchGames() {
         try {
-            const response = await fetch('/api/games'); // 發出 GET 請求
-            if (!response.ok) {
-                throw new Error('無法取得桌遊資料');
-            }
+            const response = await fetch('/api/games');
+            if (!response.ok) { throw new Error('無法取得桌遊資料'); }
             const games = await response.json();
             const container = document.getElementById('game-list-container');
-
-            // 清空載入中的訊息
             container.innerHTML = ''; 
 
-            // 遍歷每一款遊戲，並建立顯示卡片
+            if (games.length === 0) {
+                container.innerHTML = '<p>目前店內沒有可顯示的桌遊。</p>';
+                return;
+            }
+
             games.forEach(game => {
                 const card = document.createElement('div');
-                card.className = 'game-card'; // 方便未來用 CSS 美化
+                card.className = 'game-card';
                 card.innerHTML = `
                     <h3>${game.name}</h3>
                     <p>人數：${game.min_players} - ${game.max_players} 人</p>
@@ -65,7 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 container.appendChild(card);
             });
-
         } catch (error) {
             console.error('呼叫桌遊 API 失敗:', error);
             document.getElementById('game-list-container').innerHTML = '<p>讀取桌遊資料失敗。</p>';

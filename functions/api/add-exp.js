@@ -18,47 +18,51 @@ const calculateExpToNextLevel = (level) => {
 };
 // --- 假資料區結束 ---
 
-
 export const onRequestPost = async (context) => {
+    const { request, env } = context;
     try {
-        const body = await context.request.json();
+        const db = env.DB;
+        const body = await request.json();
         const { userId, amount } = body;
 
         if (!userId || typeof amount !== 'number' || amount <= 0) {
             return new Response('User ID and a positive amount are required', { status: 400 });
         }
 
-        // --- 核心邏輯開始 ---
-        // 1. 經驗值換算規則 (1元 = 1 EXP)
-        const expGained = Math.floor(amount);
+        // 從資料庫取得使用者目前的資料
+        const userStmt = db.prepare('SELECT * FROM Users WHERE user_id = ?').bind(userId);
+        const userResult = await userStmt.first();
 
-        // 2. 取得玩家目前狀態 (使用假資料)
-        let user = { ...MOCK_USER_DATA }; // 複製一份假資料來操作，避免影響原始假資料
-        
-        // 3. 加上新的經驗值
+        if (!userResult) {
+            return new Response('User not found', { status: 404 });
+        }
+
+        let user = { ...userResult };
+        const originalLevel = user.level;
+        const expGained = Math.floor(amount);
         user.current_exp += expGained;
 
-        // 4. 判斷是否升級 (使用 while 迴圈處理可能一次升多級的情況)
         let leveledUp = false;
         let expToNextLevel = calculateExpToNextLevel(user.level);
 
         while (user.current_exp >= expToNextLevel) {
             leveledUp = true;
-            user.level += 1; // 等級提升！
-            user.current_exp -= expToNextLevel; // 扣除升級所需的經驗值
-            
-            // 更新下一級所需的經驗值
+            user.level += 1;
+            user.current_exp -= expToNextLevel;
             expToNextLevel = calculateExpToNextLevel(user.level);
         }
 
-        // --- 核心邏輯結束 ---
-        
-        // 5. 準備回傳給店員後台的資料
+        // 將更新後的資料寫回資料庫
+        const updateStmt = db.prepare(
+            'UPDATE Users SET level = ?, current_exp = ? WHERE user_id = ?'
+        ).bind(user.level, user.current_exp, userId);
+        await updateStmt.run();
+
         const responsePayload = {
             success: true,
             message: `成功為 ${userId} 新增 ${expGained} 點經驗值。`,
             leveledUp: leveledUp,
-            originalLevel: MOCK_USER_DATA.level,
+            originalLevel: originalLevel,
             newLevel: user.level,
             newExp: user.current_exp,
             expToNextLevel: expToNextLevel,
@@ -74,7 +78,6 @@ export const onRequestPost = async (context) => {
     }
 };
 
-// 只允許 POST 方法
 export const onRequest = (context) => {
     if (context.request.method !== 'POST') {
         return new Response('Method Not Allowed', { status: 405 });

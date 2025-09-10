@@ -1,10 +1,9 @@
-// 這個檔案負責處理 /api/games 的 GET 請求
+// /functions/api/games.js
 export const onRequestGet = async (context) => {
     const { env } = context;
     try {
         const db = env.DB;
-
-        // 查詢所有 is_visible 為 TRUE 的桌遊
+        // 假設你的 D1 資料庫裡有一個叫做 BoardGames 的資料表
         const stmt = db.prepare('SELECT * FROM BoardGames WHERE is_visible = ?').bind(true);
         const { results } = await stmt.all();
 
@@ -16,4 +15,11 @@ export const onRequestGet = async (context) => {
         console.error(error);
         return new Response('Internal Server Error: ' + error.message, { status: 500 });
     }
+};
+
+export const onRequest = (context) => {
+    if (context.request.method !== 'GET') {
+        return new Response('Method Not Allowed', { status: 405 });
+    }
+    return onRequestGet(context);
 };
