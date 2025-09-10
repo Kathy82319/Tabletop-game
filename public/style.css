@@ -1,210 +1,195 @@
-/* 基本樣式重置 */
-body, html {
+/* --- 全域與晨曦主題色彩變數 --- */
+:root {
+    --bg-color: #FFF9F0;         /* 背景色 - 柔和米白 */
+    --primary-accent: #FF8C42;   /* 主題色 - 溫暖晨曦橙 */
+    --secondary-accent: #FFC371; /* 輔助色 - 明亮陽光金 */
+    --text-color: #5D4037;       /* 文字顏色 - 溫潤深棕 */
+    --subtle-border: #E0E0E0;    /* 邊框/分隔線 - 淡雅灰 */
+    --card-bg: #FFFFFF;          /* 卡片背景 - 純白 */
+    --font-family: 'Helvetica Neue', Arial, 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--font-family);
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background-color: #2c2c2c;
-    color: #f0f0f0;
-    height: 100%;
-    overflow: hidden;
+    padding-bottom: 70px; /* 避免內容被底部 Tab Bar 遮擋 */
 }
 
-/* 主要內容容器 */
-#app-content {
-    height: calc(100% - 60px); /* 滿高度減去導覽列高度 */
-    overflow-y: auto; /* 內容過長時可以滾動 */
-    padding: 20px;
+h1, h3 {
+    color: var(--text-color);
 }
 
-/* 頁面基本樣式 */
+/* --- 頁面與 Tab Bar 樣式 --- */
 .page {
-    display: none; /* 預設所有頁面都隱藏 */
+    display: none;
+    padding: 15px;
 }
-
-/* 當前顯示的頁面 */
 .page.active {
-    display: block; /* 只顯示有 active class 的頁面 */
+    display: block;
 }
 
-/* 底部導覽列 */
 #tab-bar {
     position: fixed;
     bottom: 0;
     left: 0;
-    right: 0;
+    width: 100%;
     height: 60px;
-    background-color: #1a1a1a;
+    background-color: var(--card-bg);
+    border-top: 1px solid var(--subtle-border);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
     display: flex;
     justify-content: space-around;
     align-items: center;
-    border-top: 1px solid #444;
 }
 
-/* 導覽列按鈕 */
 .tab-button {
     background: none;
     border: none;
-    color: #888;
-    font-size: 12px;
-    flex-grow: 1;
-    height: 100%;
+    color: #999;
+    font-size: 0.8rem;
     cursor: pointer;
-    transition: color 0.2s;
+    padding: 10px;
+    border-radius: 8px;
+    transition: color 0.2s, background-color 0.2s;
 }
 
-/* 當前選中的按鈕 */
 .tab-button.active {
-    color: #fff;
+    color: var(--primary-accent);
     font-weight: bold;
 }
 
-/* --- 桌遊圖鑑卡片樣式 --- */
-
-/* 卡片列表容器 - 使用 Grid 排版，會自動換行 */
-#game-list-container {
-    display: grid;
-    /* 讓每張卡片寬度在 280px 到 1fr (自動撐滿) 之間，達到響應式效果 */
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 24px; /* 卡片之間的間距 */
-    padding: 20px;
-}
-
-/* 單張遊戲卡片樣式 */
-.game-card {
-    background-color: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    overflow: hidden; /* 確保圖片圓角生效 */
-    display: flex;
-    flex-direction: column; /* 讓內容由上到下排列 */
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
-/* 滑鼠移到卡片上時的互動效果 */
-.game-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-}
-
-/* 卡片圖片樣式 */
-.game-image {
-    width: 100%;
-    height: 200px; /* 固定圖片高度 */
-    object-fit: cover; /* 讓圖片填滿容器且不變形 */
-}
-
-/* 卡片文字內容容器 */
-.game-info {
-    padding: 16px;
+/* --- 篩選器樣式 (更緊湊) --- */
+#filter-controls {
+    padding: 15px; /* 縮小上下左右間距 */
+    background-color: transparent; /* 背景透明，融入頁面 */
+    margin: 0;
+    margin-bottom: 20px;
     display: flex;
     flex-direction: column;
-    flex-grow: 1; /* 讓這個區塊填滿卡片剩餘空間 */
+    gap: 12px;
+}
+
+#keyword-search {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--subtle-border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+#tag-filter-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px; /* 縮小按鈕間距 */
+}
+
+.filter-group button {
+    padding: 5px 12px; /* 縮小按鈕內距，讓按鈕變小 */
+    font-size: 0.8rem; /* 縮小字體 */
+    border: 1px solid var(--subtle-border);
+    background-color: var(--card-bg);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-group button:hover {
+    border-color: var(--secondary-accent);
+}
+
+.filter-group button.active {
+    background-color: var(--primary-accent);
+    color: white;
+    border-color: var(--primary-accent);
+}
+
+#clear-filters {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    background-color: #888;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    align-self: flex-start;
+}
+
+/* --- 桌遊圖鑑卡片樣式 (圖片與文字並排) --- */
+
+/* 卡片列表容器 - 仍然使用 Grid，但內部卡片改為橫向 */
+#game-list-container {
+    display: grid;
+    grid-template-columns: 1fr; /* 現在改為單列，每張卡片自己撐滿寬度 */
+    gap: 20px;
+    padding: 0 15px;
+}
+
+/* 單張遊戲卡片樣式 - 使用 Flex 達成並排 */
+.game-card {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    display: flex; /* << 核心改動：設為 Flex 容器 */
+    flex-direction: row; /* << 核心改動：子元素橫向排列 */
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+.game-card:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 卡片圖片樣式 (左側) */
+.game-image {
+    width: 120px; /* 固定圖片寬度 */
+    height: auto; /* 高度自適應 */
+    flex-shrink: 0; /* 防止圖片被壓縮 */
+    object-fit: cover;
+}
+
+/* 卡片文字內容容器 (右側) */
+.game-info {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
 }
 
 /* 遊戲標題 */
 .game-title {
     margin-top: 0;
     margin-bottom: 8px;
-    font-size: 1.25rem;
-    color: #333;
+    font-size: 1.1rem;
 }
 
 /* 遊戲描述 */
 .game-description {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: #666;
     line-height: 1.5;
-    flex-grow: 1; /* 讓描述區塊盡量伸展，把細節推到最下方 */
-    margin-bottom: 16px;
-}
-
-/* 遊戲細節 (人數、難度) */
-.game-details {
-    display: flex;
-    justify-content: space-between; /* 讓左右兩項資訊分開 */
-    align-items: center;
-    font-size: 0.8rem;
-    color: #888;
-    border-top: 1px solid #f0f0f0;
-    padding-top: 12px;
-    margin-top: auto; /* 將此區塊推至卡片底部 */
-}
-
-.game-details span {
-    display: inline-flex;
-    align-items: center;
-}
-
-/* --- 篩選器樣式 --- */
-#filter-controls {
-    padding: 20px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    margin: 0 20px 20px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-#keyword-search {
-    width: 100%;
-    padding: 10px;
-    font-size: 1rem;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-}
-
-.filter-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.filter-group button {
-    padding: 8px 15px;
-    font-size: 0.9rem;
-    border: 1px solid #ccc;
-    background-color: #fff;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.filter-group button:hover {
-    background-color: #f0f0f0;
-}
-
-/* 按鈕被選中時的樣式 */
-.filter-group button.active {
-    background-color: #007bff;
-    color: white;
-    border-color: #007bff;
-}
-
-#clear-filters {
-    padding: 10px;
-    background-color: #6c757d;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    align-self: flex-start; /* 讓按鈕寬度自適應內容 */
-}
-
-/* --- 卡片排版與標籤樣式 --- */
-
-/* 卡片列表容器 - 修改為兩列 */
-#game-list-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 固定為兩列 */
-    gap: 24px;
-    padding: 20px;
+    margin-bottom: 12px;
+    /* 限制描述最多顯示三行，超出部分用刪節號 */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;  
+    overflow: hidden;
 }
 
 /* 卡片上的標籤容器 */
 .game-tags {
-    margin-top: 12px;
-    padding-top: 12px;
+    margin-top: auto; /* 將標籤推到內容區塊的底部 */
+    padding-top: 10px;
     border-top: 1px solid #f0f0f0;
 }
 
@@ -213,16 +198,29 @@ body, html {
     display: inline-block;
     background-color: #e9ecef;
     color: #495057;
-    padding: 4px 10px;
+    padding: 3px 8px;
     border-radius: 12px;
-    font-size: 0.75rem;
-    margin-right: 6px;
-    margin-bottom: 6px;
+    font-size: 0.7rem;
+    margin-right: 5px;
+    margin-bottom: 5px;
 }
 
-/* 在手機等小螢幕上，改為單列顯示 */
-@media (max-width: 768px) {
-    #game-list-container {
-        grid-template-columns: 1fr;
-    }
+/* 遊戲細節 (人數、難度) */
+.game-details {
+    display: flex;
+    justify-content: flex-start;
+    gap: 20px;
+    font-size: 0.8rem;
+    color: #777;
+    padding-top: 10px;
+    margin-top: auto; /* 將此區塊也推至卡片底部 */
+    border-top: 1px solid #f0f0f0;
+}
+
+/* --- 個人資料頁面微調 (使其符合主題) --- */
+#profile-info {
+    color: var(--text-color);
+}
+#qrcode-container {
+    border: 1px solid var(--subtle-border);
 }
