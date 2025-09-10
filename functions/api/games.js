@@ -11,12 +11,9 @@ export async function onRequest(context) {
       GOOGLE_SHEET_ID
     } = context.env;
 
-    // 1. 手動建立並簽署 JWT (已修正)
-    // ----------------------------------------------------
-    const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
-    
+    // 1. 手動建立並簽署 JWT
+    const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS266');
     const jwt = await new jose.SignJWT({
-        // 正確的作法：將自訂欄位放在 SignJWT 的 payload 中
         scope: 'https://www.googleapis.com/auth/spreadsheets'
       })
       .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
@@ -28,7 +25,6 @@ export async function onRequest(context) {
       .sign(privateKey);
 
     // 2. 使用簽署好的 JWT 換取 Access Token
-    // ----------------------------------------
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -46,11 +42,17 @@ export async function onRequest(context) {
     const tokenData = await tokenResponse.json();
     const accessToken = tokenData.access_token;
     
-    // 3. 使用 Access Token 操作 Google Spreadsheet
+    // 3. 使用 Access Token 操作 Google Spreadsheet (已修正)
     // ---------------------------------------------
-    const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID);
+    // 建立一個簡易驗證物件
+    const simpleAuth = {
+      getRequestHeaders: () => ({
+        'Authorization': `Bearer ${accessToken}`,
+      }),
+    };
     
-    doc.useRawAccessToken(accessToken);
+    // 將驗證物件傳入建構子
+    const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
 
     await doc.loadInfo();
     const sheet = doc.sheetsByTitle['BoardGames'];
