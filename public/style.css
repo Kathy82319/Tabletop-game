@@ -1,219 +1,268 @@
 /* --- 全域與晨曦主題色彩變數 --- */
+
+/* :root 選擇器用於在 HTML 文件的根元素上定義全域變數。
+   這樣我們就可以在整個專案中重複使用這些顏色和字體設定，方便統一管理和修改主題。*/
 :root {
-    --bg-color: #FFF9F0;         /* 背景色 - 柔和米白 */
-    --primary-accent: #FF8C42;   /* 主題色 - 溫暖晨曦橙 */
-    --secondary-accent: #FFC371; /* 輔助色 - 明亮陽光金 */
-    --text-color: #5D4037;       /* 文字顏色 - 溫潤深棕 */
-    --subtle-border: #E0E0E0;    /* 邊框/分隔線 - 淡雅灰 */
-    --card-bg: #FFFFFF;          /* 卡片背景 - 純白 */
-    --font-family: 'Helvetica Neue', Arial, 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    --bg-color: #FFF9F0;         /* 背景色 - 柔和米白，用於整個應用的背景 */
+    --primary-accent: #FF8C42;   /* 主題色 - 溫暖晨曦橙，用於按鈕、選中狀態等醒目提示 */
+    --secondary-accent: #FFC371; /* 輔助色 - 明亮陽光金，用於滑鼠懸停等互動效果 */
+    --text-color: #5D4037;       /* 文字顏色 - 溫潤深棕，用於大部分的文字內容，比純黑更柔和 */
+    --subtle-border: #E0E0E0;    /* 邊框/分隔線 - 淡雅灰，用於卡片邊框、分隔線等 */
+    --card-bg: #FFFFFF;          /* 卡片背景 - 純白，用於卡片、Tab Bar 等需要突出的區塊 */
+    --font-family: 'Helvetica Neue', Arial, 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; /* 全站使用的字體系列 */
 }
 
+
+/* --- Body 與基礎元素全域樣式 --- */
+
+/* `body` 標籤是整個網頁內容的容器，這裡設定的是最基礎的全頁預設樣式。 */
 body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    font-family: var(--font-family);
-    margin: 0;
-    padding: 0;
-    padding-bottom: 70px; /* 避免內容被底部 Tab Bar 遮擋 */
+    background-color: var(--bg-color); /* 將背景色設定為我們定義的米白變數 */
+    color: var(--text-color);          /* 設定全站的預設文字顏色為深棕色 */
+    font-family: var(--font-family);   /* 設定全站的預設字體 */
+    margin: 0;                         /* 移除瀏覽器預設的 body 邊距 */
+    padding: 0;                        /* 移除瀏覽器預設的 body 內距 */
+    padding-bottom: 70px;              /* 在頁面底部增加 70px 的內距，避免內容被固定的 Tab Bar 遮擋 */
 }
 
+/* 統一設定 h1 和 h3 標題的顏色 */
 h1, h3 {
     color: var(--text-color);
 }
 
-/* --- 頁面與 Tab Bar 樣式 --- */
+
+/* --- 頁面切換與 Tab Bar 樣式 --- */
+
+/* `.page` 是每個分頁的容器的通用 class */
 .page {
-    display: none;
-    padding: 15px;
+    display: none;   /* 預設將所有頁面隱藏 */
+    padding: 15px;   /* 為頁面內容提供一些內邊距 */
 }
+/* 只有被 JavaScript 加上 `active` class 的頁面才會顯示 */
 .page.active {
-    display: block;
+    display: block; /* 將 display 改為 block，使其顯示出來 */
 }
 
+
+/* `#tab-bar` 是底部固定的導覽列 */
 #tab-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 60px;
-    background-color: var(--card-bg);
-    border-top: 1px solid var(--subtle-border);
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
+    position: fixed;            /* 將位置固定，使其不隨頁面滾動 */
+    bottom: 0;                  /* 固定在畫面底部 */
+    left: 0;                    /* 從左側 0 的位置開始 */
+    width: 100%;                /* 寬度撐滿整個螢幕 */
+    height: 60px;               /* 設定導覽列高度 */
+    background-color: var(--card-bg); /* 背景設為白色 */
+    border-top: 1px solid var(--subtle-border); /* 在頂部加上一條細細的分隔線 */
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); /* 在頂部加上微弱的陰影，增加立體感 */
+    display: flex;              /* 使用 Flexbox 排版 */
+    justify-content: space-around; /* 讓內部的按鈕均勻分佈 */
+    align-items: center;        /* 讓內部的按鈕垂直置中 */
 }
 
+
+/* `.tab-button` 是導覽列中的每一個按鈕 */
 .tab-button {
-    background: none;
-    border: none;
-    color: #999;
-    font-size: 0.8rem;
-    cursor: pointer;
-    padding: 10px;
-    border-radius: 8px;
-    transition: color 0.2s, background-color 0.2s;
+    background: none;  /* 移除預設背景 */
+    border: none;      /* 移除預設邊框 */
+    color: #999;       /* 預設文字顏色為灰色 */
+    font-size: 0.8rem; /* 設定稍小的字體 */
+    cursor: pointer;   /* 滑鼠移上去時顯示為手指形狀，提示可點擊 */
+    padding: 10px;     /* 設定內距，讓點擊範圍變大 */
+    border-radius: 8px;/* 圓角 */
+    transition: color 0.2s, background-color 0.2s; /* 讓顏色變化有 0.2 秒的過渡動畫 */
 }
 
+/* `.tab-button.active` 是被選中的按鈕的樣式 */
 .tab-button.active {
-    color: var(--primary-accent);
-    font-weight: bold;
+    color: var(--primary-accent); /* 將文字顏色改為主題橙色 */
+    font-weight: bold;            /* 字體加粗 */
 }
+
 
 /* --- 篩選器樣式 (緊湊版) --- */
+
+/* `#filter-controls` 是整個篩選器區塊的容器 */
 #filter-controls {
-    padding: 15px;
-    background-color: transparent;
-    margin: 0;
-    margin-bottom: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    padding: 5px;                 /* 設定內距 */
+    background-color: transparent; /* 背景透明，使其融入頁面背景 */
+    margin: 0;                     /* 移除外距 */
+    margin-bottom: 20px;           /* 與下方的卡片列表保持 20px 的距離 */
+    display: flex;                 /* 使用 Flexbox 排版 */
+    flex-direction: column;        /* 讓子元素（搜尋框、標籤區）垂直排列 */
+    gap: 10px;                     /* 設定子元素之間的間距 */
 }
 
+
+/* `#keyword-search` 是關鍵字搜尋輸入框 */
 #keyword-search {
-    width: 100%;
-    padding: 12px;
-    font-size: 1rem;
-    border-radius: 8px;
-    border: 1px solid var(--subtle-border);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    width: 100%;                /* 寬度撐滿容器 */
+    padding: 12px;              /* 舒適的內距 */
+    font-size: 1rem;            /* 標準字體大小 */
+    border-radius: 8px;         /* 圓角 */
+    border: 1px solid var(--subtle-border); /* 淡雅的邊框 */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* 微弱的陰影 */
 }
 
+
+/* `#tag-filter-container` 是標籤篩選區的容器 */
 #tag-filter-container {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
+    display: flex;         /* 使用 Flexbox */
+    flex-wrap: wrap;       /* 允許內容換行 */
+    align-items: center;   /* 垂直置中對齊 */
+    gap: 10px;             /* 項目間距 */
 }
 
+
+/* `.filter-group` 是標籤按鈕的直接容器 */
 .filter-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    display: flex;      /* 使用 Flexbox */
+    flex-wrap: wrap;    /* 允許按鈕換行，以應對多個標籤 */
+    gap: 8px;           /* 按鈕之間的間距 */
 }
 
+
+/* `.filter-group button` 是單個標籤按鈕的樣式 */
 .filter-group button {
-    padding: 5px 12px;
-    font-size: 0.8rem;
-    border: 1px solid var(--subtle-border);
-    background-color: var(--card-bg);
-    border-radius: 16px;
-    cursor: pointer;
-    transition: all 0.2s;
+    padding: 5px 12px;        /* 較小的內距，讓按鈕變緊湊 */
+    font-size: 0.8rem;        /* 較小的字體 */
+    border: 1px solid var(--subtle-border); /* 邊框 */
+    background-color: var(--card-bg); /* 背景白色 */
+    border-radius: 16px;      /* 膠囊狀的圓角 */
+    cursor: pointer;          /* 可點擊的手指游標 */
+    transition: all 0.2s;     /* 所有變化的過渡動畫 */
 }
 
+
+/* `.filter-group button:hover` 滑鼠懸停在按鈕上時的樣式 */
 .filter-group button:hover {
-    border-color: var(--secondary-accent);
+    border-color: var(--secondary-accent); /* 邊框變為陽光金色 */
 }
 
+
+/* `.filter-group button.active` 標籤按鈕被選中時的樣式 */
 .filter-group button.active {
-    background-color: var(--primary-accent);
-    color: white;
-    border-color: var(--primary-accent);
+    background-color: var(--primary-accent); /* 背景變為主題橙色 */
+    color: white;                            /* 文字變為白色 */
+    border-color: var(--primary-accent);     /* 邊框也變為主題橙色 */
 }
 
+
+/* `#clear-filters` 清除篩選按鈕的樣式 */
 #clear-filters {
     padding: 8px 12px;
     font-size: 0.8rem;
-    background-color: #888;
+    background-color: #888; /* 深灰色背景 */
     color: white;
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    align-self: flex-start;
+    align-self: flex-start; /* 讓按鈕寬度不撐滿，只根據內容自適應 */
 }
+
 
 /* --- 桌遊圖鑑卡片樣式 (直式卡片，兩欄並排) --- */
 
-/* 卡片列表容器 - 使用 Grid 排版 */
+/* `#game-list-container` 是所有遊戲卡片的容器 */
 #game-list-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr); /* << 核心改動：固定為兩欄 */
-    gap: 20px; /* 卡片之間的間距 */
-    padding: 0 15px;
+    display: grid;                          /* 使用 CSS Grid 進行網格排版 */
+    grid-template-columns: repeat(2, 1fr);  /* 將容器切分為兩欄，每欄寬度均分 (1fr) */
+    gap: 15px;                              /* 設定網格項目（卡片）之間的間距 */
+    padding: 0 5px;                        /* 設定左右內距 */
 }
 
-/* 單張遊戲卡片樣式 - 改回直式排列 */
+
+/* `.game-card` 是單張遊戲卡片的樣式 */
 .game-card {
     background-color: var(--card-bg);
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    overflow: hidden; /* 確保圖片圓角生效 */
-    display: flex;
-    flex-direction: column; /* << 核心改動：改回直向排列 */
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border-radius: 12px;                    /* 圓角 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* 更柔和的陰影 */
+    overflow: hidden;                       /* 隱藏超出邊界的內容，確保圖片圓角能正常顯示 */
+    display: flex;                          /* 使用 Flexbox */
+    flex-direction: column;                 /* 讓卡片內部元素（圖片、資訊）垂直排列 */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* 設定互動動畫 */
 }
 
+
+/* `.game-card:hover` 滑鼠懸停在卡片上時的樣式 */
 .game-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    transform: translateY(-5px);           /* 讓卡片向上移動 5px */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); /* 顯示更深的陰影，營造浮起的效果 */
 }
 
-/* 卡片圖片樣式 (上方) */
+
+/* `.game-image` 卡片頂部的圖片 */
 .game-image {
-    width: 100%; /* 寬度撐滿卡片 */
-    height: 120px; /* 固定圖片高度，可依喜好調整 */
-    object-fit: cover; /* 讓圖片填滿容器且不變形 */
+    width: 100%;                /* 圖片寬度撐滿卡片 */
+    height: 120px;              /* 固定一個圖片高度，讓所有卡片視覺上更整齊 */
+    object-fit: cover;          /* 讓圖片填滿整個容器，多餘部分會被裁剪，但圖片本身不會變形 */
 }
 
-/* 卡片文字內容容器 (下方) */
+
+/* `.game-info` 卡片下半部，包含所有文字資訊的容器 */
 .game-info {
-    padding: 5px;
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1; /* 讓這個區塊填滿卡片剩餘空間，確保卡片等高 */
+    padding: 5px;               /* 內距 */
+    display: flex;              /* 使用 Flexbox */
+    flex-direction: column;     /* 內部元素垂直排列 */
+    flex-grow: 1;               /* 讓這個區塊自動伸展以填滿卡片剩餘的垂直空間，這是確保所有卡片等高的關鍵 */
 }
 
-/* 遊戲標題 */
+
+/* `.game-title` 遊戲標題 */
 .game-title {
     margin-top: 0;
     margin-bottom: 2px;
     font-size: 1.1rem;
 }
 
-/* 遊戲描述 */
+
+/* `.game-description` 遊戲描述 */
 .game-description {
     font-size: 0.85rem;
     color: #666;
     line-height: 1.5;
-    flex-grow: 1; /* 讓描述區塊盡量伸展，把標籤和細節推到最下方 */
+    flex-grow: 1;      /* 讓描述區塊佔據盡可能多的空間，這會將下方的標籤和細節推到卡片底部 */
     margin-bottom: 3px;
 }
 
-/* 卡片上的標籤容器 */
+
+/* `.game-tags` 卡片上顯示標籤的容器 */
 .game-tags {
-    margin-top: auto; /* 將標籤推到內容區塊的底部 */
+    margin-top: auto;   /* 自動外距，將此區塊推到其 Flex 容器的底部 */
     padding-top: 10px;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid #f0f0f0; /* 上方加上一條淺色分隔線 */
 }
 
-/* 單個標籤樣式 */
+
+/* `.game-tag` 單個標籤的樣式 */
 .game-tag {
     display: inline-block;
     background-color: #e9ecef;
     color: #495057;
     padding: 3px 8px;
-    border-radius: 12px;
+    border-radius: 12px;   /* 膠囊狀圓角 */
     font-size: 0.7rem;
     margin-right: 5px;
     margin-bottom: 5px;
 }
 
-/* 遊戲細節 (人數、難度) */
+
+/* `.game-details` 遊戲細節（人數、難度）的容器 */
 .game-details {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* 讓內部項目（人數、難度）左右對齊 */
     font-size: 0.8rem;
     color: #777;
     padding-top: 10px;
 }
 
+
 /* --- 個人資料頁面微調 (使其符合主題) --- */
+
+/* `#profile-info` 個人資料區塊 */
 #profile-info {
-    color: var(--text-color);
+    color: var(--text-color); /* 套用主題文字顏色 */
 }
+/* `#qrcode-container` QR Code 容器 */
 #qrcode-container {
-    border: 1px solid var(--subtle-border);
+    border: 1px solid var(--subtle-border); /* 套用主題邊框顏色 */
 }
