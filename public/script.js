@@ -58,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/api/games');
             if (!response.ok) { throw new Error('無法取得桌遊資料'); }
             const games = await response.json();
+            console.log('從 API 收到的資料:', games); 
             const container = document.getElementById('game-list-container');
             container.innerHTML = ''; 
 
