@@ -11,18 +11,20 @@ export async function onRequest(context) {
       GOOGLE_SHEET_ID
     } = context.env;
 
-    // 1. 手動建立並簽署 JWT (取代 google-auth-library)
+    // 1. 手動建立並簽署 JWT (已修正)
     // ----------------------------------------------------
     const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
     
-    const jwt = await new jose.SignJWT({})
+    const jwt = await new jose.SignJWT({
+        // 正確的作法：將自訂欄位放在 SignJWT 的 payload 中
+        scope: 'https://www.googleapis.com/auth/spreadsheets'
+      })
       .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
       .setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
       .setAudience('https://oauth2.googleapis.com/token')
       .setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
       .setIssuedAt()
       .setExpirationTime('1h')
-      .setClaim('scope', 'https://www.googleapis.com/auth/spreadsheets')
       .sign(privateKey);
 
     // 2. 使用簽署好的 JWT 換取 Access Token
@@ -43,12 +45,11 @@ export async function onRequest(context) {
 
     const tokenData = await tokenResponse.json();
     const accessToken = tokenData.access_token;
-     
+    
     // 3. 使用 Access Token 操作 Google Spreadsheet
     // ---------------------------------------------
     const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID);
     
-    // 使用原始 access token，不再需要 JWT client
     doc.useRawAccessToken(accessToken);
 
     await doc.loadInfo();
