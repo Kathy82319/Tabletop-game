@@ -1,49 +1,68 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { JWT } from 'google-auth-library';
 
-// 這個 handler 函式適用於 Vercel 或類似的 Serverless 平台
-export default async function handler(req, res) {
+// 使用 Cloudflare Pages 的原生 onRequest 處理器
+export async function onRequest(context) {
   try {
-    // 從環境變數讀取憑證和 Sheet ID
+    // 關鍵改變 1: 從 context.env 取得環境變數，而不是 process.env
+    const {
+      GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      GOOGLE_PRIVATE_KEY,
+      GOOGLE_SHEET_ID
+    } = context.env;
+
+    // 檢查環境變數是否存在
+    if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY || !GOOGLE_SHEET_ID) {
+      throw new Error("Missing required environment variables.");
+    }
+
     const serviceAccountAuth = new JWT({
-      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), // 處理換行符
+      email: GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      key: GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), // 處理換行符
       scopes: [
         'https://www.googleapis.com/auth/spreadsheets',
       ],
     });
 
-    const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID, serviceAccountAuth);
-
-    // 載入試算表資訊
+    const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, serviceAccountAuth);
     await doc.loadInfo();
 
-    // 透過名稱選取工作表
     const sheet = doc.sheetsByTitle['BoardGames'];
     if (!sheet) {
-      return res.status(404).json({ error: 'Worksheet with title "BoardGames" not found.' });
+      const errorResponse = { error: 'Worksheet with title "BoardGames" not found.' };
+      return new Response(JSON.stringify(errorResponse), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 404,
+      });
     }
 
-    // 讀取工作表中的所有行
     const rows = await sheet.getRows();
-
-    // 將每一行的資料轉換為簡單的 JSON 物件
-    // row.get(header) 可以取得該行對應標題欄位的值
     const data = rows.map(row => {
       const rowData = {};
-      // sheet.headerValues 就是試算表第一列的標題
       sheet.headerValues.forEach(header => {
         rowData[header] = row.get(header);
       });
       return rowData;
     });
 
-    // 回傳成功的 JSON 響應
-    res.status(200).json(data);
+    // 關鍵改變 2: 建立並回傳一個標準的 Response 物件
+    return new Response(JSON.stringify(data), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 200,
+    });
 
   } catch (error) {
     console.error('Error accessing spreadsheet:', error);
-    // 回傳錯誤訊息
-    res.status(500).json({ error: 'Failed to access spreadsheet data.', details: error.message });
+
+    const errorResponse = {
+      error: 'Failed to access spreadsheet data.',
+      details: error.message
+    };
+    
+    // 關鍵改變 3: 在 catch 區塊中也回傳一個標準的 Response 物件
+    return new Response(JSON.stringify(errorResponse), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 500,
+    });
   }
 }
