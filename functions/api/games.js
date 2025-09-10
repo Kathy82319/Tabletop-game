@@ -11,8 +11,10 @@ export async function onRequest(context) {
       GOOGLE_SHEET_ID
     } = context.env;
 
-    // 1. 手動建立並簽署 JWT
-    const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS266');
+    // 1. 手動建立並簽署 JWT (已修正演算法名稱)
+    // ----------------------------------------------------
+    const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256'); // <-- 這裡已從 RS266 改為 RS256
+    
     const jwt = await new jose.SignJWT({
         scope: 'https://www.googleapis.com/auth/spreadsheets'
       })
@@ -42,16 +44,13 @@ export async function onRequest(context) {
     const tokenData = await tokenResponse.json();
     const accessToken = tokenData.access_token;
     
-    // 3. 使用 Access Token 操作 Google Spreadsheet (已修正)
-    // ---------------------------------------------
-    // 建立一個簡易驗證物件
+    // 3. 使用 Access Token 操作 Google Spreadsheet
     const simpleAuth = {
       getRequestHeaders: () => ({
         'Authorization': `Bearer ${accessToken}`,
       }),
     };
     
-    // 將驗證物件傳入建構子
     const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
 
     await doc.loadInfo();
