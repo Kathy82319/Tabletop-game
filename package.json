@@ -2,14 +2,9 @@
   "name": "tabletop-game-liff",
   "version": "1.0.0",
   "private": true,
-  "scripts": {
-    
-  },
+  "scripts": {},
   "dependencies": {
     "google-spreadsheet": "^4.1.1",
     "google-auth-library": "^9.11.0"
-  },
-  "devDependencies": {
-    "some-other-package": "^1.2.3"
   }
-} 
+}
