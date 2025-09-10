@@ -61,10 +61,10 @@ h1, h3 {
     font-weight: bold;
 }
 
-/* --- 篩選器樣式 (更緊湊) --- */
+/* --- 篩選器樣式 (緊湊版) --- */
 #filter-controls {
-    padding: 15px; /* 縮小上下左右間距 */
-    background-color: transparent; /* 背景透明，融入頁面 */
+    padding: 15px;
+    background-color: transparent;
     margin: 0;
     margin-bottom: 20px;
     display: flex;
@@ -91,12 +91,12 @@ h1, h3 {
 .filter-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px; /* 縮小按鈕間距 */
+    gap: 8px;
 }
 
 .filter-group button {
-    padding: 5px 12px; /* 縮小按鈕內距，讓按鈕變小 */
-    font-size: 0.8rem; /* 縮小字體 */
+    padding: 5px 12px;
+    font-size: 0.8rem;
     border: 1px solid var(--subtle-border);
     background-color: var(--card-bg);
     border-radius: 16px;
@@ -125,45 +125,45 @@ h1, h3 {
     align-self: flex-start;
 }
 
-/* --- 桌遊圖鑑卡片樣式 (圖片與文字並排) --- */
+/* --- 桌遊圖鑑卡片樣式 (直式卡片，兩欄並排) --- */
 
-/* 卡片列表容器 - 仍然使用 Grid，但內部卡片改為橫向 */
+/* 卡片列表容器 - 使用 Grid 排版 */
 #game-list-container {
     display: grid;
-    grid-template-columns: 1fr; /* 現在改為單列，每張卡片自己撐滿寬度 */
-    gap: 20px;
+    grid-template-columns: repeat(2, 1fr); /* << 核心改動：固定為兩欄 */
+    gap: 20px; /* 卡片之間的間距 */
     padding: 0 15px;
 }
 
-/* 單張遊戲卡片樣式 - 使用 Flex 達成並排 */
+/* 單張遊戲卡片樣式 - 改回直式排列 */
 .game-card {
     background-color: var(--card-bg);
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    overflow: hidden;
-    display: flex; /* << 核心改動：設為 Flex 容器 */
-    flex-direction: row; /* << 核心改動：子元素橫向排列 */
-    transition: box-shadow 0.2s ease-in-out;
+    overflow: hidden; /* 確保圖片圓角生效 */
+    display: flex;
+    flex-direction: column; /* << 核心改動：改回直向排列 */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 .game-card:hover {
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
-/* 卡片圖片樣式 (左側) */
+/* 卡片圖片樣式 (上方) */
 .game-image {
-    width: 120px; /* 固定圖片寬度 */
-    height: auto; /* 高度自適應 */
-    flex-shrink: 0; /* 防止圖片被壓縮 */
-    object-fit: cover;
+    width: 100%; /* 寬度撐滿卡片 */
+    height: 180px; /* 固定圖片高度，可依喜好調整 */
+    object-fit: cover; /* 讓圖片填滿容器且不變形 */
 }
 
-/* 卡片文字內容容器 (右側) */
+/* 卡片文字內容容器 (下方) */
 .game-info {
     padding: 15px;
     display: flex;
     flex-direction: column;
-    flex-grow: 1;
+    flex-grow: 1; /* 讓這個區塊填滿卡片剩餘空間，確保卡片等高 */
 }
 
 /* 遊戲標題 */
@@ -178,12 +178,8 @@ h1, h3 {
     font-size: 0.85rem;
     color: #666;
     line-height: 1.5;
+    flex-grow: 1; /* 讓描述區塊盡量伸展，把標籤和細節推到最下方 */
     margin-bottom: 12px;
-    /* 限制描述最多顯示三行，超出部分用刪節號 */
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;  
-    overflow: hidden;
 }
 
 /* 卡片上的標籤容器 */
@@ -208,13 +204,17 @@ h1, h3 {
 /* 遊戲細節 (人數、難度) */
 .game-details {
     display: flex;
-    justify-content: flex-start;
-    gap: 20px;
+    justify-content: space-between;
     font-size: 0.8rem;
     color: #777;
     padding-top: 10px;
-    margin-top: auto; /* 將此區塊也推至卡片底部 */
-    border-top: 1px solid #f0f0f0;
+}
+
+/* 在手機等小螢幕上，改為單欄顯示 */
+@media (max-width: 768px) {
+    #game-list-container {
+        grid-template-columns: 1fr; /* 在手機上變回單欄 */
+    }
 }
 
 /* --- 個人資料頁面微調 (使其符合主題) --- */
