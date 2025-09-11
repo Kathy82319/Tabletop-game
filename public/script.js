@@ -1,7 +1,6 @@
-    document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     // Global variables
-    const myLiffId = "2008076323-GN1e7naW"; // 你的 LIFF ID
-    let userProfile = null; // 用來儲存使用者 LIFF Profile
+    let liffProfile = null;
     let userId = '';
     const API_BASE_URL = '/api';
 
@@ -70,33 +69,42 @@
 
     // Initialize LIFF
     async function initializeLiff() {
-        showLoading();
+        // 顯示載入中的畫面，提升使用者體驗
+        showLoading(); 
         try {
-            await liff.init({ liffId: '2005634551-xnaEPEbW' });
+            // 使用您提供的正確 LIFF ID 初始化 LIFF SDK
+            await liff.init({ liffId: '2008076323-GN1e7naW' }); 
+            
+            // 檢查使用者是否已登入
             if (!liff.isLoggedIn()) {
+                // 若未登入，則自動導向 LINE 的登入頁面
                 liff.login();
-                return;
+                return; // 中斷後續執行，直到登入完成
             }
+            
+            // 獲取使用者公開資訊
             liffProfile = await liff.getProfile();
+            // 從使用者資訊中取得 userId，這是後續所有 API 溝通的關鍵
             userId = liffProfile.userId;
 
-            // Once profile is fetched, setup all pages
+            // LIFF 初始化並成功獲取使用者資料後，才開始設定各個頁面的功能
             setupAdventurerPage();
             setupGamesPage();
             setupBookingPage();
 
         } catch (error) {
+            // 如果初始化過程中發生任何錯誤，在開發者控制台印出詳細錯誤
             console.error('LIFF initialization failed', error);
-            alert('LIFF 初始化失敗，請稍後再試。');
+            // 並跳出一個簡單的提示視窗給使用者
+            alert('LIFF 初始化失敗，請檢查網路連線或稍後再試。');
         } finally {
+            // 無論成功或失敗，最後都要隱藏載入中的畫面
             hideLoading();
         }
     }
 
-    /**
-     * -------- ADVENTURER'S PAGE FUNCTIONS --------
-     */
-
+    //-------- ADVENTURER'S PAGE FUNCTIONS (冒險者頁面模組) --------
+ 
     // Fetch user data from backend and update UI
     async function fetchUserData() {
         showLoading();
