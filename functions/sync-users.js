@@ -1,4 +1,6 @@
 // functions/api/sync-users.js
+
+// ** 修正點：在檔案最上方加入這兩行 import **
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import * as jose from 'jose';
 
