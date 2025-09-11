@@ -146,7 +146,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const AVAILABLE_TIME_SLOTS = ['14:00-16:00', '16:00-18:00', '18:00-20:00', '20:00-22:00'];
     const PRICES = { weekday: { '一次性': 150, '計時制': 50 }, weekend: { '一次性': 250, '計時制': 80 } };
     const ADVANCE_BOOKING_DISCOUNT = 20;
-    let bookingPageInitialized = false;
+    
+    // ** 關鍵修正：將變數名稱從 bookingPageInitialized 改為 bookingFlowInitialized **
+    let bookingFlowInitialized = false; 
     let bookingData = {};
     let bookingHistoryStack = [];
 
@@ -167,8 +169,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initializeBookingPage() {
-        if (bookingPageInitialized) return;
-        bookingPageInitialized = true;
+        if (bookingFlowInitialized) return; // 使用新的變數名稱
+        bookingFlowInitialized = true; // 使用新的變數名稱
 
         const elements = {
             wizardContainer: document.getElementById('booking-wizard-container'),
@@ -196,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         flatpickr(elements.datepickerContainer, {
-            inline: true, // **修正點：讓日曆直接顯示**
+            inline: true,
             minDate: new Date().fp_incr(1),
             dateFormat: "Y-m-d",
             locale: "zh_tw",
@@ -310,9 +312,8 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (targetPageId === 'page-profile') {
                 displayUserProfile();
                 if (userProfile) fetchGameData(userProfile);
-_
             } else if (targetPageId === 'page-booking') {
-                if (!bookingPageInitialized) initializeBookingPage();
+                initializeBookingPage();
                 bookingHistoryStack = [];
                 showBookingStep('step-preference');
             }
