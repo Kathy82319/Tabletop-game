@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         })
         .catch((err) => { console.error("LIFF 初始化失敗", err); });
-        
+         
     function fetchUserProfile() {
         liff.getProfile().then(profile => {
             document.getElementById('display-name').textContent = profile.displayName;
