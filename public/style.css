@@ -268,11 +268,10 @@ h1, h3 {
 }
 
 
-/* --- 場地預約頁面樣式 (全新專業版) --- */
 /* --- 場地預約頁面樣式 (多步驟流程版) --- */
 #page-booking {
     padding: 15px;
-    height: calc(100vh - 90px); /* 減去 header 和 footer 的高度 */
+    height: calc(100vh - 90px); /* 減去 header 和 footer 的高度，確保內容盡量在一頁內 */
     display: flex;
     flex-direction: column;
 }
@@ -302,7 +301,7 @@ h1, h3 {
     flex-direction: column;
     gap: 20px;
     margin-top: 20px;
-    flex-grow: 1;
+    flex-grow: 1; /* 讓選項填滿中間的空間 */
 }
 .preference-btn {
     padding: 20px;
@@ -347,7 +346,7 @@ h1, h3 {
 .summary-card .final-price { font-size: 1.3rem; font-weight: bold; color: var(--primary-accent); }
 .summary-card .discount-text { font-size: 0.9rem; color: #28a745; justify-content: flex-end; }
 
-.cta-button { width: 100%; padding: 15px; font-size: 1.1rem; font-weight: bold; color: white; background: linear-gradient(45deg, var(--secondary-accent), var(--primary-accent)); border: none; border-radius: 10px; cursor: pointer; margin-top: auto; box-shadow: 0 4px 10px rgba(255, 140, 66, 0.4); }
+.cta-button { width: 100%; padding: 15px; font-size: 1.1rem; font-weight: bold; color: white; background: linear-gradient(45deg, var(--secondary-accent), var(--primary-accent)); border: none; border-radius: 10px; cursor: pointer; margin-top: auto; /* 將按鈕推到 flex 容器底部 */ box-shadow: 0 4px 10px rgba(255, 140, 66, 0.4); }
 
 #booking-result-content { text-align: center; margin: auto; }
 #booking-result-content h2 { font-size: 1.5rem; }
