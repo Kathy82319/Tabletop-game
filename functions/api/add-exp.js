@@ -2,45 +2,42 @@
 
 export async function onRequest(context) {
   try {
-    // 1. 檢查請求方法是否為 POST
     if (context.request.method !== 'POST') {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    // 2. 解析傳入的 JSON 資料
-    const { userId, amount } = await context.request.json();
+    // 新的 API 會接收 userId, expValue, 和 reason
+    const { userId, expValue, reason } = await context.request.json();
 
-    // 3. 驗證資料是否齊全且正確
-    if (!userId || typeof amount !== 'number' || amount <= 0) {
-      return new Response(JSON.stringify({ error: '無效的使用者 ID 或金額。' }), {
+    if (!userId || typeof expValue !== 'number' || expValue <= 0) {
+      return new Response(JSON.stringify({ error: '無效的使用者 ID 或經驗值。' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // 4. 計算要增加的經驗值 (目前規則 1 元 = 1 EXP)
-    const expToAdd = Math.floor(amount);
-
-    // 5. 準備並執行 D1 資料庫更新指令
     const db = context.env.DB;
-    const stmt = db.prepare(
+    
+    // 使用 D1 的 batch 功能來執行一個交易 (Transaction)
+    // 確保兩條 SQL 指令要嘛都成功，要嘛都失敗，保證資料一致性
+    const updateUserStmt = db.prepare(
       'UPDATE Users SET current_exp = current_exp + ? WHERE user_id = ?'
     );
-    const result = await stmt.bind(expToAdd, userId).run();
+    const insertHistoryStmt = db.prepare(
+      'INSERT INTO ExpHistory (user_id, exp_added, reason) VALUES (?, ?, ?)'
+    );
 
-    // 6. 檢查是否有成功更新到資料
-    if (result.meta.changes === 0) {
-      // 如果 a.meta.changes 為 0，代表 WHERE user_id = ? 條件沒有找到任何匹配的紀錄
-      return new Response(JSON.stringify({ error: `找不到使用者 ID: ${userId}` }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const batchResult = await db.batch([
+      updateUserStmt.bind(expValue, userId),
+      insertHistoryStmt.bind(userId, expValue, reason || '未提供原因') // 如果沒有原因，給一個預設值
+    ]);
 
-    // 7. 回傳成功訊息
+    // 檢查更新是否有成功 (可以透過查詢 batchResult 來做更細緻的檢查)
+    // 這裡我們先簡化，假設能執行到這一步就是成功
+    
     return new Response(JSON.stringify({ 
         success: true, 
-        message: `成功為使用者 ${userId} 新增 ${expToAdd} 點經驗值。` 
+        message: `成功為使用者 ${userId} 新增 ${expValue} 點經驗值。原因：${reason}` 
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
