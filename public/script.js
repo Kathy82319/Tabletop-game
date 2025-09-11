@@ -51,6 +51,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // ===== 新增的函式：查詢並顯示個人預約紀錄 =====
+async function fetchAndDisplayMyBookings(userId) {
+    const container = document.getElementById('my-bookings-container');
+    if (!container) return; // 如果找不到容器就返回
+
+    container.innerHTML = '<p>正在查詢您的預約紀錄...</p>';
+    try {
+        const response = await fetch(`/api/my-bookings?userId=${userId}`);
+        if (!response.ok) throw new Error('查詢預約失敗');
+
+        const bookings = await response.json();
+
+        if (bookings.length === 0) {
+            container.innerHTML = '<p>您目前沒有即將到來的預約。</p>';
+            return;
+        }
+
+        container.innerHTML = ''; // 清空載入訊息
+        bookings.forEach(booking => {
+            const card = document.createElement('div');
+            card.className = 'booking-info-card';
+            card.innerHTML = `
+                <p class="booking-date-time">${booking.booking_date} - ${booking.time_slot}</p>
+                <p><strong>預約姓名：</strong> ${booking.contact_name}</p>
+                <p><strong>預約人數：</strong> ${booking.num_of_people} 人</p>
+            `;
+            container.appendChild(card);
+        });
+
+    } catch (error) {
+        console.error('獲取個人預約失敗:', error);
+        container.innerHTML = '<p style="color: red;">無法載入預約紀錄。</p>';
+    }
+}
+
     // =================================================================
     // 桌遊圖鑑 & 篩選功能區塊
     // =================================================================
@@ -285,8 +320,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId: userProfile.userId, message: result.confirmationMessage })
                 });
-                elements.resultContent.innerHTML = `<h2 class="success">✅ 預約成功！</h2><p>已將預約確認訊息發送至您的 LINE，我們到時見！</p><button onclick="liff.closeWindow()" class="cta-button">關閉視窗</button>`;
-                showBookingStep('step-result');
+                elements.resultContent.innerHTML = `
+    <h2 class="success">✅ 預約成功！</h2>
+    <p>已將預約確認訊息發送至您的 LINE，我們到時見！</p>
+    <button id="booking-done-btn" class="cta-button">完成</button>
+`;
+showBookingStep('step-result');
             } catch (error) {
                 alert(`預約失敗：${error.message}`);
             } finally {
@@ -301,7 +340,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 分頁切換邏輯
     // =================================================================
-    const tabBar = document.getElementById('tab-bar');
+    // 為新的「完成」按鈕加上事件監聽
+document.getElementById('booking-done-btn').addEventListener('click', () => {
+    // 手動重置整個預約流程
+    bookingHistoryStack = [];
+    showBookingStep('step-preference'); // 回到第一個步驟
+    
+    // 清空日曆選擇
+    const datepickerInstance = elements.datepickerContainer._flatpickr;
+    if (datepickerInstance) {
+        datepickerInstance.clear();
+    }
+    
+    // 清空時段顯示
+    elements.slotsContainer.innerHTML = '';
+    elements.slotsPlaceholder.style.display = 'block';
+    elements.slotsPlaceholder.textContent = '請先從上方選擇日期';
+});
 
     tabBar.addEventListener('click', (event) => {
         const button = event.target.closest('.tab-button');
@@ -314,10 +369,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (targetPageId === 'page-games') {
                 initializeGamesPage();
-            } else if (targetPageId === 'page-profile') {
-                displayUserProfile();
-                if (userProfile) fetchGameData(userProfile);
-            } else if (targetPageId === 'page-booking') {
+           } else if (targetPageId === 'page-profile') {
+    displayUserProfile();
+    if (userProfile) {
+        fetchGameData(userProfile);
+        fetchAndDisplayMyBookings(userProfile.userId); // << 新增這一行
+    }
+} else if (targetPageId === 'page-booking') {
                 if (!bookingPageInitialized) initializeBookingPage();
                 bookingHistoryStack = [];
                 showBookingStep('step-preference');
