@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>正在開啟後台...</title>
+    <title>開啟後台管理</title>
     <style>
-        /* 簡單的載入中樣式 */
         body {
             display: flex;
             justify-content: center;
@@ -14,30 +13,41 @@
             margin: 0;
             font-family: sans-serif;
             background-color: #f0f2f5;
-            color: #555;
-        }
-        .loading-container {
+            color: #333;
             text-align: center;
+            padding: 20px;
         }
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border-left-color: #007bff;
-            animation: spin 1s ease infinite;
-            margin: 0 auto 20px;
+        .container {
+            max-width: 400px;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        /* 按鈕預設隱藏 */
+        #open-browser-btn {
+            display: none;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #open-browser-btn:hover {
+            background-color: #0056b3;
+        }
+        p {
+            font-size: 1.1rem;
+            color: #555;
         }
     </style>
 </head>
 <body>
-    <div class="loading-container">
-        <div class="spinner"></div>
-        <p>正在為您跳轉至手機瀏覽器以進行安全登入...</p>
+    <div class="container">
+        <h1>店家後台系統</h1>
+        <p id="message">正在初始化 LIFF，請稍候...</p>
+        <button id="open-browser-btn">在手機瀏覽器中開啟</button>
     </div>
 
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
