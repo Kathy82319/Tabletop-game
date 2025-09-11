@@ -1,5 +1,50 @@
 document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
+    // 頁面切換邏輯 (全新強制渲染版)
+    // =================================================================
+    const appContent = document.getElementById('app-content');
+    const pageTemplates = document.getElementById('page-templates');
+    const tabBar = document.getElementById('tab-bar');
+
+    function showPage(pageId) {
+        const template = pageTemplates.querySelector(`#${pageId}`);
+        if (template) {
+            // 強制清空主內容區，並複製樣板的 HTML 過去
+            appContent.innerHTML = template.innerHTML;
+            console.log(`已強制渲染頁面: ${pageId}`);
+
+            // 重新觸發該頁面的初始化函式
+            switch (pageId) {
+                case 'page-games':
+                    initializeGamesPage(true); // true 代表強制重新初始化
+                    break;
+                case 'page-profile':
+                    displayUserProfile();
+                    if (userProfile) fetchGameData(userProfile);
+                    break;
+                case 'page-booking':
+                    initializeBookingPage(true); // true 代表強制重新初始化
+                    break;
+                // 其他頁面...
+            }
+        } else {
+            console.error(`找不到樣板: ${pageId}`);
+        }
+    }
+
+    tabBar.addEventListener('click', (event) => {
+        const button = event.target.closest('.tab-button');
+        if (button) {
+            const targetPageId = button.dataset.target;
+            
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            showPage(targetPageId);
+        }
+    });
+
+    // =================================================================
     // 全域變數與 LIFF 初始化
     // =================================================================
     const myLiffId = "2008076323-GN1e7naW";
@@ -13,11 +58,15 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 liff.getProfile().then(profile => {
                     userProfile = profile;
-                    fetchGameData(profile);
+                    showPage('page-home'); // LIFF 初始化成功後，顯示預設的首頁
                 }).catch(err => console.error("獲取 LINE Profile 失敗", err));
             }
         })
-        .catch((err) => { console.error("LIFF 初始化失敗", err); });
+        .catch((err) => {
+            console.error("LIFF 初始化失敗", err);
+            // 即使失敗，也嘗試顯示首頁
+            showPage('page-home');
+        });
         
     // =================================================================
     // 使用者資料相關函式
@@ -57,10 +106,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let allGames = [];
     let activeFilters = { keyword: '', tag: null };
     let gamesPageInitialized = false;
-    const gameListContainer = document.getElementById('game-list-container');
-    const keywordSearchInput = document.getElementById('keyword-search');
-    const tagFiltersContainer = document.getElementById('tag-filters');
-    const clearFiltersButton = document.getElementById('clear-filters');
+        async function initializeGamesPage(forceReinit = false) {
+        if (gamesPageInitialized && !forceReinit) return;
+        gamesPageInitialized = true;
+        // **重要**：因為頁面是重新渲染的，每次都要重新抓取元素
+        const gameListContainer = appContent.querySelector('#game-list-container');
+        const keywordSearchInput = appContent.querySelector('#keyword-search');
+        const tagFiltersContainer = appContent.querySelector('#tag-filters');
+        const clearFiltersButton = appContent.querySelector('#clear-filters');
 
     function renderGames() {
         let filteredGames = allGames;
@@ -146,9 +199,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const AVAILABLE_TIME_SLOTS = ['14:00-16:00', '16:00-18:00', '18:00-20:00', '20:00-22:00'];
     const PRICES = { weekday: { '一次性': 150, '計時制': 50 }, weekend: { '一次性': 250, '計時制': 80 } };
     const ADVANCE_BOOKING_DISCOUNT = 20;
+
     
     // ** 關鍵修正：將變數名稱從 bookingPageInitialized 改為 bookingFlowInitialized **
-    let bookingFlowInitialized = false; 
+
+    let bookingFlowInitialized = false;
     let bookingData = {};
     let bookingHistoryStack = [];
 
@@ -168,12 +223,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function initializeBookingPage() {
-        if (bookingFlowInitialized) return; // 使用新的變數名稱
-        bookingFlowInitialized = true; // 使用新的變數名稱
+    function initializeBookingPage(forceReinit = false) {
+        if (bookingFlowInitialized && !forceReinit) return;
+        bookingFlowInitialized = true;
 
         const elements = {
-            wizardContainer: document.getElementById('booking-wizard-container'),
+            wizardContainer: appContent.querySelector('#booking-wizard-container'),
             preferenceBtns: document.querySelectorAll('.preference-btn'),
             datepickerContainer: document.getElementById('booking-datepicker-container'),
             slotsContainer: document.getElementById('booking-slots-container'),

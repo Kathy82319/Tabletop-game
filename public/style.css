@@ -1,43 +1,108 @@
-/* --- 簡易版場地預約頁面樣式 (安全) --- */
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>冒險者公會</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-#page-booking {
-    /* display: flex;  <-- 移除這一行 */
-    /* display 的控制權完全交還給 .page 和 .page.active */
-    height: calc(100vh - 90px);
-    flex-direction: column;
-}
-/* 新增下面這段，確保只有在 active 時才使用 flex 排版 */
-#page-booking.active {
-    display: flex;
-}
+    <main id="app-content"></main>
 
-#page-booking .booking-wizard-container {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
+    <div id="page-templates" style="display: none;">
 
-#page-booking .booking-step {
-    display: none; /* 預設隱藏所有步驟 */
-    flex-direction: column;
-    height: 100%;
-    justify-content: space-between;
-}
-#page-booking .booking-step.active {
-    display: flex; /* 只顯示 active 的步驟 */
-}
+        <div id="page-home">
+            <h1>最新情報</h1>
+            <p>這裡是公會佈告欄，將來會顯示最新活動與公告。</p>
+        </div>
 
-#page-booking h1 { font-size: 1.8rem; text-align: center; }
-#page-booking h2 { font-size: 1.4rem; text-align: center; }
-#page-booking .back-button { cursor: pointer; color: blue; }
+        <div id="page-games">
+            <div id="filter-controls">
+                <input type="search" id="keyword-search" placeholder="搜尋關鍵字 (遊戲名稱、描述)...">
+                <div id="tag-filter-container"><div id="tag-filters" class="filter-group"></div></div>
+                <button id="clear-filters">清除所有篩選</button>
+            </div>
+            <div id="game-list-container"><p>正在載入桌遊資料...</p></div>
+        </div>
 
-#page-booking .preference-options { display: flex; flex-direction: column; gap: 10px; }
-#page-booking .preference-btn { padding: 15px; border: 1px solid #ccc; cursor: pointer; }
+        <div id="page-profile">
+             <h1>冒險者資料</h1>
+             <div id="profile-info" style="text-align: center; margin-top: 20px;">
+                 <img id="profile-picture" src="" alt="Profile Picture" style="width: 100px; height: 100px; border-radius: 50%;">
+                 <h2 id="display-name" style="margin-top: 10px;"></h2>
+                 <p id="status-message" style="color: #aaa;"></p>
+             </div>
+             <div id="qrcode-container" style="background-color: white; padding: 20px; margin: 25px auto; width: 200px; height: 200px;">
+                 <div id="qrcode" style="width:200px; height:200px;"></div>
+             </div>
+             <div style="margin-top: 10px;">
+                 <p>職業：<span id="user-class">--</span></p> 
+                 <p>等級：<span id="user-level">--</span></p>
+                 <p>經驗值：<span id="user-exp">-- / ----</span></p>
+             </div>
+        </div>
 
-#page-booking #booking-slots-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-#page-booking .slot-button { padding: 10px; border: 1px solid #ccc; cursor: pointer; }
-#page-booking .slot-button.booked { background: #eee; text-decoration: line-through; cursor: not-allowed; }
-#page-booking .slot-button.selected { background: blue; color: white; }
+        <div id="page-booking">
+            <div id="booking-wizard-container">
+                <div id="step-preference" class="booking-step active">
+                    <div class="booking-header"><h1>場地預約</h1><p class="booking-subtitle">請先選擇您偏好的消費方式</p></div>
+                    <div class="preference-options">
+                        <button class="preference-btn" data-preference="一次性"><h3>🎟️ 一次性入場</h3><p><strong>平日 $150 / 假日 $250</strong><br>適合長時間暢玩</p></button>
+                        <button class="preference-btn" data-preference="計時制"><h3>⏱️ 計時制入場</h3><p><strong>平日 $50/時 / 假日 $80/時</strong><br>適合短時間體驗</p></button>
+                    </div>
+                    <div class="booking-notice"><p><strong>請注意：</strong>包廂及當日預約請透過 LINE 官方帳號或電話聯繫我們。</p></div>
+                </div>
+                <div id="step-date" class="booking-step">
+                    <button class="back-button">← 返回</button>
+                    <h2>選擇預約日期</h2>
+                    <div id="booking-datepicker-container"></div>
+                    <div class="discount-highlight"><p>✨ <strong>提前三日預約，享「一次性入場」方案每人現折 $20 優惠！</strong></p></div>
+                </div>
+                <div id="step-slots" class="booking-step">
+                    <button class="back-button">← 返回</button>
+                    <h2>選擇預約時段</h2>
+                    <div id="booking-slots-container"></div>
+                </div>
+                <div id="step-contact" class="booking-step">
+                    <button class="back-button">← 返回</button>
+                    <h2>填寫預約資訊</h2>
+                    <div class="input-group"><label for="booking-people">預約總人數：</label><input type="number" id="booking-people" min="1" max="20" placeholder="請輸入總人數"></div>
+                    <div class="input-group"><label for="contact-name">預約姓名：</label><input type="text" id="contact-name" placeholder="請輸入您的姓名"></div>
+                    <div class="input-group"><label for="contact-phone">聯絡電話：</label><input type="tel" id="contact-phone" placeholder="請輸入您的手機號碼" maxlength="10"></div>
+                    <button id="to-summary-btn" class="cta-button">下一步：確認資訊</button>
+                </div>
+                <div id="step-summary" class="booking-step">
+                    <button class="back-button">← 返回</button>
+                    <h2>確認預約內容</h2>
+                    <div id="booking-summary-card" class="summary-card"></div>
+                    <button id="confirm-booking-btn" class="cta-button">確認送出</button>
+                </div>
+                <div id="step-result" class="booking-step">
+                    <div id="booking-result-content"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="page-info">
+            <h1>店家資訊</h1>
+            <p>這裡有公會的規章、位置和聯繫方式。</p>
+        </div>
+    </div>
 
-#page-booking .input-group { margin-bottom: 15px; }
-#page-booking .cta-button { padding: 15px; background: green; color: white; border: none; cursor: pointer; }
+    <nav id="tab-bar">
+        <button class="tab-button active" data-target="page-home">最新情報</button>
+        <button class="tab-button" data-target="page-games">桌遊圖鑑</button>
+        <button class="tab-button" data-target="page-profile">冒險者資料</button>
+        <button class="tab-button" data-target="page-booking">場地預約</button>
+        <button class="tab-button" data-target="page-info">店家資訊</button>
+    </nav>
+
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/zh-tw.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
