@@ -3,12 +3,10 @@
 #page-booking {
     /* display: flex;  <-- 移除這一行 */
     /* display 的控制權完全交還給 .page 和 .page.active */
-    flex-direction: column;
+    padding: 15px;
 }
 /* 新增下面這段，確保只有在 active 時才使用 flex 排版 */
-#page-booking.active {
-    display: flex;
-}
+
 
 #page-booking .booking-wizard-container {
     height: 100%;
