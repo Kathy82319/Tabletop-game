@@ -312,13 +312,14 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (targetPageId === 'page-profile') {
                 displayUserProfile();
                 if (userProfile) fetchGameData(userProfile);
-        /* << 暫時將這段註解掉
-        else if (targetPageId === 'page-booking') { 
-            if (!bookingFlowInitialized) initializeBookingPage();
-            bookingHistoryStack = [];
-            showBookingStep('step-preference');
-        }
-        */
+            } 
+            /*
+            else if (targetPageId === 'page-booking') {
+                initializeBookingPage();
+                bookingHistoryStack = [];
+                showBookingStep('step-preference');
+            }
+            */
 
             showPage(targetPageId);
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
