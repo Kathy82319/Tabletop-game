@@ -150,7 +150,7 @@ body {
     flex-grow: 1;
 }
 #booking-datepicker-container {
-    margin: 0 auto; /* 讓日曆水平置中 */
+    margin:auto; /* 讓日曆水平置中 */
 }
 #booking-slots-wrapper {
     flex-grow: 1;
