@@ -147,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const PRICES = { weekday: { '一次性': 150, '計時制': 50 }, weekend: { '一次性': 250, '計時制': 80 } };
     const ADVANCE_BOOKING_DISCOUNT = 20;
     
+    // ** 關鍵修正：將變數名稱從 bookingPageInitialized 改為 bookingFlowInitialized **
     let bookingFlowInitialized = false; 
     let bookingData = {};
     let bookingHistoryStack = [];
@@ -168,8 +169,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initializeBookingPage() {
-        if (bookingFlowInitialized) return;
-        bookingFlowInitialized = true;
+        if (bookingFlowInitialized) return; // 使用新的變數名稱
+        bookingFlowInitialized = true; // 使用新的變數名稱
 
         const elements = {
             wizardContainer: document.getElementById('booking-wizard-container'),
@@ -307,23 +308,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (button) {
             const targetPageId = button.dataset.target;
             
-            if (targetPageId === 'page-games') {
-                initializeGamesPage();
-            } else if (targetPageId === 'page-profile') {
+            if (targetPageId === 'page-games') initializeGamesPage();
+            else if (targetPageId === 'page-profile') {
                 displayUserProfile();
                 if (userProfile) fetchGameData(userProfile);
-            } else if (targetPageId === 'page-booking') {
-                // ** 關鍵修正：只在第一次點擊時初始化 **
-                if (!bookingFlowInitialized) {
-                    initializeBookingPage();
-                }
-                // ** 每次點擊都重置到第一步 **
-                bookingHistoryStack = [];
-                showBookingStep('step-preference');
-            }
+        /* << 暫時將這段註解掉
+        else if (targetPageId === 'page-booking') { 
+            if (!bookingFlowInitialized) initializeBookingPage();
+            bookingHistoryStack = [];
+            showBookingStep('step-preference');
+        }
+        */
 
-            // ** 關鍵修正：將 showPage 移到最前面執行 **
-            showPage(targetPageId); 
+            showPage(targetPageId);
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
         }
@@ -334,6 +331,5 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById(pageId)?.classList.add('active');
     }
     
-    // 預設顯示首頁
     showPage('page-home');
 });
