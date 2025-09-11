@@ -2,6 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     const qrReaderElement = document.getElementById('qr-reader');
+    const syncUsersBtn = document.getElementById('sync-users-btn');
     const syncBtn = document.getElementById('sync-btn');
     const syncStatus = document.getElementById('sync-status');
     const scanResultSection = document.getElementById('scan-result');
@@ -132,6 +133,32 @@ document.addEventListener('DOMContentLoaded', () => {
         syncStatus.className = 'error';
     } finally {
         syncBtn.disabled = false;
+    }
+});
+
+syncUsersBtn.addEventListener('click', async () => {
+    if (!confirm('確定要將所有使用者列表同步到 Google Sheet 嗎？這將會覆蓋現有內容。')) {
+        return;
+    }
+
+    try {
+        syncStatus.textContent = '正在同步使用者列表中...';
+        syncStatus.className = '';
+        syncUsersBtn.disabled = true;
+
+        const response = await fetch('/api/sync-users', { method: 'POST' });
+        const result = await response.json();
+
+        if (!response.ok) throw new Error(result.details || '同步失敗');
+
+        syncStatus.textContent = result.message || '使用者列表同步成功！';
+        syncStatus.className = 'success';
+
+    } catch (error) {
+        syncStatus.textContent = `同步失敗：${error.message}`;
+        syncStatus.className = 'error';
+    } finally {
+        syncUsersBtn.disabled = false;
     }
 });
 
