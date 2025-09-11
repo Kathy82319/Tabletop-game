@@ -24,8 +24,19 @@ export async function onRequest(context) {
 
     // 2. 檢查使用者是否存在
     if (user) {
-      // 如果使用者已存在，直接回傳他的資料
-      return new Response(JSON.stringify(user), {
+      // --- 【⭐ 唯一修正點 開始 ⭐】 ---
+      // 使用者已存在，我們需要手動計算並補上「下一級所需經驗值」這個欄位
+      // 這是為了確保回傳給前端的資料格式，與新註冊使用者的資料格式完全一致
+      const expToNextLevel = Math.floor(100 * Math.pow(user.level || 1, 1.5));
+      
+      // 在原有的 user 物件基礎上，加上新的欄位
+      const userData = {
+        ...user,
+        expToNextLevel: expToNextLevel
+      };
+
+      // 回傳包含 expToNextLevel 的完整使用者資料
+      return new Response(JSON.stringify(userData), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
