@@ -1,6 +1,7 @@
-document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
     // Global variables
-    let liffProfile = null;
+    const myLiffId = "2008076323-GN1e7naW"; // 你的 LIFF ID
+    let userProfile = null; // 用來儲存使用者 LIFF Profile
     let userId = '';
     const API_BASE_URL = '/api';
 
