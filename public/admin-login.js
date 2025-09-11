@@ -2,6 +2,8 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     const qrReaderElement = document.getElementById('qr-reader');
+    const syncBtn = document.getElementById('sync-btn');
+    const syncStatus = document.getElementById('sync-status');
     const scanResultSection = document.getElementById('scan-result');
     const userIdDisplay = document.getElementById('user-id-display');
     const reasonSelect = document.getElementById('reason-select');
@@ -107,5 +109,31 @@ document.addEventListener('DOMContentLoaded', () => {
         startScanner();
     });
     
-    startScanner();
+    syncBtn.addEventListener('click', async () => {
+    if (!confirm('確定要將所有經驗值紀錄同步到 Google Sheet 嗎？這將會覆蓋現有內容。')) {
+        return;
+    }
+
+    try {
+        syncStatus.textContent = '正在同步中，請稍候...';
+        syncStatus.className = '';
+        syncBtn.disabled = true;
+
+        const response = await fetch('/api/sync-history', { method: 'POST' });
+        const result = await response.json();
+
+        if (!response.ok) throw new Error(result.details || '同步失敗');
+
+        syncStatus.textContent = result.message || '同步成功！';
+        syncStatus.className = 'success';
+
+    } catch (error) {
+        syncStatus.textContent = `同步失敗：${error.message}`;
+        syncStatus.className = 'error';
+    } finally {
+        syncBtn.disabled = false;
+    }
+});
+
+startScanner();
 });
