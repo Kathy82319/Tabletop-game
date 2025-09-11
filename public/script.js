@@ -298,36 +298,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // =================================================================
-    // 分頁切換邏輯
-    // =================================================================
-    const tabBar = document.getElementById('tab-bar');
-
-    tabBar.addEventListener('click', (event) => {
-        const button = event.target.closest('.tab-button');
-        if (button) {
-            const targetPageId = button.dataset.target;
-            
-            if (targetPageId === 'page-games') initializeGamesPage();
-            else if (targetPageId === 'page-profile') {
-                displayUserProfile();
-                if (userProfile) fetchGameData(userProfile);
-            } else if (targetPageId === 'page-booking') {
-                initializeBookingPage();
-                bookingHistoryStack = [];
-                showBookingStep('step-preference');
-            }
-
-            showPage(targetPageId);
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-        }
-    });
-
-    function showPage(pageId) {
-        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-        document.getElementById(pageId)?.classList.add('active');
-    }
-    
+  
     showPage('page-home');
 });
