@@ -1,50 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
-    // 頁面切換邏輯 (全新強制渲染版)
-    // =================================================================
-    const appContent = document.getElementById('app-content');
-    const pageTemplates = document.getElementById('page-templates');
-    const tabBar = document.getElementById('tab-bar');
-
-    function showPage(pageId) {
-        const template = pageTemplates.querySelector(`#${pageId}`);
-        if (template) {
-            // 強制清空主內容區，並複製樣板的 HTML 過去
-            appContent.innerHTML = template.innerHTML;
-            console.log(`已強制渲染頁面: ${pageId}`);
-
-            // 重新觸發該頁面的初始化函式
-            switch (pageId) {
-                case 'page-games':
-                    initializeGamesPage(true); // true 代表強制重新初始化
-                    break;
-                case 'page-profile':
-                    displayUserProfile();
-                    if (userProfile) fetchGameData(userProfile);
-                    break;
-                case 'page-booking':
-                    initializeBookingPage(true); // true 代表強制重新初始化
-                    break;
-                // 其他頁面...
-            }
-        } else {
-            console.error(`找不到樣板: ${pageId}`);
-        }
-    }
-
-    tabBar.addEventListener('click', (event) => {
-        const button = event.target.closest('.tab-button');
-        if (button) {
-            const targetPageId = button.dataset.target;
-            
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            
-            showPage(targetPageId);
-        }
-    });
-
-    // =================================================================
     // 全域變數與 LIFF 初始化
     // =================================================================
     const myLiffId = "2008076323-GN1e7naW";
@@ -58,15 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 liff.getProfile().then(profile => {
                     userProfile = profile;
-                    showPage('page-home'); // LIFF 初始化成功後，顯示預設的首頁
+                    fetchGameData(profile);
                 }).catch(err => console.error("獲取 LINE Profile 失敗", err));
             }
         })
-        .catch((err) => {
-            console.error("LIFF 初始化失敗", err);
-            // 即使失敗，也嘗試顯示首頁
-            showPage('page-home');
-        });
+        .catch((err) => { console.error("LIFF 初始化失敗", err); });
         
     // =================================================================
     // 使用者資料相關函式
@@ -106,16 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let allGames = [];
     let activeFilters = { keyword: '', tag: null };
     let gamesPageInitialized = false;
-        async function initializeGamesPage(forceReinit = false) {
-        if (gamesPageInitialized && !forceReinit) return;
-        gamesPageInitialized = true;
-        // **重要**：因為頁面是重新渲染的，每次都要重新抓取元素
-        const gameListContainer = appContent.querySelector('#game-list-container');
-        const keywordSearchInput = appContent.querySelector('#keyword-search');
-        const tagFiltersContainer = appContent.querySelector('#tag-filters');
-        const clearFiltersButton = appContent.querySelector('#clear-filters');
 
     function renderGames() {
+        const gameListContainer = document.getElementById('game-list-container');
+        if(!gameListContainer) return;
         let filteredGames = allGames;
         const keyword = activeFilters.keyword.toLowerCase().trim();
         if (keyword) {
@@ -125,10 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
             filteredGames = filteredGames.filter(g => g.tags.split(',').map(t => t.trim()).includes(activeFilters.tag));
         }
         gameListContainer.innerHTML = '';
-        if (filteredGames.length === 0) {
-            gameListContainer.innerHTML = '<p>找不到符合條件的遊戲。</p>';
-            return;
-        }
+        if (filteredGames.length === 0) { gameListContainer.innerHTML = '<p>找不到符合條件的遊戲。</p>'; return; }
         filteredGames.forEach(game => {
             if (game.is_visible !== 'TRUE') return;
             const gameCard = document.createElement('div'); gameCard.className = 'game-card';
@@ -138,9 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const desc = document.createElement('p'); desc.className = 'game-description'; desc.textContent = game.description;
             const tags = document.createElement('div'); tags.className = 'game-tags';
             game.tags.split(',').forEach(t => {
-                if(t.trim()) {
-                    const tagEl = document.createElement('span'); tagEl.className = 'game-tag'; tagEl.textContent = t.trim(); tags.appendChild(tagEl);
-                }
+                if(t.trim()) { const tagEl = document.createElement('span'); tagEl.className = 'game-tag'; tagEl.textContent = t.trim(); tags.appendChild(tagEl); }
             });
             const details = document.createElement('div'); details.className = 'game-details';
             details.innerHTML = `<span>👥 ${game.min_players}-${game.max_players} 人</span><span>⭐ 難度: ${game.difficulty}</span>`;
@@ -151,17 +91,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function populateFilters() {
+        const tagFiltersContainer = document.getElementById('tag-filters');
+        if(!tagFiltersContainer) return;
         const allTags = new Set(allGames.flatMap(g => g.tags.split(',')).map(t => t.trim()).filter(Boolean));
         tagFiltersContainer.innerHTML = '';
         allTags.forEach(tag => {
             const btn = document.createElement('button'); btn.textContent = tag; btn.dataset.tag = tag;
             btn.addEventListener('click', () => {
-                if (btn.classList.contains('active')) {
-                    activeFilters.tag = null; btn.classList.remove('active');
-                } else {
-                    tagFiltersContainer.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-                    activeFilters.tag = tag; btn.classList.add('active');
-                }
+                if (btn.classList.contains('active')) { activeFilters.tag = null; btn.classList.remove('active'); }
+                else { tagFiltersContainer.querySelectorAll('button').forEach(b => b.classList.remove('active')); activeFilters.tag = tag; btn.classList.add('active'); }
                 renderGames();
             });
             tagFiltersContainer.appendChild(btn);
@@ -169,10 +107,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setupFilterEventListeners() {
+        const keywordSearchInput = document.getElementById('keyword-search');
+        const clearFiltersButton = document.getElementById('clear-filters');
+        if(!keywordSearchInput || !clearFiltersButton) return;
         keywordSearchInput.addEventListener('input', e => { activeFilters.keyword = e.target.value; renderGames(); });
         clearFiltersButton.addEventListener('click', () => {
             activeFilters.keyword = ''; activeFilters.tag = null; keywordSearchInput.value = '';
-            tagFiltersContainer.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#tag-filters button').forEach(b => b.classList.remove('active'));
             renderGames();
         });
     }
@@ -187,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
             populateFilters(); renderGames(); setupFilterEventListeners();
         } catch (error) {
             console.error('初始化桌遊圖鑑失敗:', error);
-            gameListContainer.innerHTML = '<p style="color: red;">讀取桌遊資料失敗。</p>';
+            document.getElementById('game-list-container').innerHTML = '<p style="color: red;">讀取桌遊資料失敗。</p>';
         }
     }
 
@@ -199,11 +140,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const AVAILABLE_TIME_SLOTS = ['14:00-16:00', '16:00-18:00', '18:00-20:00', '20:00-22:00'];
     const PRICES = { weekday: { '一次性': 150, '計時制': 50 }, weekend: { '一次性': 250, '計時制': 80 } };
     const ADVANCE_BOOKING_DISCOUNT = 20;
-
     
-    // ** 關鍵修正：將變數名稱從 bookingPageInitialized 改為 bookingFlowInitialized **
-
-    let bookingFlowInitialized = false;
+    let bookingPageInitialized = false;
     let bookingData = {};
     let bookingHistoryStack = [];
 
@@ -223,12 +161,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function initializeBookingPage(forceReinit = false) {
-        if (bookingFlowInitialized && !forceReinit) return;
-        bookingFlowInitialized = true;
+    function initializeBookingPage() {
+        if (bookingPageInitialized) return;
+        bookingPageInitialized = true;
 
         const elements = {
-            wizardContainer: appContent.querySelector('#booking-wizard-container'),
+            wizardContainer: document.getElementById('booking-wizard-container'),
             preferenceBtns: document.querySelectorAll('.preference-btn'),
             datepickerContainer: document.getElementById('booking-datepicker-container'),
             slotsContainer: document.getElementById('booking-slots-container'),
@@ -347,10 +285,14 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 alert(`預約失敗：${error.message}`);
             } finally {
-                elements.confirmBtn.disabled = false;
-                elements.confirmBtn.textContent = '確認送出';
+                if(elements.confirmBtn) {
+                   elements.confirmBtn.disabled = false;
+                   elements.confirmBtn.textContent = '確認送出';
+                }
             }
         });
+        
+        showBookingStep('step-preference');
     }
 
     // =================================================================
@@ -363,31 +305,29 @@ document.addEventListener('DOMContentLoaded', () => {
         if (button) {
             const targetPageId = button.dataset.target;
             
-            if (targetPageId === 'page-games') initializeGamesPage();
-            else if (targetPageId === 'page-profile') {
-                displayUserProfile();
-                if (userProfile) fetchGameData(userProfile);
-            } 
-            /*
-            else if (targetPageId === 'page-booking') {
-                initializeBookingPage();
-                bookingHistoryStack = [];
-                showBookingStep('step-preference');
-            }
-            */
-
-            showPage(targetPageId);
+            showPage(targetPageId); // 總是先切換頁面
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
+
+            // 在切換頁面後，再執行該頁的初始化
+            if (targetPageId === 'page-games') {
+                initializeGamesPage();
+            } else if (targetPageId === 'page-profile') {
+                displayUserProfile();
+                if (userProfile) fetchGameData(userProfile);
+            } else if (targetPageId === 'page-booking') {
+                initializeBookingPage();
+            }
         }
     });
 
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-        document.getElementById(pageId)?.classList.add('active');
+        const targetPage = document.getElementById(pageId);
+        if (targetPage) {
+            targetPage.classList.add('active');
+        }
     }
     
     showPage('page-home');
-    }
 });
-
