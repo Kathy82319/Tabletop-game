@@ -1,13 +1,14 @@
 /* --- 簡易版場地預約頁面樣式 (安全) --- */
 
-/* 確保所有預約相關的樣式，都只在 #page-booking 內部生效 */
 #page-booking {
+    /* display: flex;  <-- 移除這一行 */
+    /* display 的控制權完全交還給 .page 和 .page.active */
     height: calc(100vh - 90px);
-    display: none; /* 遵循 .page 的規則 */
-}
-#page-booking.active {
-    display: flex; /* 當預約頁被選中時，使用 flex 排版 */
     flex-direction: column;
+}
+/* 新增下面這段，確保只有在 active 時才使用 flex 排版 */
+#page-booking.active {
+    display: flex;
 }
 
 #page-booking .booking-wizard-container {
