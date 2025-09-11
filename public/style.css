@@ -3,7 +3,7 @@
 #page-booking {
     /* display: flex;  <-- 移除這一行 */
     /* display 的控制權完全交還給 .page 和 .page.active */
-    padding: 15px;
+    height: calc(100vh - 90px);
     flex-direction: column;
 }
 /* 新增下面這段，確保只有在 active 時才使用 flex 排版 */
