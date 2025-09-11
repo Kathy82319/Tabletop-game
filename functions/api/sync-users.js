@@ -1,6 +1,6 @@
 // functions/api/sync-users.js
 
-// ** 修正點：在檔案最上方加入這兩行 import **
+// 確保這兩行 import 存在於檔案最上方
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import * as jose from 'jose';
 
@@ -10,11 +10,14 @@ async function runUserSync(env) {
       GOOGLE_SERVICE_ACCOUNT_EMAIL,
       GOOGLE_PRIVATE_KEY,
       GOOGLE_SHEET_ID,
-      USERS_SHEET_NAME, // 我們新加的變數
+      USERS_SHEET_NAME, // 我們新增的環境變數
       DB
     } = env;
 
-    if (!USERS_SHEET_NAME) throw new Error('Missing USERS_SHEET_NAME environment variable.');
+    // 增加對所有必要環境變數的檢查
+    if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY || !GOOGLE_SHEET_ID || !USERS_SHEET_NAME) {
+        throw new Error('一個或多個必要的 Google Sheets 環境變數未設定。');
+    }
     
     // 從 D1 讀取所有使用者資料
     const { results } = await DB.prepare('SELECT * FROM Users ORDER BY created_at DESC').all();
@@ -39,7 +42,10 @@ async function runUserSync(env) {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt }),
     });
-    if (!tokenResponse.ok) throw new Error('Failed to fetch access token from Google.');
+    if (!tokenResponse.ok) {
+        const errorBody = await tokenResponse.json();
+        throw new Error(`從 Google 取得 access token 失敗: ${errorBody.error_description}`);
+    }
     const tokenData = await tokenResponse.json();
     const accessToken = tokenData.access_token;
     
@@ -49,31 +55,36 @@ async function runUserSync(env) {
     // 寫入資料到 Google Sheets
     await doc.loadInfo();
     const sheet = doc.sheetsByTitle[USERS_SHEET_NAME];
-    if (!sheet) throw new Error(`在 Google Sheets 中找不到名為 "${USERS_SHEET_NAME}" 的工作表。`);
+    if (!sheet) {
+        throw new Error(`在 Google Sheets 中找不到名為 "${USERS_SHEET_NAME}" 的工作表。`);
+    }
 
-    await sheet.clear();
+    await sheet.clear(); // 清空舊資料
+    // 確保標題列與你的 CSV 和資料庫欄位完全對應
     await sheet.setHeaderRow(['user_id', 'line_display_name', 'line_picture_url', 'class', 'level', 'current_exp', 'created_at']);
-    await sheet.addRows(results);
+    await sheet.addRows(results); // 將資料寫入
 
     return { success: true, message: `成功同步了 ${results.length} 筆使用者資料。` };
 }
 
-// API 端點處理器
+// API 端點的處理器
 export async function onRequest(context) {
     try {
+        // 只允許 POST 方法
         if (context.request.method !== 'POST') {
-            return new Response('Invalid request method.', { status: 405 });
+            return new Response(JSON.stringify({ error: '僅允許 POST 請求' }), {
+                status: 405, headers: { 'Content-Type': 'application/json' }
+            });
         }
+        // 執行同步
         const result = await runUserSync(context.env);
         return new Response(JSON.stringify(result), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
+            status: 200, headers: { 'Content-Type': 'application/json' }
         });
     } catch (error) {
-        console.error('Error in sync-users API:', error);
+        console.error('Error in sync-users API:', error.stack);
         return new Response(JSON.stringify({ error: '同步失敗。', details: error.message }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' },
+            status: 500, headers: { 'Content-Type': 'application/json' }
         });
     }
 }
