@@ -133,10 +133,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // 場地預約功能區塊
+    // 場地預約功能區塊 (全新整合版)
     // =================================================================
     const TOTAL_TABLES = 5;
-    const PEOPLE_PER_TABLE = 4;
     const AVAILABLE_TIME_SLOTS = ['14:00-16:00', '16:00-18:00', '18:00-20:00', '20:00-22:00'];
     const PRICES = { weekday: { '一次性': 150, '計時制': 50 }, weekend: { '一次性': 250, '計時制': 80 } };
     const ADVANCE_BOOKING_DISCOUNT = 20;
@@ -169,7 +168,10 @@ document.addEventListener('DOMContentLoaded', () => {
             wizardContainer: document.getElementById('booking-wizard-container'),
             preferenceBtns: document.querySelectorAll('.preference-btn'),
             datepickerContainer: document.getElementById('booking-datepicker-container'),
+            slotsWrapper: document.getElementById('booking-slots-wrapper'),
+            slotsPlaceholder: document.getElementById('slots-placeholder'),
             slotsContainer: document.getElementById('booking-slots-container'),
+            contactSummary: document.getElementById('contact-summary'),
             peopleInput: document.getElementById('booking-people'),
             nameInput: document.getElementById('contact-name'),
             phoneInput: document.getElementById('contact-phone'),
@@ -186,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.preferenceBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 bookingData.preference = btn.dataset.preference;
-                showBookingStep('step-date');
+                showBookingStep('step-date-and-slots');
             });
         });
 
@@ -202,16 +204,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 bookingData.hasDiscount = Math.ceil((selectedDates[0] - today) / (1000 * 60 * 60 * 24)) >= 3;
                 bookingData.date = dateStr;
                 fetchAndRenderSlots(dateStr);
-                showBookingStep('step-slots');
             },
         });
 
         async function fetchAndRenderSlots(date) {
-            elements.slotsContainer.innerHTML = '<p>正在查詢空位...</p>';
+            elements.slotsPlaceholder.textContent = '正在查詢空位...';
+            elements.slotsContainer.innerHTML = '';
             try {
                 const res = await fetch(`/api/bookings-check?date=${date}`);
                 const bookedTablesBySlot = await res.json();
-                elements.slotsContainer.innerHTML = '';
+                elements.slotsPlaceholder.style.display = 'none'; // 隱藏提示文字
+                
                 AVAILABLE_TIME_SLOTS.forEach(slot => {
                     const tablesBooked = bookedTablesBySlot[slot] || 0;
                     const tablesAvailable = TOTAL_TABLES - tablesBooked;
@@ -224,13 +227,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         btn.classList.add('available');
                         btn.addEventListener('click', () => {
                             bookingData.timeSlot = slot;
+                            elements.contactSummary.textContent = `${bookingData.date} 的 ${slot}`;
                             showBookingStep('step-contact');
                         });
                     }
                     elements.slotsContainer.appendChild(btn);
                 });
             } catch (error) {
-                elements.slotsContainer.innerHTML = `<p style="color: red;">查詢失敗：${error.message}</p>`;
+                elements.slotsPlaceholder.textContent = `查詢失敗：${error.message}`;
+                elements.slotsPlaceholder.style.color = 'red';
             }
         }
 
@@ -291,8 +296,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
-        
-        showBookingStep('step-preference');
     }
 
     // =================================================================
@@ -305,18 +308,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (button) {
             const targetPageId = button.dataset.target;
             
-            showPage(targetPageId); // 總是先切換頁面
+            showPage(targetPageId);
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
 
-            // 在切換頁面後，再執行該頁的初始化
             if (targetPageId === 'page-games') {
                 initializeGamesPage();
             } else if (targetPageId === 'page-profile') {
                 displayUserProfile();
                 if (userProfile) fetchGameData(userProfile);
             } else if (targetPageId === 'page-booking') {
-                initializeBookingPage();
+                if (!bookingPageInitialized) initializeBookingPage();
+                bookingHistoryStack = [];
+                showBookingStep('step-preference');
             }
         }
     });
