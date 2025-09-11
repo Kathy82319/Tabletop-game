@@ -51,40 +51,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ===== 新增的函式：查詢並顯示個人預約紀錄 =====
-async function fetchAndDisplayMyBookings(userId) {
-    const container = document.getElementById('my-bookings-container');
-    if (!container) return; // 如果找不到容器就返回
-
-    container.innerHTML = '<p>正在查詢您的預約紀錄...</p>';
-    try {
-        const response = await fetch(`/api/my-bookings?userId=${userId}`);
-        if (!response.ok) throw new Error('查詢預約失敗');
-
-        const bookings = await response.json();
-
-        if (bookings.length === 0) {
-            container.innerHTML = '<p>您目前沒有即將到來的預約。</p>';
-            return;
+    async function fetchAndDisplayMyBookings(userId) {
+        const container = document.getElementById('my-bookings-container');
+        if (!container) return;
+        container.innerHTML = '<p>正在查詢您的預約紀錄...</p>';
+        try {
+            const response = await fetch(`/api/my-bookings?userId=${userId}`);
+            if (!response.ok) throw new Error('查詢預約失敗');
+            const bookings = await response.json();
+            if (bookings.length === 0) {
+                container.innerHTML = '<p>您目前沒有即將到來的預約。</p>';
+                return;
+            }
+            container.innerHTML = '';
+            bookings.forEach(booking => {
+                const card = document.createElement('div');
+                card.className = 'booking-info-card';
+                card.innerHTML = `<p class="booking-date-time">${booking.booking_date} - ${booking.time_slot}</p><p><strong>預約姓名：</strong> ${booking.contact_name}</p><p><strong>預約人數：</strong> ${booking.num_of_people} 人</p>`;
+                container.appendChild(card);
+            });
+        } catch (error) {
+            console.error('獲取個人預約失敗:', error);
+            container.innerHTML = '<p style="color: red;">無法載入預約紀錄。</p>';
         }
-
-        container.innerHTML = ''; // 清空載入訊息
-        bookings.forEach(booking => {
-            const card = document.createElement('div');
-            card.className = 'booking-info-card';
-            card.innerHTML = `
-                <p class="booking-date-time">${booking.booking_date} - ${booking.time_slot}</p>
-                <p><strong>預約姓名：</strong> ${booking.contact_name}</p>
-                <p><strong>預約人數：</strong> ${booking.num_of_people} 人</p>
-            `;
-            container.appendChild(card);
-        });
-
-    } catch (error) {
-        console.error('獲取個人預約失敗:', error);
-        container.innerHTML = '<p style="color: red;">無法載入預約紀錄。</p>';
     }
-}
 
     // =================================================================
     // 桌遊圖鑑 & 篩選功能區塊
@@ -168,7 +158,7 @@ async function fetchAndDisplayMyBookings(userId) {
     }
 
     // =================================================================
-    // 場地預約功能區塊 (全新整合版)
+    // 場地預約功能區塊
     // =================================================================
     const TOTAL_TABLES = 5;
     const AVAILABLE_TIME_SLOTS = ['14:00-16:00', '16:00-18:00', '18:00-20:00', '20:00-22:00'];
@@ -178,6 +168,7 @@ async function fetchAndDisplayMyBookings(userId) {
     let bookingPageInitialized = false;
     let bookingData = {};
     let bookingHistoryStack = [];
+    let flatpickrInstance = null;
 
     function showBookingStep(stepId) {
         document.querySelectorAll('#booking-wizard-container .booking-step').forEach(step => step.classList.remove('active'));
@@ -192,7 +183,9 @@ async function fetchAndDisplayMyBookings(userId) {
             bookingHistoryStack.pop();
             const lastStep = bookingHistoryStack[bookingHistoryStack.length - 1];
             showBookingStep(lastStep);
+            return true;
         }
+        return false;
     }
 
     function initializeBookingPage() {
@@ -227,7 +220,7 @@ async function fetchAndDisplayMyBookings(userId) {
             });
         });
 
-        flatpickr(elements.datepickerContainer, {
+        flatpickrInstance = flatpickr(elements.datepickerContainer, {
             inline: true,
             minDate: new Date().fp_incr(1),
             dateFormat: "Y-m-d",
@@ -248,8 +241,7 @@ async function fetchAndDisplayMyBookings(userId) {
             try {
                 const res = await fetch(`/api/bookings-check?date=${date}`);
                 const bookedTablesBySlot = await res.json();
-                elements.slotsPlaceholder.style.display = 'none'; // 隱藏提示文字
-                
+                elements.slotsPlaceholder.style.display = 'none';
                 AVAILABLE_TIME_SLOTS.forEach(slot => {
                     const tablesBooked = bookedTablesBySlot[slot] || 0;
                     const tablesAvailable = TOTAL_TABLES - tablesBooked;
@@ -304,8 +296,7 @@ async function fetchAndDisplayMyBookings(userId) {
             elements.confirmBtn.textContent = '處理中...';
             try {
                 const createRes = await fetch('/api/bookings-create', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         userId: userProfile.userId, bookingDate: bookingData.date,
                         timeSlot: bookingData.timeSlot, numOfPeople: bookingData.people,
@@ -316,16 +307,23 @@ async function fetchAndDisplayMyBookings(userId) {
                 const result = await createRes.json();
                 if (!createRes.ok) throw new Error(result.error || '預約失敗');
                 await fetch('/api/send-message', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId: userProfile.userId, message: result.confirmationMessage })
                 });
-                elements.resultContent.innerHTML = `
-    <h2 class="success">✅ 預約成功！</h2>
-    <p>已將預約確認訊息發送至您的 LINE，我們到時見！</p>
-    <button id="booking-done-btn" class="cta-button">完成</button>
-`;
-showBookingStep('step-result');
+
+                // ** 修正點 1: 預約成功後重置 **
+                elements.resultContent.innerHTML = `<h2 class="success">✅ 預約成功！</h2><p>已將預約確認訊息發送至您的 LINE，我們到時見！</p><button id="booking-done-btn" class="cta-button">返回預約首頁</button>`;
+                showBookingStep('step-result');
+                
+                document.getElementById('booking-done-btn').addEventListener('click', () => {
+                    bookingHistoryStack = [];
+                    showBookingStep('step-preference');
+                    if (flatpickrInstance) flatpickrInstance.clear();
+                    elements.slotsContainer.innerHTML = '';
+                    elements.slotsPlaceholder.style.display = 'block';
+                    elements.slotsPlaceholder.textContent = '請先從上方選擇日期';
+                });
+
             } catch (error) {
                 alert(`預約失敗：${error.message}`);
             } finally {
@@ -340,23 +338,7 @@ showBookingStep('step-result');
     // =================================================================
     // 分頁切換邏輯
     // =================================================================
-    // 為新的「完成」按鈕加上事件監聽
-document.getElementById('booking-done-btn').addEventListener('click', () => {
-    // 手動重置整個預約流程
-    bookingHistoryStack = [];
-    showBookingStep('step-preference'); // 回到第一個步驟
-    
-    // 清空日曆選擇
-    const datepickerInstance = elements.datepickerContainer._flatpickr;
-    if (datepickerInstance) {
-        datepickerInstance.clear();
-    }
-    
-    // 清空時段顯示
-    elements.slotsContainer.innerHTML = '';
-    elements.slotsPlaceholder.style.display = 'block';
-    elements.slotsPlaceholder.textContent = '請先從上方選擇日期';
-});
+    const tabBar = document.getElementById('tab-bar');
 
     tabBar.addEventListener('click', (event) => {
         const button = event.target.closest('.tab-button');
@@ -369,13 +351,14 @@ document.getElementById('booking-done-btn').addEventListener('click', () => {
 
             if (targetPageId === 'page-games') {
                 initializeGamesPage();
-           } else if (targetPageId === 'page-profile') {
-    displayUserProfile();
-    if (userProfile) {
-        fetchGameData(userProfile);
-        fetchAndDisplayMyBookings(userProfile.userId); // << 新增這一行
-    }
-} else if (targetPageId === 'page-booking') {
+            } else if (targetPageId === 'page-profile') {
+                displayUserProfile();
+                if (userProfile) {
+                    fetchGameData(userProfile);
+                    // ** 修正點 2: 呼叫查詢個人預約的函式 **
+                    fetchAndDisplayMyBookings(userProfile.userId);
+                }
+            } else if (targetPageId === 'page-booking') {
                 if (!bookingPageInitialized) initializeBookingPage();
                 bookingHistoryStack = [];
                 showBookingStep('step-preference');
