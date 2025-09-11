@@ -2,6 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     const qrReaderElement = document.getElementById('qr-reader');
+    const syncBookingsBtn = document.getElementById('sync-bookings-btn');
     const syncUsersBtn = document.getElementById('sync-users-btn');
     const syncBtn = document.getElementById('sync-btn');
     const syncStatus = document.getElementById('sync-status');
@@ -159,6 +160,32 @@ syncUsersBtn.addEventListener('click', async () => {
         syncStatus.className = 'error';
     } finally {
         syncUsersBtn.disabled = false;
+    }
+});
+
+syncBookingsBtn.addEventListener('click', async () => {
+    if (!confirm('確定要將所有預約紀錄同步到 Google Sheet 嗎？這將會覆蓋現有內容。')) {
+        return;
+    }
+
+    try {
+        syncStatus.textContent = '正在同步預約紀錄中...';
+        syncStatus.className = '';
+        syncBookingsBtn.disabled = true;
+
+        const response = await fetch('/api/sync-bookings', { method: 'POST' });
+        const result = await response.json();
+
+        if (!response.ok) throw new Error(result.details || '同步失敗');
+
+        syncStatus.textContent = result.message || '預約紀錄同步成功！';
+        syncStatus.className = 'success';
+
+    } catch (error) {
+        syncStatus.textContent = `同步失敗：${error.message}`;
+        syncStatus.className = 'error';
+    } finally {
+        syncBookingsBtn.disabled = false;
     }
 });
 
