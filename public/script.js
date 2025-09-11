@@ -147,7 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const PRICES = { weekday: { '一次性': 150, '計時制': 50 }, weekend: { '一次性': 250, '計時制': 80 } };
     const ADVANCE_BOOKING_DISCOUNT = 20;
     
-    // ** 關鍵修正：將變數名稱從 bookingPageInitialized 改為 bookingFlowInitialized **
     let bookingFlowInitialized = false; 
     let bookingData = {};
     let bookingHistoryStack = [];
@@ -169,8 +168,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initializeBookingPage() {
-        if (bookingFlowInitialized) return; // 使用新的變數名稱
-        bookingFlowInitialized = true; // 使用新的變數名稱
+        if (bookingFlowInitialized) return;
+        bookingFlowInitialized = true;
 
         const elements = {
             wizardContainer: document.getElementById('booking-wizard-container'),
@@ -298,6 +297,43 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-  
+    // =================================================================
+    // 分頁切換邏輯
+    // =================================================================
+    const tabBar = document.getElementById('tab-bar');
+
+    tabBar.addEventListener('click', (event) => {
+        const button = event.target.closest('.tab-button');
+        if (button) {
+            const targetPageId = button.dataset.target;
+            
+            if (targetPageId === 'page-games') {
+                initializeGamesPage();
+            } else if (targetPageId === 'page-profile') {
+                displayUserProfile();
+                if (userProfile) fetchGameData(userProfile);
+            } else if (targetPageId === 'page-booking') {
+                // ** 關鍵修正：只在第一次點擊時初始化 **
+                if (!bookingFlowInitialized) {
+                    initializeBookingPage();
+                }
+                // ** 每次點擊都重置到第一步 **
+                bookingHistoryStack = [];
+                showBookingStep('step-preference');
+            }
+
+            // ** 關鍵修正：將 showPage 移到最前面執行 **
+            showPage(targetPageId); 
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+        }
+    });
+
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+        document.getElementById(pageId)?.classList.add('active');
+    }
+    
+    // 預設顯示首頁
     showPage('page-home');
 });
