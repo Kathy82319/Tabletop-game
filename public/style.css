@@ -13,7 +13,7 @@
 }
 
 /* =================================================================
-   基礎 Body 與頁面切換樣式 (非常核心)
+   基礎 Body 與頁面切換樣式
    - 這裡定義了 App 的基礎外觀和分頁切換的底層邏輯。
    ================================================================= */
 body {
@@ -22,15 +22,13 @@ body {
     font-family: var(--font-family);
     margin: 0;
     padding: 0;
-    padding-bottom: 70px; /* 為底部固定的 Tab Bar 預留空間 */
+    padding-bottom: 70px;
 }
 
-/* 頁面容器的基礎樣式 */
 .page {
-    display: none;   /* 預設隱藏所有頁面，這是實現分頁切換的關鍵 */
+    display: none;
     padding: 15px;
 }
-/* 只有被 JavaScript 加上 .active 的頁面才會顯示 */
 .page.active {
     display: block;
 }
@@ -52,16 +50,10 @@ body {
     justify-content: space-around;
     align-items: center;
 }
-
 .tab-button {
-    background: none;
-    border: none;
-    color: #999;
-    font-size: 0.8rem;
-    cursor: pointer;
-    padding: 10px;
-    border-radius: 8px;
-    transition: color 0.2s; /* 讓顏色變化有過渡動畫 */
+    background: none; border: none; color: #999;
+    font-size: 0.8rem; cursor: pointer; padding: 10px;
+    border-radius: 8px; transition: color 0.2s;
 }
 .tab-button.active {
     color: var(--primary-accent);
@@ -80,16 +72,9 @@ body {
 }
 
 .cta-button {
-    width: 100%;
-    padding: 15px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    color: white;
+    width: 100%; padding: 15px; font-size: 1.1rem; font-weight: bold; color: white;
     background: linear-gradient(45deg, var(--secondary-accent), var(--primary-accent));
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    margin-top: auto; /* 將按鈕推到 flex 容器底部 */
+    border: none; border-radius: 10px; cursor: pointer; margin-top: auto;
     box-shadow: 0 4px 10px rgba(255, 140, 66, 0.4);
     transition: all 0.2s;
 }
@@ -122,56 +107,43 @@ body {
 .game-details { display: flex; justify-content: space-between; font-size: 0.8rem; color: #777; padding-top: 10px; }
 
 /* =================================================================
-   場地預約頁面樣式 (全新整合版)
-   - 控制多步驟預約流程中所有元素的外觀、排版與動畫。
+   場地預約頁面樣式 (修正日曆置中)
+   - 這裡包含了所有預約流程步驟的樣式。
    ================================================================= */
 #page-booking { height: calc(100vh - 90px); flex-direction: column; }
-#page-booking.active { display: flex; } /* 修正點：只在 active 時使用 flex 排版 */
+#page-booking.active { display: flex; }
 #booking-wizard-container { height: 100%; display: flex; flex-direction: column; }
-.booking-step { display: none; flex-direction: column; height: 100%; justify-content: flex-start; /* 改為從頭開始對齊 */ }
+.booking-step { display: none; flex-direction: column; height: 100%; justify-content: flex-start; }
 .booking-step.active { display: flex; }
-
-/* 步驟 1: 選擇消費方式 */
 .booking-header { text-align: center; margin-bottom: 20px; }
 .booking-header h1 { margin: 0; font-size: 1.8rem; }
 .booking-header .booking-subtitle { margin: 5px 0 0; font-size: 1rem; color: #888; }
-.preference-options { display: flex; flex-direction: column; gap: 20px; margin-top: 20px; }
+.preference-options { display: flex; flex-direction: column; gap: 20px; margin-top: 20px; flex-grow: 1; }
 .preference-btn { padding: 20px; border: 2px solid var(--subtle-border); border-radius: 12px; background-color: var(--card-bg); text-align: left; cursor: pointer; transition: all 0.2s; }
 .preference-btn:hover { border-color: var(--primary-accent); transform: translateY(-3px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
 .preference-btn h3 { margin: 0 0 8px 0; font-size: 1.2rem; color: var(--primary-accent); }
 .preference-btn p { margin: 0; color: #666; }
-.booking-notice { text-align: center; font-size: 0.8rem; color: #777; margin-top: auto; /* 將注意事項推到底部 */ padding-bottom: 20px;}
+.booking-notice { text-align: center; font-size: 0.8rem; color: #777; margin-top: auto; padding-bottom: 20px;}
+.back-button { background: none; border: none; color: var(--primary-accent); font-size: 1rem; font-weight: bold; cursor: pointer; align-self: flex-start; margin-bottom: 15px; padding: 0; }
+.booking-step h2 { border-bottom: 2px solid var(--primary-accent); padding-bottom: 8px; margin-bottom: 20px; font-size: 1.4rem; text-align: center;}
 
-/* 步驟 2: 選擇日期與時段 (新版整合介面) */
+/* ** 關鍵修正區域 ** */
 .calendar-and-slots-container {
     display: flex;
-    flex-direction: column; /* 在手機上預設為垂直排列 */
+    flex-direction: column;
+    align-items: center; /* << 新增：讓所有子元素（包含日曆）水平置中 */
     gap: 20px;
     flex-grow: 1;
 }
 #booking-datepicker-container {
-    margin:auto; /* 讓日曆水平置中 */
+    /* margin: 0 auto;  <-- 移除這一行，因為父層已經用 flex 置中 */
+    width: fit-content; /* 讓容器寬度自適應日曆本身，很重要 */
 }
-#booking-slots-wrapper {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-}
-#slots-placeholder {
-    text-align: center;
-    color: #999;
-    margin: auto; /* 垂直水平置中 */
-}
-#booking-slots-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 時段固定為兩欄 */
-    gap: 10px;
-}
+/* ** 修正結束 ** */
 
-/* 通用元件 */
-.back-button { background: none; border: none; color: var(--primary-accent); font-size: 1rem; font-weight: bold; cursor: pointer; align-self: flex-start; margin-bottom: 15px; padding: 0; }
-.booking-step h2 { border-bottom: 2px solid var(--primary-accent); padding-bottom: 8px; margin-bottom: 20px; font-size: 1.4rem; text-align: center;}
-.discount-highlight { text-align: center; background-color: #fff3e0; color: #e65100; padding: 12px; border-radius: 8px; margin-top: 20px; font-weight: bold; }
+#booking-slots-wrapper { flex-grow: 1; display: flex; flex-direction: column; width: 100%; }
+#slots-placeholder { text-align: center; color: #999; margin: auto; }
+#booking-slots-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .slot-button { padding: 15px; font-size: 1rem; border: 1px solid var(--subtle-border); background-color: #fff; border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.2s; }
 .slot-button.booked { background-color: #e9ecef; color: #adb5bd; cursor: not-allowed; text-decoration: line-through; }
 .slot-button.available:hover { border-color: var(--primary-accent); }
@@ -196,6 +168,6 @@ body {
 /* --- 響應式設計 --- */
 @media (max-width: 768px) {
     #game-list-container {
-        grid-template-columns: 1fr; /* 手機上，桌遊圖鑑變回單欄 */
+        grid-template-columns: 1fr;
     }
 }
