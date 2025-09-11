@@ -2,8 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 全域變數與 LIFF 初始化
     // =================================================================
-    const myLiffId = "2008076323-GN1e7naW";
-    let userProfile = null;
+    const myLiffId = "2008076323-GN1e7naW"; // 你的 LIFF ID
+    let userProfile = null; // 用來儲存使用者 LIFF Profile
 
     liff.init({ liffId: myLiffId })
         .then(() => {
@@ -11,23 +11,27 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!liff.isLoggedIn()) {
                 liff.login();
             } else {
+                // 登入成功後，先獲取一次使用者資料並儲存
                 liff.getProfile().then(profile => {
                     userProfile = profile;
-                    fetchGameData(profile);
+                    fetchGameData(profile); // 呼叫後端，處理使用者資料的取得或自動註冊
                 }).catch(err => console.error("獲取 LINE Profile 失敗", err));
             }
         })
         .catch((err) => { console.error("LIFF 初始化失敗", err); });
         
     // =================================================================
-    // 使用者資料相關函式 (與之前相同)
+    // 使用者資料相關函式
     // =================================================================
     function displayUserProfile() {
-        if (!userProfile) return;
+        if (!userProfile) return; // 確保 userProfile 有資料才執行
         document.getElementById('display-name').textContent = userProfile.displayName;
         document.getElementById('status-message').textContent = userProfile.statusMessage || '';
         const profilePicture = document.getElementById('profile-picture');
-        if (userProfile.pictureUrl) profilePicture.src = userProfile.pictureUrl;
+        if (userProfile.pictureUrl) {
+            profilePicture.src = userProfile.pictureUrl;
+        }
+        
         const qrcodeElement = document.getElementById('qrcode');
         qrcodeElement.innerHTML = '';
         new QRCode(qrcodeElement, { text: userProfile.userId, width: 200, height: 200 });
@@ -38,14 +42,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/api/user', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: profile.userId, displayName: profile.displayName, pictureUrl: profile.pictureUrl }),
+                body: JSON.stringify({ 
+                    userId: profile.userId,
+                    displayName: profile.displayName,
+                    pictureUrl: profile.pictureUrl
+                }),
             });
-            if (!response.ok) throw new Error('無法取得會員遊戲資料');
+            if (!response.ok) { throw new Error('無法取得會員遊戲資料'); }
+            
             const gameData = await response.json();
+
             let expToNextLevel = gameData.expToNextLevel || Math.floor(100 * Math.pow(gameData.level || 1, 1.5));
+
             document.getElementById('user-class').textContent = gameData.class;
             document.getElementById('user-level').textContent = gameData.level;
             document.getElementById('user-exp').textContent = `${gameData.current_exp} / ${expToNextLevel}`;
+
         } catch (error) {
             console.error('呼叫會員 API 失敗:', error);
         }
@@ -86,7 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         filteredGames.forEach(game => {
             if (game.is_visible !== 'TRUE') return;
-
             const gameCard = document.createElement('div');
             gameCard.className = 'game-card';
             const img = document.createElement('img');
@@ -186,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // 場地預約功能區塊 (全新多步驟流程 + 返回鍵處理)
+    // 場地預約功能區塊
     // =================================================================
     const TOTAL_TABLES = 5;
     const PEOPLE_PER_TABLE = 4;
@@ -195,16 +206,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const ADVANCE_BOOKING_DISCOUNT = 20;
 
     let bookingPageInitialized = false;
-    let bookingData = {}; // 用於儲存預約流程中的所有資料
-    let bookingHistoryStack = []; // 用於處理返回鍵
+    let bookingData = {}; 
+    let bookingHistoryStack = [];
 
     function showBookingStep(stepId) {
         document.querySelectorAll('#booking-wizard-container .booking-step').forEach(step => {
             step.classList.remove('active');
         });
-        document.getElementById(stepId).classList.add('active');
+        const targetStep = document.getElementById(stepId);
+        if (targetStep) {
+            targetStep.classList.add('active');
+        }
         
-        // 更新歷史紀錄
         if(bookingHistoryStack[bookingHistoryStack.length - 1] !== stepId) {
             bookingHistoryStack.push(stepId);
         }
@@ -212,12 +225,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function goBackBookingStep() {
         if (bookingHistoryStack.length > 1) {
-            bookingHistoryStack.pop(); // 移除目前步驟
-            const lastStep = bookingHistoryStack[bookingHistoryStack.length - 1]; // 取得上一個步驟
+            bookingHistoryStack.pop(); 
+            const lastStep = bookingHistoryStack[bookingHistoryStack.length - 1]; 
             showBookingStep(lastStep);
-            return true; // 表示成功返回
+            return true; 
         }
-        return false; // 表示已在第一步，無法返回
+        return false; 
     }
 
     function initializeBookingPage() {
@@ -228,7 +241,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const allElements = {};
         allSteps.forEach(id => allElements[id] = document.getElementById(id));
         
-        // 獲取所有互動元素
         allElements.preferenceBtns = document.querySelectorAll('.preference-btn');
         allElements.datepickerInput = document.getElementById('booking-datepicker');
         allElements.slotsContainer = document.getElementById('booking-slots-container');
@@ -240,12 +252,10 @@ document.addEventListener('DOMContentLoaded', () => {
         allElements.confirmBtn = document.getElementById('confirm-booking-btn');
         allElements.resultContent = document.getElementById('booking-result-content');
         
-        // 綁定所有返回按鈕
         document.querySelectorAll('#page-booking .back-button').forEach(btn => {
             btn.addEventListener('click', () => goBackBookingStep());
         });
 
-        // 步驟 1: 選擇消費方式
         allElements.preferenceBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 bookingData.preference = btn.dataset.preference;
@@ -253,7 +263,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // 步驟 2: 選擇日期
         flatpickr(allElements.datepickerInput, {
             minDate: new Date().fp_incr(1),
             dateFormat: "Y-m-d",
@@ -270,13 +279,11 @@ document.addEventListener('DOMContentLoaded', () => {
             },
         });
 
-        // 步驟 3: 選擇時段 (fetchAndRenderSlots 會處理後續)
         async function fetchAndRenderSlots(date) {
             allElements.slotsContainer.innerHTML = '<p>正在查詢空位...</p>';
             try {
                 const response = await fetch(`/api/bookings-check?date=${date}`);
                 const bookedTablesBySlot = await response.json();
-
                 allElements.slotsContainer.innerHTML = '';
                 AVAILABLE_TIME_SLOTS.forEach(slot => {
                     const tablesBooked = bookedTablesBySlot[slot] || 0;
@@ -301,12 +308,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // 步驟 4: 填寫聯絡資訊 -> 進入總結
         allElements.toSummaryBtn.addEventListener('click', () => {
             bookingData.people = Number(allElements.peopleInput.value);
             bookingData.name = allElements.nameInput.value.trim();
             bookingData.phone = allElements.phoneInput.value.trim();
-
             if (!bookingData.people || !bookingData.name || !bookingData.phone || bookingData.phone.length < 10) {
                 alert('請確實填寫所有資訊，並確認手機號碼為10碼！');
                 return;
@@ -315,32 +320,25 @@ document.addEventListener('DOMContentLoaded', () => {
             showBookingStep('step-summary');
         });
         
-        // 步驟 5: 渲染總結並確認送出
         function renderSummary() {
             const priceKey = bookingData.isWeekend ? 'weekend' : 'weekday';
             const basePrice = PRICES[priceKey][bookingData.preference];
             let finalPrice = basePrice * bookingData.people;
             let discountText = '';
-
             if (bookingData.preference === '一次性' && bookingData.hasDiscount) {
                 const totalDiscount = ADVANCE_BOOKING_DISCOUNT * bookingData.people;
                 finalPrice -= totalDiscount;
                 discountText = `<p class="discount-text"><span>早鳥優惠折扣:</span><span>-$${totalDiscount}</span></p>`;
             }
-            
             const priceSuffix = (bookingData.preference === '計時制') ? ' / 每小時' : '';
-
             allElements.summaryCard.innerHTML = `
                 <p><span>姓名:</span><span>${bookingData.name}</span></p>
                 <p><span>電話:</span><span>${bookingData.phone}</span></p>
                 <p><span>日期:</span><span>${bookingData.date}</span></p>
                 <p><span>時段:</span><span>${bookingData.timeSlot}</span></p>
                 <p><span>人數:</span><span>${bookingData.people} 人</span></p>
-                <p><span>消費方式:</span><span>${bookingData.preference}</span></p>
-                <hr>
-                ${discountText}
-                <p><span>預估總金額:</span><span class="final-price">$${finalPrice}${priceSuffix}</span></p>
-            `;
+                <p><span>消費方式:</span><span>${bookingData.preference}</span></p><hr>${discountText}
+                <p><span>預估總金額:</span><span class="final-price">$${finalPrice}${priceSuffix}</span></p>`;
         }
 
         allElements.confirmBtn.addEventListener('click', async () => {
@@ -351,19 +349,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        userId: userProfile.userId,
-                        bookingDate: bookingData.date,
-                        timeSlot: bookingData.timeSlot,
-                        numOfPeople: bookingData.people,
-                        bookingPreference: bookingData.preference,
-                        contactName: bookingData.name,
+                        userId: userProfile.userId, bookingDate: bookingData.date,
+                        timeSlot: bookingData.timeSlot, numOfPeople: bookingData.people,
+                        bookingPreference: bookingData.preference, contactName: bookingData.name,
                         contactPhone: bookingData.phone
                     })
                 });
                 const result = await createResponse.json();
                 if (!createResponse.ok) throw new Error(result.error || '預約失敗');
 
-                // 預約成功後，發送 LINE 通知
                 await fetch('/api/send-message', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -373,8 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 allElements.resultContent.innerHTML = `
                     <h2 class="success">✅ 預約成功！</h2>
                     <p>已將預約確認訊息發送至您的 LINE，我們到時見！</p>
-                    <button onclick="liff.closeWindow()" class="cta-button">關閉視窗</button>
-                `;
+                    <button onclick="liff.closeWindow()" class="cta-button">關閉視窗</button>`;
                 showBookingStep('step-result');
 
             } catch (error) {
@@ -387,19 +380,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // 分頁切換邏輯 (整合返回鍵)
+    // 分頁切換邏輯
     // =================================================================
     const tabBar = document.getElementById('tab-bar');
-    
-    // 監聽 LIFF 的返回事件
-    liff.events.on('back', (event) => {
-        // 如果我們在預約流程中，就執行我們的返回邏輯
-        if (document.getElementById('page-booking').classList.contains('active')) {
-            if (goBackBookingStep()) {
-                event.preventDefault(); // 阻止 LIFF 關閉
-            }
-        }
-    });
+
+    // ** 移除錯誤的 liff.events.on('back', ...) 監聽器 **
 
     tabBar.addEventListener('click', (event) => {
         const button = event.target.closest('.tab-button');
@@ -415,7 +400,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!bookingPageInitialized) {
                     initializeBookingPage();
                 }
-                // 每次進入預約頁都重置到第一步
                 bookingHistoryStack = [];
                 showBookingStep('step-preference');
             }
@@ -429,7 +413,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
         const targetPage = document.getElementById(pageId);
-        if (targetPage) targetPage.classList.add('active');
+        if (targetPage) {
+            targetPage.classList.add('active');
+        }
     }
     
     showPage('page-home');
