@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 liff.login();
             } else {
                 fetchUserProfile();
-                // 注意：這裡我們不再立刻呼叫 fetchGames()
             }
         })
         .catch((err) => { console.error("LIFF 初始化失敗", err); });
@@ -25,7 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 profilePicture.src = profile.pictureUrl;
             }
 
-            fetchGameData(profile.userId); // 呼叫 fetchGameData 來取得會員遊戲資料
+            // ** 修正點 1: 傳入完整的 profile 物件 **
+            fetchGameData(profile); 
 
             const qrcodeElement = document.getElementById('qrcode');
             qrcodeElement.innerHTML = '';
@@ -39,18 +39,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function fetchGameData(userId) {
+    // ** 修正點 2: 修改函式以接收完整的 profile 物件 **
+    async function fetchGameData(profile) { 
         try {
             const response = await fetch('/api/user', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: userId }),
+                // ** 修正點 3: 將完整的 profile 資訊都傳給後端 **
+                body: JSON.stringify({ 
+                    userId: profile.userId,
+                    displayName: profile.displayName,
+                    pictureUrl: profile.pictureUrl
+                }),
             });
             if (!response.ok) { throw new Error('無法取得會員遊戲資料'); }
+            
             const gameData = await response.json();
+
+            // 假設後端回傳的資料中沒有 expToNextLevel，我們在前端計算
+            // (如果後端有回傳，這裡的計算會被覆蓋，不影響)
+            let expToNextLevel = gameData.expToNextLevel;
+            if (!expToNextLevel) {
+                 expToNextLevel = Math.floor(100 * Math.pow(gameData.level || 1, 1.5));
+            }
+
             document.getElementById('user-class').textContent = gameData.class;
             document.getElementById('user-level').textContent = gameData.level;
-            document.getElementById('user-exp').textContent = `${gameData.exp} / ${gameData.expToNextLevel}`;
+            document.getElementById('user-exp').textContent = `${gameData.current_exp} / ${expToNextLevel}`;
+
         } catch (error) {
             console.error('呼叫會員 API 失敗:', error);
         }
@@ -62,20 +78,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let allGames = []; // 儲存所有遊戲資料的變數
     let activeFilters = {
         keyword: '',
-        tag: null // 一次只篩選一個標籤
+        tag: null
     };
     let gamesPageInitialized = false; // 追蹤圖鑑頁是否已初始化
 
-    // 獲取圖鑑頁面上的重要元素
     const gameListContainer = document.getElementById('game-list-container');
     const keywordSearchInput = document.getElementById('keyword-search');
     const tagFiltersContainer = document.getElementById('tag-filters');
     const clearFiltersButton = document.getElementById('clear-filters');
 
-    // 主要的渲染函式：根據篩選條件顯示遊戲
     function renderGames() {
         let filteredGames = allGames;
-
         const keyword = activeFilters.keyword.toLowerCase().trim();
         if (keyword) {
             filteredGames = filteredGames.filter(game => 
@@ -83,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 game.description.toLowerCase().includes(keyword)
             );
         }
-
         if (activeFilters.tag) {
             filteredGames = filteredGames.filter(game => 
                 game.tags.split(',').map(t => t.trim()).includes(activeFilters.tag)
@@ -101,23 +113,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const gameCard = document.createElement('div');
             gameCard.className = 'game-card';
-
             const img = document.createElement('img');
             img.src = game.image_url;
             img.alt = game.name;
             img.className = 'game-image';
-
             const infoContainer = document.createElement('div');
             infoContainer.className = 'game-info';
-
             const title = document.createElement('h3');
             title.className = 'game-title';
             title.textContent = game.name;
-
             const description = document.createElement('p');
             description.className = 'game-description';
             description.textContent = game.description;
-
             const tagsContainer = document.createElement('div');
             tagsContainer.className = 'game-tags';
             game.tags.split(',').forEach(tagStr => {
@@ -129,26 +136,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     tagsContainer.appendChild(tagElement);
                 }
             });
-
             const detailsContainer = document.createElement('div');
             detailsContainer.className = 'game-details';
-            detailsContainer.innerHTML = `
-                <span>👥 ${game.min_players}-${game.max_players} 人</span>
-                <span>⭐ 難度: ${game.difficulty}</span>
-            `;
-
+            detailsContainer.innerHTML = `<span>👥 ${game.min_players}-${game.max_players} 人</span><span>⭐ 難度: ${game.difficulty}</span>`;
+            
             infoContainer.appendChild(title);
             infoContainer.appendChild(description);
             infoContainer.appendChild(tagsContainer);
             infoContainer.appendChild(detailsContainer);
-
             gameCard.appendChild(img);
             gameCard.appendChild(infoContainer);
             gameListContainer.appendChild(gameCard);
         });
     }
 
-    // 動態生成標籤篩選按鈕
     function populateFilters() {
         const allTags = new Set();
         allGames.forEach(game => {
@@ -167,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (button.classList.contains('active')) {
                     activeFilters.tag = null;
                     button.classList.remove('active');
-} else {
+                } else {
                     tagFiltersContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
                     activeFilters.tag = tag;
                     button.classList.add('active');
@@ -178,13 +179,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 綁定篩選器的事件監聽器
     function setupFilterEventListeners() {
         keywordSearchInput.addEventListener('input', (e) => {
             activeFilters.keyword = e.target.value;
             renderGames();
         });
-
         clearFiltersButton.addEventListener('click', () => {
             activeFilters.keyword = '';
             activeFilters.tag = null;
@@ -194,30 +193,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 主函式：抓取資料並初始化圖鑑頁面 (只會執行一次)
     async function initializeGamesPage() {
-        if (gamesPageInitialized) return; // 如果已初始化，就直接返回
+        if (gamesPageInitialized) return;
         gamesPageInitialized = true;
-
         try {
             const response = await fetch('/api/games');
             if (!response.ok) throw new Error('無法從 API 取得桌遊資料');
-            
             allGames = await response.json();
-            
             populateFilters();
             renderGames();
             setupFilterEventListeners();
-
         } catch (error) {
             console.error('初始化桌遊圖鑑失敗:', error);
             gameListContainer.innerHTML = '<p style="color: red;">讀取桌遊資料失敗，請稍後再試。</p>';
         }
     }
 
-
     // =================================================================
-    // 分頁切換邏輯 (整合遊戲圖鑑的初始化)
+    // 分頁切換邏輯
     // =================================================================
     const tabBar = document.getElementById('tab-bar');
     tabBar.addEventListener('click', (event) => {
@@ -225,8 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (button) {
             const targetPageId = button.dataset.target;
             
-            // ** 整合點：如果目標是圖鑑頁，且尚未初始化，就執行初始化 **
-            if (targetPageId === 'page-games' && !gamesPageInitialized) {
+            if (targetPageId === 'page-games') {
                 initializeGamesPage();
             }
 
@@ -244,6 +236,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // 預設顯示首頁
     showPage('page-home');
 });
