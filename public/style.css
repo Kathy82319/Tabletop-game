@@ -218,3 +218,88 @@ body {
     color: var(--text-color);
     margin-bottom: 12px;
 }
+
+/* =================================================================
+   遊戲詳情頁面樣式
+   - 控制單一遊戲詳細介紹頁面的外觀。
+   ================================================================= */
+#page-game-details {
+    padding-bottom: 30px; /* 增加底部空間 */
+}
+
+.details-back-button {
+    display: inline-block;
+    background: none;
+    border: 1px solid var(--subtle-border);
+    border-radius: 20px;
+    padding: 8px 15px;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: background-color 0.2s, color 0.2s;
+}
+.details-back-button:hover {
+    background-color: var(--secondary-accent);
+    color: white;
+}
+
+.details-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+.details-image {
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 15px;
+}
+.details-title {
+    font-size: 1.8rem;
+    margin: 0;
+}
+
+.details-section {
+    background-color: var(--card-bg);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.details-section h3 {
+    margin-top: 0;
+    border-bottom: 2px solid var(--primary-accent);
+    padding-bottom: 10px;
+}
+
+.price-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 兩欄佈局 */
+    gap: 15px;
+}
+.price-item p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #666;
+}
+.price-item .price-value {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--text-color);
+}
+.price-item .stock-info {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.rules-list {
+    padding-left: 20px;
+    line-height: 1.8;
+    color: #555;
+}
+.rules-list li {
+    margin-bottom: 10px;
+}

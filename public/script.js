@@ -77,11 +77,75 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // 桌遊圖鑑 & 篩選功能區塊
+    // 桌遊圖鑑 & 詳情頁功能區塊 (全新整合版)
     // =================================================================
     let allGames = [];
     let activeFilters = { keyword: '', tag: null };
     let gamesPageInitialized = false;
+    let pageHistory = []; // 用於處理返回鍵
+
+    // 渲染遊戲詳情頁
+    function renderGameDetails(game) {
+        const detailsPage = document.getElementById('page-game-details');
+        if (!detailsPage) return;
+
+        const isForSale = Number(game.for_sale_stock) > 0;
+        const isForRent = Number(game.for_rent_stock) > 0;
+        
+        // 價格區塊的 HTML
+        let priceHTML = '<div class="price-grid">';
+        if (isForSale) {
+            priceHTML += `
+                <div class="price-item">
+                    <p>售價</p>
+                    <p class="price-value">$${game.sale_price}</p>
+                    <p class="stock-info">可販售庫存: ${game.for_sale_stock}</p>
+                </div>
+                <div class="price-item">
+                    <p>押金</p>
+                    <p class="price-value">$${game.sale_price}</p>
+                    <p class="stock-info">&nbsp;</p>
+                </div>
+            `;
+        }
+        if (isForRent) {
+             priceHTML += `
+                <div class="price-item">
+                    <p>租金 (三天)</p>
+                    <p class="price-value">$${game.rent_price}</p>
+                     <p class="stock-info">可租借庫存: ${game.for_rent_stock}</p>
+                </div>
+            `;
+        }
+        priceHTML += '</div>';
+
+        detailsPage.innerHTML = `
+            <button class="details-back-button">← 返回圖鑑</button>
+            <div class="details-header">
+                <img src="${game.image_url}" alt="${game.name}" class="details-image">
+                <h1 class="details-title">${game.name}</h1>
+            </div>
+            <div class="details-section">
+                <h3>遊戲簡介</h3>
+                <p>${game.description}</p>
+            </div>
+            <div class="details-section">
+                <h3>價格與庫存</h3>
+                ${priceHTML}
+            </div>
+            <div class="details-section">
+                <h3>租借規則說明</h3>
+                <ol class="rules-list">
+                    <li>每筆租借基本天數為三天。</li>
+                    <li>最長可延期至15天，每日 $20。</li>
+                    <li>未提前申請延期且超過三天者視為逾期，逾期每日 $40 計算。</li>
+                    <li>押金為該桌遊售價，歸還若發現缺件或毀損，將沒收押金。</li>
+                    <li>每位使用者最多同時租借三款桌遊。</li>
+                </ol>
+            </div>
+        `;
+        showPage('page-game-details');
+    }
 
     function renderGames() {
         const gameListContainer = document.getElementById('game-list-container');
@@ -96,9 +160,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         gameListContainer.innerHTML = '';
         if (filteredGames.length === 0) { gameListContainer.innerHTML = '<p>找不到符合條件的遊戲。</p>'; return; }
+        
         filteredGames.forEach(game => {
             if (game.is_visible !== 'TRUE') return;
-            const gameCard = document.createElement('div'); gameCard.className = 'game-card';
+            const gameCard = document.createElement('div');
+            gameCard.className = 'game-card';
+            // ** 關鍵改動：為卡片加上點擊事件 **
+            gameCard.addEventListener('click', () => {
+                renderGameDetails(game);
+            });
+
             const img = document.createElement('img'); img.src = game.image_url; img.alt = game.name; img.className = 'game-image';
             const info = document.createElement('div'); info.className = 'game-info';
             const title = document.createElement('h3'); title.className = 'game-title'; title.textContent = game.name;
@@ -336,16 +407,52 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // 分頁切換邏輯
+    // 分頁切換邏輯 (整合返回鍵)
     // =================================================================
     const tabBar = document.getElementById('tab-bar');
+
+    // ** 關鍵改動：監聽整個 App 內容區域的點擊事件 **
+    document.getElementById('app-content').addEventListener('click', (event) => {
+        // 專門處理詳情頁返回按鈕的點擊
+        if (event.target.matches('.details-back-button')) {
+            goBackPage();
+        }
+    });
+
+    // ** 全新的 showPage 和返回邏輯 **
+    function showPage(pageId, isBackAction = false) {
+        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+        const targetPage = document.getElementById(pageId);
+        if (targetPage) {
+            targetPage.classList.add('active');
+        }
+        
+        // 只有在不是返回操作時，才將頁面加入歷史紀錄
+        if (!isBackAction) {
+            pageHistory.push(pageId);
+        }
+    }
+
+    function goBackPage() {
+        if (pageHistory.length > 1) {
+            pageHistory.pop(); // 移除目前的頁面
+            const previousPageId = pageHistory[pageHistory.length - 1]; // 取得上一個頁面
+            showPage(previousPageId, true); // 顯示上一個頁面，並標示這是返回操作
+        } else {
+            // 如果歷史紀錄中只有一頁，可能代表是從 LIFF App 外部連結進入，直接關閉
+            liff.closeWindow();
+        }
+    }
 
     tabBar.addEventListener('click', (event) => {
         const button = event.target.closest('.tab-button');
         if (button) {
             const targetPageId = button.dataset.target;
             
-            showPage(targetPageId);
+            // 切換主分頁時，重置歷史紀錄，並將該分頁設為新的起點
+            pageHistory = [];
+            showPage(targetPageId); 
+
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
 
@@ -355,7 +462,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 displayUserProfile();
                 if (userProfile) {
                     fetchGameData(userProfile);
-                    // ** 修正點 2: 呼叫查詢個人預約的函式 **
                     fetchAndDisplayMyBookings(userProfile.userId);
                 }
             } else if (targetPageId === 'page-booking') {
@@ -365,14 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-
-    function showPage(pageId) {
-        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-        const targetPage = document.getElementById(pageId);
-        if (targetPage) {
-            targetPage.classList.add('active');
-        }
-    }
     
+    // 預設顯示首頁
     showPage('page-home');
 });
