@@ -7,7 +7,7 @@ async function runBookingSync(env) {
       GOOGLE_SERVICE_ACCOUNT_EMAIL,
       GOOGLE_PRIVATE_KEY,
       GOOGLE_SHEET_ID,
-      BOOKINGS_SHEET_NAME, // 我們新加的變數
+      BOOKINGS_SHEET_NAME,
       DB
     } = env;
 
@@ -49,8 +49,8 @@ async function runBookingSync(env) {
     if (!sheet) throw new Error(`在 Google Sheets 中找不到名為 "${BOOKINGS_SHEET_NAME}" 的工作表。`);
 
     await sheet.clear();
-    // 確保標題列與你的 D1 資料庫欄位完全對應
-    await sheet.setHeaderRow(['booking_id', 'user_id', 'booking_date', 'time_slot', 'table_number', 'num_of_people', 'status', 'created_at']);
+    // ** 關鍵修正：調整 setHeaderRow 的欄位順序以匹配你的要求 **
+    await sheet.setHeaderRow(['booking_id', 'user_id', 'contact_name', 'contact_phone', 'booking_date', 'time_slot', 'tables_occupied', 'num_of_people', 'booking_preference', 'status', 'created_at']);
     await sheet.addRows(results);
 
     return { success: true, message: `成功同步了 ${results.length} 筆預約紀錄。` };
