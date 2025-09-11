@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>冒險者公會</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
 
@@ -44,10 +45,42 @@
                </div>
         </div>
 
-        <div id="page-booking" class="page">
-            <h1>場地預約</h1>
-            <p>需要作戰室或集會所？在這裡預約你的下一次冒險！</p>
+<div id="page-booking" class="page">
+    <h1>場地預約</h1>
+
+    <div class="booking-container">
+        <div class="booking-step">
+            <h2>1. 選擇日期</h2>
+            <input type="text" id="booking-datepicker" placeholder="請點擊這裡選擇預約日期">
         </div>
+
+        <div id="slots-step" class="booking-step" style="display: none;">
+            <h2>2. 選擇時段與桌號</h2>
+            <div id="booking-slots-container">
+                </div>
+        </div>
+
+        <div id="confirmation-step" class="booking-step" style="display: none;">
+            <h2>3. 確認預約資訊</h2>
+            <div id="booking-summary"></div>
+            <div class="input-group">
+                <label for="booking-people">預約人數：</label>
+                <select id="booking-people">
+                    <option value="2">2 人</option>
+                    <option value="3">3 人</option>
+                    <option value="4">4 人</option>
+                    <option value="5">5 人</option>
+                    <option value="6">6 人</option>
+                    <option value="7">7 人</option>
+                    <option value="8">8 人</option>
+                </select>
+            </div>
+            <button id="confirm-booking-btn">確認預約</button>
+        </div>
+
+        <div id="booking-result" class="booking-step"></div>
+    </div>
+</div>
 
         <div id="page-info" class="page">
             <h1>店家資訊</h1>
@@ -65,6 +98,8 @@
 
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/zh-tw.js"></script> ```
     <script src="script.js"></script>
 </body>
 </html>

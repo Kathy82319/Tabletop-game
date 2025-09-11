@@ -1,8 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
-    // LIFF & 使用者資料區塊
+    // 全域變數與 LIFF 初始化
     // =================================================================
-    const myLiffId = "2008076323-GN1e7naW"; // 你的 LIFF ID
+    const myLiffId = "2008076323-GN1e7naW";
+    let userProfile = null; // 用來儲存使用者 LIFF Profile
 
     liff.init({ liffId: myLiffId })
         .then(() => {
@@ -10,42 +11,35 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!liff.isLoggedIn()) {
                 liff.login();
             } else {
-                fetchUserProfile();
+                // 登入成功後，先獲取一次使用者資料
+                liff.getProfile().then(profile => {
+                    userProfile = profile;
+                    fetchGameData(profile); // 更新/註冊使用者資料
+                }).catch(err => console.error("獲取 Profile 失敗", err));
             }
         })
         .catch((err) => { console.error("LIFF 初始化失敗", err); });
-         
+        
+    // =================================================================
+    // 使用者資料相關函式 (與之前相同)
+    // =================================================================
     function fetchUserProfile() {
-        liff.getProfile().then(profile => {
-            document.getElementById('display-name').textContent = profile.displayName;
-            document.getElementById('status-message').textContent = profile.statusMessage || '';
-            const profilePicture = document.getElementById('profile-picture');
-            if (profile.pictureUrl) {
-                profilePicture.src = profile.pictureUrl;
-            }
-
-            // ** 修正點 1: 傳入完整的 profile 物件 **
-            fetchGameData(profile); 
-
-            const qrcodeElement = document.getElementById('qrcode');
-            qrcodeElement.innerHTML = '';
-            new QRCode(qrcodeElement, {
-                text: profile.userId,
-                width: 200,
-                height: 200,
-            });
-        }).catch((err) => {
-            console.error("取得 Profile 失敗", err);
-        });
+        if (!userProfile) return;
+        document.getElementById('display-name').textContent = userProfile.displayName;
+        document.getElementById('status-message').textContent = userProfile.statusMessage || '';
+        const profilePicture = document.getElementById('profile-picture');
+        if (userProfile.pictureUrl) profilePicture.src = userProfile.pictureUrl;
+        
+        const qrcodeElement = document.getElementById('qrcode');
+        qrcodeElement.innerHTML = '';
+        new QRCode(qrcodeElement, { text: userProfile.userId, width: 200, height: 200 });
     }
 
-    // ** 修正點 2: 修改函式以接收完整的 profile 物件 **
     async function fetchGameData(profile) { 
         try {
             const response = await fetch('/api/user', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // ** 修正點 3: 將完整的 profile 資訊都傳給後端 **
                 body: JSON.stringify({ 
                     userId: profile.userId,
                     displayName: profile.displayName,
@@ -53,20 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }),
             });
             if (!response.ok) { throw new Error('無法取得會員遊戲資料'); }
-            
             const gameData = await response.json();
-
-            // 假設後端回傳的資料中沒有 expToNextLevel，我們在前端計算
-            // (如果後端有回傳，這裡的計算會被覆蓋，不影響)
-            let expToNextLevel = gameData.expToNextLevel;
-            if (!expToNextLevel) {
-                 expToNextLevel = Math.floor(100 * Math.pow(gameData.level || 1, 1.5));
-            }
-
+            let expToNextLevel = gameData.expToNextLevel || Math.floor(100 * Math.pow(gameData.level || 1, 1.5));
             document.getElementById('user-class').textContent = gameData.class;
             document.getElementById('user-level').textContent = gameData.level;
             document.getElementById('user-exp').textContent = `${gameData.current_exp} / ${expToNextLevel}`;
-
         } catch (error) {
             console.error('呼叫會員 API 失敗:', error);
         }
@@ -209,8 +194,135 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+// =================================================================
+    // 場地預約功能區塊 (全新)
     // =================================================================
-    // 分頁切換邏輯
+    
+    // ===== 請在這裡設定你的店家資訊 =====
+    const AVAILABLE_TABLES = ['A1', 'A2', 'A3', 'A4', 'A5', '二樓包廂'];
+    const AVAILABLE_TIME_SLOTS = ['14:00-16:00', '16:00-18:00', '18:00-20:00', '20:00-22:00'];
+    // ===================================
+    
+    let bookingPageInitialized = false;
+    let selectedBookingInfo = {
+        date: null,
+        timeSlot: null,
+        tableNumber: null
+    };
+
+    function initializeBookingPage() {
+        if (bookingPageInitialized) return;
+        bookingPageInitialized = true;
+
+        const datepickerInput = document.getElementById('booking-datepicker');
+        const slotsStep = document.getElementById('slots-step');
+        const confirmationStep = document.getElementById('confirmation-step');
+        const slotsContainer = document.getElementById('booking-slots-container');
+        const bookingSummary = document.getElementById('booking-summary');
+        const numOfPeopleSelect = document.getElementById('booking-people');
+        const confirmBtn = document.getElementById('confirm-booking-btn');
+        const bookingResult = document.getElementById('booking-result');
+
+        // 初始化 Flatpickr 日曆
+        flatpickr(datepickerInput, {
+            minDate: "today",
+            dateFormat: "Y-m-d",
+            locale: "zh_tw", // 使用中文語系
+            onChange: function(selectedDates, dateStr, instance) {
+                selectedBookingInfo = { date: dateStr, timeSlot: null, tableNumber: null };
+                slotsStep.style.display = 'block';
+                confirmationStep.style.display = 'none';
+                bookingResult.innerHTML = '';
+                fetchAndRenderSlots(dateStr);
+            },
+        });
+
+        async function fetchAndRenderSlots(date) {
+            slotsContainer.innerHTML = '<p>正在查詢空位...</p>';
+            try {
+                const response = await fetch(`/api/bookings-check?date=${date}`);
+                if (!response.ok) throw new Error('查詢失敗');
+                const bookedSlots = await response.json(); // ex: [{time_slot: "14:00-16:00", table_number: "A1"}, ...]
+
+                slotsContainer.innerHTML = '';
+                AVAILABLE_TIME_SLOTS.forEach(slot => {
+                    AVAILABLE_TABLES.forEach(table => {
+                        const isBooked = bookedSlots.some(
+                            booked => booked.time_slot === slot && booked.table_number === table
+                        );
+                        
+                        const button = document.createElement('button');
+                        button.className = 'slot-button';
+                        button.textContent = `${slot} - ${table}`;
+                        button.dataset.slot = slot;
+                        button.dataset.table = table;
+
+                        if (isBooked) {
+                            button.classList.add('booked');
+                            button.disabled = true;
+                        } else {
+                            button.classList.add('available');
+                            button.addEventListener('click', () => {
+                                // 移除其他按鈕的選中樣式
+                                slotsContainer.querySelectorAll('.slot-button.selected').forEach(btn => btn.classList.remove('selected'));
+                                // 將當前按鈕設為選中
+                                button.classList.add('selected');
+                                
+                                selectedBookingInfo.timeSlot = slot;
+                                selectedBookingInfo.tableNumber = table;
+                                
+                                bookingSummary.textContent = `您預約了：${selectedBookingInfo.date} 的 ${slot} 時段，桌號 ${table}`;
+                                confirmationStep.style.display = 'block';
+                            });
+                        }
+                        slotsContainer.appendChild(button);
+                    });
+                });
+            } catch (error) {
+                slotsContainer.innerHTML = '<p style="color: red;">查詢空位失敗，請稍後再試。</p>';
+            }
+        }
+
+        confirmBtn.addEventListener('click', async () => {
+            if (!userProfile || !selectedBookingInfo.date || !selectedBookingInfo.timeSlot || !selectedBookingInfo.tableNumber) {
+                alert('預約資訊不完整！');
+                return;
+            }
+
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = '處理中...';
+            
+            try {
+                const response = await fetch('/api/bookings-create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: userProfile.userId,
+                        bookingDate: selectedBookingInfo.date,
+                        timeSlot: selectedBookingInfo.timeSlot,
+                        tableNumber: selectedBookingInfo.tableNumber,
+                        numOfPeople: parseInt(numOfPeopleSelect.value, 10),
+                    })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || '預約失敗');
+                
+                // 預約成功
+                slotsStep.style.display = 'none';
+                confirmationStep.style.display = 'none';
+                bookingResult.innerHTML = `<p class="success">✅ 預約成功！</p><p>${bookingSummary.textContent}</p>`;
+
+            } catch (error) {
+                alert(`預約失敗：${error.message}`);
+            } finally {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = '確認預約';
+            }
+        });
+    }
+
+    // =================================================================
+    // 分頁切換邏輯 (整合新功能)
     // =================================================================
     const tabBar = document.getElementById('tab-bar');
     tabBar.addEventListener('click', (event) => {
@@ -219,7 +331,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const targetPageId = button.dataset.target;
             
             if (targetPageId === 'page-games') {
-                initializeGamesPage();
+                // ... (你現有的 initializeGamesPage() 呼叫)
+            } else if (targetPageId === 'page-profile') {
+                fetchUserProfile(); // 切換到個人資料頁時，刷新一次資料
+            } else if (targetPageId === 'page-booking') {
+                initializeBookingPage();
             }
 
             showPage(targetPageId);
@@ -231,9 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
         const targetPage = document.getElementById(pageId);
-        if (targetPage) {
-            targetPage.classList.add('active');
-        }
+        if (targetPage) targetPage.classList.add('active');
     }
     
     showPage('page-home');

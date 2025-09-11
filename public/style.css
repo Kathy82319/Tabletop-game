@@ -266,3 +266,92 @@ h1, h3 {
 #qrcode-container {
     border: 1px solid var(--subtle-border); /* 套用主題邊框顏色 */
 }
+
+/* --- 場地預約頁面樣式 --- */
+.booking-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.booking-step h2 {
+    border-bottom: 2px solid var(--primary-accent);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+}
+
+#booking-datepicker {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    text-align: center;
+    border-radius: 8px;
+    border: 1px solid var(--subtle-border);
+    cursor: pointer;
+    background-color: var(--card-bg);
+}
+
+#booking-slots-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.slot-button {
+    padding: 12px;
+    font-size: 0.9rem;
+    border: 1px solid var(--subtle-border);
+    background-color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.slot-button.booked {
+    background-color: #e9ecef;
+    color: #adb5bd;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+.slot-button.available:hover {
+    border-color: var(--primary-accent);
+    background-color: #fff3e0;
+}
+
+.slot-button.selected {
+    background-color: var(--primary-accent);
+    color: white;
+    border-color: var(--primary-accent);
+    font-weight: bold;
+}
+
+#booking-summary {
+    background-color: #e9f7ff;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-weight: bold;
+    text-align: center;
+}
+
+#confirm-booking-btn {
+     width: 100%;
+     padding: 12px;
+     border: none;
+     border-radius: 6px;
+     background-color: #28a745;
+     color: white;
+     font-size: 1rem;
+     font-weight: bold;
+     cursor: pointer;
+}
+
+#booking-result {
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-align: center;
+}
+/* --- 場地預約頁面樣式結束 --- */
