@@ -1,12 +1,75 @@
 // functions/api/user.js
+import { GoogleSpreadsheet } from 'google-spreadsheet';
+import * as jose from 'jose';
 
+// =================================================================
+// 核心邏輯：將「單筆」新使用者資料非同步同步到 Google Sheet
+// =================================================================
+async function syncSingleUserToSheet(env, newUser) {
+    try {
+        console.log('背景任務：開始同步新使用者資料...');
+        const {
+          GOOGLE_SERVICE_ACCOUNT_EMAIL,
+          GOOGLE_PRIVATE_KEY,
+          GOOGLE_SHEET_ID,
+          USERS_SHEET_NAME // 我們之前為手動同步建立的環境變數
+        } = env;
+
+        // 驗證並連接到 Google Sheets
+        const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
+        const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets' })
+          .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
+          .setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
+          .setAudience('https://oauth2.googleapis.com/token')
+          .setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
+          .setIssuedAt()
+          .setExpirationTime('1h')
+          .sign(privateKey);
+
+        const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt }),
+        });
+        if (!tokenResponse.ok) throw new Error('背景同步(User)：從 Google 取得 access token 失敗。');
+        const tokenData = await tokenResponse.json();
+        const accessToken = tokenData.access_token;
+        
+        const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
+        const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
+        await doc.loadInfo();
+
+        const sheet = doc.sheetsByTitle[USERS_SHEET_NAME];
+        if (!sheet) throw new Error(`背景同步(User)：找不到名為 "${USERS_SHEET_NAME}" 的工作表。`);
+
+        // 使用 addRow 新增一行資料
+        await sheet.addRow({
+            user_id: newUser.user_id,
+            line_display_name: newUser.line_display_name,
+            line_picture_url: newUser.line_picture_url,
+            class: newUser.class,
+            level: newUser.level,
+            current_exp: newUser.current_exp,
+            created_at: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
+        });
+
+        console.log(`背景任務：新使用者 ${newUser.user_id} 資料同步成功！`);
+
+    } catch (error) {
+        console.error('背景同步新使用者失敗:', error);
+    }
+}
+
+
+// =================================================================
+// 主要 API 處理器
+// =================================================================
 export async function onRequest(context) {
   try {
     if (context.request.method !== 'POST') {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    // 從前端接收使用者完整的 LINE Profile 資料
     const { userId, displayName, pictureUrl } = await context.request.json();
 
     if (!userId) {
@@ -24,57 +87,46 @@ export async function onRequest(context) {
 
     // 2. 檢查使用者是否存在
     if (user) {
-      // --- 【⭐ 唯一修正點 開始 ⭐】 ---
-      // 使用者已存在，我們需要手動計算並補上「下一級所需經驗值」這個欄位
-      // 這是為了確保回傳給前端的資料格式，與新註冊使用者的資料格式完全一致
-      const expToNextLevel = Math.floor(100 * Math.pow(user.level || 1, 1.5));
-      
-      // 在原有的 user 物件基礎上，加上新的欄位
-      const userData = {
-        ...user,
-        expToNextLevel: expToNextLevel
-      };
-
-      // 回傳包含 expToNextLevel 的完整使用者資料
-      return new Response(JSON.stringify(userData), {
+      // 如果使用者已存在，直接回傳他的資料
+      // 我們也需要為現有使用者計算升級經驗值
+      const expToNextLevel = 100 * Math.pow(user.level, 1.5);
+      return new Response(JSON.stringify({
+          ...user,
+          expToNextLevel: Math.floor(expToNextLevel)
+      }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
     } else {
-      // 3. 如果使用者不存在，這就是一位新會員！
-      // 準備新會員的預設資料
+      // 3. 如果使用者不存在，建立新會員
       const newUser = {
         user_id: userId,
-        line_display_name: displayName || '未提供名稱', // 如果沒有名稱，給個預設值
+        line_display_name: displayName || '未提供名稱',
         line_picture_url: pictureUrl || '',
-        class: '無', // 預設職業
-        level: 1,      // 預設等級
-        current_exp: 0 // 預設經驗值
+        class: '無',
+        level: 1,
+        current_exp: 0
       };
 
-      // 4. 將新會員資料插入到 Users 資料表中
       stmt = db.prepare(
         'INSERT INTO Users (user_id, line_display_name, line_picture_url, class, level, current_exp) VALUES (?, ?, ?, ?, ?, ?)'
       );
       await stmt.bind(
-        newUser.user_id,
-        newUser.line_display_name,
-        newUser.line_picture_url,
-        newUser.class,
-        newUser.level,
-        newUser.current_exp
+        newUser.user_id, newUser.line_display_name, newUser.line_picture_url,
+        newUser.class, newUser.level, newUser.current_exp
       ).run();
 
-      // 5. 回傳剛剛建立的新會員資料給前端
-      // 這裡我們直接回傳 newUser 物件，因為它就是我們剛存進去的樣子
-      // 我們還需要計算升級所需經驗值，這裡先用一個簡單的公式
+      // ** 關鍵改動：觸發背景同步任務 **
+      context.waitUntil(syncSingleUserToSheet(context.env, newUser));
+
+      // 4. 立即回傳剛建立的新會員資料給前端
       const expToNextLevel = 100 * Math.pow(newUser.level, 1.5);
       
       return new Response(JSON.stringify({
         ...newUser,
-        expToNextLevel: Math.floor(expToNextLevel) // 回傳給前端顯示
+        expToNextLevel: Math.floor(expToNextLevel)
       }), {
-        status: 201, // 201 Created，表示成功建立了一筆新資源
+        status: 201, // 201 Created
         headers: { 'Content-Type': 'application/json' },
       });
     }
