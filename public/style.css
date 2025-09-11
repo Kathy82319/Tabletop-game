@@ -1,92 +1,23 @@
-/* =================================================================
-   全域與晨曦主題色彩變數
-   - :root 用於定義全站通用的變數，方便統一管理主題色彩與字體。
-   ================================================================= */
 :root {
-    --bg-color: #FFF9F0;         /* 背景色 - 柔和米白 */
-    --primary-accent: #FF8C42;   /* 主題色 - 溫暖晨曦橙 */
-    --secondary-accent: #FFC371; /* 輔助色 - 明亮陽光金 */
-    --text-color: #5D4037;       /* 文字顏色 - 溫潤深棕 */
-    --subtle-border: #E0E0E0;    /* 邊框/分隔線 - 淡雅灰 */
-    --card-bg: #FFFFFF;          /* 卡片背景 - 純白 */
+    --bg-color: #FFF9F0; --primary-accent: #FF8C42; --secondary-accent: #FFC371;
+    --text-color: #5D4037; --subtle-border: #E0E0E0; --card-bg: #FFFFFF;
     --font-family: 'Helvetica Neue', Arial, 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
-
-/* =================================================================
-   基礎 Body 與頁面切換樣式
-   - 這裡定義了 App 的基礎外觀和分頁切換的底層邏輯。
-   ================================================================= */
 body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    font-family: var(--font-family);
-    margin: 0;
-    padding: 0;
-    padding-bottom: 70px;
+    background-color: var(--bg-color); color: var(--text-color); font-family: var(--font-family);
+    margin: 0; padding: 0; padding-bottom: 70px;
 }
-
-.page {
-    display: none;
-    padding: 15px;
-}
-.page.active {
-    display: block;
-}
-
-/* =================================================================
-   底部 Tab Bar 導覽列樣式
-   - 控制底部五個主要按鈕的外觀與互動效果。
-   ================================================================= */
+.page { display: none; padding: 15px; }
+.page.active { display: block; }
+.page > h1 { font-size: 1.8rem; text-align: center; margin-top: 0; margin-bottom: 25px; }
 #tab-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 60px;
-    background-color: var(--card-bg);
-    border-top: 1px solid var(--subtle-border);
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
+    position: fixed; bottom: 0; left: 0; width: 100%; height: 60px;
+    background-color: var(--card-bg); border-top: 1px solid var(--subtle-border);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); display: flex;
+    justify-content: space-around; align-items: center;
 }
-.tab-button {
-    background: none; border: none; color: #999;
-    font-size: 0.8rem; cursor: pointer; padding: 10px;
-    border-radius: 8px; transition: color 0.2s;
-}
-.tab-button.active {
-    color: var(--primary-accent);
-    font-weight: bold;
-}
-
-/* =================================================================
-   通用元素樣式
-   - 如標題、按鈕等，在多個頁面都會用到的元素。
-   ================================================================= */
-.page > h1 {
-    font-size: 1.8rem;
-    text-align: center;
-    margin-top: 0;
-    margin-bottom: 25px;
-}
-
-.cta-button {
-    width: 100%; padding: 15px; font-size: 1.1rem; font-weight: bold; color: white;
-    background: linear-gradient(45deg, var(--secondary-accent), var(--primary-accent));
-    border: none; border-radius: 10px; cursor: pointer; margin-top: auto;
-    box-shadow: 0 4px 10px rgba(255, 140, 66, 0.4);
-    transition: all 0.2s;
-}
-.cta-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(255, 140, 66, 0.5);
-}
-
-/* =================================================================
-   桌遊圖鑑頁面樣式
-   - 控制篩選器、搜尋框和遊戲卡片的外觀。
-   ================================================================= */
+.tab-button { background: none; border: none; color: #999; font-size: 0.8rem; cursor: pointer; padding: 10px; border-radius: 8px; transition: color 0.2s; }
+.tab-button.active { color: var(--primary-accent); font-weight: bold; }
 #filter-controls { padding: 15px; background-color: transparent; margin: 0 0 20px 0; display: flex; flex-direction: column; gap: 12px; }
 #keyword-search { width: 100%; padding: 12px; font-size: 1rem; border-radius: 8px; border: 1px solid var(--subtle-border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 #tag-filter-container { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
@@ -96,7 +27,7 @@ body {
 .filter-group button.active { background-color: var(--primary-accent); color: white; border-color: var(--primary-accent); }
 #clear-filters { padding: 8px 12px; font-size: 0.8rem; background-color: #888; color: white; border: none; border-radius: 6px; cursor: pointer; align-self: flex-start; }
 #game-list-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; padding: 0 15px; }
-.game-card { background-color: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; }
+.game-card { background-color: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;}
 .game-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); }
 .game-image { width: 100%; height: 180px; object-fit: cover; }
 .game-info { padding: 15px; display: flex; flex-direction: column; flex-grow: 1; }
@@ -105,11 +36,6 @@ body {
 .game-tags { margin-top: auto; padding-top: 10px; border-top: 1px solid #f0f0f0; }
 .game-tag { display: inline-block; background-color: #e9ecef; color: #495057; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; margin-right: 5px; margin-bottom: 5px; }
 .game-details { display: flex; justify-content: space-between; font-size: 0.8rem; color: #777; padding-top: 10px; }
-
-/* =================================================================
-   場地預約頁面樣式 (修正日曆置中)
-   - 這裡包含了所有預約流程步驟的樣式。
-   ================================================================= */
 #page-booking { height: calc(100vh - 90px); flex-direction: column; }
 #page-booking.active { display: flex; }
 #booking-wizard-container { height: 100%; display: flex; flex-direction: column; }
@@ -126,21 +52,8 @@ body {
 .booking-notice { text-align: center; font-size: 0.8rem; color: #777; margin-top: auto; padding-bottom: 20px;}
 .back-button { background: none; border: none; color: var(--primary-accent); font-size: 1rem; font-weight: bold; cursor: pointer; align-self: flex-start; margin-bottom: 15px; padding: 0; }
 .booking-step h2 { border-bottom: 2px solid var(--primary-accent); padding-bottom: 8px; margin-bottom: 20px; font-size: 1.4rem; text-align: center;}
-
-/* ** 關鍵修正區域 ** */
-.calendar-and-slots-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* << 新增：讓所有子元素（包含日曆）水平置中 */
-    gap: 20px;
-    flex-grow: 1;
-}
-#booking-datepicker-container {
-    /* margin: 0 auto;  <-- 移除這一行，因為父層已經用 flex 置中 */
-    width: fit-content; /* 讓容器寬度自適應日曆本身，很重要 */
-}
-/* ** 修正結束 ** */
-
+.calendar-and-slots-container { display: flex; flex-direction: column; align-items: center; gap: 20px; flex-grow: 1; }
+#booking-datepicker-container { width: fit-content; }
 #booking-slots-wrapper { flex-grow: 1; display: flex; flex-direction: column; width: 100%; }
 #slots-placeholder { text-align: center; color: #999; margin: auto; }
 #booking-slots-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -160,146 +73,26 @@ body {
 #booking-result-content { text-align: center; margin: auto; }
 #booking-result-content h2 { font-size: 1.5rem; }
 .success { color: #28a745; }
-
-/* --- 個人資料頁面微調 --- */
+#my-bookings-section { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--subtle-border); }
+#my-bookings-section h2 { text-align: center; font-size: 1.4rem; margin-bottom: 20px; }
+#my-bookings-container { display: flex; flex-direction: column; gap: 15px; }
+.booking-info-card { background-color: var(--card-bg); border-radius: 10px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); border-left: 5px solid var(--secondary-accent); }
+.booking-info-card p { margin: 0 0 8px 0; font-size: 0.9rem; color: #666; }
+.booking-info-card .booking-date-time { font-weight: bold; font-size: 1.1rem; color: var(--text-color); margin-bottom: 12px; }
 #profile-info { color: var(--text-color); }
 #qrcode-container { border: 1px solid var(--subtle-border); }
-
-/* --- 響應式設計 --- */
-@media (max-width: 768px) {
-    #game-list-container {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* =================================================================
-   個人資料頁 - 我的預約紀錄樣式
-   - 控制「冒險者資料」頁面下方顯示的預約卡片外觀。
-   ================================================================= */
-#my-bookings-section {
-    margin-top: 40px;
-    padding-top: 20px;
-    border-top: 1px solid var(--subtle-border);
-}
-
-#my-bookings-section h2 {
-    text-align: center;
-    font-size: 1.4rem;
-    margin-bottom: 20px;
-}
-
-#my-bookings-container {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.booking-info-card {
-    background-color: var(--card-bg);
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-    border-left: 5px solid var(--secondary-accent);
-}
-
-.booking-info-card p {
-    margin: 0 0 8px 0;
-    font-size: 0.9rem;
-    color: #666;
-}
-
-.booking-info-card p:last-child {
-    margin-bottom: 0;
-}
-
-.booking-info-card .booking-date-time {
-    font-weight: bold;
-    font-size: 1.1rem;
-    color: var(--text-color);
-    margin-bottom: 12px;
-}
-
-/* =================================================================
-   遊戲詳情頁面樣式
-   - 控制單一遊戲詳細介紹頁面的外觀。
-   ================================================================= */
-#page-game-details {
-    padding-bottom: 30px; /* 增加底部空間 */
-}
-
-.details-back-button {
-    display: inline-block;
-    background: none;
-    border: 1px solid var(--subtle-border);
-    border-radius: 20px;
-    padding: 8px 15px;
-    color: var(--text-color);
-    font-size: 0.9rem;
-    font-weight: bold;
-    cursor: pointer;
-    margin-bottom: 20px;
-    transition: background-color 0.2s, color 0.2s;
-}
-.details-back-button:hover {
-    background-color: var(--secondary-accent);
-    color: white;
-}
-
-.details-header {
-    text-align: center;
-    margin-bottom: 20px;
-}
-.details-image {
-    width: 100%;
-    max-width: 300px;
-    height: auto;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    margin-bottom: 15px;
-}
-.details-title {
-    font-size: 1.8rem;
-    margin: 0;
-}
-
-.details-section {
-    background-color: var(--card-bg);
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-.details-section h3 {
-    margin-top: 0;
-    border-bottom: 2px solid var(--primary-accent);
-    padding-bottom: 10px;
-}
-
-.price-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* 兩欄佈局 */
-    gap: 15px;
-}
-.price-item p {
-    margin: 0;
-    font-size: 0.9rem;
-    color: #666;
-}
-.price-item .price-value {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: var(--text-color);
-}
-.price-item .stock-info {
-    font-size: 0.8rem;
-    color: #888;
-}
-
-.rules-list {
-    padding-left: 20px;
-    line-height: 1.8;
-    color: #555;
-}
-.rules-list li {
-    margin-bottom: 10px;
-}
+#page-game-details { padding-bottom: 30px; }
+.details-back-button { display: inline-block; background: none; border: 1px solid var(--subtle-border); border-radius: 20px; padding: 8px 15px; color: var(--text-color); font-size: 0.9rem; font-weight: bold; cursor: pointer; margin-bottom: 20px; transition: background-color 0.2s, color 0.2s; }
+.details-back-button:hover { background-color: var(--secondary-accent); color: white; }
+.details-header { text-align: center; margin-bottom: 20px; }
+.details-image { width: 100%; max-width: 300px; height: auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 15px; }
+.details-title { font-size: 1.8rem; margin: 0; }
+.details-section { background-color: var(--card-bg); border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.details-section h3 { margin-top: 0; border-bottom: 2px solid var(--primary-accent); padding-bottom: 10px; }
+.price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.price-item p { margin: 0; font-size: 0.9rem; color: #666; }
+.price-item .price-value { font-size: 1.2rem; font-weight: bold; color: var(--text-color); }
+.price-item .stock-info { font-size: 0.8rem; color: #888; }
+.rules-list { padding-left: 20px; line-height: 1.8; color: #555; }
+.rules-list li { margin-bottom: 10px; }
+@media (max-width: 768px) { #game-list-container { grid-template-columns: 1fr; } }
