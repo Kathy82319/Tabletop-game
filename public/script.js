@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 全域變數與 LIFF 初始化
     // =================================================================
-    const myLiffId = "2008076323-GN1e7naW";
+    const myLiffId = "2008076323-GN1e7naW"; // 你的 LIFF ID
     let userProfile = null; // 用來儲存使用者 LIFF Profile
 
     liff.init({ liffId: myLiffId })
@@ -11,24 +11,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!liff.isLoggedIn()) {
                 liff.login();
             } else {
-                // 登入成功後，先獲取一次使用者資料
+                // 登入成功後，先獲取一次使用者資料並儲存
                 liff.getProfile().then(profile => {
                     userProfile = profile;
-                    fetchGameData(profile); // 更新/註冊使用者資料
-                }).catch(err => console.error("獲取 Profile 失敗", err));
+                    fetchGameData(profile); // 呼叫後端，處理使用者資料的取得或自動註冊
+                }).catch(err => console.error("獲取 LINE Profile 失敗", err));
             }
         })
         .catch((err) => { console.error("LIFF 初始化失敗", err); });
         
     // =================================================================
-    // 使用者資料相關函式 (與之前相同)
+    // 使用者資料相關函式
     // =================================================================
-    function fetchUserProfile() {
-        if (!userProfile) return;
+    function displayUserProfile() {
+        if (!userProfile) return; // 確保 userProfile 有資料才執行
         document.getElementById('display-name').textContent = userProfile.displayName;
         document.getElementById('status-message').textContent = userProfile.statusMessage || '';
         const profilePicture = document.getElementById('profile-picture');
-        if (userProfile.pictureUrl) profilePicture.src = userProfile.pictureUrl;
+        if (userProfile.pictureUrl) {
+            profilePicture.src = userProfile.pictureUrl;
+        }
         
         const qrcodeElement = document.getElementById('qrcode');
         qrcodeElement.innerHTML = '';
@@ -47,11 +49,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }),
             });
             if (!response.ok) { throw new Error('無法取得會員遊戲資料'); }
+            
             const gameData = await response.json();
+
+            // 簡單的升級經驗值公式 (如果後端沒有提供)
             let expToNextLevel = gameData.expToNextLevel || Math.floor(100 * Math.pow(gameData.level || 1, 1.5));
+
             document.getElementById('user-class').textContent = gameData.class;
             document.getElementById('user-level').textContent = gameData.level;
             document.getElementById('user-exp').textContent = `${gameData.current_exp} / ${expToNextLevel}`;
+
         } catch (error) {
             console.error('呼叫會員 API 失敗:', error);
         }
@@ -60,12 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 桌遊圖鑑 & 篩選功能區塊
     // =================================================================
-    let allGames = []; // 儲存所有遊戲資料的變數
-    let activeFilters = {
-        keyword: '',
-        tag: null
-    };
-    let gamesPageInitialized = false; // 追蹤圖鑑頁是否已初始化
+    let allGames = [];
+    let activeFilters = { keyword: '', tag: null };
+    let gamesPageInitialized = false;
 
     const gameListContainer = document.getElementById('game-list-container');
     const keywordSearchInput = document.getElementById('keyword-search');
@@ -194,42 +198,76 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-// =================================================================
-    // 場地預約功能區塊 (全新)
     // =================================================================
-    
-    // ===== 請在這裡設定你的店家資訊 =====
-    const AVAILABLE_TABLES = ['A1', 'A2', 'A3', 'A4', 'A5', '二樓包廂'];
+    // 場地預約功能區塊
+    // =================================================================
+    const TOTAL_TABLES = 5;
+    const PEOPLE_PER_TABLE = 4;
     const AVAILABLE_TIME_SLOTS = ['14:00-16:00', '16:00-18:00', '18:00-20:00', '20:00-22:00'];
-    // ===================================
-    
+    const PRICES = {
+        weekday: { once: 150, per_hour: 50 },
+        weekend: { once: 250, per_hour: 80 },
+    };
+    const ADVANCE_BOOKING_DISCOUNT = 20;
+
     let bookingPageInitialized = false;
     let selectedBookingInfo = {
         date: null,
         timeSlot: null,
-        tableNumber: null
+        numOfPeople: 0,
+        isWeekend: false,
+        hasDiscount: false,
+        estimatedPrice: 0
     };
 
     function initializeBookingPage() {
         if (bookingPageInitialized) return;
         bookingPageInitialized = true;
 
+        const infoView = document.getElementById('booking-info-view');
+        const processView = document.getElementById('booking-process-view');
+        const startBookingBtn = document.getElementById('start-booking-btn');
+        const backToInfoBtn = document.getElementById('back-to-info-btn');
         const datepickerInput = document.getElementById('booking-datepicker');
         const slotsStep = document.getElementById('slots-step');
         const confirmationStep = document.getElementById('confirmation-step');
         const slotsContainer = document.getElementById('booking-slots-container');
         const bookingSummary = document.getElementById('booking-summary');
-        const numOfPeopleSelect = document.getElementById('booking-people');
+        const numOfPeopleInput = document.getElementById('booking-people');
+        const preferenceSelect = document.getElementById('booking-preference');
+        const priceEstimationBox = document.getElementById('price-estimation');
         const confirmBtn = document.getElementById('confirm-booking-btn');
         const bookingResult = document.getElementById('booking-result');
 
-        // 初始化 Flatpickr 日曆
+        startBookingBtn.addEventListener('click', () => {
+            infoView.style.display = 'none';
+            processView.style.display = 'flex';
+        });
+
+        backToInfoBtn.addEventListener('click', () => {
+            processView.style.display = 'none';
+            infoView.style.display = 'flex';
+            datepickerInput.value = '';
+            slotsStep.style.display = 'none';
+            confirmationStep.style.display = 'none';
+        });
+
         flatpickr(datepickerInput, {
-            minDate: "today",
+            minDate: new Date().fp_incr(1),
             dateFormat: "Y-m-d",
-            locale: "zh_tw", // 使用中文語系
-            onChange: function(selectedDates, dateStr, instance) {
-                selectedBookingInfo = { date: dateStr, timeSlot: null, tableNumber: null };
+            locale: "zh_tw",
+            onChange: function(selectedDates, dateStr) {
+                const selectedDate = selectedDates[0];
+                const dayOfWeek = selectedDate.getDay();
+                selectedBookingInfo.isWeekend = (dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6);
+                
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const diffTime = selectedDate.getTime() - today.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                selectedBookingInfo.hasDiscount = (diffDays >= 3);
+
+                selectedBookingInfo.date = dateStr;
                 slotsStep.style.display = 'block';
                 confirmationStep.style.display = 'none';
                 bookingResult.innerHTML = '';
@@ -237,54 +275,82 @@ document.addEventListener('DOMContentLoaded', () => {
             },
         });
 
+        function calculateAndUpdatePrice() {
+            const people = Number(numOfPeopleInput.value);
+            if (people <= 0) {
+                priceEstimationBox.innerHTML = '';
+                return;
+            }
+            const priceKey = selectedBookingInfo.isWeekend ? 'weekend' : 'weekday';
+            const preference = preferenceSelect.value;
+            const basePricePerPerson = (preference === '一次性') ? PRICES[priceKey].once : PRICES[priceKey].per_hour;
+            let finalPrice = basePricePerPerson * people;
+            let discountText = '';
+            
+            if (preference === '一次性' && selectedBookingInfo.hasDiscount) {
+                const totalDiscount = ADVANCE_BOOKING_DISCOUNT * people;
+                finalPrice -= totalDiscount;
+                discountText = `<p class="discount-text">已套用早鳥優惠，共折扣 $${totalDiscount}！</p>`;
+            }
+            
+            selectedBookingInfo.estimatedPrice = finalPrice;
+            const priceSuffix = (preference === '一次性') ? '' : ' / 每小時';
+            
+            priceEstimationBox.innerHTML = `
+                <p>預估總費用 (${people}人)：</p>
+                <p class="final-price">$${finalPrice}${priceSuffix}</p>
+                ${discountText}
+                <p style="font-size: 0.8rem; color: #888; margin-top: 5px;">(詳細計費以現場為準)</p>
+            `;
+        }
+
+        numOfPeopleInput.addEventListener('input', calculateAndUpdatePrice);
+        preferenceSelect.addEventListener('change', calculateAndUpdatePrice);
+
         async function fetchAndRenderSlots(date) {
             slotsContainer.innerHTML = '<p>正在查詢空位...</p>';
             try {
                 const response = await fetch(`/api/bookings-check?date=${date}`);
                 if (!response.ok) throw new Error('查詢失敗');
-                const bookedSlots = await response.json(); // ex: [{time_slot: "14:00-16:00", table_number: "A1"}, ...]
+                const bookedTablesBySlot = await response.json();
 
                 slotsContainer.innerHTML = '';
                 AVAILABLE_TIME_SLOTS.forEach(slot => {
-                    AVAILABLE_TABLES.forEach(table => {
-                        const isBooked = bookedSlots.some(
-                            booked => booked.time_slot === slot && booked.table_number === table
-                        );
-                        
-                        const button = document.createElement('button');
-                        button.className = 'slot-button';
-                        button.textContent = `${slot} - ${table}`;
-                        button.dataset.slot = slot;
-                        button.dataset.table = table;
-
-                        if (isBooked) {
-                            button.classList.add('booked');
-                            button.disabled = true;
-                        } else {
-                            button.classList.add('available');
-                            button.addEventListener('click', () => {
-                                // 移除其他按鈕的選中樣式
-                                slotsContainer.querySelectorAll('.slot-button.selected').forEach(btn => btn.classList.remove('selected'));
-                                // 將當前按鈕設為選中
-                                button.classList.add('selected');
-                                
-                                selectedBookingInfo.timeSlot = slot;
-                                selectedBookingInfo.tableNumber = table;
-                                
-                                bookingSummary.textContent = `您預約了：${selectedBookingInfo.date} 的 ${slot} 時段，桌號 ${table}`;
-                                confirmationStep.style.display = 'block';
-                            });
-                        }
-                        slotsContainer.appendChild(button);
-                    });
+                    const tablesBooked = bookedTablesBySlot[slot] || 0;
+                    const tablesAvailable = TOTAL_TABLES - tablesBooked;
+                    
+                    const button = document.createElement('button');
+                    button.className = 'slot-button';
+                    button.innerHTML = `${slot}<br><span style="font-size:0.8em; font-weight:normal;">剩餘 ${tablesAvailable} 桌</span>`;
+                    button.dataset.slot = slot;
+                    
+                    if (tablesAvailable <= 0) {
+                        button.classList.add('booked');
+                        button.disabled = true;
+                    } else {
+                        button.classList.add('available');
+                        button.addEventListener('click', () => {
+                            slotsContainer.querySelectorAll('.slot-button.selected').forEach(btn => btn.classList.remove('selected'));
+                            button.classList.add('selected');
+                            
+                            selectedBookingInfo.timeSlot = slot;
+                            bookingSummary.textContent = `${selectedBookingInfo.date} 的 ${slot}`;
+                            confirmationStep.style.display = 'block';
+                            numOfPeopleInput.value = '';
+                            priceEstimationBox.innerHTML = '';
+                        });
+                    }
+                    slotsContainer.appendChild(button);
                 });
             } catch (error) {
-                slotsContainer.innerHTML = '<p style="color: red;">查詢空位失敗，請稍後再試。</p>';
+                slotsContainer.innerHTML = `<p style="color: red;">查詢空位失敗：${error.message}</p>`;
             }
         }
 
         confirmBtn.addEventListener('click', async () => {
-            if (!userProfile || !selectedBookingInfo.date || !selectedBookingInfo.timeSlot || !selectedBookingInfo.tableNumber) {
+            const numOfPeople = Number(numOfPeopleInput.value);
+            
+            if (!userProfile || !selectedBookingInfo.date || !selectedBookingInfo.timeSlot || numOfPeople <= 0) {
                 alert('預約資訊不完整！');
                 return;
             }
@@ -300,29 +366,29 @@ document.addEventListener('DOMContentLoaded', () => {
                         userId: userProfile.userId,
                         bookingDate: selectedBookingInfo.date,
                         timeSlot: selectedBookingInfo.timeSlot,
-                        tableNumber: selectedBookingInfo.tableNumber,
-                        numOfPeople: parseInt(numOfPeopleSelect.value, 10),
+                        numOfPeople: numOfPeople,
+                        bookingPreference: preferenceSelect.value
                     })
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || '預約失敗');
                 
-                // 預約成功
-                slotsStep.style.display = 'none';
-                confirmationStep.style.display = 'none';
-                bookingResult.innerHTML = `<p class="success">✅ 預約成功！</p><p>${bookingSummary.textContent}</p>`;
-
+                processView.style.display = 'none';
+                infoView.style.display = 'flex'; 
+                bookingResult.innerHTML = `<div class="rules-card" style="text-align: center;"><h2 class="success">✅ 預約成功！</h2><p>感謝您的預約，我們到時見！</p><p><strong>${bookingSummary.textContent}，共 ${numOfPeople} 人</strong></p><button onclick="location.reload()" class="cta-button" style="margin-top: 20px;">返回</button></div>`;
+                infoView.innerHTML = bookingResult.innerHTML;
+                
             } catch (error) {
                 alert(`預約失敗：${error.message}`);
             } finally {
                 confirmBtn.disabled = false;
-                confirmBtn.textContent = '確認預約';
+                confirmBtn.textContent = '確認送出預約';
             }
         });
     }
 
     // =================================================================
-    // 分頁切換邏輯 (整合新功能)
+    // 分頁切換邏輯
     // =================================================================
     const tabBar = document.getElementById('tab-bar');
     tabBar.addEventListener('click', (event) => {
@@ -330,10 +396,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (button) {
             const targetPageId = button.dataset.target;
             
+            // 根據點擊的分頁，執行對應的初始化或刷新
             if (targetPageId === 'page-games') {
-                // ... (你現有的 initializeGamesPage() 呼叫)
+                initializeGamesPage();
             } else if (targetPageId === 'page-profile') {
-                fetchUserProfile(); // 切換到個人資料頁時，刷新一次資料
+                displayUserProfile(); // 顯示已儲存的 profile
+                if (userProfile) fetchGameData(userProfile); // 每次點擊都重新抓取最新的等級/經驗值
             } else if (targetPageId === 'page-booking') {
                 initializeBookingPage();
             }
@@ -347,8 +415,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
         const targetPage = document.getElementById(pageId);
-        if (targetPage) targetPage.classList.add('active');
+        if (targetPage) {
+            targetPage.classList.add('active');
+        }
     }
     
+    // 預設顯示首頁
     showPage('page-home');
 });

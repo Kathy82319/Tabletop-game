@@ -46,39 +46,67 @@
         </div>
 
 <div id="page-booking" class="page">
-    <h1>場地預約</h1>
-
-    <div class="booking-container">
-        <div class="booking-step">
-            <h2>1. 選擇日期</h2>
-            <input type="text" id="booking-datepicker" placeholder="請點擊這裡選擇預約日期">
+    <div id="booking-info-view">
+        <div class="booking-header">
+            <h1>場地預約</h1>
+            <p class="booking-subtitle">預約未來座位，享受專屬優惠</p>
         </div>
-
-        <div id="slots-step" class="booking-step" style="display: none;">
-            <h2>2. 選擇時段與桌號</h2>
-            <div id="booking-slots-container">
-                </div>
-        </div>
-
-        <div id="confirmation-step" class="booking-step" style="display: none;">
-            <h2>3. 確認預約資訊</h2>
-            <div id="booking-summary"></div>
-            <div class="input-group">
-                <label for="booking-people">預約人數：</label>
-                <select id="booking-people">
-                    <option value="2">2 人</option>
-                    <option value="3">3 人</option>
-                    <option value="4">4 人</option>
-                    <option value="5">5 人</option>
-                    <option value="6">6 人</option>
-                    <option value="7">7 人</option>
-                    <option value="8">8 人</option>
-                </select>
+        
+        <div class="rules-card">
+            <h2>預約方式說明</h2>
+            <div class="rule-item">
+                <h3>🎟️ 一次性入場</h3>
+                <p><strong>平日：$150</strong> / <strong>假日：$250</strong><br> (皆可折抵飲料 $30)</p>
             </div>
-            <button id="confirm-booking-btn">確認預約</button>
+            <div class="rule-item">
+                <h3>⏱️ 計時制入場</h3>
+                <p><strong>平日：$50/時</strong> / <strong>假日：$80/時</strong><br> (收費有上限，可補差額轉一次性)</p>
+            </div>
+            <div class="discount-highlight">
+                <p>✨ <strong>提前三日預約，享入場費現折 $20 優惠！</strong></p>
+            </div>
+            <div class="booking-notice">
+                <p><strong>請注意：</strong>包廂及當日預約請透過 LINE 官方帳號或電話聯繫我們。</p>
+            </div>
         </div>
+        
+        <button id="start-booking-btn" class="cta-button">開始預約</button>
+    </div>
 
-        <div id="booking-result" class="booking-step"></div>
+    <div id="booking-process-view" style="display: none;">
+        <button id="back-to-info-btn" class="back-button">← 返回說明</button>
+        <div class="booking-container">
+            <div class="booking-step">
+                <h2>1. 選擇日期</h2>
+                <input type="text" id="booking-datepicker" placeholder="請點擊選擇預約日期">
+            </div>
+<div id="slots-step" class="booking-step" style="display: none;">
+    <h2>2. 選擇時段</h2>
+    <div id="booking-slots-container">
+        </div>
+</div>
+
+<div id="confirmation-step" class="booking-step" style="display: none;">
+    <h2>3. 填寫預約資訊</h2>
+    <div class="input-group">
+        <label>您選擇的時段：</label>
+        <div id="booking-summary"></div>
+    </div>
+    <div class="input-group">
+        <label for="booking-people">預約人數：</label>
+        <input type="number" id="booking-people" min="1" max="20" placeholder="請輸入總人數"> </div>
+    <div class="input-group">
+        <label for="booking-preference">偏好消費方式：</label>
+        <select id="booking-preference">
+            <option value="一次性">一次性入場</option>
+            <option value="計時制">計時制</option>
+        </select>
+    </div>
+    <div id="price-estimation" class="price-estimation-box"></div>
+    <button id="confirm-booking-btn" class="cta-button">確認送出預約</button>
+</div>
+            <div id="booking-result"></div>
+        </div>
     </div>
 </div>
 

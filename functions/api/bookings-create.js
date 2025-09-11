@@ -6,49 +6,54 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    const { userId, bookingDate, timeSlot, tableNumber, numOfPeople } = await context.request.json();
-
-    if (!userId || !bookingDate || !timeSlot || !tableNumber || !numOfPeople) {
-      return new Response(JSON.stringify({ error: '所有預約欄位皆為必填。' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
+    const { userId, bookingDate, timeSlot, numOfPeople, bookingPreference } = await context.request.json();
+    
+    if (!userId || !bookingDate || !timeSlot || !numOfPeople || numOfPeople <= 0) {
+      return new Response(JSON.stringify({ error: '所有预约栏位皆为必填。' }), {
+        status: 400, headers: { 'Content-Type': 'application/json' }
       });
     }
+    
+    // ===== 店家设定 =====
+    const TOTAL_TABLES = 5;
+    const PEOPLE_PER_TABLE = 4;
+    // ====================
+
+    // 1. 根据人数计算需要占用的桌数
+    const tablesNeeded = Math.ceil(numOfPeople / PEOPLE_PER_TABLE);
 
     const db = context.env.DB;
 
-    // 在新增前，再次檢查該時段該桌次是否已被預約，防止重複預約
+    // 2. 在写入前，再次进行一次“原子性”检查，查询该时段当前已预订的总桌数
     const checkStmt = db.prepare(
-      "SELECT booking_id FROM Bookings WHERE booking_date = ? AND time_slot = ? AND table_number = ? AND status = 'confirmed'"
+      "SELECT SUM(tables_occupied) as total_tables_booked FROM Bookings WHERE booking_date = ? AND time_slot = ? AND status = 'confirmed'"
     );
-    const existingBooking = await checkStmt.bind(bookingDate, timeSlot, tableNumber).first();
+    const currentBooking = await checkStmt.bind(bookingDate, timeSlot).first();
+    const tablesAlreadyBooked = currentBooking.total_tables_booked || 0;
 
-    if (existingBooking) {
-      return new Response(JSON.stringify({ error: '這個時段已經被預約了，請選擇其他時段。' }), {
-        status: 409, // 409 Conflict，表示資源衝突
+    // 3. 检查加上本次预约後是否会超过总桌数
+    if ((tablesAlreadyBooked + tablesNeeded) > TOTAL_TABLES) {
+      return new Response(JSON.stringify({ error: `该时段座位不足，仅剩 ${TOTAL_TABLES - tablesAlreadyBooked} 桌。` }), {
+        status: 409, // 409 Conflict
         headers: { 'Content-Type': 'application/json' },
       });
     }
     
-    // 插入新的預約紀錄
+    // 4. 插入新的预约纪录
     const insertStmt = db.prepare(
-      'INSERT INTO Bookings (user_id, booking_date, time_slot, table_number, num_of_people) VALUES (?, ?, ?, ?, ?)'
+      'INSERT INTO Bookings (user_id, booking_date, time_slot, num_of_people, tables_occupied, booking_preference) VALUES (?, ?, ?, ?, ?, ?)'
     );
-    await insertStmt.bind(userId, bookingDate, timeSlot, tableNumber, numOfPeople).run();
+    await insertStmt.bind(userId, bookingDate, timeSlot, numOfPeople, tablesNeeded, bookingPreference || '未指定').run();
 
-    return new Response(JSON.stringify({ 
-        success: true, 
-        message: '預約成功！' 
-    }), {
+    return new Response(JSON.stringify({ success: true, message: '预约成功！' }), {
       status: 201, // 201 Created
       headers: { 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('Error in bookings-create API:', error);
-    return new Response(JSON.stringify({ error: '建立預約失敗。' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
+    return new Response(JSON.stringify({ error: '建立预约失败。' }), {
+      status: 500, headers: { 'Content-Type': 'application/json' }
     });
   }
 }
