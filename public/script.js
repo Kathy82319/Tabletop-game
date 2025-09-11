@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
         allSteps.forEach(id => allElements[id] = document.getElementById(id));
         
         allElements.preferenceBtns = document.querySelectorAll('.preference-btn');
-        allElements.datepickerInput = document.getElementById('booking-datepicker');
+        allElements.datepickerInput = document.getElementById('booking-datepicker-container');
         allElements.slotsContainer = document.getElementById('booking-slots-container');
         allElements.peopleInput = document.getElementById('booking-people');
         allElements.nameInput = document.getElementById('contact-name');
@@ -263,21 +263,27 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        flatpickr(allElements.datepickerInput, {
-            minDate: new Date().fp_incr(1),
-            dateFormat: "Y-m-d",
-            locale: "zh_tw",
-            onChange: (selectedDates, dateStr) => {
-                const day = selectedDates[0].getDay();
-                bookingData.isWeekend = (day === 0 || day === 5 || day === 6);
-                const today = new Date(); today.setHours(0,0,0,0);
-                const diffDays = Math.ceil((selectedDates[0] - today) / (1000 * 60 * 60 * 24));
-                bookingData.hasDiscount = (diffDays >= 3);
-                bookingData.date = dateStr;
-                fetchAndRenderSlots(dateStr);
-                showBookingStep('step-slots');
-            },
-        });
+flatpickr(datepickerContainer, {
+    inline: true, // << 核心改動：讓日曆直接顯示在頁面上，而不是彈出式
+    minDate: new Date().fp_incr(1),
+    dateFormat: "Y-m-d",
+    locale: "zh_tw",
+    onChange: function(selectedDates, dateStr, instance) {
+        // ... 後續的 onChange 邏輯維持不變 ...
+        const selectedDate = selectedDates[0];
+        const dayOfWeek = selectedDate.getDay();
+        bookingData.isWeekend = (dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6);
+        
+        const today = new Date(); today.setHours(0,0,0,0);
+        const diffTime = selectedDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        bookingData.hasDiscount = (diffDays >= 3);
+
+        bookingData.date = dateStr;
+        fetchAndRenderSlots(dateStr);
+        showBookingStep('step-slots');
+    },
+});
 
         async function fetchAndRenderSlots(date) {
             allElements.slotsContainer.innerHTML = '<p>正在查詢空位...</p>';
