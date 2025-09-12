@@ -5,14 +5,14 @@ import * as jose from 'jose';
 // =================================================================
 // 核心邏輯：將「單筆」經驗值紀錄非同步同步到 Google Sheet
 // =================================================================
-async function syncSingleExpToSheet(env, expData) {
+async function syncSingleExpToSheet(env, ExpHistory) {
     try {
         console.log('背景任務：開始同步單筆經驗值紀錄...');
         const {
           GOOGLE_SERVICE_ACCOUNT_EMAIL,
           GOOGLE_PRIVATE_KEY,
           GOOGLE_SHEET_ID,
-          EXP_HISTORY_SHEET_NAME // 我們之前為手動同步建立的環境變數
+          ExpHistory // 我們之前為手動同步建立的環境變數
         } = env;
 
         // 驗證並連接到 Google Sheets
@@ -39,14 +39,15 @@ async function syncSingleExpToSheet(env, expData) {
         const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
         await doc.loadInfo();
 
-        const sheet = doc.sheetsByTitle[EXP_HISTORY_SHEET_NAME];
-        if (!sheet) throw new Error(`背景同步(Exp)：找不到名為 "${EXP_HISTORY_SHEET_NAME}" 的工作表。`);
+        const sheet = doc.sheetsByTitle[ExpHistory];
+        if (!sheet) throw new Error(`背景同步(Exp)：找不到名為 "${ExpHistory}" 的工作表。`);
 
         // 使用 addRow 新增一行資料
         await sheet.addRow({
-            user_id: expData.userId,
-            exp_added: expData.expValue,
-            reason: expData.reason,
+            user_id: ExpHistory.userId,
+            exp_added: ExpHistory.exp_added,
+            staff_id: ExpHistory.staff_id,
+            reason: ExpHistory.reason,
             // created_at 會由 Google Sheets 自動填入時間戳，或我們也可以手動指定
             created_at: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
         });
