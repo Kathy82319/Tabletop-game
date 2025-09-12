@@ -179,14 +179,224 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // 場地預約功能區塊
-    // =================================================================
-    const TOTAL_TABLES = 5, AVAILABLE_TIME_SLOTS = ['14:00-16:00', '16:00-18:00', '18:00-20:00', '20:00-22:00'], PRICES = { weekday: { '一次性': 150, '計時制': 50 }, weekend: { '一次性': 250, '計時制': 80 } }, ADVANCE_BOOKING_DISCOUNT = 20;
-    let bookingPageInitialized = false, bookingData = {}, bookingHistoryStack = [], flatpickrInstance = null;
-    function showBookingStep(stepId){ document.querySelectorAll('#booking-wizard-container .booking-step').forEach(step => step.classList.remove('active')); document.getElementById(stepId)?.classList.add('active'); if(bookingHistoryStack[bookingHistoryStack.length - 1] !== stepId) bookingHistoryStack.push(stepId); }
-    function goBackBookingStep(){ if(bookingHistoryStack.length > 1) { bookingHistoryStack.pop(); showBookingStep(bookingHistoryStack[bookingHistoryStack.length - 1]); return true; } return false; }
-    function initializeBookingPage(){ if(bookingPageInitialized) return; bookingPageInitialized = true; const elements = { wizardContainer: document.getElementById('booking-wizard-container'), preferenceBtns: document.querySelectorAll('.preference-btn'), datepickerContainer: document.getElementById('booking-datepicker-container'), slotsWrapper: document.getElementById('booking-slots-wrapper'), slotsPlaceholder: document.getElementById('slots-placeholder'), slotsContainer: document.getElementById('booking-slots-container'), contactSummary: document.getElementById('contact-summary'), peopleInput: document.getElementById('booking-people'), nameInput: document.getElementById('contact-name'), phoneInput: document.getElementById('contact-phone'), toSummaryBtn: document.getElementById('to-summary-btn'), summaryCard: document.getElementById('booking-summary-card'), confirmBtn: document.getElementById('confirm-booking-btn'), resultContent: document.getElementById('booking-result-content'), }; elements.wizardContainer.addEventListener('click', e => { if (e.target.matches('.back-button')) goBackBookingStep(); }); elements.preferenceBtns.forEach(btn => { btn.addEventListener('click', () => { bookingData.preference = btn.dataset.preference; showBookingStep('step-date-and-slots'); }); }); flatpickrInstance = flatpickr(elements.datepickerContainer, { inline: true, minDate: new Date().fp_incr(1), dateFormat: "Y-m-d", locale: "zh_tw", onChange: (selectedDates, dateStr) => { const day = selectedDates[0].getDay(); bookingData.isWeekend = (day === 0 || day === 5 || day === 6); const today = new Date(); today.setHours(0,0,0,0); bookingData.hasDiscount = Math.ceil((selectedDates[0] - today) / (1000 * 60 * 60 * 24)) >= 3; bookingData.date = dateStr; fetchAndRenderSlots(dateStr); }, }); async function fetchAndRenderSlots(date){ elements.slotsPlaceholder.textContent = '正在查詢空位...'; elements.slotsContainer.innerHTML = ''; try { const res = await fetch(`/api/bookings-check?date=${date}`); const bookedTablesBySlot = await res.json(); elements.slotsPlaceholder.style.display = 'none'; AVAILABLE_TIME_SLOTS.forEach(slot => { const tablesBooked = bookedTablesBySlot[slot] || 0; const tablesAvailable = TOTAL_TABLES - tablesBooked; const btn = document.createElement('button'); btn.className = 'slot-button'; btn.innerHTML = `${slot}<br><span style="font-size:0.8em;">剩餘 ${tablesAvailable} 桌</span>`; if (tablesAvailable <= 0) { btn.classList.add('booked'); btn.disabled = true; } else { btn.classList.add('available'); btn.addEventListener('click', () => { bookingData.timeSlot = slot; elements.contactSummary.textContent = `${bookingData.date} 的 ${slot}`; showBookingStep('step-contact'); }); } elements.slotsContainer.appendChild(btn); }); } catch (error) { elements.slotsPlaceholder.textContent = `查詢失敗：${error.message}`; elements.slotsPlaceholder.style.color = 'red'; } } elements.toSummaryBtn.addEventListener('click', () => { bookingData.people = Number(elements.peopleInput.value); bookingData.name = elements.nameInput.value.trim(); bookingData.phone = elements.phoneInput.value.trim(); if (!bookingData.people || !bookingData.name || bookingData.phone.length < 10) { alert('請確實填寫所有資訊，並確認手機號碼為10碼！'); return; } renderSummary(); showBookingStep('step-summary'); }); function renderSummary(){ const priceKey = bookingData.isWeekend ? 'weekend' : 'weekday'; const basePrice = PRICES[priceKey][bookingData.preference]; let finalPrice = basePrice * bookingData.people; let discountText = ''; if (bookingData.preference === '一次性' && bookingData.hasDiscount) { const totalDiscount = ADVANCE_BOOKING_DISCOUNT * bookingData.people; finalPrice -= totalDiscount; discountText = `<p class="discount-text"><span>早鳥優惠折扣:</span><span>-$${totalDiscount}</span></p>`; } const priceSuffix = bookingData.preference === '計時制' ? ' / 每小時' : ''; elements.summaryCard.innerHTML = `<p><span>姓名:</span><span>${bookingData.name}</span></p><p><span>電話:</span><span>${bookingData.phone}</span></p><p><span>日期:</span><span>${bookingData.date}</span></p><p><span>時段:</span><span>${bookingData.timeSlot}</span></p><p><span>人數:</span><span>${bookingData.people} 人</span></p><p><span>消費方式:</span><span>${bookingData.preference}</span></p><hr>${discountText}<p><span>預估總金額:</span><span class="final-price">$${finalPrice}${priceSuffix}</span></p>`; } elements.confirmBtn.addEventListener('click', async () => { elements.confirmBtn.disabled = true; elements.confirmBtn.textContent = '處理中...'; try { const createRes = await fetch('/api/bookings-create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: userProfile.userId, bookingDate: bookingData.date, timeSlot: bookingData.timeSlot, numOfPeople: bookingData.people, bookingPreference: bookingData.preference, contactName: bookingData.name, contactPhone: bookingData.phone }) }); const result = await createRes.json(); if (!createRes.ok) throw new Error(result.error || '預約失敗'); await fetch('/api/send-message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: userProfile.userId, message: result.confirmationMessage }) }); elements.resultContent.innerHTML = `<h2 class="success">✅ 預約成功！</h2><p>已將預約確認訊息發送至您的 LINE，我們到時見！</p><button id="booking-done-btn" class="cta-button">返回預約首頁</button>`; showBookingStep('step-result'); document.getElementById('booking-done-btn').addEventListener('click', () => { bookingHistoryStack = []; showBookingStep('step-preference'); if (flatpickrInstance) flatpickrInstance.clear(); elements.slotsContainer.innerHTML = ''; elements.slotsPlaceholder.style.display = 'block'; elements.slotsPlaceholder.textContent = '請先從上方選擇日期'; }); } catch (error) { alert(`預約失敗：${error.message}`); } finally { if(elements.confirmBtn) { elements.confirmBtn.disabled = false; elements.confirmBtn.textContent = '確認送出'; } } }); }
+// 場地預約功能區塊 (全新整合版，修正日曆置中與流程)
+// =================================================================
+const TOTAL_TABLES = 5; // 預設總桌數
+const PEOPLE_PER_TABLE = 4;
+const AVAILABLE_TIME_SLOTS = ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30'];
+const PRICES = { weekday: 150, weekend: 250 };
+const ADVANCE_BOOKING_DISCOUNT = 20;
 
+let bookingPageInitialized = false;
+let bookingData = {}; // 用於儲存預約流程中的所有資料
+let bookingHistoryStack = []; // 用於處理返回鍵
+let dailyAvailability = { limit: TOTAL_TABLES, booked: 0, available: TOTAL_TABLES }; // 儲存當日空位資訊
+
+function showBookingStep(stepId) {
+    document.querySelectorAll('#booking-wizard-container .booking-step').forEach(step => {
+        step.classList.remove('active');
+    });
+    const targetStep = document.getElementById(stepId);
+    if (targetStep) {
+        targetStep.classList.add('active');
+    }
+    
+    if(bookingHistoryStack[bookingHistoryStack.length - 1] !== stepId) {
+        bookingHistoryStack.push(stepId);
+    }
+}
+
+function goBackBookingStep() {
+    if (bookingHistoryStack.length > 1) {
+        bookingHistoryStack.pop(); // 移除目前步驟
+        const lastStep = bookingHistoryStack[bookingHistoryStack.length - 1]; // 取得上一個步驟
+        showBookingStep(lastStep);
+        return true; // 表示成功返回
+    }
+    return false; // 表示已在第一步，無法返回
+}
+
+function initializeBookingPage() {
+    if (bookingPageInitialized) return;
+    bookingPageInitialized = true;
+
+    const elements = {
+        wizardContainer: document.getElementById('booking-wizard-container'),
+        preferenceBtns: document.querySelectorAll('.preference-btn'),
+        datepickerContainer: document.getElementById('booking-datepicker-container'),
+        slotsWrapper: document.getElementById('booking-slots-wrapper'),
+        slotsPlaceholder: document.getElementById('slots-placeholder'),
+        slotsContainer: document.getElementById('booking-slots-container'),
+        contactSummary: document.getElementById('contact-summary'),
+        peopleInput: document.getElementById('booking-people'),
+        nameInput: document.getElementById('contact-name'),
+        phoneInput: document.getElementById('contact-phone'),
+        toSummaryBtn: document.getElementById('to-summary-btn'),
+        summaryCard: document.getElementById('booking-summary-card'),
+        confirmBtn: document.getElementById('confirm-booking-btn'),
+        resultContent: document.getElementById('booking-result-content'),
+    };
+
+    // 使用事件代理來處理所有返回按鈕
+    elements.wizardContainer.addEventListener('click', e => {
+        if (e.target.matches('.back-button')) {
+            goBackBookingStep();
+        }
+    });
+    
+    // 步驟 1: 選擇消費方式
+    elements.preferenceBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // 在這裡我們只記錄選擇，但新流程中已移除計時制，所以直接進入下一步
+            // bookingData.preference = btn.dataset.preference; // 這行可以保留或移除
+            showBookingStep('step-date-and-slots');
+        });
+    });
+
+    // 步驟 2: 初始化日曆
+    flatpickr(elements.datepickerContainer, {
+        inline: true, // 讓日曆直接顯示
+        minDate: new Date().fp_incr(1), // 最早只能預約明天
+        dateFormat: "Y-m-d",
+        locale: "zh_tw",
+        onChange: (selectedDates, dateStr) => {
+            const day = selectedDates[0].getDay();
+            bookingData.isWeekend = (day === 0 || day === 5 || day === 6);
+            const today = new Date(); today.setHours(0,0,0,0);
+            bookingData.hasDiscount = Math.ceil((selectedDates[0] - today) / (1000 * 60 * 60 * 24)) >= 3;
+            bookingData.date = dateStr;
+            fetchAndRenderSlots(dateStr); // 選擇日期後，立刻查詢並顯示時段
+        },
+    });
+
+    async function fetchAndRenderSlots(date) {
+        elements.slotsPlaceholder.textContent = '正在查詢當日空位...';
+        elements.slotsContainer.innerHTML = '';
+        elements.slotsPlaceholder.style.display = 'block';
+
+        try {
+            const response = await fetch(`/api/bookings-check?date=${date}`);
+            if (!response.ok) throw new Error('查詢失敗');
+            dailyAvailability = await response.json();
+
+            elements.slotsContainer.innerHTML = '';
+            
+            if (dailyAvailability.available <= 0) {
+                elements.slotsPlaceholder.textContent = '抱歉，本日預約已額滿';
+                return;
+            }
+
+            elements.slotsPlaceholder.style.display = 'none'; // 隱藏提示文字
+            
+            AVAILABLE_TIME_SLOTS.forEach(slot => {
+                const btn = document.createElement('button');
+                btn.className = 'slot-button available'; // 預設都可選
+                btn.textContent = slot;
+                btn.addEventListener('click', () => {
+                    bookingData.timeSlot = slot;
+                    elements.contactSummary.textContent = `${bookingData.date} 的 ${slot}`;
+                    showBookingStep('step-contact');
+                });
+                elements.slotsContainer.appendChild(btn);
+            });
+        } catch (error) {
+            elements.slotsPlaceholder.textContent = `查詢空位失敗：${error.message}`;
+            elements.slotsPlaceholder.style.color = 'red';
+        }
+    }
+    
+    // 步驟 3 -> 4: 填寫資料並前往總結
+    elements.toSummaryBtn.addEventListener('click', () => {
+        bookingData.people = Number(elements.peopleInput.value);
+        bookingData.name = elements.nameInput.value.trim();
+        bookingData.phone = elements.phoneInput.value.trim();
+
+        if (!bookingData.people || !bookingData.name || bookingData.phone.length < 10) {
+            alert('請確實填寫所有資訊，並確認手機號碼為10碼！');
+            return;
+        }
+
+        const tablesNeeded = Math.ceil(bookingData.people / PEOPLE_PER_TABLE);
+        if (tablesNeeded > dailyAvailability.available) {
+            alert(`抱歉，座位不足！您需要 ${tablesNeeded} 桌，但當日僅剩 ${dailyAvailability.available} 桌可預約。`);
+            return;
+        }
+
+        renderSummary();
+        showBookingStep('step-summary');
+    });
+
+    // 渲染總結畫面
+    function renderSummary() {
+        const priceKey = bookingData.isWeekend ? 'weekend' : 'weekday';
+        const basePrice = PRICES[priceKey];
+        let finalPrice = basePrice * bookingData.people;
+        let discountText = '';
+        if (bookingData.hasDiscount) {
+            const totalDiscount = ADVANCE_BOOKING_DISCOUNT * bookingData.people;
+            finalPrice -= totalDiscount;
+            discountText = `<p class="discount-text"><span>早鳥優惠折扣:</span><span>-$${totalDiscount}</span></p>`;
+        }
+        
+        elements.summaryCard.innerHTML = `
+            <p><span>姓名:</span><span>${bookingData.name}</span></p>
+            <p><span>電話:</span><span>${bookingData.phone}</span></p>
+            <p><span>日期:</span><span>${bookingData.date}</span></p>
+            <p><span>時段:</span><span>${bookingData.timeSlot}</span></p>
+            <p><span>人數:</span><span>${bookingData.people} 人</span></p>
+            <hr>
+            ${discountText}
+            <p><span>預估總金額:</span><span class="final-price">$${finalPrice}</span></p>
+        `;
+    }
+
+    // 步驟 4 -> 5: 確認送出預約
+    elements.confirmBtn.addEventListener('click', async () => {
+        elements.confirmBtn.disabled = true;
+        elements.confirmBtn.textContent = '處理中...';
+        try {
+            const createRes = await fetch('/api/bookings-create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: userProfile.userId,
+                    bookingDate: bookingData.date,
+                    timeSlot: bookingData.timeSlot,
+                    numOfPeople: bookingData.people,
+                    contactName: bookingData.name,
+                    contactPhone: bookingData.phone
+                })
+            });
+            const result = await createRes.json();
+            if (!createRes.ok) throw new Error(result.error || '預約失敗');
+            
+            await fetch('/api/send-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: userProfile.userId, message: result.confirmationMessage })
+            });
+
+            elements.resultContent.innerHTML = `<h2 class="success">✅ 預約成功！</h2><p>已將預約確認訊息發送至您的 LINE，我們到時見！</p><button id="booking-done-btn" class="cta-button">返回預約首頁</button>`;
+            showBookingStep('step-result');
+
+            document.getElementById('booking-done-btn').addEventListener('click', () => {
+                bookingHistoryStack = [];
+                showBookingStep('step-preference');
+                if (flatpickrInstance) flatpickrInstance.clear();
+                elements.slotsContainer.innerHTML = '';
+                elements.slotsPlaceholder.style.display = 'block';
+                elements.slotsPlaceholder.textContent = '請先從上方選擇日期';
+            });
+        } catch (error) {
+            alert(`預約失敗：${error.message}`);
+        } finally {
+            if (elements.confirmBtn) {
+               elements.confirmBtn.disabled = false;
+               elements.confirmBtn.textContent = '確認送出';
+            }
+        }
+    });
+}
     // =================================================================
     // 分頁切換邏輯 (整合返回鍵)
     // =================================================================
