@@ -23,12 +23,61 @@
         </div>
         <div id="page-game-details" class="page"></div>
 
-        <div id="page-profile" class="page">
-             <h1>冒險者資料</h1>
-             <div id="profile-info" style="text-align: center; margin-top: 20px;"><img id="profile-picture" src="" alt="Profile Picture" style="width: 100px; height: 100px; border-radius: 50%;"><h2 id="display-name" style="margin-top: 10px;"></h2><p id="status-message" style="color: #aaa;"></p></div>
-             <div id="qrcode-container" style="background-color: white; padding: 20px; margin: 25px auto; width: 200px; height: 200px;"><div id="qrcode" style="width:200px; height:200px;"></div></div>
-             <div style="margin-top: 10px;"><p>職業：<span id="user-class">--</span></p><p>等級：<span id="user-level">--</span></p><p>經驗值：<span id="user-exp">-- / ----</span></p></div>
-             </div>
+<div id="page-profile" class="page">
+    <h1>冒險者資料</h1>
+    <div id="profile-info" style="text-align: center; margin-top: 20px;">
+        <img id="profile-picture" src="" alt="Profile Picture" style="width: 100px; height: 100px; border-radius: 50%;">
+        <h2 id="display-name" style="margin-top: 10px;"></h2>
+        <p id="status-message" style="color: #aaa;"></p>
+    </div>
+    <div id="qrcode-container" style="background-color: white; padding: 20px; margin: 25px auto; width: 200px; height: 200px;">
+        <div id="qrcode" style="width:200px; height:200px;"></div>
+    </div>
+    <div style="margin-top: 10px;">
+        <p>職業：<span id="user-class">--</span></p> 
+        <p>等級：<span id="user-level">--</span></p>
+        <p>經驗值：<span id="user-exp">-- / ----</span></p>
+    </div>
+    <div id="my-bookings-section">
+        <h2>我預約的冒險旅程</h2>
+        <div id="my-bookings-container"><p>正在查詢您的預約紀錄...</p></div>
+    </div>
+
+    <div class="profile-actions">
+        <button id="edit-profile-btn" class="cta-button">完善冒險者登錄</button>
+    </div>
+
+    <div id="profile-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2>冒險者登錄</h2>
+            <p>填寫您的資料，讓我們更認識你！</p>
+            <form id="profile-form">
+                <div class="input-group">
+                    <label for="profile-nickname">暱稱</label>
+                    <input type="text" id="profile-nickname" required>
+                </div>
+                <div class="input-group">
+                    <label for="profile-phone">聯絡電話</label>
+                    <input type="tel" id="profile-phone" maxlength="10" required>
+                </div>
+                <div class="input-group">
+                    <label for="profile-games">偏好的遊戲類型</label>
+                    <select id="profile-games">
+                        <option value="策略">策略</option>
+                        <option value="派對">派對</option>
+                        <option value="家庭">家庭</option>
+                        <option value="陣營">陣營</option>
+                        <option value="其他">其他 (請手動輸入)</option>
+                    </select>
+                    <input type="text" id="profile-games-other" placeholder="請輸入其他偏好類型" style="display: none; margin-top: 10px;">
+                </div>
+                <button type="submit" class="cta-button">儲存資料</button>
+            </form>
+            <p id="profile-form-status" class="form-status"></p>
+        </div>
+    </div>
+</div>
 
 <div id="my-bookings-section">
     <h2>我預約的冒險旅程</h2>

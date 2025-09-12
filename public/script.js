@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch((err) => { 
             console.error("LIFF 初始化失敗", err);
-            showPage('page-home'); // 即使失敗，也嘗試顯示首頁
+            showPage('page-home');
         });
         
     // =================================================================
@@ -32,8 +32,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const profilePicture = document.getElementById('profile-picture');
         if (userProfile.pictureUrl) profilePicture.src = userProfile.pictureUrl;
         const qrcodeElement = document.getElementById('qrcode');
-        qrcodeElement.innerHTML = '';
-        new QRCode(qrcodeElement, { text: userProfile.userId, width: 200, height: 200 });
+        if(qrcodeElement) {
+            qrcodeElement.innerHTML = '';
+            new QRCode(qrcodeElement, { text: userProfile.userId, width: 200, height: 200 });
+        }
     }
 
     async function fetchGameData(profile) { 
@@ -49,6 +51,13 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('user-class').textContent = gameData.class;
             document.getElementById('user-level').textContent = gameData.level;
             document.getElementById('user-exp').textContent = `${gameData.current_exp} / ${expToNextLevel}`;
+            
+            // 將從資料庫讀取到的舊資料，預先填入表單中
+            const nicknameInput = document.getElementById('profile-nickname');
+            const phoneInput = document.getElementById('profile-phone');
+            if(nicknameInput) nicknameInput.value = gameData.nickname || '';
+            if(phoneInput) phoneInput.value = gameData.phone || '';
+
         } catch (error) {
             console.error('呼叫會員 API 失敗:', error);
         }
@@ -78,6 +87,88 @@ document.addEventListener('DOMContentLoaded', () => {
             container.innerHTML = '<p style="color: red;">無法載入預約紀錄。</p>';
         }
     }
+    
+    // =================================================================
+    // 個人資料頁互動功能 (全新)
+    // =================================================================
+    let profilePageInitialized = false;
+
+    function initializeProfilePage() {
+        if (profilePageInitialized) return;
+        profilePageInitialized = true;
+
+        const modal = document.getElementById('profile-modal');
+        const editBtn = document.getElementById('edit-profile-btn');
+        const closeBtn = document.querySelector('.modal-close-btn');
+        const form = document.getElementById('profile-form');
+        const gameSelect = document.getElementById('profile-games');
+        const otherGameInput = document.getElementById('profile-games-other');
+        const statusMsg = document.getElementById('profile-form-status');
+
+        editBtn.addEventListener('click', () => {
+            modal.style.display = 'flex';
+        });
+
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        });
+        
+        gameSelect.addEventListener('change', () => {
+            if(gameSelect.value === '其他') {
+                otherGameInput.style.display = 'block';
+            } else {
+                otherGameInput.style.display = 'none';
+            }
+        });
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault(); // 防止表單傳統提交
+            statusMsg.textContent = '儲存中...';
+            statusMsg.className = 'form-status';
+
+            let preferredGames = gameSelect.value;
+            if (preferredGames === '其他') {
+                preferredGames = otherGameInput.value.trim();
+            }
+
+            const formData = {
+                userId: userProfile.userId,
+                nickname: document.getElementById('profile-nickname').value,
+                phone: document.getElementById('profile-phone').value,
+                preferredGames: preferredGames
+            };
+
+            try {
+                const response = await fetch('/api/update-user-profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || '儲存失敗');
+
+                statusMsg.textContent = '儲存成功！';
+                statusMsg.classList.add('success');
+
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    statusMsg.textContent = '';
+                    statusMsg.className = 'form-status';
+                }, 1500);
+
+            } catch (error) {
+                statusMsg.textContent = `儲存失敗: ${error.message}`;
+                statusMsg.classList.add('error');
+            }
+        });
+    }
+
 
     // =================================================================
     // 桌遊圖鑑 & 詳情頁功能區塊
@@ -178,7 +269,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // =================================================================
+    
+// =================================================================
 // 場地預約功能區塊 (全新整合版，修正日曆置中與流程)
 // =================================================================
 const TOTAL_TABLES = 5; // 預設總桌數
@@ -397,11 +489,10 @@ function initializeBookingPage() {
         }
     });
 }
-    // =================================================================
-    // 分頁切換邏輯 (整合返回鍵)
+// =================================================================
+    // 分頁切換邏輯 (整合新功能)
     // =================================================================
     const tabBar = document.getElementById('tab-bar');
-    let pageHistory = [];
 
     function showPage(pageId, isBackAction = false) {
         document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
@@ -410,7 +501,6 @@ function initializeBookingPage() {
             targetPage.classList.add('active');
         }
         if (!isBackAction) {
-            // 如果是切換主分頁，重置歷史紀錄
             if (['page-home', 'page-games', 'page-profile', 'page-booking', 'page-info'].includes(pageId)) {
                 pageHistory = [pageId];
             } else {
@@ -442,9 +532,12 @@ function initializeBookingPage() {
             showPage(targetPageId); 
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
+            
             if (targetPageId === 'page-games') {
                 initializeGamesPage();
             } else if (targetPageId === 'page-profile') {
+                // ** 關鍵改動：呼叫新的初始化函式 **
+                initializeProfilePage(); 
                 displayUserProfile();
                 if (userProfile) {
                     fetchGameData(userProfile);
