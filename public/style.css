@@ -59,7 +59,7 @@ body {
    桌遊圖鑑頁面樣式
    - 控制篩選器、搜尋框和遊戲卡片的外觀。
    ================================================================= */
-#filter-controls { padding: 15px; background-color: transparent; margin: 0 0 20px 0; display: flex; flex-direction: column; gap: 12px; }
+#filter-controls { padding: 5px; background-color: transparent; margin: 0 0 10px 0; display: flex; flex-direction: column; gap: 12px; }
 #keyword-search { width: 100%; padding: 12px; font-size: 1rem; border-radius: 8px; border: 1px solid var(--subtle-border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 #tag-filter-container { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .filter-group { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -67,7 +67,7 @@ body {
 .filter-group button:hover { border-color: var(--secondary-accent); }
 .filter-group button.active { background-color: var(--primary-accent); color: white; border-color: var(--primary-accent); }
 #clear-filters { padding: 8px 12px; font-size: 0.8rem; background-color: #888; color: white; border: none; border-radius: 6px; cursor: pointer; align-self: flex-start; }
-#game-list-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; padding: 0 15px; }
+#game-list-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; padding: 0 5px; }
 .game-card { background-color: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;}
 .game-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); }
 .game-image { width: 100%; height: 180px; object-fit: cover; }
@@ -158,11 +158,3 @@ body {
 .price-item .stock-info { font-size: 0.8rem; color: #888; }
 .rules-list { padding-left: 20px; line-height: 1.8; color: #555; }
 .rules-list li { margin-bottom: 10px; }
-
-/* --- 桌遊圖鑑卡片樣式 --- */
-#game-list-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 5x;
-    padding: 0 5px;
-}
