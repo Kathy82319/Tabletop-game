@@ -71,8 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 使用者資料 & 個人資料頁
     // =================================================================
-    let profilePageInitialized = false;
-
     function displayUserProfile() {
         if (!userProfile) return;
         const displayNameEl = appContent.querySelector('#display-name');
