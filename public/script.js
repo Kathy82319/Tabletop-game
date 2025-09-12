@@ -237,8 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     let allGames = [];
     let activeFilters = { keyword: '', tag: null };
-    let gamesPageInitialized = false;
-    let pageHistory = [];
 
     function renderGameDetails(game) {
         const detailsTemplate = pageTemplates.querySelector('#page-game-details');
@@ -352,7 +350,7 @@ const AVAILABLE_TIME_SLOTS = ['12:00', '12:30', '13:00', '13:30', '14:00', '14:3
 const PRICES = { weekday: 150, weekend: 250 };
 const ADVANCE_BOOKING_DISCOUNT = 20;
 
-let bookingPageInitialized = false;
+
 let bookingData = {}; // 用於儲存預約流程中的所有資料
 let bookingHistoryStack = []; // 用於處理返回鍵
 let dailyAvailability = { limit: TOTAL_TABLES, booked: 0, available: TOTAL_TABLES }; // 儲存當日空位資訊
