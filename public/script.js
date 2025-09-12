@@ -198,7 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 桌遊圖鑑 & 詳情頁功能區塊
     // =================================================================
-    let activeFilters = { keyword: '', tag: null };
     function renderGameDetails(game) {
         const detailsTemplate = pageTemplates.querySelector('#page-game-details');
         if (!detailsTemplate) return;
