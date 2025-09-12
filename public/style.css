@@ -1,21 +1,31 @@
 /* =================================================================
    全域與晨曦主題色彩變數
-   - :root 用於定義全站通用的變數，方便統一管理主題色彩與字體。
    ================================================================= */
 :root {
     --bg-color: #FFF9F0; --primary-accent: #FF8C42; --secondary-accent: #FFC371;
     --text-color: #5D4037; --subtle-border: #E0E0E0; --card-bg: #FFFFFF;
     --font-family: 'Helvetica Neue', Arial, 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
+
+/* =================================================================
+   基礎 Body 與頁面樣式
+   ================================================================= */
 body {
     background-color: var(--bg-color); color: var(--text-color); font-family: var(--font-family);
-    margin: 0; padding: 0; padding-bottom: 70px;
+    margin: 0; padding: 0; padding-bottom: 70px; /* 為 Tab Bar 預留空間 */
 }
-/* .page 和 .active 的規則已不再需要 */
+
+/* 由於使用 JS 強制渲染，不再需要 .page 和 .active 來控制顯示/隱藏 */
 #app-content {
-    padding: 15px;
+    padding: 15px; /* 為所有渲染出來的頁面提供一個基礎的內距 */
 }
-#app-content > h1 { font-size: 1.8rem; text-align: center; margin-top: 0; margin-bottom: 25px; }
+
+#app-content > h1 { /* 為每個頁面的主標題設定統一樣式 */
+    font-size: 1.8rem;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 25px;
+}
 #tab-bar {
     position: fixed; bottom: 0; left: 0; width: 100%; height: 60px;
     background-color: var(--card-bg); border-top: 1px solid var(--subtle-border);
