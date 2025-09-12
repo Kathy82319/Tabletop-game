@@ -421,8 +421,8 @@ function goBackBookingStep() {
 function initializeBookingPage() {
         bookingHistoryStack = [];
         showBookingStep('step-preference'); // 確保每次都從第一步開始
-    if (bookingPageInitialized) return;
-    bookingPageInitialized = true;
+    //if (bookingPageInitialized) return;
+    //bookingPageInitialized = true;
 
     const elements = {
         wizardContainer: document.getElementById('booking-wizard-container'),
