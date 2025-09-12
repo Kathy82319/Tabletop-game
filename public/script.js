@@ -1,28 +1,93 @@
 document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
-    // 全域變數與 LIFF 初始化
+    // 核心DOM元素與全域變數
     // =================================================================
     const myLiffId = "2008076323-GN1e7naW";
-    // 將所有設定相關的常數統一放在這裡
-    const TOTAL_TABLES = 4; // 預設總桌數
+    let userProfile = null;
+
+    const appContent = document.getElementById('app-content');
+    const pageTemplates = document.getElementById('page-templates');
+    const tabBar = document.getElementById('tab-bar');
+
+    // 全域設定常數
+    const TOTAL_TABLES = 4;
     const PEOPLE_PER_TABLE = 4;
     const AVAILABLE_TIME_SLOTS = ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30'];
     const PRICES = { weekday: 150, weekend: 250 };
     const ADVANCE_BOOKING_DISCOUNT = 20;
 
-    let userProfile = null;
-    // 將所有頁面的初始化旗標和共用變數統一宣告於此
-    let gamesPageInitialized = false;
-    let bookingPageInitialized = false;
-    let profilePageInitialized = false;
+    // 全域狀態變數
+    let allGames = []; // 遊戲資料只抓取一次
     let pageHistory = [];
-    let allGames = [];
     let activeFilters = { keyword: '', tag: null };
-    let bookingData = {};  // 用於儲存預約流程中的所有資料
-    let bookingHistoryStack = []; // 用於處理返回鍵
-    let flatpickrInstance = null;
-    let dailyAvailability = { limit: TOTAL_TABLES, booked: 0, available: TOTAL_TABLES }; // 儲存當日空位資訊
+    let bookingData = {};
+    let bookingHistoryStack = [];
+    let dailyAvailability = { limit: TOTAL_TABLES, booked: 0, available: TOTAL_TABLES };
 
+    // =================================================================
+    // 全新頁面切換邏輯 (強制渲染)
+    // =================================================================
+    function showPage(pageId, isBackAction = false) {
+        const template = pageTemplates.querySelector(`#${pageId}`);
+        if (template) {
+            appContent.innerHTML = template.innerHTML;
+            
+            if (!isBackAction) {
+                if (['page-home', 'page-games', 'page-profile', 'page-booking', 'page-info'].includes(pageId)) {
+                    pageHistory = [pageId];
+                } else {
+                    pageHistory.push(pageId);
+                }
+            }
+            
+            // 每次渲染後，重新觸發該頁面的初始化函式
+            switch (pageId) {
+                case 'page-games':
+                    initializeGamesPage();
+                    break;
+                case 'page-profile':
+                    initializeProfilePage();
+                    break;
+                case 'page-booking':
+                    initializeBookingPage();
+                    break;
+            }
+        } else {
+            console.error(`在 page-templates 中找不到樣板: ${pageId}`);
+            appContent.innerHTML = `<h1>找不到頁面: ${pageId}</h1>`;
+        }
+    }
+
+    function goBackPage() {
+        if (pageHistory.length > 1) {
+            pageHistory.pop();
+            const previousPageId = pageHistory[pageHistory.length - 1];
+            showPage(previousPageId, true);
+        } else {
+            liff.closeWindow();
+        }
+    }
+
+    tabBar.addEventListener('click', (event) => {
+        const button = event.target.closest('.tab-button');
+        if (button) {
+            const targetPageId = button.dataset.target;
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            showPage(targetPageId);
+        }
+    });
+    
+    // 使用事件代理處理動態內容的點擊
+    appContent.addEventListener('click', (event) => {
+        if (event.target.matches('.details-back-button')) {
+            goBackPage();
+        }
+    });
+
+    // =================================================================
+    // LIFF 初始化
+    // =================================================================
     liff.init({ liffId: myLiffId })
         .then(() => {
             console.log("LIFF 初始化成功");
@@ -35,11 +100,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }).catch(err => console.error("獲取 LINE Profile 失敗", err));
             }
         })
-        .catch((err) => { 
+        .catch((err) => {
             console.error("LIFF 初始化失敗", err);
             showPage('page-home');
         });
-
 
     // =================================================================
     // 使用者資料 & 個人資料頁
@@ -153,38 +217,52 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initializeProfilePage() {
-        if (profilePageInitialized) return;
-        profilePageInitialized = true;
-        const classSelectionContainer = document.getElementById('class-selection');
+        displayUserProfile();
+        if (userProfile) {
+            fetchGameData(userProfile);
+            fetchAndDisplayMyBookings(userProfile.userId);
+        }
+        
+        // --- 綁定職業選擇按鈕事件 ---
+        const classSelectionContainer = appContent.querySelector('#class-selection');
         if (classSelectionContainer) {
             classSelectionContainer.addEventListener('click', (event) => {
                 const button = event.target.closest('.class-btn');
                 if (button) {
-                    const className = button.dataset.class;
-                    handleSetClass(className);
+                    handleSetClass(button.dataset.class);
                 }
             });
         }
-        const modal = document.getElementById('profile-modal');
-        const editBtn = document.getElementById('edit-profile-btn');
-        const closeBtn = document.querySelector('.modal-close-btn');
-        const form = document.getElementById('profile-form');
-        const gameSelect = document.getElementById('profile-games');
-        const otherGameInput = document.getElementById('profile-games-other');
-        const statusMsg = document.getElementById('profile-form-status');
+
+        // --- 處理「完善冒險者登錄」的彈出式表單 ---
+        const modal = appContent.querySelector('#profile-modal');
+        const editBtn = appContent.querySelector('#edit-profile-btn');
+        const closeBtn = appContent.querySelector('.modal-close-btn');
+        const form = appContent.querySelector('#profile-form');
+        
         if (!modal || !editBtn || !closeBtn || !form) return;
+
         editBtn.addEventListener('click', () => { modal.style.display = 'flex'; });
         closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
-        window.addEventListener('click', (event) => { if (event.target == modal) modal.style.display = 'none'; });
-        gameSelect.addEventListener('change', () => { otherGameInput.style.display = (gameSelect.value === '其他') ? 'block' : 'none'; });
+        modal.addEventListener('click', (event) => {
+            if (event.target == modal) modal.style.display = 'none';
+        });
+        
+        const gameSelect = appContent.querySelector('#profile-games');
+        const otherGameInput = appContent.querySelector('#profile-games-other');
+        gameSelect.addEventListener('change', () => {
+            otherGameInput.style.display = (gameSelect.value === '其他') ? 'block' : 'none';
+        });
+
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
+            const statusMsg = appContent.querySelector('#profile-form-status');
             statusMsg.textContent = '儲存中...';
             let preferredGames = gameSelect.value === '其他' ? otherGameInput.value.trim() : gameSelect.value;
             const formData = {
                 userId: userProfile.userId,
-                nickname: document.getElementById('profile-nickname').value,
-                phone: document.getElementById('profile-phone').value,
+                nickname: appContent.querySelector('#profile-nickname').value,
+                phone: appContent.querySelector('#profile-phone').value,
                 preferredGames: preferredGames
             };
             try {
@@ -291,22 +369,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function initializeGamesPage() {
         if (allGames.length > 0) { // 如果已經抓過資料，就直接用，不用重抓
-             renderGames(); populateFilters(); setupFilterEventListeners();
+             renderGames();
+             populateFilters();
+             setupFilterEventListeners();
              return;
         }
+        
         const gameListContainer = appContent.querySelector('#game-list-container');
         try {
             const res = await fetch('/api/games');
             if (!res.ok) throw new Error('API 請求失敗');
             allGames = await res.json();
-            renderGames(); populateFilters(); setupFilterEventListeners();
+            renderGames();
+            populateFilters();
+            setupFilterEventListeners();
         } catch (error) {
             console.error('初始化桌遊圖鑑失敗:', error);
             if(gameListContainer) gameListContainer.innerHTML = '<p style="color: red;">讀取桌遊資料失敗。</p>';
         }
     }
-
-
 // =================================================================
 // 場地預約功能區塊 (全新整合版，修正日曆置中與流程)
 // =================================================================
@@ -335,6 +416,8 @@ function goBackBookingStep() {
 }
 
 function initializeBookingPage() {
+        bookingHistoryStack = [];
+        showBookingStep('step-preference'); // 確保每次都從第一步開始
     if (bookingPageInitialized) return;
     bookingPageInitialized = true;
 
