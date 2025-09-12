@@ -73,12 +73,7 @@ body {
 #booking-result-content { text-align: center; margin: auto; }
 #booking-result-content h2 { font-size: 1.5rem; }
 .success { color: #28a745; }
-#my-bookings-section { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--subtle-border); }
-#my-bookings-section h2 { text-align: center; font-size: 1.4rem; margin-bottom: 20px; }
-#my-bookings-container { display: flex; flex-direction: column; gap: 15px; }
-.booking-info-card { background-color: var(--card-bg); border-radius: 10px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); border-left: 5px solid var(--secondary-accent); }
-.booking-info-card p { margin: 0 0 8px 0; font-size: 0.9rem; color: #666; }
-.booking-info-card .booking-date-time { font-weight: bold; font-size: 1.1rem; color: var(--text-color); margin-bottom: 12px; }
+
 #profile-info { color: var(--text-color); }
 #qrcode-container { border: 1px solid var(--subtle-border); }
 #page-game-details { padding-bottom: 30px; }
@@ -96,3 +91,50 @@ body {
 .rules-list { padding-left: 20px; line-height: 1.8; color: #555; }
 .rules-list li { margin-bottom: 10px; }
 @media (max-width: 768px) { #game-list-container { grid-template-columns: 1fr; } }
+
+/* =================================================================
+   個人資料頁 - 我的預約紀錄樣式
+   - 控制「冒險者資料」頁面下方顯示的預約卡片外觀。
+   ================================================================= */
+#my-bookings-section {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--subtle-border);
+}
+
+#my-bookings-section h2 {
+    text-align: center;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+}
+
+#my-bookings-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.booking-info-card {
+    background-color: var(--card-bg);
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    border-left: 5px solid var(--secondary-accent);
+}
+
+.booking-info-card p {
+    margin: 0 0 8px 0;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.booking-info-card p:last-child {
+    margin-bottom: 0;
+}
+
+.booking-info-card .booking-date-time {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: var(--text-color);
+    margin-bottom: 12px;
+}
