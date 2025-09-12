@@ -1,13 +1,32 @@
 document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
-    // 核心DOM元素與全域變數
+    // 全域變數與 LIFF 初始化
     // =================================================================
     const myLiffId = "2008076323-GN1e7naW";
     let userProfile = null;
 
-    const appContent = document.getElementById('app-content');
-    const pageTemplates = document.getElementById('page-templates');
-    const tabBar = document.getElementById('tab-bar');
+    // 將所有頁面的初始化旗標統一宣告於此，避免重複
+    let gamesPageInitialized = false;
+    let bookingPageInitialized = false;
+    let profilePageInitialized = false;
+    let pageHistory = [];
+
+    liff.init({ liffId: myLiffId })
+        .then(() => {
+            console.log("LIFF 初始化成功");
+            if (!liff.isLoggedIn()) {
+                liff.login();
+            } else {
+                liff.getProfile().then(profile => {
+                    userProfile = profile;
+                    showPage('page-home');
+                }).catch(err => console.error("獲取 LINE Profile 失敗", err));
+            }
+        })
+        .catch((err) => { 
+            console.error("LIFF 初始化失敗", err);
+            showPage('page-home');
+        });
 
     // =================================================================
     // 全新頁面切換邏輯 (強制渲染)
@@ -47,142 +66,88 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-
-    // =================================================================
-    // LIFF 初始化
-    // =================================================================
-    liff.init({ liffId: myLiffId })
-        .then(() => {
-            console.log("LIFF 初始化成功");
-            if (!liff.isLoggedIn()) {
-                liff.login();
-            } else {
-                liff.getProfile().then(profile => {
-                    userProfile = profile;
-                    showPage('page-home'); // LIFF 初始化成功後，顯示預設的首頁
-                }).catch(err => console.error("獲取 LINE Profile 失敗", err));
-            }
-        })
-        .catch((err) => {
-            console.error("LIFF 初始化失敗", err);
-            showPage('page-home');
-        });
-        
     // =================================================================
     // 使用者資料 & 個人資料頁
     // =================================================================
     function displayUserProfile() {
         if (!userProfile) return;
-        const displayNameEl = appContent.querySelector('#display-name');
-        const statusMessageEl = appContent.querySelector('#status-message');
-        const profilePictureEl = appContent.querySelector('#profile-picture');
-        const qrcodeContainerEl = appContent.querySelector('#qrcode');
-
-        if(displayNameEl) displayNameEl.textContent = userProfile.displayName;
-        if(statusMessageEl) statusMessageEl.textContent = userProfile.statusMessage || '';
-        if(profilePictureEl && userProfile.pictureUrl) profilePictureEl.src = userProfile.pictureUrl;
-        
-        if(qrcodeContainerEl) {
-            qrcodeContainerEl.innerHTML = '';
-            new QRCode(qrcodeContainerEl, { text: userProfile.userId, width: 200, height: 200 });
+        document.getElementById('display-name').textContent = userProfile.displayName;
+        document.getElementById('status-message').textContent = userProfile.statusMessage || '';
+        const profilePicture = document.getElementById('profile-picture');
+        if (userProfile.pictureUrl) profilePicture.src = userProfile.pictureUrl;
+        const qrcodeElement = document.getElementById('qrcode');
+        if(qrcodeElement) {
+            qrcodeElement.innerHTML = '';
+            new QRCode(qrcodeElement, { text: userProfile.userId, width: 200, height: 200 });
         }
     }
 
-// =================================================================
-// 新增的函式：處理職業選擇
-// =================================================================
-async function handleSetClass(className) {
-    // 跳出你指定的確認訊息
-    const isConfirmed = confirm(`職業選擇後若需更換職業要到現場申請，確定要選擇「${className}」嗎？`);
-
-    if (isConfirmed) {
+    async function fetchGameData(profile) { 
         try {
-            const response = await fetch('/api/set-class', {
+            const response = await fetch('/api/user', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: userProfile.userId,
-                    className: className
-                })
+                body: JSON.stringify({ userId: profile.userId, displayName: profile.displayName, pictureUrl: profile.pictureUrl }),
             });
+            if (!response.ok) throw new Error('無法取得會員遊戲資料');
+            const gameData = await response.json();
+            
+            const expToNextLevel = gameData.level * 10;
+            const userClassEl = document.getElementById('user-class');
+            const userLevelEl = document.getElementById('user-level');
+            const userExpEl = document.getElementById('user-exp');
+            const userPerkEl = document.getElementById('user-perk');
+            const classSelectionEl = document.getElementById('class-selection');
 
-            const result = await response.json();
-            if (!response.ok) {
-                throw new Error(result.error || '選擇職業失敗');
+            if (userClassEl) {
+                if (gameData.class && gameData.class !== '無') {
+                    userClassEl.textContent = gameData.class;
+                } else {
+                    userClassEl.textContent = "初心者";
+                }
+            }
+            if (userLevelEl) userLevelEl.textContent = gameData.level;
+            if (userExpEl) userExpEl.textContent = `${gameData.current_exp} / ${expToNextLevel}`;
+            
+            if (userPerkEl) {
+                if (gameData.perk && gameData.perk !== '無特殊優惠') {
+                    userPerkEl.textContent = gameData.perk;
+                    userPerkEl.style.display = 'block';
+                } else {
+                    userPerkEl.style.display = 'none';
+                }
             }
 
-            alert('恭喜！職業選擇成功！');
-            // 選擇成功後，立刻重新抓取一次使用者資料，以更新畫面
-            fetchGameData(userProfile);
+            if (classSelectionEl) {
+                if (gameData.level >= 5 && gameData.class === '無') {
+                    classSelectionEl.style.display = 'block';
+                } else {
+                    classSelectionEl.style.display = 'none';
+                }
+            }
+            
+            const nicknameInput = document.getElementById('profile-nickname');
+            const phoneInput = document.getElementById('profile-phone');
+            if(nicknameInput) nicknameInput.value = gameData.nickname || '';
+            if(phoneInput) phoneInput.value = gameData.phone || '';
 
         } catch (error) {
-            console.error('設定職業失敗:', error);
-            alert(`錯誤：${error.message}`);
+            console.error('呼叫會員 API 失敗:', error);
         }
     }
-}
-
-// =================================================================
-// 更新後的函式：取得並顯示使用者遊戲資料 (整合遊戲化邏輯)
-// =================================================================
-async function fetchGameData(profile) { 
-    try {
-        const response = await fetch('/api/user', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                userId: profile.userId, 
-                displayName: profile.displayName, 
-                pictureUrl: profile.pictureUrl 
-            }),
-        });
-        if (!response.ok) throw new Error('無法取得會員遊戲資料');
-        
-        const gameData = await response.json();
-        
-        // 更新等級與經驗值
-        const expToNextLevel = gameData.level * 10;
-        document.getElementById('user-level').textContent = gameData.level;
-        document.getElementById('user-exp').textContent = `${gameData.current_exp} / ${expToNextLevel}`;
-        
-        // 更新職業與優惠顯示
-        const userClassEl = document.getElementById('user-class');
-        const userPerkEl = document.getElementById('user-perk');
-        const classSelectionEl = document.getElementById('class-selection');
-
-        if (gameData.class && gameData.class !== '無') {
-            // 如果已有職業
-            userClassEl.textContent = gameData.class;
-            userPerkEl.textContent = gameData.perk || '無特殊優惠';
-            userPerkEl.style.display = 'block'; // 顯示優惠說明
-            classSelectionEl.style.display = 'none'; // 隱藏職業選擇
-        } else {
-            // 如果沒有職業
-            userClassEl.textContent = "初心者";
-            userPerkEl.style.display = 'none'; // 隱藏優惠說明
-
-            // 檢查是否達到選擇職業的等級
-            if (gameData.level >= 5) {
-                classSelectionEl.style.display = 'block'; // 顯示職業選擇
-            } else {
-                classSelectionEl.style.display = 'none'; // 隱藏職業選擇
-            }
-        }
-
-    } catch (error) {
-        console.error('呼叫會員 API 失敗:', error);
-    }
-}
 
     async function fetchAndDisplayMyBookings(userId) {
-        const container = appContent.querySelector('#my-bookings-container');
+        const container = document.getElementById('my-bookings-container');
         if (!container) return;
         container.innerHTML = '<p>正在查詢您的預約紀錄...</p>';
         try {
             const response = await fetch(`/api/my-bookings?userId=${userId}`);
             if (!response.ok) throw new Error('查詢預約失敗');
             const bookings = await response.json();
-            if (bookings.length === 0) { container.innerHTML = '<p>您目前沒有即將到來的預約。</p>'; return; }
+            if (bookings.length === 0) {
+                container.innerHTML = '<p>您目前沒有即將到來的預約。</p>';
+                return;
+            }
             container.innerHTML = '';
             bookings.forEach(booking => {
                 const card = document.createElement('div');
@@ -195,76 +160,76 @@ async function fetchGameData(profile) {
             container.innerHTML = '<p style="color: red;">無法載入預約紀錄。</p>';
         }
     }
-    
-    // =================================================================
-// 新增的函式：初始化個人資料頁面的所有互動功能
-// =================================================================
-let profilePageInitialized = false;
 
-function initializeProfilePage() {
-    if (profilePageInitialized) return; // 避免重複綁定
-    profilePageInitialized = true;
+    async function handleSetClass(className) {
+        const isConfirmed = confirm(`職業選擇後若需更換職業要到現場申請，確定要選擇「${className}」嗎？`);
+        if (isConfirmed) {
+            try {
+                const response = await fetch('/api/set-class', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: userProfile.userId, className: className })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || '選擇職業失敗');
+                alert('恭喜！職業選擇成功！');
+                fetchGameData(userProfile);
+            } catch (error) {
+                console.error('設定職業失敗:', error);
+                alert(`錯誤：${error.message}`);
+            }
+        }
+    }
 
-    // --- 綁定職業選擇按鈕事件 ---
-    const classSelectionContainer = document.getElementById('class-selection');
-    if (classSelectionContainer) {
-        classSelectionContainer.addEventListener('click', (event) => {
-            const button = event.target.closest('.class-btn');
-            if (button) {
-                const className = button.dataset.class;
-                handleSetClass(className);
+    function initializeProfilePage() {
+        if (profilePageInitialized) return;
+        profilePageInitialized = true;
+        const classSelectionContainer = document.getElementById('class-selection');
+        if (classSelectionContainer) {
+            classSelectionContainer.addEventListener('click', (event) => {
+                const button = event.target.closest('.class-btn');
+                if (button) {
+                    const className = button.dataset.class;
+                    handleSetClass(className);
+                }
+            });
+        }
+        const modal = document.getElementById('profile-modal');
+        const editBtn = document.getElementById('edit-profile-btn');
+        const closeBtn = document.querySelector('.modal-close-btn');
+        const form = document.getElementById('profile-form');
+        const gameSelect = document.getElementById('profile-games');
+        const otherGameInput = document.getElementById('profile-games-other');
+        const statusMsg = document.getElementById('profile-form-status');
+        if (!modal || !editBtn || !closeBtn || !form) return;
+        editBtn.addEventListener('click', () => { modal.style.display = 'flex'; });
+        closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+        window.addEventListener('click', (event) => { if (event.target == modal) modal.style.display = 'none'; });
+        gameSelect.addEventListener('change', () => { otherGameInput.style.display = (gameSelect.value === '其他') ? 'block' : 'none'; });
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            statusMsg.textContent = '儲存中...';
+            let preferredGames = gameSelect.value === '其他' ? otherGameInput.value.trim() : gameSelect.value;
+            const formData = {
+                userId: userProfile.userId,
+                nickname: document.getElementById('profile-nickname').value,
+                phone: document.getElementById('profile-phone').value,
+                preferredGames: preferredGames
+            };
+            try {
+                const response = await fetch('/api/update-user-profile', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || '儲存失敗');
+                statusMsg.textContent = '儲存成功！'; statusMsg.classList.add('success');
+                setTimeout(() => { modal.style.display = 'none'; statusMsg.textContent = ''; }, 1500);
+            } catch (error) {
+                statusMsg.textContent = `儲存失敗: ${error.message}`; statusMsg.classList.add('error');
             }
         });
     }
 
-    // --- 處理「完善冒險者登錄」的彈出式表單 ---
-    const modal = document.getElementById('profile-modal');
-    const editBtn = document.getElementById('edit-profile-btn');
-    const closeBtn = document.querySelector('.modal-close-btn');
-    const form = document.getElementById('profile-form');
-    const gameSelect = document.getElementById('profile-games');
-    const otherGameInput = document.getElementById('profile-games-other');
-    const statusMsg = document.getElementById('profile-form-status');
-
-    if (!modal || !editBtn || !closeBtn || !form) return;
-
-    editBtn.addEventListener('click', () => { modal.style.display = 'flex'; });
-    closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
-    window.addEventListener('click', (event) => {
-        if (event.target == modal) modal.style.display = 'none';
-    });
-    
-    gameSelect.addEventListener('change', () => {
-        otherGameInput.style.display = (gameSelect.value === '其他') ? 'block' : 'none';
-    });
-
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        statusMsg.textContent = '儲存中...';
-        let preferredGames = gameSelect.value === '其他' ? otherGameInput.value.trim() : gameSelect.value;
-        const formData = {
-            userId: userProfile.userId,
-            nickname: document.getElementById('profile-nickname').value,
-            phone: document.getElementById('profile-phone').value,
-            preferredGames: preferredGames
-        };
-        try {
-            const response = await fetch('/api/update-user-profile', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || '儲存失敗');
-            statusMsg.textContent = '儲存成功！';
-            statusMsg.classList.add('success');
-            setTimeout(() => { modal.style.display = 'none'; statusMsg.textContent = ''; }, 1500);
-        } catch (error) {
-            statusMsg.textContent = `儲存失敗: ${error.message}`;
-            statusMsg.classList.add('error');
-        }
-    });
-}
 
 
     // =================================================================
@@ -597,22 +562,67 @@ function initializeBookingPage() {
         }
     });
 }
+
     // =================================================================
-    // 全域事件與分頁切換邏輯 (整合返回鍵)
+    // 分頁切換邏輯 (整合返回鍵)
     // =================================================================
-    appContent.addEventListener('click', (event) => {
-        // 處理詳情頁返回按鈕
+    const tabBar = document.getElementById('tab-bar');
+
+    function showPage(pageId, isBackAction = false) {
+        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+        const targetPage = document.getElementById(pageId);
+        if (targetPage) {
+            targetPage.classList.add('active');
+        }
+        if (!isBackAction) {
+            if (['page-home', 'page-games', 'page-profile', 'page-booking', 'page-info'].includes(pageId)) {
+                pageHistory = [pageId];
+            } else {
+                pageHistory.push(pageId);
+}
+        }
+    }
+
+    function goBackPage() {
+        if (pageHistory.length > 1) {
+            pageHistory.pop();
+            const previousPageId = pageHistory[pageHistory.length - 1];
+            showPage(previousPageId, true);
+        } else {
+            liff.closeWindow();
+        }
+    }
+
+    document.getElementById('app-content').addEventListener('click', (event) => {
         if (event.target.matches('.details-back-button')) {
             goBackPage();
         }
     });
 
-    function goBackPage() {
-        if (pageHistory.length > 0) {
-            const previousPageId = pageHistory.pop();
-            showPage(previousPageId);
-        } else {
-             showPage('page-home'); // 如果沒有歷史，回到首頁
+    tabBar.addEventListener('click', (event) => {
+        const button = event.target.closest('.tab-button');
+        if (button) {
+            const targetPageId = button.dataset.target;
+            showPage(targetPageId); 
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            if (targetPageId === 'page-games') {
+                initializeGamesPage();
+            } else if (targetPageId === 'page-profile') {
+                initializeProfilePage(); 
+                displayUserProfile();
+                if (userProfile) {
+                    fetchGameData(userProfile);
+                    fetchAndDisplayMyBookings(userProfile.userId);
+                }
+            } else if (targetPageId === 'page-booking') {
+                if (!bookingPageInitialized) initializeBookingPage();
+                bookingHistoryStack = [];
+                showBookingStep('step-preference');
+            }
         }
-    }
+    });
+    
+    showPage('page-home');
 });
