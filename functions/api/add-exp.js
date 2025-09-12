@@ -71,28 +71,45 @@ export async function onRequest(context) {
     const { userId, expValue, reason } = await context.request.json();
 
     if (!userId || typeof expValue !== 'number' || expValue <= 0) {
-      return new Response(JSON.stringify({ error: '無效的使用者 ID 或經驗值。' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(JSON.stringify({ error: '無效的使用者 ID 或經驗值。' }), { status: 400 });
     }
 
     const db = context.env.DB;
-    
-    // 使用 D1 交易來確保資料一致性
+
+    // ** 關鍵改動 1: 先查詢使用者目前的等級和經驗值 **
+    const userStmt = db.prepare('SELECT level, current_exp FROM Users WHERE user_id = ?');
+    let user = await userStmt.bind(userId).first();
+
+    if (!user) {
+      return new Response(JSON.stringify({ error: `找不到使用者 ID: ${userId}` }), { status: 404 });
+    }
+
+    let currentLevel = user.level;
+    let currentExp = user.current_exp + expValue;
+
+    // ** 關鍵改動 2: 處理升級邏輯 (支援連續升級) **
+    let requiredExp = currentLevel * 10;
+    while (currentExp >= requiredExp) {
+      currentExp -= requiredExp; // 扣除升級所需經驗
+      currentLevel += 1;          // 等級 +1
+      requiredExp = currentLevel * 10; // 計算新等級的升級門檻
+    }
+
+    // ** 關鍵改動 3: 使用 D1 交易，同時更新等級、經驗值，並新增歷史紀錄 **
     const batchResult = await db.batch([
-      db.prepare('UPDATE Users SET current_exp = current_exp + ? WHERE user_id = ?').bind(expValue, userId),
+      db.prepare('UPDATE Users SET level = ?, current_exp = ? WHERE user_id = ?').bind(currentLevel, currentExp, userId),
       db.prepare('INSERT INTO ExpHistory (user_id, exp_added, reason) VALUES (?, ?, ?)').bind(userId, expValue, reason || '未提供原因')
     ]);
-
-    // ** 關鍵改動：觸發背景同步任務 **
-    // 我們將前端傳來的資料，以及 D1 的執行結果傳遞給背景函式
+    
+    // 觸發背景同步任務
     context.waitUntil(syncSingleExpToSheet(context.env, { userId, expValue, reason }));
     
-    // ** 立即回傳成功訊息給使用者 **
+    // 回傳包含新等級和經驗值的成功訊息
     return new Response(JSON.stringify({ 
         success: true, 
-        message: `成功為使用者 ${userId} 新增 ${expValue} 點經驗值。` 
+        message: `成功新增 ${expValue} 點經驗值。`,
+        newLevel: currentLevel,
+        newExp: currentExp
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
@@ -100,10 +117,6 @@ export async function onRequest(context) {
 
   } catch (error) {
     console.error('Error in add-exp API:', error);
-    const errorResponse = { error: '伺服器內部錯誤，新增經驗值失敗。', details: error.message };
-    return new Response(JSON.stringify(errorResponse), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(JSON.stringify({ error: '伺服器內部錯誤，新增經驗值失敗。'}), { status: 500 });
   }
 }

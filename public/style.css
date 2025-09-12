@@ -69,11 +69,11 @@ body {
 #clear-filters { padding: 8px 12px; font-size: 0.8rem; background-color: #888; color: white; border: none; border-radius: 6px; cursor: pointer; align-self: flex-start; }
 #game-list-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; padding: 0 5px; }
 .game-card { background-color: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;}
-.game-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); }
+.game-card:hover { transform: translateY(-5px); box-shadow: 0 8px 10px rgba(0, 0, 0, 0.12); }
 .game-image { width: 100%; height: 180px; object-fit: cover; }
-.game-info { padding: 15px; display: flex; flex-direction: column; flex-grow: 1; }
-.game-title { margin-top: 0; margin-bottom: 8px; font-size: 1.1rem; }
-.game-description { font-size: 0.85rem; color: #666; line-height: 1.5; flex-grow: 1; margin-bottom: 12px; }
+.game-info { padding: 5px; display: flex; flex-direction: column; flex-grow: 1; }
+.game-title { margin-top: 0; margin-bottom: 5px; font-size: 1.1rem; }
+.game-description { font-size: 0.85rem; color: #666; line-height: 1.5; flex-grow: 1; margin-bottom: 8px; }
 .game-tags { margin-top: auto; padding-top: 10px; border-top: 1px solid #f0f0f0; }
 .game-tag { display: inline-block; background-color: #e9ecef; color: #495057; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; margin-right: 5px; margin-bottom: 5px; }
 .game-details { display: flex; justify-content: space-between; font-size: 0.8rem; color: #777; padding-top: 10px; }
@@ -158,3 +158,53 @@ body {
 .price-item .stock-info { font-size: 0.8rem; color: #888; }
 .rules-list { padding-left: 20px; line-height: 1.8; color: #555; }
 .rules-list li { margin-bottom: 10px; }
+
+/* =================================================================
+   個人資料頁 - 職業選擇與優惠顯示
+   ================================================================= */
+.perk-display {
+    background-color: #e0f2f1; /* 淡淡的青色背景 */
+    color: #00796b; /* 深青色文字 */
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 15px;
+    font-size: 0.9rem;
+    border: 1px solid #b2dfdb;
+}
+
+.class-selection-container {
+    margin-top: 30px;
+    padding: 20px;
+    border: 2px dashed var(--primary-accent);
+    border-radius: 12px;
+    text-align: center;
+    background-color: #fffaf0;
+}
+.class-selection-container h2 {
+    margin-top: 0;
+    font-size: 1.3rem;
+}
+.class-selection-container p {
+    color: #666;
+    margin-bottom: 20px;
+}
+.class-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+.class-btn {
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    border: 1px solid var(--subtle-border);
+    background-color: var(--card-bg);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.class-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    border-color: var(--primary-accent);
+}

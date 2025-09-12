@@ -60,6 +60,58 @@ async function syncSingleUserToSheet(env, newUser) {
     }
 }
 
+// ** 新增：定義職業與優惠的對應關係 **
+const CLASS_PERKS = {
+    '戰士': '被動技能：購買桌遊享 95 折優惠。',
+    '盜賊': '被動技能：租借桌遊享 95 折優惠。',
+    '法師': '被動技能：單點宇宙飲品可折抵 5 元。',
+    '牧師': '被動技能：預約場地費可額外折扣 5 元。',
+};
+
+export async function onRequest(context) {
+  try {
+    if (context.request.method !== 'POST') {
+      return new Response('Invalid request method.', { status: 405 });
+    }
+    const { userId, displayName, pictureUrl } = await context.request.json();
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'User ID is required.' }), { status: 400 });
+    }
+    const db = context.env.DB;
+    
+    let user = await db.prepare('SELECT * FROM Users WHERE user_id = ?').bind(userId).first();
+
+    if (user) {
+      // 如果是現有使用者
+      const expToNextLevel = user.level * 10;
+      // ** 關鍵改動：根據職業，加上優惠說明 **
+      user.perk = CLASS_PERKS[user.class] || '無特殊優惠';
+      
+      return new Response(JSON.stringify({ ...user, expToNextLevel }), { status: 200 });
+
+    } else {
+      // 如果是新使用者
+      const newUser = {
+        user_id: userId, line_display_name: displayName || '未提供名稱',
+        line_picture_url: pictureUrl || '', class: '無', level: 1, current_exp: 0
+      };
+      await db.prepare(
+        'INSERT INTO Users (user_id, line_display_name, line_picture_url, class, level, current_exp) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind(newUser.user_id, newUser.line_display_name, newUser.line_picture_url, newUser.class, newUser.level, newUser.current_exp).run();
+      
+      context.waitUntil(syncSingleUserToSheet(context.env, newUser));
+      
+      const expToNextLevel = newUser.level * 10;
+      // ** 關鍵改動：新使用者也加上優惠說明 **
+      newUser.perk = '無特殊優惠';
+
+      return new Response(JSON.stringify({ ...newUser, expToNextLevel }), { status: 201 });
+    }
+  } catch (error) {
+    console.error('Error in user API:', error);
+    return new Response(JSON.stringify({ error: '處理使用者資料失敗。'}), { status: 500 });
+  }
+}
 
 // =================================================================
 // 主要 API 處理器
