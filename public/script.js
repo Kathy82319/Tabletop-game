@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let allGames = []; // 遊戲資料只抓取一次
         // 將所有頁面的初始化旗標和共用變數統一宣告於此
     let gamesPageInitialized = false;
-    let bookingPageInitialized = false;
     let profilePageInitialized = false;
     let pageHistory = [];
     let activeFilters = { keyword: '', tag: null };
