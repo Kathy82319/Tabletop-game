@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     const myLiffId = "2008076323-GN1e7naW";
     let userProfile = null;
-
+    let bookingPageInitialized = false;
     const appContent = document.getElementById('app-content');
     const pageTemplates = document.getElementById('page-templates');
     const tabBar = document.getElementById('tab-bar');
@@ -18,6 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 全域狀態變數
     let allGames = []; // 遊戲資料只抓取一次
+        // 將所有頁面的初始化旗標和共用變數統一宣告於此
+    let gamesPageInitialized = false;
+    let bookingPageInitialized = false;
+    let profilePageInitialized = false;
     let pageHistory = [];
     let activeFilters = { keyword: '', tag: null };
     let bookingData = {};
@@ -418,6 +422,8 @@ function goBackBookingStep() {
 function initializeBookingPage() {
         bookingHistoryStack = [];
         showBookingStep('step-preference'); // 確保每次都從第一步開始
+    if (bookingPageInitialized) return;
+    bookingPageInitialized = true;
 
     const elements = {
         wizardContainer: document.getElementById('booking-wizard-container'),
