@@ -5,11 +5,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const myLiffId = "2008076323-GN1e7naW";
     let userProfile = null;
 
-    // 將所有頁面的初始化旗標統一宣告於此，避免重複
+    // 將所有頁面的初始化旗標和共用變數統一宣告於此
     let gamesPageInitialized = false;
     let bookingPageInitialized = false;
     let profilePageInitialized = false;
-    let pageHistory = []; // 用於處理詳情頁的返回
+    let pageHistory = [];
+    let allGames = [];
+    let activeFilters = { keyword: '', tag: null };
+    let bookingData = {};
+    let bookingHistoryStack = [];
+    let flatpickrInstance = null;
+    let dailyAvailability = {};
 
     liff.init({ liffId: myLiffId })
         .then(() => {
@@ -19,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 liff.getProfile().then(profile => {
                     userProfile = profile;
-                    showPage('page-home'); // LIFF 初始化成功後，顯示預設的首頁
+                    showPage('page-home');
                 }).catch(err => console.error("獲取 LINE Profile 失敗", err));
             }
         })
@@ -27,7 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("LIFF 初始化失敗", err);
             showPage('page-home');
         });
-        
+
+
     // =================================================================
     // 使用者資料 & 個人資料頁
     // =================================================================
@@ -515,20 +522,38 @@ function initializeBookingPage() {
         }
     });
 }
-
-  // =================================================================
+    // =================================================================
     // 分頁切換邏輯
     // =================================================================
     const tabBar = document.getElementById('tab-bar');
 
-    function showPage(pageId) {
+    function showPage(pageId, isBackAction = false) {
         document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
         const targetPage = document.getElementById(pageId);
-        if (targetPage) {
-            targetPage.classList.add('active');
+        if (targetPage) targetPage.classList.add('active');
+        if (!isBackAction) {
+            if (['page-home', 'page-games', 'page-profile', 'page-booking', 'page-info'].includes(pageId)) {
+                pageHistory = [pageId];
+            } else {
+                pageHistory.push(pageId);
+            }
         }
     }
-    
+
+    function goBackPage() {
+        if (pageHistory.length > 1) {
+            pageHistory.pop();
+            const previousPageId = pageHistory[pageHistory.length - 1];
+            showPage(previousPageId, true);
+        } else {
+            liff.closeWindow();
+        }
+    }
+
+    document.getElementById('app-content').addEventListener('click', (event) => {
+        if (event.target.matches('.details-back-button')) goBackPage();
+    });
+
     tabBar.addEventListener('click', (event) => {
         const button = event.target.closest('.tab-button');
         if (button) {
@@ -537,10 +562,9 @@ function initializeBookingPage() {
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
             
-            if (targetPageId === 'page-games') {
-                initializeGamesPage();
-            } else if (targetPageId === 'page-profile') {
-                initializeProfilePage();
+            if (targetPageId === 'page-games') initializeGamesPage();
+            else if (targetPageId === 'page-profile') {
+                initializeProfilePage(); 
                 displayUserProfile();
                 if (userProfile) {
                     fetchGameData(userProfile);
