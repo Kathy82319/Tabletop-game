@@ -163,6 +163,6 @@ body {
 #game-list-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    padding: 0 15px;
+    gap: 5x;
+    padding: 0 5px;
 }
