@@ -12,10 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let pageHistory = [];
     let allGames = [];
     let activeFilters = { keyword: '', tag: null };
-    let bookingData = {};
-    let bookingHistoryStack = [];
+    let bookingData = {};  // 用於儲存預約流程中的所有資料
+    let bookingHistoryStack = []; // 用於處理返回鍵
     let flatpickrInstance = null;
-    let dailyAvailability = {};
+    let dailyAvailability = { limit: TOTAL_TABLES, booked: 0, available: TOTAL_TABLES }; // 儲存當日空位資訊
 
     liff.init({ liffId: myLiffId })
         .then(() => {
@@ -198,7 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 桌遊圖鑑 & 詳情頁功能區塊
     // =================================================================
-    let allGames = [];
     let activeFilters = { keyword: '', tag: null };
     function renderGameDetails(game) {
         const detailsTemplate = pageTemplates.querySelector('#page-game-details');
@@ -311,11 +310,6 @@ const PEOPLE_PER_TABLE = 4;
 const AVAILABLE_TIME_SLOTS = ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30'];
 const PRICES = { weekday: 150, weekend: 250 };
 const ADVANCE_BOOKING_DISCOUNT = 20;
-
-
-let bookingData = {}; // 用於儲存預約流程中的所有資料
-let bookingHistoryStack = []; // 用於處理返回鍵
-let dailyAvailability = { limit: TOTAL_TABLES, booked: 0, available: TOTAL_TABLES }; // 儲存當日空位資訊
 
 function showBookingStep(stepId) {
     document.querySelectorAll('#booking-wizard-container .booking-step').forEach(step => {
