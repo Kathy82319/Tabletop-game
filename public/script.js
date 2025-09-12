@@ -601,7 +601,6 @@ function initializeBookingPage() {
     // =================================================================
     // 分頁切換邏輯
     // =================================================================
-    const tabBar = document.getElementById('tab-bar');
 
     function showPage(pageId, isBackAction = false) {
         document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
