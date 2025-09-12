@@ -35,7 +35,7 @@ body {
     margin-top: 0;
     margin-bottom: 25px;
 }
-
+.discount-highlight { text-align: center; background-color: #fff3e0; color: #e65100; padding: 12px; border-radius: 8px; margin-top: 20px; font-weight: bold; }
 .cta-button {
     width: 100%;
     padding: 15px;
@@ -159,9 +159,10 @@ body {
 .rules-list { padding-left: 20px; line-height: 1.8; color: #555; }
 .rules-list li { margin-bottom: 10px; }
 
-/* --- 響應式設計：在手機等小螢幕上，桌遊圖鑑改為單欄 --- */
-@media (max-width: 768px) {
-    #game-list-container {
-        grid-template-columns: 2fr;
-    }
+/* --- 桌遊圖鑑卡片樣式 --- */
+#game-list-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 0 15px;
 }
