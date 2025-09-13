@@ -1,7 +1,6 @@
 // public/admin-login.js
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- DOM 元素宣告 ---
     const mainNav = document.querySelector('.nav-tabs');
     const pages = document.querySelectorAll('.page');
     
@@ -19,12 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const editGameModal = document.getElementById('edit-game-modal');
     const editGameForm = document.getElementById('edit-game-form');
 
-    // --- 全域狀態變數 ---
     let allUsers = [];
     let allGames = [];
     let gameFilters = { visibility: 'all', rentalType: 'all' };
 
-    // ---- 頁面切換邏輯 ----
     function showPage(pageId) {
         pages.forEach(page => page.classList.remove('active'));
         const targetPage = document.getElementById(`page-${pageId}`);
@@ -55,14 +52,15 @@ document.addEventListener('DOMContentLoaded', () => {
         users.forEach(user => {
             const row = document.createElement('tr');
             row.dataset.userId = user.user_id;
+            // ** 關鍵修正：移除暱稱，並修改操作按鈕的結構 **
             row.innerHTML = `
                 <td>${user.line_display_name || 'N/A'}</td>
                 <td>${user.level}</td>
                 <td>${user.current_exp} / 10</td>
                 <td><span class="tag-display">${user.tag || '無'}</span></td>
-                <td>
+                <td class="actions-cell">
                     <button class="action-btn btn-edit" data-userid="${user.user_id}">編輯標籤</button>
-                    <button class="action-btn btn-sync" data-userid="${user.user_id}">從Sheet同步</button>
+                    <button class="action-btn btn-sync" data-userid="${user.user_id}">同步</button>
                 </td>
             `;
             userListTbody.appendChild(row);
@@ -75,9 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('無法獲取使用者列表');
             allUsers = await response.json();
             renderUserList(allUsers);
-        } catch (error) {
-            console.error('獲取使用者列表失敗:', error);
-        }
+        } catch (error) { console.error('獲取使用者列表失敗:', error); }
     }
 
     userSearchInput.addEventListener('input', () => {
@@ -86,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderUserList(filteredUsers);
     });
     
-    // --- 使用者標籤編輯 Modal ---
     function openEditTagModal(userId) {
         const user = allUsers.find(u => u.user_id === userId);
         if (!user) return;
@@ -99,8 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
         modalTitle.textContent = `編輯標籤：${user.line_display_name}`;
         userIdInput.value = user.user_id;
         
-        const standardTags = ["會員", "員工", "特殊"];
-        if (user.tag && !standardTags.includes(user.tag) && user.tag !== '') {
+        const standardTags = ["", "會員", "員工", "特殊"];
+        if (user.tag && !standardTags.includes(user.tag)) {
             tagSelect.value = 'other';
             otherInput.style.display = 'block';
             otherInput.value = user.tag;
@@ -133,8 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const response = await fetch('/api/update-user-tag', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, tag: newTag })
             });
             const result = await response.json();
@@ -142,11 +136,14 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const user = allUsers.find(u => u.user_id === userId);
             if (user) user.tag = newTag;
-            renderUserList(allUsers); // 重新渲染整個列表
+            
+            // 直接重新渲染，確保資料一致性
+            const currentSearch = userSearchInput.value;
+            const filteredUsers = currentSearch ? allUsers.filter(u => (u.line_display_name || '').toLowerCase().includes(currentSearch.toLowerCase().trim())) : allUsers;
+            renderUserList(filteredUsers);
+            
             editTagModal.style.display = 'none';
-        } catch (error) {
-            alert(`錯誤：${error.message}`);
-        }
+        } catch (error) { alert(`錯誤：${error.message}`); }
     });
 
     userListTbody.addEventListener('click', async (event) => {
@@ -156,9 +153,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (target.classList.contains('btn-edit')) openEditTagModal(userId);
 
-        if (target.classList.contains('btn-sync')) { /* ...同步邏輯不變... */ }
+        if (target.classList.contains('btn-sync')) {
+            if (!confirm(`確定要從 Google Sheet 同步使用者 ${userId} 的資料嗎？D1 資料庫中的該筆紀錄將被覆蓋。`)) return;
+            try {
+                target.textContent = '同步中...';
+                target.disabled = true;
+                const response = await fetch('/api/sync-user-from-sheet', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.details || result.error || '同步失敗');
+                alert('同步成功！將重新整理列表資料。');
+                await fetchAllUsers();
+            } catch (error) {
+                alert(`錯誤：${error.message}`);
+            } finally {
+                target.textContent = '同步';
+                target.disabled = false;
+            }
+        }
     });
-
 
     // =================================================================
     // 庫存管理模組
@@ -167,15 +182,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const searchTerm = gameSearchInput.value.toLowerCase().trim();
         let filteredGames = allGames;
 
-        if (searchTerm) {
-            filteredGames = filteredGames.filter(game => (game.name || '').toLowerCase().includes(searchTerm));
-        }
-        if (gameFilters.visibility !== 'all') {
-            filteredGames = filteredGames.filter(game => game.is_visible === gameFilters.visibility);
-        }
-        if (gameFilters.rentalType !== 'all') {
-            filteredGames = filteredGames.filter(game => game.rental_type === gameFilters.rentalType);
-        }
+        if (searchTerm) filteredGames = filteredGames.filter(game => (game.name || '').toLowerCase().includes(searchTerm));
+        if (gameFilters.visibility !== 'all') filteredGames = filteredGames.filter(game => game.is_visible === gameFilters.visibility);
+        if (gameFilters.rentalType !== 'all') filteredGames = filteredGames.filter(game => game.rental_type === gameFilters.rentalType);
         
         renderGameList(filteredGames);
     }
@@ -230,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-game-id').value = game.game_id;
         document.getElementById('edit-total-stock').value = game.total_stock;
         document.getElementById('edit-is-visible').value = game.is_visible || 'TRUE';
-        document.getElementById('edit-rental-type').value = game.rental_type || '僅供內用';
+        document.getElementById('edit-rental-type').value = game.rental_type || '僅供內借';
         editGameModal.style.display = 'flex';
     }
 
@@ -241,7 +250,35 @@ document.addEventListener('DOMContentLoaded', () => {
     editGameModal.querySelector('.modal-close').addEventListener('click', () => editGameModal.style.display = 'none');
     editGameModal.querySelector('.btn-cancel').addEventListener('click', () => editGameModal.style.display = 'none');
     
-    editGameForm.addEventListener('submit', async (e) => { /* ...此函式內容不變... */ });
+    editGameForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const gameId = document.getElementById('edit-game-id').value;
+        const formData = {
+            gameId: Number(gameId),
+            total_stock: Number(document.getElementById('edit-total-stock').value),
+            is_visible: document.getElementById('edit-is-visible').value,
+            rental_type: document.getElementById('edit-rental-type').value
+        };
+
+        try {
+            const response = await fetch('/api/update-boardgame', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || '更新失敗');
+
+            alert('更新成功！');
+            editGameModal.style.display = 'none';
+            const gameIndex = allGames.findIndex(g => g.game_id == gameId);
+            if (gameIndex > -1) {
+                // 更新緩存資料時，要用展開語法合併，而不是直接替換
+                allGames[gameIndex] = { ...allGames[gameIndex], ...formData };
+            }
+            applyGameFiltersAndRender(); // 重新渲染列表
+        } catch (error) { alert(`錯誤：${error.message}`); }
+    });
 
     // ---- 初始化 ----
     function initialize() {
