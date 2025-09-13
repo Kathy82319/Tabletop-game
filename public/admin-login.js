@@ -9,16 +9,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const userListTbody = document.getElementById('user-list-tbody');
     const userSearchInput = document.getElementById('user-search-input');
     const editTagModal = document.getElementById('edit-tag-modal');
+    const editTagForm = document.getElementById('edit-tag-form');
     
     // 庫存管理
     const gameListTbody = document.getElementById('game-list-tbody');
     const gameSearchInput = document.getElementById('game-search-input');
+    const visibilityFilter = document.getElementById('visibility-filter');
+    const rentalTypeFilter = document.getElementById('rental-type-filter');
     const editGameModal = document.getElementById('edit-game-modal');
+    const editGameForm = document.getElementById('edit-game-form');
 
-    // ** 新增：訂位管理 **
+    // 訂位管理
     const bookingListTbody = document.getElementById('booking-list-tbody');
 
-    // ** 新增：掃碼加點頁面元素 **
+    // 掃碼加點
     const qrReaderElement = document.getElementById('qr-reader');
     const scanResultSection = document.getElementById('scan-result');
     const userIdDisplay = document.getElementById('user-id-display');
@@ -32,11 +36,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 全域狀態變數 ---
     let allUsers = [], allGames = [], allBookings = [];
     let gameFilters = { visibility: 'all', rentalType: 'all' };
-    let html5QrCode = null; // ** 新增：掃碼器實例 **
+    let html5QrCode = null;
 
-    // ---- 頁面切換邏輯 (修正版) ----
+    // ---- 頁面切換邏輯 ----
     function showPage(pageId) {
-        // 離開掃碼頁時，確保相機關閉
         if (html5QrCode && html5QrCode.isScanning) {
             html5QrCode.stop().catch(err => console.error("停止掃描器失敗", err));
         }
@@ -50,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (link.getAttribute('href') === `#${pageId}`) link.classList.add('active');
         });
 
-        // 根據頁面載入對應的資料或功能
         if (pageId === 'users' && allUsers.length === 0) fetchAllUsers();
         if (pageId === 'inventory' && allGames.length === 0) fetchAllGames();
         if (pageId === 'bookings' && allBookings.length === 0) fetchAllBookings();
@@ -74,7 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
         users.forEach(user => {
             const row = document.createElement('tr');
             row.dataset.userId = user.user_id;
-            // ** 關鍵修正：移除暱稱，並修改操作按鈕的結構 **
             row.innerHTML = `
                 <td>${user.line_display_name || 'N/A'}</td>
                 <td>${user.level}</td>
@@ -126,7 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
             otherInput.style.display = 'none';
             otherInput.value = '';
         }
-        
         editTagModal.style.display = 'flex';
     }
 
@@ -134,8 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
     editTagModal.querySelector('.btn-cancel').addEventListener('click', () => editTagModal.style.display = 'none');
     
     document.getElementById('edit-tag-select').addEventListener('change', (e) => {
-        const otherInput = document.getElementById('edit-tag-other-input');
-        otherInput.style.display = (e.target.value === 'other') ? 'block' : 'none';
+        document.getElementById('edit-tag-other-input').style.display = (e.target.value === 'other') ? 'block' : 'none';
     });
 
     editTagForm.addEventListener('submit', async (e) => {
@@ -143,10 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const userId = document.getElementById('edit-user-id').value;
         const tagSelect = document.getElementById('edit-tag-select');
         let newTag = tagSelect.value;
-
-        if (newTag === 'other') {
-            newTag = document.getElementById('edit-tag-other-input').value.trim();
-        }
+        if (newTag === 'other') newTag = document.getElementById('edit-tag-other-input').value.trim();
 
         try {
             const response = await fetch('/api/update-user-tag', {
@@ -159,11 +155,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const user = allUsers.find(u => u.user_id === userId);
             if (user) user.tag = newTag;
             
-            // 直接重新渲染，確保資料一致性
             const currentSearch = userSearchInput.value;
             const filteredUsers = currentSearch ? allUsers.filter(u => (u.line_display_name || '').toLowerCase().includes(currentSearch.toLowerCase().trim())) : allUsers;
             renderUserList(filteredUsers);
-            
             editTagModal.style.display = 'none';
         } catch (error) { alert(`錯誤：${error.message}`); }
     });
@@ -172,11 +166,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const target = event.target;
         const userId = target.dataset.userid;
         if (!userId) return;
-
         if (target.classList.contains('btn-edit')) openEditTagModal(userId);
-
         if (target.classList.contains('btn-sync')) {
-            if (!confirm(`確定要從 Google Sheet 同步使用者 ${userId} 的資料嗎？D1 資料庫中的該筆紀錄將被覆蓋。`)) return;
+            if (!confirm(`確定要從 Google Sheet 同步使用者 ${userId} 的資料嗎？`)) return;
             try {
                 target.textContent = '同步中...';
                 target.disabled = true;
@@ -203,11 +195,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function applyGameFiltersAndRender() {
         const searchTerm = gameSearchInput.value.toLowerCase().trim();
         let filteredGames = allGames;
-
         if (searchTerm) filteredGames = filteredGames.filter(game => (game.name || '').toLowerCase().includes(searchTerm));
         if (gameFilters.visibility !== 'all') filteredGames = filteredGames.filter(game => game.is_visible === gameFilters.visibility);
         if (gameFilters.rentalType !== 'all') filteredGames = filteredGames.filter(game => game.rental_type === gameFilters.rentalType);
-        
         renderGameList(filteredGames);
     }
     
@@ -217,9 +207,9 @@ document.addEventListener('DOMContentLoaded', () => {
         games.forEach(game => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td class="game-info">
-                    <div class="game-name">${game.name}</div>
-                    <div class="game-id">ID: ${game.game_id}</div>
+                <td class="compound-cell">
+                    <div class="main-info">${game.name}</div>
+                    <div class="sub-info">ID: ${game.game_id}</div>
                 </td>
                 <td>${game.total_stock}</td>
                 <td>${game.is_visible === 'TRUE' ? '是' : '否'}</td>
@@ -281,49 +271,43 @@ document.addEventListener('DOMContentLoaded', () => {
             is_visible: document.getElementById('edit-is-visible').value,
             rental_type: document.getElementById('edit-rental-type').value
         };
-
         try {
             const response = await fetch('/api/update-boardgame', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || '更新失敗');
-
             alert('更新成功！');
             editGameModal.style.display = 'none';
             const gameIndex = allGames.findIndex(g => g.game_id == gameId);
-            if (gameIndex > -1) {
-                // 更新緩存資料時，要用展開語法合併，而不是直接替換
-                allGames[gameIndex] = { ...allGames[gameIndex], ...formData };
-            }
-            applyGameFiltersAndRender(); // 重新渲染列表
+            if (gameIndex > -1) allGames[gameIndex] = { ...allGames[gameIndex], ...formData, name: allGames[gameIndex].name };
+            applyGameFiltersAndRender();
         } catch (error) { alert(`錯誤：${error.message}`); }
     });
 
     // =================================================================
-    // ** 新增：訂位管理模組 **
+    // 訂位管理模組
     // =================================================================
-
-    // 渲染預約列表到表格
     function renderBookingList(bookings) {
         if (!bookingListTbody) return;
         bookingListTbody.innerHTML = '';
-
         if (bookings.length === 0) {
-            bookingListTbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">目前沒有即將到來的預約。</td></tr>';
+            bookingListTbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">目前沒有即將到來的預約。</td></tr>';
             return;
         }
-
         bookings.forEach(booking => {
             const row = document.createElement('tr');
             row.dataset.bookingId = booking.booking_id;
             row.innerHTML = `
-                <td>${booking.booking_date}</td>
-                <td>${booking.time_slot}</td>
-                <td>${booking.contact_name}</td>
-                <td>${booking.contact_phone}</td>
+                <td class="compound-cell">
+                    <div class="main-info">${booking.booking_date}</div>
+                    <div class="sub-info">${booking.time_slot}</div>
+                </td>
+                <td class="compound-cell">
+                    <div class="main-info">${booking.contact_name}</div>
+                    <div class="sub-info">${booking.contact_phone}</div>
+                </td>
                 <td>${booking.num_of_people}</td>
                 <td class="actions-cell">
                     <button class="action-btn btn-cancel-booking" data-bookingid="${booking.booking_id}">取消預約</button>
@@ -333,64 +317,41 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 從後端 API 獲取所有預約資料
     async function fetchAllBookings() {
         try {
             const response = await fetch('/api/get-bookings');
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || '無法獲取預約列表');
-            }
+            if (!response.ok) throw new Error('無法獲取預約列表');
             allBookings = await response.json();
             renderBookingList(allBookings);
-        } catch (error) {
-            console.error('獲取預約列表失敗:', error);
-            if (bookingListTbody) {
-                bookingListTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">${error.message}</td></tr>`;
-            }
-        }
+        } catch (error) { console.error('獲取預約列表失敗:', error); }
     }
 
-    // 處理取消預約的點擊事件
     bookingListTbody.addEventListener('click', async (event) => {
         if (event.target.classList.contains('btn-cancel-booking')) {
             const bookingId = event.target.dataset.bookingid;
             const booking = allBookings.find(b => b.booking_id == bookingId);
-
             if (!booking) return;
 
             if (confirm(`確定要取消 ${booking.booking_date} ${booking.contact_name} 的預約嗎？`)) {
                 try {
                     const response = await fetch('/api/update-booking-status', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ bookingId: Number(bookingId), status: 'cancelled' })
                     });
-
                     const result = await response.json();
                     if (!response.ok) throw new Error(result.error || '取消預約失敗');
-
                     alert('預約已成功取消！');
-                    
-                    // 從前端列表中移除該筆預約，或重新整理
                     allBookings = allBookings.filter(b => b.booking_id != bookingId);
                     renderBookingList(allBookings);
-
-                } catch (error) {
-                    alert(`錯誤：${error.message}`);
-                }
+                } catch (error) { alert(`錯誤：${error.message}`); }
             }
         }
     });
 
-
     // =================================================================
-    // ** 新增：掃碼加點模組 **
+    // 掃碼加點模組
     // =================================================================
-    
-    // 成功掃描後的回呼函式
     function onScanSuccess(decodedText, decodedResult) {
-        console.log(`掃碼成功: ${decodedText}`);
         html5QrCode.stop().then(() => {
             qrReaderElement.style.display = 'none';
             scanResultSection.style.display = 'block';
@@ -400,15 +361,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }).catch(err => console.error("停止掃描失敗", err));
     }
 
-    // 啟動掃描器
     function startScanner() {
         if (!qrReaderElement) return;
-        // 如果實例不存在，則建立一個新的
-        if (!html5QrCode) {
-            html5QrCode = new Html5Qrcode("qr-reader");
-        }
+        html5QrCode = new Html5Qrcode("qr-reader");
         
-        // 重置介面狀態
         qrReaderElement.style.display = 'block';
         scanResultSection.style.display = 'none';
         scanStatusMessage.textContent = '請將顧客的 QR Code 對準掃描框';
@@ -420,28 +376,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
         html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
             .catch(err => {
-                console.error("無法啟動掃描器", err);
                 scanStatusMessage.textContent = '無法啟動相機，請檢查權限。';
                 scanStatusMessage.className = 'error';
             });
     }
 
-    // 監聽原因下拉選單
     reasonSelect.addEventListener('change', () => {
         customReasonInput.style.display = (reasonSelect.value === 'other') ? 'block' : 'none';
     });
 
-    // 重新掃描按鈕
     rescanBtn.addEventListener('click', startScanner);
 
-    // 提交經驗值按鈕
     submitExpBtn.addEventListener('click', async () => {
         const userId = userIdDisplay.value;
         const expValue = Number(expInput.value);
         let reason = reasonSelect.value;
-        if (reason === 'other') {
-            reason = customReasonInput.value.trim();
-        }
+        if (reason === 'other') reason = customReasonInput.value.trim();
 
         if (!userId || !expValue || expValue <= 0 || !reason) {
             scanStatusMessage.textContent = '錯誤：所有欄位皆為必填。';
@@ -455,27 +405,22 @@ document.addEventListener('DOMContentLoaded', () => {
             submitExpBtn.disabled = true;
 
             const response = await fetch('/api/add-exp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, expValue, reason }),
             });
-
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || '未知錯誤');
             
             scanStatusMessage.textContent = `成功為 ${userId.substring(0, 10)}... 新增 ${expValue} 點經驗！`;
             scanStatusMessage.className = 'success';
-            expInput.value = ''; // 清空經驗值欄位，方便下次輸入
-
+            expInput.value = '';
         } catch (error) {
-            console.error('新增經驗值失敗:', error);
             scanStatusMessage.textContent = `新增失敗: ${error.message}`;
             scanStatusMessage.className = 'error';
         } finally {
             submitExpBtn.disabled = false;
         }
     });
-
 
     // ---- 初始化 ----
     function initialize() {
