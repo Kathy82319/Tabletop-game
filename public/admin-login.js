@@ -34,9 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let gameFilters = { visibility: 'all', rentalType: 'all' };
     let html5QrCode = null; // ** 新增：掃碼器實例 **
 
-    // ---- 頁面切換邏輯 ----
+    // ---- 頁面切換邏輯 (修正版) ----
     function showPage(pageId) {
-        // ** 關鍵修正：切換頁面時，如果相機正在掃描，就關閉它 **
+        // 離開掃碼頁時，確保相機關閉
         if (html5QrCode && html5QrCode.isScanning) {
             html5QrCode.stop().catch(err => console.error("停止掃描器失敗", err));
         }
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pageId === 'users' && allUsers.length === 0) fetchAllUsers();
         if (pageId === 'inventory' && allGames.length === 0) fetchAllGames();
         if (pageId === 'bookings' && allBookings.length === 0) fetchAllBookings();
-        if (pageId === 'scan') startScanner(); // ** 新增：切換到掃碼頁時，啟動相機 **
+        if (pageId === 'scan') startScanner();
     }
 
     mainNav.addEventListener('click', (event) => {
