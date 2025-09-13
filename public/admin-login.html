@@ -11,30 +11,41 @@
             --text-dark: #343a40; --text-light: #6c757d;
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background-color: var(--light-gray); }
-        .header { background-color: var(--text-dark); color: white; padding: 1rem 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .header h1 { margin: 0; font-size: 1.5rem; }
-        .nav-tabs { background-color: white; padding: 0 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; }
-        .nav-tabs a { padding: 1rem 1.25rem; color: var(--text-light); text-decoration: none; font-weight: 500; border-bottom: 3px solid transparent; transition: color 0.2s, border-bottom-color 0.2s; cursor: pointer; }
+        .header { background-color: var(--text-dark); color: white; padding: 0.8rem 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header h1 { margin: 0; font-size: 1.4rem; }
+        .nav-tabs { background-color: white; padding: 0 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; flex-wrap: wrap; }
+        .nav-tabs a { padding: 0.8rem 1rem; color: var(--text-light); text-decoration: none; font-weight: 500; border-bottom: 3px solid transparent; transition: color 0.2s, border-bottom-color 0.2s; cursor: pointer; white-space: nowrap; }
         .nav-tabs a:hover { color: var(--primary-color); }
         .nav-tabs a.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
         .main-content { padding: 1.5rem; }
         .page { display: none; }
         .page.active { display: block; }
         .page-header { margin-bottom: 1.5rem; }
-        .page-header h2 { margin: 0; font-size: 2rem; color: var(--text-dark); }
+        .page-header h2 { margin: 0; font-size: 1.8rem; color: var(--text-dark); }
+        
+        /* 篩選器樣式 */
+        .filter-controls { margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+        .search-bar input { width: 100%; max-width: 300px; padding: 0.5rem 0.8rem; font-size: 0.9rem; border: 1px solid var(--border-color); border-radius: 6px; }
+        .filter-group { display: flex; gap: 0.5rem; align-items: center; }
+        .filter-group .filter-label { font-size: 0.9rem; font-weight: 500; margin-right: 0.5rem; }
+        .filter-group .filter-btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; border: 1px solid var(--border-color); border-radius: 15px; background-color: white; cursor: pointer; transition: all 0.2s; }
+        .filter-group .filter-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+        
+        /* 表格緊湊樣式 */
         table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; }
-        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
-        th { background-color: var(--light-gray); font-weight: 600; }
-        .search-bar { margin-bottom: 1.5rem; }
-        .search-bar input { width: 100%; max-width: 400px; padding: 0.6rem 1rem; font-size: 1rem; border: 1px solid var(--border-color); border-radius: 6px; }
+        th, td { padding: 0.6rem 0.8rem; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        th { background-color: var(--light-gray); font-weight: 600; font-size: 0.9rem; }
+        td { font-size: 0.9rem; }
+        .game-info .game-name { font-weight: bold; }
+        .game-info .game-id { font-size: 0.8rem; color: var(--text-light); }
         .action-btn { padding: 0.3rem 0.6rem; font-size: 0.8rem; border: none; border-radius: 5px; cursor: pointer; color: white; margin-right: 5px; transition: opacity 0.2s; }
         .action-btn:hover { opacity: 0.85; }
         .btn-edit { background-color: #ffc107; color: #212529; }
         .btn-sync { background-color: #17a2b8; }
         
-        /* Modal Styles */
+        /* Modal 樣式 */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px; }
         .modal-header h3 { margin: 0; }
         .modal-close { font-size: 1.5rem; font-weight: bold; border: none; background: none; cursor: pointer; }
@@ -44,6 +55,7 @@
         .form-actions { margin-top: 20px; text-align: right; }
         .btn-save { background-color: var(--primary-color); }
         .btn-cancel { background-color: var(--secondary-color); }
+        #edit-tag-other-input { display: none; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -58,10 +70,12 @@
     <main class="main-content">
         <div id="page-users" class="page active">
             <div class="page-header"><h2>顧客總表</h2></div>
-            <div class="search-bar"><input type="text" id="user-search-input" placeholder="依名稱或暱稱搜尋..."></div>
+            <div class="filter-controls">
+                <div class="search-bar"><input type="text" id="user-search-input" placeholder="依 LINE 名稱搜尋..."></div>
+            </div>
             <table>
                 <thead>
-                    <tr><th>LINE 名稱</th><th>暱稱</th><th>等級</th><th>經驗值</th><th>標籤</th><th>操作</th></tr>
+                    <tr><th>LINE 名稱</th><th>等級</th><th>經驗值</th><th>標籤</th><th>操作</th></tr>
                 </thead>
                 <tbody id="user-list-tbody"></tbody>
             </table>
@@ -69,10 +83,25 @@
 
         <div id="page-inventory" class="page">
             <div class="page-header"><h2>庫存管理</h2></div>
-            <div class="search-bar"><input type="text" id="game-search-input" placeholder="依桌遊名稱搜尋..."></div>
+            <div class="filter-controls">
+                <div class="search-bar"><input type="text" id="game-search-input" placeholder="依桌遊名稱搜尋..."></div>
+                <div class="filter-group" id="visibility-filter">
+                    <span class="filter-label">上架:</span>
+                    <button class="filter-btn active" data-filter="all">全部</button>
+                    <button class="filter-btn" data-filter="TRUE">是</button>
+                    <button class="filter-btn" data-filter="FALSE">否</button>
+                </div>
+                <div class="filter-group" id="rental-type-filter">
+                    <span class="filter-label">類型:</span>
+                    <button class="filter-btn active" data-filter="all">全部</button>
+                    <button class="filter-btn" data-filter="僅供販售">販售</button>
+                    <button class="filter-btn" data-filter="僅供內借">內借</button>
+                    <button class="filter-btn" data-filter="可外借">外借</button>
+                </div>
+            </div>
             <table>
                 <thead>
-                    <tr><th>ID</th><th>名稱</th><th>總庫存</th><th>上架狀態</th><th>租借類型</th><th>操作</th></tr>
+                    <tr><th>遊戲 (ID/名稱)</th><th>總庫存</th><th>上架狀態</th><th>租借類型</th><th>操作</th></tr>
                 </thead>
                 <tbody id="game-list-tbody"></tbody>
             </table>
@@ -84,35 +113,30 @@
     
     <div id="edit-game-modal" class="modal-overlay">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modal-title">編輯桌遊資訊</h3>
-                <button class="modal-close">&times;</button>
-            </div>
+            <div class="modal-header"><h3 id="modal-game-title">編輯桌遊資訊</h3><button class="modal-close">&times;</button></div>
             <form id="edit-game-form">
                 <input type="hidden" id="edit-game-id">
+                <div class="form-group"><label for="edit-total-stock">總庫存</label><input type="number" id="edit-total-stock" min="0" required></div>
+                <div class="form-group"><label for="edit-is-visible">上架狀態</label><select id="edit-is-visible"><option value="TRUE">是</option><option value="FALSE">否</option></select></div>
+                <div class="form-group"><label for="edit-rental-type">租借類型</label><select id="edit-rental-type"><option value="僅供販售">僅供販售</option><option value="僅供內借">僅供內借</option><option value="可外借">可外借</option></select></div>
+                <div class="form-actions"><button type="button" class="action-btn btn-cancel">取消</button><button type="submit" class="action-btn btn-save">儲存</button></div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="edit-tag-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3 id="modal-user-title">編輯使用者標籤</h3><button class="modal-close">&times;</button></div>
+            <form id="edit-tag-form">
+                <input type="hidden" id="edit-user-id">
                 <div class="form-group">
-                    <label for="edit-total-stock">總庫存</label>
-                    <input type="number" id="edit-total-stock" min="0" required>
-                </div>
-                <div class="form-group">
-                    <label for="edit-is-visible">上架狀態</label>
-                    <select id="edit-is-visible">
-                        <option value="TRUE">是</option>
-                        <option value="FALSE">否</option>
+                    <label for="edit-tag-select">標籤</label>
+                    <select id="edit-tag-select">
+                        <option value="">無</option><option value="會員">會員</option><option value="員工">員工</option><option value="特殊">特殊</option><option value="other">其他</option>
                     </select>
+                    <input type="text" id="edit-tag-other-input" placeholder="請輸入自訂標籤">
                 </div>
-                <div class="form-group">
-                    <label for="edit-rental-type">租借類型</label>
-                    <select id="edit-rental-type">
-                        <option value="僅供販售">僅供販售</option>
-                        <option value="僅供內用">僅供內用</option>
-                        <option value="可外借">可外借</option>
-                    </select>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="action-btn btn-cancel">取消</button>
-                    <button type="submit" class="action-btn btn-save">儲存</button>
-                </div>
+                <div class="form-actions"><button type="button" class="action-btn btn-cancel">取消</button><button type="submit" class="action-btn btn-save">儲存</button></div>
             </form>
         </div>
     </div>
