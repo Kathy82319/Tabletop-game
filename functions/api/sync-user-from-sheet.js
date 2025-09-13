@@ -1,5 +1,5 @@
 // functions/api/sync-user-from-sheet.js
-import { getSheet } from '../utils/google-sheets-utils.js';
+import { getSheet } from '../_google-sheets-utils.js';
 
 export async function onRequest(context) {
     try {
