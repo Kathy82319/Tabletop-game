@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('無法取得會員遊戲資料');
             const gameData = await response.json();
             
-            const expToNextLevel = gameData.level * 10;
+            const expToNextLevel = gameData.level;
             const userClassEl = document.getElementById('user-class');
             const userLevelEl = document.getElementById('user-level');
             const userExpEl = document.getElementById('user-exp');
