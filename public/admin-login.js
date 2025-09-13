@@ -1,6 +1,7 @@
 // public/admin-login.js
 
 document.addEventListener('DOMContentLoaded', () => {
+    // --- DOM 元素宣告 ---
     const mainNav = document.querySelector('.nav-tabs');
     const pages = document.querySelectorAll('.page');
     
@@ -8,20 +9,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const userListTbody = document.getElementById('user-list-tbody');
     const userSearchInput = document.getElementById('user-search-input');
     const editTagModal = document.getElementById('edit-tag-modal');
-    const editTagForm = document.getElementById('edit-tag-form');
     
     // 庫存管理
     const gameListTbody = document.getElementById('game-list-tbody');
     const gameSearchInput = document.getElementById('game-search-input');
-    const visibilityFilter = document.getElementById('visibility-filter');
-    const rentalTypeFilter = document.getElementById('rental-type-filter');
     const editGameModal = document.getElementById('edit-game-modal');
-    const editGameForm = document.getElementById('edit-game-form');
 
+    // ** 新增：訂位管理 **
+    const bookingListTbody = document.getElementById('booking-list-tbody');
+
+    // --- 全域狀態變數 ---
     let allUsers = [];
     let allGames = [];
+    let allBookings = []; // ** 新增 **
     let gameFilters = { visibility: 'all', rentalType: 'all' };
 
+    // ---- 頁面切換邏輯 ----
     function showPage(pageId) {
         pages.forEach(page => page.classList.remove('active'));
         const targetPage = document.getElementById(`page-${pageId}`);
@@ -32,7 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (link.getAttribute('href') === `#${pageId}`) link.classList.add('active');
         });
 
+        // ** 新增：切換到對應頁面時，如果資料為空就自動載入 **
         if (pageId === 'inventory' && allGames.length === 0) fetchAllGames();
+        if (pageId === 'bookings' && allBookings.length === 0) fetchAllBookings();
     }
 
     mainNav.addEventListener('click', (event) => {
@@ -280,11 +285,92 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { alert(`錯誤：${error.message}`); }
     });
 
+    // =================================================================
+    // ** 新增：訂位管理模組 **
+    // =================================================================
+
+    // 渲染預約列表到表格
+    function renderBookingList(bookings) {
+        if (!bookingListTbody) return;
+        bookingListTbody.innerHTML = '';
+
+        if (bookings.length === 0) {
+            bookingListTbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">目前沒有即將到來的預約。</td></tr>';
+            return;
+        }
+
+        bookings.forEach(booking => {
+            const row = document.createElement('tr');
+            row.dataset.bookingId = booking.booking_id;
+            row.innerHTML = `
+                <td>${booking.booking_date}</td>
+                <td>${booking.time_slot}</td>
+                <td>${booking.contact_name}</td>
+                <td>${booking.contact_phone}</td>
+                <td>${booking.num_of_people}</td>
+                <td class="actions-cell">
+                    <button class="action-btn btn-cancel-booking" data-bookingid="${booking.booking_id}">取消預約</button>
+                </td>
+            `;
+            bookingListTbody.appendChild(row);
+        });
+    }
+
+    // 從後端 API 獲取所有預約資料
+    async function fetchAllBookings() {
+        try {
+            const response = await fetch('/api/get-bookings');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || '無法獲取預約列表');
+            }
+            allBookings = await response.json();
+            renderBookingList(allBookings);
+        } catch (error) {
+            console.error('獲取預約列表失敗:', error);
+            if (bookingListTbody) {
+                bookingListTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">${error.message}</td></tr>`;
+            }
+        }
+    }
+
+    // 處理取消預約的點擊事件
+    bookingListTbody.addEventListener('click', async (event) => {
+        if (event.target.classList.contains('btn-cancel-booking')) {
+            const bookingId = event.target.dataset.bookingid;
+            const booking = allBookings.find(b => b.booking_id == bookingId);
+
+            if (!booking) return;
+
+            if (confirm(`確定要取消 ${booking.booking_date} ${booking.contact_name} 的預約嗎？`)) {
+                try {
+                    const response = await fetch('/api/update-booking-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ bookingId: Number(bookingId), status: 'cancelled' })
+                    });
+
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error || '取消預約失敗');
+
+                    alert('預約已成功取消！');
+                    
+                    // 從前端列表中移除該筆預約，或重新整理
+                    allBookings = allBookings.filter(b => b.booking_id != bookingId);
+                    renderBookingList(allBookings);
+
+                } catch (error) {
+                    alert(`錯誤：${error.message}`);
+                }
+            }
+        }
+    });
+
+
     // ---- 初始化 ----
     function initialize() {
         showPage('users');
         fetchAllUsers();
     }
-    
     initialize();
 });
