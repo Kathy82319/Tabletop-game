@@ -1,5 +1,56 @@
 // functions/api/update-user-tag.js
-import { updateRowInSheet } from '../_google-sheets-utils.js';
+import { GoogleSpreadsheet } from 'google-spreadsheet';
+import * as jose from 'jose';
+
+// --- 開始整合 Google Sheets 工具 ---
+async function getAccessToken(env) {
+    const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY } = env;
+    if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) throw new Error('缺少 Google 服務帳號的環境變數。');
+    
+    const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
+    const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets' })
+      .setProtectedHeader({ alg: 'RS256', typ: 'JWT' }).setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
+      .setAudience('https://oauth2.googleapis.com/token').setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
+      .setIssuedAt().setExpirationTime('1h').sign(privateKey);
+
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt }),
+    });
+
+    const tokenData = await tokenResponse.json();
+    if (!tokenResponse.ok) throw new Error(`從 Google 取得 access token 失敗: ${tokenData.error_description || tokenData.error}`);
+    return tokenData.access_token;
+}
+
+async function updateRowInSheet(env, sheetName, matchColumn, matchValue, updateData) {
+    const { GOOGLE_SHEET_ID } = env;
+    if (!GOOGLE_SHEET_ID) throw new Error('缺少 GOOGLE_SHEET_ID 環境變數。');
+
+    const accessToken = await getAccessToken(env);
+    const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
+    
+    const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
+    await doc.loadInfo();
+    
+    const sheet = doc.sheetsByTitle[sheetName];
+    if (!sheet) throw new Error(`在 Google Sheets 中找不到名為 "${sheetName}" 的工作表。`);
+
+    const rows = await sheet.getRows();
+    const rowToUpdate = rows.find(row => row.get(matchColumn) == matchValue);
+
+    if (rowToUpdate) {
+        // 使用 .set() 方法逐一更新欄位
+        for (const key in updateData) {
+            rowToUpdate.set(key, updateData[key]);
+        }
+        await rowToUpdate.save();
+    } else {
+        console.warn(`在工作表 "${sheetName}" 中找不到 ${matchColumn} 為 "${matchValue}" 的資料列，無法更新。`);
+    }
+}
+// --- 結束整合 Google Sheets 工具 ---
+
 
 export async function onRequest(context) {
   try {
@@ -15,7 +66,6 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
-    // 1. 更新 D1 資料庫
     const stmt = db.prepare('UPDATE Users SET tag = ? WHERE user_id = ?');
     const result = await stmt.bind(tag, userId).run();
 
@@ -25,15 +75,9 @@ export async function onRequest(context) {
       });
     }
 
-    // 2. 觸發背景任務，將變動同步到 Google Sheet
     context.waitUntil(
-        updateRowInSheet(
-            context.env, 
-            '使用者列表',  // 您的工作表名稱
-            'user_id',     // 用來匹配的欄位
-            userId,        // 要匹配的值
-            { tag: tag }   // 要更新的資料
-        ).catch(err => console.error("背景同步使用者標籤失敗:", err))
+        updateRowInSheet(context.env, '使用者列表', 'user_id', userId, { tag: tag })
+        .catch(err => console.error("背景同步使用者標籤失敗:", err))
     );
 
     return new Response(JSON.stringify({ success: true, message: '成功更新使用者標籤！' }), {
