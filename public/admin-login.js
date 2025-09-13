@@ -1,162 +1,177 @@
 // public/admin-login.js
 
 document.addEventListener('DOMContentLoaded', () => {
-    const qrReaderElement = document.getElementById('qr-reader');
-    const syncBookingsBtn = document.getElementById('sync-bookings-btn');
-    const importUsersBtn = document.getElementById('import-users-btn');
-    const syncBtn = document.getElementById('sync-btn');
-    const syncStatus = document.getElementById('sync-status');
-    const scanResultSection = document.getElementById('scan-result');
-    const userIdDisplay = document.getElementById('user-id-display');
-    const reasonSelect = document.getElementById('reason-select');
-    const customReasonInput = document.getElementById('custom-reason-input');
-    const expInput = document.getElementById('exp-input');
-    const submitBtn = document.getElementById('submit-btn');
-    const statusMessage = document.getElementById('status-message');
-    const rescanBtn = document.getElementById('rescan-btn');
+    const sidebarNav = document.querySelector('.sidebar-nav');
+    const pages = document.querySelectorAll('.page');
+    const userListTbody = document.getElementById('user-list-tbody');
+    const userSearchInput = document.getElementById('user-search-input');
 
-    let scannedUserId = null;
-    const html5QrCode = new Html5Qrcode("qr-reader");
+    let allUsers = [];
 
-    const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-        console.log(`掃描成功: ${decodedText}`);
-        html5QrCode.stop().then(() => {
-            qrReaderElement.style.display = 'none';
-            scanResultSection.style.display = 'block';
-            scannedUserId = decodedText;
-            userIdDisplay.value = decodedText;
-            statusMessage.textContent = '掃描成功！請選擇原因並輸入點數。';
-            statusMessage.className = 'success';
-        }).catch(err => console.error("停止掃描失敗", err));
-    };
+    // ---- 頁面切換邏輯 ----
+    function showPage(pageId) {
+        pages.forEach(page => page.classList.remove('active'));
+        const targetPage = document.getElementById(`page-${pageId}`);
+        if (targetPage) targetPage.classList.add('active');
 
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-    function startScanner() {
-        qrReaderElement.style.display = 'block';
-        scanResultSection.style.display = 'none';
-        statusMessage.textContent = '請將顧客的 QR Code 對準掃描框';
-        statusMessage.className = '';
-        html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
-            .catch(err => {
-                console.error("無法啟動掃描器", err);
-                statusMessage.textContent = '無法啟動相機，請檢查權限。';
-                statusMessage.className = 'error';
-            });
+        document.querySelectorAll('.sidebar-nav a').forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${pageId}`) link.classList.add('active');
+        });
     }
 
-    reasonSelect.addEventListener('change', () => {
-        customReasonInput.style.display = (reasonSelect.value === 'other') ? 'block' : 'none';
+    sidebarNav.addEventListener('click', (event) => {
+        if (event.target.tagName === 'A') {
+            event.preventDefault();
+            const pageId = event.target.getAttribute('href').substring(1);
+            showPage(pageId);
+        }
     });
 
-    submitBtn.addEventListener('click', async () => {
-        const expValue = Number(expInput.value);
-        let reason = reasonSelect.value;
-        if (reason === 'other') {
-            reason = customReasonInput.value.trim();
-        }
+    // ---- 使用者管理邏輯 ----
 
-        if (!scannedUserId || !expValue || expValue <= 0 || !reason) {
-            statusMessage.textContent = '錯誤：所有欄位皆為必填。';
-            statusMessage.className = 'error';
+    // 渲染使用者列表
+    function renderUserList(users) {
+        if (!userListTbody) return;
+        userListTbody.innerHTML = '';
+
+        if (users.length === 0) {
+            userListTbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">找不到任何使用者資料。</td></tr>';
             return;
         }
 
-        try {
-            statusMessage.textContent = '正在處理中...';
-            statusMessage.className = '';
-            submitBtn.disabled = true;
-
-            const response = await fetch('/api/add-exp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: scannedUserId,
-                    expValue: expValue,
-                    reason: reason,
-                }),
-            });
-
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || '未知錯誤');
-            
-            statusMessage.textContent = `成功！`;
-            statusMessage.className = 'success';
-            expInput.value = '';
-            customReasonInput.value = '';
-            reasonSelect.value = '消費回饋';
-            customReasonInput.style.display = 'none';
-
-        } catch (error) {
-            console.error('新增經驗值失敗:', error);
-            statusMessage.textContent = `新增失敗: ${error.message}`;
-            statusMessage.className = 'error';
-        } finally {
-            submitBtn.disabled = false;
-        }
-    });
-
-    rescanBtn.addEventListener('click', () => {
-        scannedUserId = null;
-        userIdDisplay.value = '';
-        expInput.value = '';
-        customReasonInput.value = '';
-        reasonSelect.value = '消費回饋';
-        customReasonInput.style.display = 'none';
-        startScanner();
-    });
+        users.forEach(user => {
+            const row = document.createElement('tr');
+            row.dataset.userId = user.user_id; // 在 <tr> 元素上儲存 user_id
+            row.innerHTML = `
+                <td>${user.line_display_name || 'N/A'}</td>
+                <td>${user.nickname || ''}</td>
+                <td>${user.level}</td>
+                <td>${user.current_exp} / 10</td>
+                <td><span class="tag-display">${user.tag || '無'}</span></td>
+                <td>
+                    <button class="action-btn btn-edit" data-userid="${user.user_id}">編輯標籤</button>
+                    <button class="action-btn btn-sync" data-userid="${user.user_id}">從Sheet同步</button>
+                </td>
+            `;
+            userListTbody.appendChild(row);
+        });
+    }
     
-    // ** 關鍵修正：優化後的通用同步處理函式 **
-    async function handleSync(button, statusElement, apiUrl, confirmMessage, actionName) {
-        if (!confirm(confirmMessage)) {
-            return;
-        }
-    
-        // 1. 立即更新 UI 狀態並禁用按鈕
-        statusElement.textContent = `正在${actionName}中，請稍候...`;
-        statusElement.className = '';
-        button.disabled = true;
-    
-        try {
-            const response = await fetch(apiUrl, { method: 'POST' });
-            
-            // 2. 解析後端回傳的 JSON
-            const result = await response.json();
-    
-            // 3. 根據後端回傳的 HTTP 狀態碼來判斷成功或失敗
-            if (!response.ok) {
-                // 如果是失敗狀態 (4xx, 5xx), 拋出後端提供的詳細錯誤
-                throw new Error(result.details || result.error || `未知的${actionName}錯誤`);
+    // 重新載入並渲染單一使用者的資料列
+    function reloadAndRenderRow(userId) {
+         const foundUser = allUsers.find(u => u.user_id === userId);
+         if (foundUser) {
+            const row = userListTbody.querySelector(`tr[data-user-id="${userId}"]`);
+            if (row) {
+                 row.innerHTML = `
+                    <td>${foundUser.line_display_name || 'N/A'}</td>
+                    <td>${foundUser.nickname || ''}</td>
+                    <td>${foundUser.level}</td>
+                    <td>${foundUser.current_exp} / 10</td>
+                    <td><span class="tag-display">${foundUser.tag || '無'}</span></td>
+                    <td>
+                        <button class="action-btn btn-edit" data-userid="${foundUser.user_id}">編輯標籤</button>
+                        <button class="action-btn btn-sync" data-userid="${foundUser.user_id}">從Sheet同步</button>
+                    </td>
+                `;
             }
-    
-            // 4. 如果是成功狀態 (2xx), 顯示成功訊息
-            statusElement.textContent = result.message || `${actionName}成功！`;
-            statusElement.className = 'success';
-    
+         }
+    }
+
+
+    // 獲取所有使用者
+    async function fetchAllUsers() {
+        try {
+            const response = await fetch('/api/get-users');
+            if (!response.ok) throw new Error('無法從伺服器獲取使用者列表。');
+            allUsers = await response.json();
+            renderUserList(allUsers);
         } catch (error) {
-            // 5. 捕捉所有錯誤 (包括網路錯誤和後端拋出的錯誤)
-            statusElement.textContent = `${actionName}失敗：${error.message}`;
-            statusElement.className = 'error';
-        } finally {
-            // 6. 無論成功或失敗，最後都重新啟用按鈕
-            button.disabled = false;
+            console.error('獲取使用者列表失敗:', error);
+            if (userListTbody) userListTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">${error.message}</td></tr>`;
         }
     }
-    
-    syncBtn.addEventListener('click', () => handleSync(
-        syncBtn, syncStatus, '/api/sync-history', 
-        '確定要將所有經驗值紀錄同步到 Google Sheet 嗎？這將會覆蓋現有內容。', '同步經驗值紀錄'
-    ));
-    
-    syncBookingsBtn.addEventListener('click', () => handleSync(
-        syncBookingsBtn, syncStatus, '/api/sync-bookings',
-        '確定要將所有預約紀錄同步到 Google Sheet 嗎？這將會覆蓋現有內容。', '同步預約紀錄'
-    ));
-    
-    importUsersBtn.addEventListener('click', () => handleSync(
-        importUsersBtn, syncStatus, '/api/import-users',
-        '確定要從 Google Sheet 匯入所有使用者資料嗎？這將會覆蓋資料庫中現有的使用者資訊。', '匯入使用者資料'
-    ));
 
-    startScanner();
+    // 搜尋功能
+    userSearchInput.addEventListener('input', () => {
+        const searchTerm = userSearchInput.value.toLowerCase().trim();
+        const filteredUsers = searchTerm ? allUsers.filter(user => 
+            (user.line_display_name || '').toLowerCase().includes(searchTerm) || 
+            (user.nickname || '').toLowerCase().includes(searchTerm)
+        ) : allUsers;
+        renderUserList(filteredUsers);
+    });
+
+    // ---- 按鈕事件處理 (使用事件代理) ----
+    userListTbody.addEventListener('click', async (event) => {
+        const target = event.target;
+        const userId = target.dataset.userid;
+
+        if (!userId) return;
+
+        // ** 處理「編輯標籤」按鈕 **
+        if (target.classList.contains('btn-edit')) {
+            const currentTag = allUsers.find(u => u.user_id === userId).tag || '';
+            const newTag = prompt('請輸入新的標籤 (會員, 員工, 特殊, 或其他):', currentTag);
+            
+            if (newTag !== null) { // prompt 按下取消會回傳 null
+                try {
+                    const response = await fetch('/api/update-user-tag', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: userId, tag: newTag.trim() })
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error || '更新失敗');
+                    
+                    // 更新成功後，直接更新前端的資料和畫面
+                    const user = allUsers.find(u => u.user_id === userId);
+                    user.tag = newTag.trim();
+                    const tagDisplay = document.querySelector(`tr[data-user-id="${userId}"] .tag-display`);
+                    if (tagDisplay) tagDisplay.textContent = newTag.trim() || '無';
+                    alert('標籤更新成功！');
+
+                } catch (error) {
+                    alert(`錯誤：${error.message}`);
+                }
+            }
+        }
+
+        // ** 處理「從Sheet同步」按鈕 **
+        if (target.classList.contains('btn-sync')) {
+            if (!confirm(`確定要從 Google Sheet 同步使用者 ${userId} 的資料嗎？D1 資料庫中的該筆紀錄將被覆蓋。`)) return;
+
+            try {
+                target.textContent = '同步中...';
+                target.disabled = true;
+
+                const response = await fetch('/api/sync-user-from-sheet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: userId })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.details || result.error || '同步失敗');
+
+                alert('同步成功！將重新整理此列資料。');
+                // 重新從後端獲取一次完整的最新列表資料
+                await fetchAllUsers();
+
+            } catch (error) {
+                alert(`錯誤：${error.message}`);
+            } finally {
+                target.textContent = '從Sheet同步';
+                target.disabled = false;
+            }
+        }
+    });
+
+    // ---- 初始化 ----
+    function initialize() {
+        showPage('users');
+        fetchAllUsers();
+    }
+
+    initialize();
 });
