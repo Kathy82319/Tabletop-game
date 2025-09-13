@@ -14,16 +14,17 @@ async function runSync(env) {
     if (!EXP_HISTORY_SHEET_NAME) {
         throw new Error('缺少 EXP_HISTORY_SHEET_NAME 環境變數。');
     }
-
+    
     const { results } = await DB.prepare('SELECT * FROM ExpHistory ORDER BY created_at DESC').all();
 
     if (!results || results.length === 0) {
         return { success: true, message: '資料庫中沒有歷史紀錄可同步。' };
     }
 
-    const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS266');
+    // ** 關鍵修正：將加密演算法 RS266 改回正確的 RS256 **
+    const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
     const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets' })
-      .setProtectedHeader({ alg: 'RS266', typ: 'JWT' })
+      .setProtectedHeader({ alg: 'RS256', typ: 'JWT' }) // ** 這裡也必須是 RS256 **
       .setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
       .setAudience('https://oauth2.googleapis.com/token')
       .setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
@@ -33,12 +34,11 @@ async function runSync(env) {
 
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
-      // ** 關鍵修正：確保標頭的寫法最標準 **
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
         assertion: jwt
-      }).toString(),
+      }),
     });
 
     const tokenData = await tokenResponse.json();
@@ -69,10 +69,10 @@ export async function onRequest(context) {
             return new Response(JSON.stringify({ error: '僅允許 POST 請求' }), { status: 405 });
         }
         const result = await runSync(context.env);
-        return new Response(JSON.stringify(result), { status: 200 });
+        return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
     } catch (error) {
         console.error('Error in sync-history API:', error);
         const errorResponse = { error: '同步失敗。', details: error.message };
-        return new Response(JSON.stringify(errorResponse), { status: 500 });
+        return new Response(JSON.stringify(errorResponse), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 }
