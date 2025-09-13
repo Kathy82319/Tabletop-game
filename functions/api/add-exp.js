@@ -2,20 +2,20 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import * as jose from 'jose';
 
-// =================================================================
-// 核心邏輯：將「單筆」經驗值紀錄非同步同步到 Google Sheet
-// =================================================================
-async function syncSingleExpToSheet(env, ExpHistory) {
+async function syncSingleExpToSheet(env, expData) {
     try {
         console.log('背景任務：開始同步單筆經驗值紀錄...');
         const {
           GOOGLE_SERVICE_ACCOUNT_EMAIL,
           GOOGLE_PRIVATE_KEY,
           GOOGLE_SHEET_ID,
-          ExpHistory // 我們之前為手動同步建立的環境變數
+          EXP_HISTORY_SHEET_NAME 
         } = env;
 
-        // 驗證並連接到 Google Sheets
+        if (!EXP_HISTORY_SHEET_NAME) {
+            throw new Error('背景同步(Exp)失敗：缺少 EXP_HISTORY_SHEET_NAME 環境變數。');
+        }
+
         const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
         const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets' })
           .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
@@ -39,16 +39,14 @@ async function syncSingleExpToSheet(env, ExpHistory) {
         const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
         await doc.loadInfo();
 
-        const sheet = doc.sheetsByTitle[ExpHistory];
-        if (!sheet) throw new Error(`背景同步(Exp)：找不到名為 "${ExpHistory}" 的工作表。`);
+        const sheet = doc.sheetsByTitle[EXP_HISTORY_SHEET_NAME];
+        if (!sheet) throw new Error(`背景同步(Exp)：找不到名為 "${EXP_HISTORY_SHEET_NAME}" 的工作表。`);
 
-        // 使用 addRow 新增一行資料
         await sheet.addRow({
-            user_id: ExpHistory.userId,
-            exp_added: ExpHistory.exp_added,
-            staff_id: ExpHistory.staff_id,
-            reason: ExpHistory.reason,
-            // created_at 會由 Google Sheets 自動填入時間戳，或我們也可以手動指定
+            user_id: expData.userId,
+            exp_added: expData.expValue, 
+            reason: expData.reason,
+            staff_id: null,
             created_at: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
         });
 
@@ -59,10 +57,6 @@ async function syncSingleExpToSheet(env, ExpHistory) {
     }
 }
 
-
-// =================================================================
-// 主要 API 處理器
-// =================================================================
 export async function onRequest(context) {
   try {
     if (context.request.method !== 'POST') {
@@ -76,8 +70,6 @@ export async function onRequest(context) {
     }
 
     const db = context.env.DB;
-
-    // ** 關鍵改動 1: 先查詢使用者目前的等級和經驗值 **
     const userStmt = db.prepare('SELECT level, current_exp FROM Users WHERE user_id = ?');
     let user = await userStmt.bind(userId).first();
 
@@ -88,24 +80,21 @@ export async function onRequest(context) {
     let currentLevel = user.level;
     let currentExp = user.current_exp + expValue;
 
-    // ** 關鍵改動 2: 處理升級邏輯 (支援連續升級) **
-    let requiredExp = currentLevel * 10;
+    // ** 關鍵修正：將升級門檻固定為 10 **
+    const requiredExp = 10;
     while (currentExp >= requiredExp) {
-      currentExp -= requiredExp; // 扣除升級所需經驗
+      currentExp -= requiredExp; // 減去固定的升級經驗
       currentLevel += 1;          // 等級 +1
-      requiredExp = currentLevel * 10; // 計算新等級的升級門檻
+      // ** 關鍵修正：不再重新計算 requiredExp **
     }
 
-    // ** 關鍵改動 3: 使用 D1 交易，同時更新等級、經驗值，並新增歷史紀錄 **
-    const batchResult = await db.batch([
+    await db.batch([
       db.prepare('UPDATE Users SET level = ?, current_exp = ? WHERE user_id = ?').bind(currentLevel, currentExp, userId),
       db.prepare('INSERT INTO ExpHistory (user_id, exp_added, reason) VALUES (?, ?, ?)').bind(userId, expValue, reason || '未提供原因')
     ]);
     
-    // 觸發背景同步任務
     context.waitUntil(syncSingleExpToSheet(context.env, { userId, expValue, reason }));
     
-    // 回傳包含新等級和經驗值的成功訊息
     return new Response(JSON.stringify({ 
         success: true, 
         message: `成功新增 ${expValue} 點經驗值。`,
