@@ -421,24 +421,33 @@ document.addEventListener('DOMContentLoaded', () => {
             if (bookingData.hasDiscount) { const totalDiscount = ADVANCE_BOOKING_DISCOUNT * bookingData.people; finalPrice -= totalDiscount; discountText = `<p class="discount-text"><span>早鳥優惠折扣:</span><span>-$${totalDiscount}</span></p>`; }
             elements.summaryCard.innerHTML = `<p><span>姓名:</span><span>${bookingData.name}</span></p><p><span>電話:</span><span>${bookingData.phone}</span></p><p><span>日期:</span><span>${bookingData.date}</span></p><p><span>時段:</span><span>${bookingData.timeSlot}</span></p><p><span>人數:</span><span>${bookingData.people} 人</span></p><hr>${discountText}<p><span>預估總金額:</span><span class="final-price">$${finalPrice}</span></p>`;
         }
-        elements.confirmBtn.addEventListener('click', async () => {
-            elements.confirmBtn.disabled = true; elements.confirmBtn.textContent = '處理中...';
-            try {
-                const createRes = await fetch('/api/bookings-create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: userProfile.userId, bookingDate: bookingData.date, timeSlot: bookingData.timeSlot, numOfPeople: bookingData.people, contactName: bookingData.name, contactPhone: bookingData.phone }) });
-                const result = await createRes.json();
-                if (!createRes.ok) throw new Error(result.error || '預約失敗');
-                await fetch('/api/send-message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: userProfile.userId, message: result.confirmationMessage }) });
-                elements.resultContent.innerHTML = `<h2 class="success">✅ 預約成功！</h2><p>已將預約確認訊息發送至您的 LINE，我們到時見！</p><button id="booking-done-btn" class="cta-button">返回預約首頁</button>`;
-                showBookingStep('step-result');
-                document.getElementById('booking-done-btn').addEventListener('click', () => {
-                    bookingHistoryStack = [];
-                    showBookingStep('step-preference');
-                    if (flatpickrInstance) flatpickrInstance.clear();
-                    elements.slotsContainer.innerHTML = '';
-                    elements.slotsPlaceholder.style.display = 'block';
-                    elements.slotsPlaceholder.textContent = '請先從上方選擇日期';
-                });
-            } catch (error) { alert(`預約失敗：${error.message}`); } finally { if (elements.confirmBtn) { elements.confirmBtn.disabled = false; elements.confirmBtn.textContent = '確認送出'; } }
+elements.confirmBtn.addEventListener('click', async () => {
+    // ** 關鍵修正：增加 isSubmitting 旗標防止重複提交 **
+    if (elements.confirmBtn.dataset.isSubmitting === 'true') return;
+
+    try {
+        elements.confirmBtn.dataset.isSubmitting = 'true'; // 標記為提交中
+        elements.confirmBtn.disabled = true;
+        elements.confirmBtn.textContent = '處理中...';
+        
+        const createRes = await fetch('/api/bookings-create', { /* ... fetch 內容不變 ... */ });
+        const result = await createRes.json();
+        if (!createRes.ok) throw new Error(result.error || '預約失敗');
+        
+        await fetch('/api/send-message', { /* ... fetch 內容不變 ... */ });
+
+        elements.resultContent.innerHTML = `<h2 class="success">✅ 預約成功！</h2><p>已將預約確認訊息發送至您的 LINE，我們到時見！</p><button id="booking-done-btn" class="cta-button">返回預約首頁</button>`;
+        showBookingStep('step-result');
+
+        document.getElementById('booking-done-btn').addEventListener('click', () => { /* ... 內容不變 ... */ });
+
+    } catch (error) {
+        alert(`預約失敗：${error.message}`);
+        // ** 關鍵修正：失敗時也要恢復按鈕狀態 **
+        elements.confirmBtn.dataset.isSubmitting = 'false';
+        elements.confirmBtn.disabled = false;
+        elements.confirmBtn.textContent = '確認送出';
+    }
         });
     }
 

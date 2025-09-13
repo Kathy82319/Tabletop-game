@@ -363,6 +363,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function startScanner() {
         if (!qrReaderElement) return;
+        
+        // ** 關鍵修正：如果已有實例且正在掃描，先停止它 **
+        if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().catch(err => console.log("掃描器已停止"));
+        }
+        
         html5QrCode = new Html5Qrcode("qr-reader");
         
         qrReaderElement.style.display = 'block';

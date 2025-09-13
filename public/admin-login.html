@@ -11,50 +11,32 @@
             --text-dark: #343a40; --text-light: #6c757d;
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background-color: var(--light-gray); }
-        .header { background-color: var(--text-dark); color: white; padding: 0.8rem 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header { background-color: var(--text-dark); color: white; padding: 0.8rem 1.5rem; }
         .header h1 { margin: 0; font-size: 1.4rem; }
         .nav-tabs { background-color: white; padding: 0 1rem; border-bottom: 1px solid var(--border-color); display: flex; flex-wrap: nowrap; overflow-x: auto; }
-        .nav-tabs a { padding: 0.8rem 0.8rem; color: var(--text-light); text-decoration: none; font-weight: 500; border-bottom: 3px solid transparent; transition: color 0.2s, border-bottom-color 0.2s; cursor: pointer; white-space: nowrap; }
-        .nav-tabs a:hover { color: var(--primary-color); }
+        .nav-tabs a { padding: 0.8rem; color: var(--text-light); text-decoration: none; font-weight: 500; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; }
         .nav-tabs a.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
         .main-content { padding: 1.5rem; }
         .page { display: none; }
         .page.active { display: block; }
-        .page-header { margin-bottom: 1.5rem; }
-        .page-header h2 { margin: 0; font-size: 1.8rem; color: var(--text-dark); }
         
-        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; table-layout: fixed; }
-        th, td { padding: 0.6rem 0.8rem; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle; white-space: normal; }
-        th { background-color: var(--light-gray); font-weight: 600; font-size: 0.9rem; white-space: nowrap; }
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 0.6rem 0.8rem; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        th { background-color: var(--light-gray); font-weight: 600; font-size: 0.9rem; white-space: nowrap; text-align: center; } /* 名稱置中 */
         td { font-size: 0.9rem; }
         
-        /* 複合式欄位樣式 */
+        /* 複合式欄位 & 操作按鈕 */
+        .compound-cell { text-align: center; }
         .compound-cell .main-info { font-weight: bold; }
         .compound-cell .sub-info { font-size: 0.8rem; color: var(--text-light); }
-
-        .actions-cell .action-btn { display: block; width: 100%; text-align: center; }
+        .actions-cell { text-align: center; }
+        .actions-cell .action-btn { display: block; width: 80%; margin: 0 auto; text-align: center; }
         .actions-cell .action-btn:first-child { margin-bottom: 4px; }
-        .action-btn { padding: 0.3rem 0.6rem; font-size: 0.8rem; border: none; border-radius: 5px; cursor: pointer; color: white; transition: opacity 0.2s; }
+        .action-btn { padding: 0.3rem 0.6rem; font-size: 0.8rem; border: none; border-radius: 5px; cursor: pointer; color: white; }
         .btn-edit { background-color: #ffc107; color: #212529; }
         .btn-sync { background-color: #17a2b8; }
         .btn-cancel-booking { background-color: var(--danger-color); }
-        .btn-save { background-color: var(--primary-color); }
-        .btn-cancel { background-color: var(--secondary-color); }
 
-
-        /* Modal 樣式 */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px; }
-        .modal-header h3 { margin: 0; }
-        .modal-close { font-size: 1.5rem; font-weight: bold; border: none; background: none; cursor: pointer; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
-        .form-group input, .form-group select { width: 100%; padding: 8px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .form-actions { margin-top: 20px; text-align: right; }
-        .btn-save { background-color: var(--primary-color); }
-        .btn-cancel { background-color: var(--secondary-color); }
-        #edit-tag-other-input { display: none; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -100,7 +82,7 @@
             </div>
             <table>
                 <thead>
-                    <tr><th>遊戲 (ID/名稱)</th><th>總庫存</th><th>上架狀態</th><th>租借類型</th><th>操作</th></tr>
+                    <tr><th>遊戲</th><th>庫存</th><th>上架</th><th>類型</th><th>操作</th></tr>
                 </thead>
                 <tbody id="game-list-tbody"></tbody>
             </table>
@@ -116,12 +98,7 @@
                     <col style="width: 30%;">
                 </colgroup>
                 <thead>
-                    <tr>
-                        <th>時間 (日期/時段)</th>
-                        <th>聯絡資訊 (姓名/電話)</th>
-                        <th>人數</th>
-                        <th>操作</th>
-                    </tr>
+                    <tr><th>時間</th><th>客戶</th><th>人數</th><th>操作</th></tr>
                 </thead>
                 <tbody id="booking-list-tbody"></tbody>
             </table>
