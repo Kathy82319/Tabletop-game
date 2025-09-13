@@ -1,5 +1,5 @@
 // functions/api/update-user-tag.js
-import { updateRowInSheet } from '../utils/google-sheets-utils.js';
+import { updateRowInSheet } from 'functions/utils/google-sheets-utils.js';
 
 export async function onRequest(context) {
   try {
