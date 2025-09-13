@@ -18,14 +18,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // ** 新增：訂位管理 **
     const bookingListTbody = document.getElementById('booking-list-tbody');
 
+    // ** 新增：掃碼加點頁面元素 **
+    const qrReaderElement = document.getElementById('qr-reader');
+    const scanResultSection = document.getElementById('scan-result');
+    const userIdDisplay = document.getElementById('user-id-display');
+    const reasonSelect = document.getElementById('reason-select');
+    const customReasonInput = document.getElementById('custom-reason-input');
+    const expInput = document.getElementById('exp-input');
+    const submitExpBtn = document.getElementById('submit-exp-btn');
+    const rescanBtn = document.getElementById('rescan-btn');
+    const scanStatusMessage = document.getElementById('scan-status-message');
+
     // --- 全域狀態變數 ---
-    let allUsers = [];
-    let allGames = [];
-    let allBookings = []; // ** 新增 **
+    let allUsers = [], allGames = [], allBookings = [];
     let gameFilters = { visibility: 'all', rentalType: 'all' };
+    let html5QrCode = null; // ** 新增：掃碼器實例 **
 
     // ---- 頁面切換邏輯 ----
     function showPage(pageId) {
+        // ** 關鍵修正：切換頁面時，如果相機正在掃描，就關閉它 **
+        if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().catch(err => console.error("停止掃描器失敗", err));
+        }
+
         pages.forEach(page => page.classList.remove('active'));
         const targetPage = document.getElementById(`page-${pageId}`);
         if (targetPage) targetPage.classList.add('active');
@@ -35,9 +50,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (link.getAttribute('href') === `#${pageId}`) link.classList.add('active');
         });
 
-        // ** 新增：切換到對應頁面時，如果資料為空就自動載入 **
+        // 根據頁面載入對應的資料或功能
+        if (pageId === 'users' && allUsers.length === 0) fetchAllUsers();
         if (pageId === 'inventory' && allGames.length === 0) fetchAllGames();
         if (pageId === 'bookings' && allBookings.length === 0) fetchAllBookings();
+        if (pageId === 'scan') startScanner(); // ** 新增：切換到掃碼頁時，啟動相機 **
     }
 
     mainNav.addEventListener('click', (event) => {
@@ -367,10 +384,104 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
+    // =================================================================
+    // ** 新增：掃碼加點模組 **
+    // =================================================================
+    
+    // 成功掃描後的回呼函式
+    function onScanSuccess(decodedText, decodedResult) {
+        console.log(`掃碼成功: ${decodedText}`);
+        html5QrCode.stop().then(() => {
+            qrReaderElement.style.display = 'none';
+            scanResultSection.style.display = 'block';
+            userIdDisplay.value = decodedText;
+            scanStatusMessage.textContent = '掃描成功！請輸入點數。';
+            scanStatusMessage.className = 'success';
+        }).catch(err => console.error("停止掃描失敗", err));
+    }
+
+    // 啟動掃描器
+    function startScanner() {
+        if (!qrReaderElement) return;
+        // 如果實例不存在，則建立一個新的
+        if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode("qr-reader");
+        }
+        
+        // 重置介面狀態
+        qrReaderElement.style.display = 'block';
+        scanResultSection.style.display = 'none';
+        scanStatusMessage.textContent = '請將顧客的 QR Code 對準掃描框';
+        scanStatusMessage.className = '';
+        expInput.value = '';
+        reasonSelect.value = '消費回饋';
+        customReasonInput.style.display = 'none';
+
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
+            .catch(err => {
+                console.error("無法啟動掃描器", err);
+                scanStatusMessage.textContent = '無法啟動相機，請檢查權限。';
+                scanStatusMessage.className = 'error';
+            });
+    }
+
+    // 監聽原因下拉選單
+    reasonSelect.addEventListener('change', () => {
+        customReasonInput.style.display = (reasonSelect.value === 'other') ? 'block' : 'none';
+    });
+
+    // 重新掃描按鈕
+    rescanBtn.addEventListener('click', startScanner);
+
+    // 提交經驗值按鈕
+    submitExpBtn.addEventListener('click', async () => {
+        const userId = userIdDisplay.value;
+        const expValue = Number(expInput.value);
+        let reason = reasonSelect.value;
+        if (reason === 'other') {
+            reason = customReasonInput.value.trim();
+        }
+
+        if (!userId || !expValue || expValue <= 0 || !reason) {
+            scanStatusMessage.textContent = '錯誤：所有欄位皆為必填。';
+            scanStatusMessage.className = 'error';
+            return;
+        }
+
+        try {
+            scanStatusMessage.textContent = '正在處理中...';
+            scanStatusMessage.className = '';
+            submitExpBtn.disabled = true;
+
+            const response = await fetch('/api/add-exp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, expValue, reason }),
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || '未知錯誤');
+            
+            scanStatusMessage.textContent = `成功為 ${userId.substring(0, 10)}... 新增 ${expValue} 點經驗！`;
+            scanStatusMessage.className = 'success';
+            expInput.value = ''; // 清空經驗值欄位，方便下次輸入
+
+        } catch (error) {
+            console.error('新增經驗值失敗:', error);
+            scanStatusMessage.textContent = `新增失敗: ${error.message}`;
+            scanStatusMessage.className = 'error';
+        } finally {
+            submitExpBtn.disabled = false;
+        }
+    });
+
+
     // ---- 初始化 ----
     function initialize() {
         showPage('users');
         fetchAllUsers();
     }
+    
     initialize();
 });

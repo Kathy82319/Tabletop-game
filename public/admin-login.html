@@ -123,7 +123,35 @@
         </div>
         
 
-        <div id="page-scan" class="page"><h2>掃碼加點 (建置中)</h2></div>
+      <div id="page-scan" class="page">
+            <div class="page-header"><h2>掃碼加點</h2></div>
+            <div id="scan-container">
+                <div id="qr-reader" style="width: 100%; max-width: 500px; margin: 0 auto;"></div>
+                <div id="scan-result" style="display: none;">
+                    <div class="form-group">
+                        <label for="user-id-display">顧客 User ID:</label>
+                        <input type="text" id="user-id-display" readonly style="background-color: #e9ecef;">
+                    </div>
+                    <div class="form-group">
+                        <label for="reason-select">點數名稱 (原因):</label>
+                        <select id="reason-select">
+                            <option value="消費回饋">消費回饋</option>
+                            <option value="活動獎勵">活動獎勵</option>
+                            <option value="新手獎勵">新手獎勵</option>
+                            <option value="other">其他 (請手動輸入)</option>
+                        </select>
+                        <input type="text" id="custom-reason-input" placeholder="請輸入自訂原因" style="display: none; margin-top: 10px;">
+                    </div>
+                    <div class="form-group">
+                        <label for="exp-input">經驗值點數:</label>
+                        <input type="number" id="exp-input" placeholder="請輸入要新增的經驗值" min="1">
+                    </div>
+                    <button id="submit-exp-btn" class="action-btn btn-save" style="width: 100%; padding: 12px; font-size: 1rem;">確認新增</button>
+                    <button id="rescan-btn" class="action-btn btn-cancel" style="width: 100%; padding: 12px; font-size: 1rem; margin-top: 10px;">重新掃描</button>
+                </div>
+                <div id="scan-status-message" style="text-align: center; margin-top: 15px; font-weight: bold; min-height: 24px;"></div>
+            </div>
+        </div>
     </main>
     
     <div id="edit-game-modal" class="modal-overlay">
