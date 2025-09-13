@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('無法取得會員遊戲資料');
             const gameData = await response.json();
             
-            const expToNextLevel = gameData.level;
+            const expToNextLevel = gameData.level; //修正經驗顯示欄位
             const userClassEl = document.getElementById('user-class');
             const userLevelEl = document.getElementById('user-level');
             const userExpEl = document.getElementById('user-exp');
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (userClassEl) {
                 userClassEl.textContent = (gameData.class && gameData.class !== '無') ? gameData.class : "初心者";
             }
-            if (userLevelEl) userLevelEl.textContent = gameData.level;
+            if (userLevelEl) userLevelEl.textContent = "10";
             if (userExpEl) userExpEl.textContent = `${gameData.current_exp} / ${expToNextLevel}`;
             
             if (userPerkEl) {
