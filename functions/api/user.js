@@ -1,6 +1,6 @@
 // functions/api/user.js
 // ** 引入我們建立的共用工具 **
-import { addRowToSheet } from 'functions/utils/google-sheets-utils.js';
+import { addRowToSheet } from '../utils/google-sheets-utils.js';
 
 // ** 這段已不再需要，因為邏輯已移至共用工具中 **
 // async function syncSingleUserToSheet(env, newUser) { ... }
