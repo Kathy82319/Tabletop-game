@@ -2,9 +2,7 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import * as jose from 'jose';
 
-// 這是可重複使用的核心同步邏輯 (這部分不變)
 async function runSync(env) {
-    // 1. 取得所有需要的環境變數
     const {
       GOOGLE_SERVICE_ACCOUNT_EMAIL,
       GOOGLE_PRIVATE_KEY,
@@ -17,38 +15,46 @@ async function runSync(env) {
         throw new Error('缺少 EXP_HISTORY_SHEET_NAME 環境變數。');
     }
     
-    // 2. 從 D1 資料庫讀取所有歷史紀錄
-    const stmt = DB.prepare('SELECT * FROM ExpHistory ORDER BY created_at DESC');
-    const { results } = await stmt.all();
+    const { results } = await DB.prepare('SELECT * FROM ExpHistory ORDER BY created_at DESC').all();
 
     if (!results || results.length === 0) {
         return { success: true, message: '資料庫中沒有歷史紀錄可同步。' };
     }
 
-    // 3. 驗證並連接到 Google Sheets
-    const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
-    const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets' })
-      .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
-      .setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
-      .setAudience('https://oauth2.googleapis.com/token')
-      .setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
-      .setIssuedAt()
-      .setExpirationTime('1h')
-      .sign(privateKey);
+    // --- 獨立的 Token 獲取邏輯，帶有詳細錯誤處理 ---
+    let accessToken;
+    try {
+        const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
+        const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets' })
+          .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
+          .setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
+          .setAudience('https://oauth2.googleapis.com/token')
+          .setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
+          .setIssuedAt()
+          .setExpirationTime('1h')
+          .sign(privateKey);
 
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth-grant-type:jwt-bearer', assertion: jwt }),
-    });
-    if (!tokenResponse.ok) throw new Error('從 Google 取得 access token 失敗。');
-    const tokenData = await tokenResponse.json();
-    const accessToken = tokenData.access_token;
+        const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth-grant-type-jwt-bearer', assertion: jwt }),
+        });
+        
+        const tokenData = await tokenResponse.json();
+        if (!tokenResponse.ok) {
+            // 如果請求失敗，拋出從 Google API 收到的具體錯誤描述
+            throw new Error(tokenData.error_description || '從 Google 取得 access token 時發生未知錯誤。');
+        }
+        accessToken = tokenData.access_token;
+    } catch (e) {
+        console.error("獲取 Access Token 失敗:", e);
+        // 重新拋出一個更清晰的錯誤，以便上層捕捉
+        throw new Error(`從 Google 取得 access token 失敗: ${e.message}`);
+    }
     
     const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
     const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
 
-    // 4. 寫入資料到 Google Sheets
     await doc.loadInfo();
     const sheet = doc.sheetsByTitle[EXP_HISTORY_SHEET_NAME];
     if (!sheet) {
@@ -62,12 +68,10 @@ async function runSync(env) {
     return { success: true, message: `成功同步了 ${results.length} 筆紀錄。` };
 }
 
-
-// 這是 API 端點的處理器
 export async function onRequest(context) {
     try {
         if (context.request.method !== 'POST') {
-            return new Response('Invalid request method.', { status: 405 });
+            return new Response(JSON.stringify({ error: '僅允許 POST 請求', details: '請求方法錯誤' }), { status: 405 });
         }
         
         const result = await runSync(context.env);
@@ -78,20 +82,10 @@ export async function onRequest(context) {
         });
 
     } catch (error) {
-        // ** 關鍵改動：增強錯誤回報機制 **
-        console.error('Error in sync-history API (Full Error):', error);
-
-        let detailedMessage = error.message;
-
-        // 嘗試從 Google API 的錯誤中提取更具體的資訊
-        if (error.response && error.response.data && error.response.data.error) {
-            const googleError = error.response.data.error;
-            detailedMessage = `[${googleError.code}] ${googleError.message} (狀態: ${googleError.status})`;
-        }
-
+        console.error('Error in sync-history API:', error);
         const errorResponse = { 
             error: '同步失敗。', 
-            details: detailedMessage // 將更詳細的錯誤訊息放入 details 欄位
+            details: error.message // 直接使用我們在 runSync 中拋出的、更清晰的錯誤訊息
         };
         
         return new Response(JSON.stringify(errorResponse), {

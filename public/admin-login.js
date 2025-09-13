@@ -45,13 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // 監聽下拉選單的變化
     reasonSelect.addEventListener('change', () => {
-        if (reasonSelect.value === 'other') {
-            customReasonInput.style.display = 'block';
-        } else {
-            customReasonInput.style.display = 'none';
-        }
+        customReasonInput.style.display = (reasonSelect.value === 'other') ? 'block' : 'none';
     });
 
     submitBtn.addEventListener('click', async () => {
@@ -111,84 +106,57 @@ document.addEventListener('DOMContentLoaded', () => {
         startScanner();
     });
     
-    syncBtn.addEventListener('click', async () => {
-    if (!confirm('確定要將所有經驗值紀錄同步到 Google Sheet 嗎？這將會覆蓋現有內容。')) {
-        return;
-    }
-
-    try {
-        syncStatus.textContent = '正在同步中，請稍候...';
-        syncStatus.className = '';
-        syncBtn.disabled = true;
-
-        const response = await fetch('/api/sync-history', { method: 'POST' });
-        const result = await response.json();
-
-        if (!response.ok) throw new Error(result.details || '同步失敗');
-
-        syncStatus.textContent = result.message || '同步成功！';
-        syncStatus.className = 'success';
-
-    } catch (error) {
-        syncStatus.textContent = `同步失敗：${error.message}`;
-        syncStatus.className = 'error';
-    } finally {
-        syncBtn.disabled = false;
-    }
-});
-
-syncBookingsBtn.addEventListener('click', async () => {
-    if (!confirm('確定要將所有預約紀錄同步到 Google Sheet 嗎？這將會覆蓋現有內容。')) {
-        return;
-    }
-
-    try {
-        syncStatus.textContent = '正在同步預約紀錄中...';
-        syncStatus.className = '';
-        syncBookingsBtn.disabled = true;
-
-        const response = await fetch('/api/sync-bookings', { method: 'POST' });
-        const result = await response.json();
-
-        if (!response.ok) throw new Error(result.details || '同步失敗');
-
-        syncStatus.textContent = result.message || '預約紀錄同步成功！';
-        syncStatus.className = 'success';
-
-    } catch (error) {
-        syncStatus.textContent = `同步失敗：${error.message}`;
-        syncStatus.className = 'error';
-    } finally {
-        syncBookingsBtn.disabled = false;
-    }
-});
-
-importUsersBtn.addEventListener('click', async () => {
-    if (!confirm('確定要從 Google Sheet 匯入所有使用者資料嗎？這將會覆蓋資料庫中現有的使用者資訊。')) {
-        return;
+    // ** 關鍵修正：優化後的通用同步處理函式 **
+    async function handleSync(button, statusElement, apiUrl, confirmMessage, actionName) {
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+    
+        // 1. 立即更新 UI 狀態並禁用按鈕
+        statusElement.textContent = `正在${actionName}中，請稍候...`;
+        statusElement.className = '';
+        button.disabled = true;
+    
+        try {
+            const response = await fetch(apiUrl, { method: 'POST' });
+            
+            // 2. 解析後端回傳的 JSON
+            const result = await response.json();
+    
+            // 3. 根據後端回傳的 HTTP 狀態碼來判斷成功或失敗
+            if (!response.ok) {
+                // 如果是失敗狀態 (4xx, 5xx), 拋出後端提供的詳細錯誤
+                throw new Error(result.details || result.error || `未知的${actionName}錯誤`);
+            }
+    
+            // 4. 如果是成功狀態 (2xx), 顯示成功訊息
+            statusElement.textContent = result.message || `${actionName}成功！`;
+            statusElement.className = 'success';
+    
+        } catch (error) {
+            // 5. 捕捉所有錯誤 (包括網路錯誤和後端拋出的錯誤)
+            statusElement.textContent = `${actionName}失敗：${error.message}`;
+            statusElement.className = 'error';
+        } finally {
+            // 6. 無論成功或失敗，最後都重新啟用按鈕
+            button.disabled = false;
+        }
     }
     
-    try {
-        syncStatus.textContent = '正在從 Google Sheet 匯入中...';
-        syncStatus.className = '';
-        importUsersBtn.disabled = true;
+    syncBtn.addEventListener('click', () => handleSync(
+        syncBtn, syncStatus, '/api/sync-history', 
+        '確定要將所有經驗值紀錄同步到 Google Sheet 嗎？這將會覆蓋現有內容。', '同步經驗值紀錄'
+    ));
+    
+    syncBookingsBtn.addEventListener('click', () => handleSync(
+        syncBookingsBtn, syncStatus, '/api/sync-bookings',
+        '確定要將所有預約紀錄同步到 Google Sheet 嗎？這將會覆蓋現有內容。', '同步預約紀錄'
+    ));
+    
+    importUsersBtn.addEventListener('click', () => handleSync(
+        importUsersBtn, syncStatus, '/api/import-users',
+        '確定要從 Google Sheet 匯入所有使用者資料嗎？這將會覆蓋資料庫中現有的使用者資訊。', '匯入使用者資料'
+    ));
 
-        // 呼叫我們新的 API 端點
-        const response = await fetch('/api/import-users', { method: 'POST' });
-        const result = await response.json();
-
-        if (!response.ok) throw new Error(result.details || '匯入失敗');
-
-        syncStatus.textContent = result.message || '資料匯入成功！';
-        syncStatus.className = 'success';
-
-    } catch (error) {
-        syncStatus.textContent = `匯入失敗：${error.message}`;
-        syncStatus.className = 'error';
-    } finally {
-        importUsersBtn.disabled = false;
-    }
-});
-
-startScanner();
+    startScanner();
 });
