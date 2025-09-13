@@ -12,9 +12,9 @@ async function syncSingleUserToSheet(env, newUser) {
           USERS_SHEET_NAME
         } = env;
 
-        const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
+        const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS266');
         const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets' })
-          .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
+          .setProtectedHeader({ alg: 'RS266', typ: 'JWT' })
           .setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
           .setAudience('https://oauth2.googleapis.com/token')
           .setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
