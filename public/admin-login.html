@@ -66,24 +66,12 @@
     </nav>
 
     <main class="main-content">
-        <div id="page-users" class="page active">
-            <div class="page-header"><h2>顧客總表</h2></div>
-            <input type="text" id="user-search-input" placeholder="依 LINE 名稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
-            <table>
-                <thead>
-                    <tr><th>LINE 名稱</th><th>等級</th><th>經驗值</th><th>標籤</th><th>操作</th></tr>
-                </thead>
-                <tbody id="user-list-tbody"></tbody>
-            </table>
-        </div>
-
         <div id="page-inventory" class="page">
             <div class="page-header">
                 <h2>庫存管理</h2>
                 <button id="sync-games-btn" class="action-btn" style="background-color: #28a745;">同步至資料庫</button>
             </div>
             <input type="text" id="game-search-input" placeholder="依桌遊名稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
-            
             <div class="filter-bar">
                 <div id="visibility-filter" class="filter-group">
                     <span>上架狀態：</span>
@@ -105,81 +93,66 @@
                 <tbody id="game-list-tbody"></tbody>
             </table>
         </div>
-
-        <div id="page-bookings" class="page">
-            <div class="page-header"><h2>訂位管理</h2></div>
-            <table>
-                <thead>
-                    <tr><th>時間</th><th>客戶</th><th>人數</th><th>操作</th></tr>
-                </thead>
-                <tbody id="booking-list-tbody"></tbody>
-            </table>
-        </div>
-
-        <div id="page-news" class="page">
-            <div class="page-header">
-                <h2>情報管理</h2>
-                <button id="add-news-btn" class="action-btn btn-save">新增情報</button>
-            </div>
-            <table>
-                <thead>
-                    <tr><th>標題</th><th>分類</th><th>發布日期</th><th>狀態</th><th>操作</th></tr>
-                </thead>
-                <tbody id="news-list-tbody"></tbody>
-            </table>
-        </div>
-
-        <div id="page-store-info" class="page">
-            <div class="page-header"><h2>店家資訊管理</h2></div>
-            <form id="store-info-form">
-                <div class="form-group"><label for="info-address">地址</label><input type="text" id="info-address" required></div>
-                <div class="form-group"><label for="info-phone">電話</label><input type="text" id="info-phone" required></div>
-                <div class="form-group"><label for="info-hours">營業時間 (換行請直接按 Enter)</label><textarea id="info-hours" rows="5" required></textarea></div>
-                <div class="form-group"><label for="info-desc">公會介紹</label><textarea id="info-desc" rows="8" required></textarea></div>
-                <div class="form-actions"><button type="submit" class="action-btn btn-save">儲存變更</button></div>
-            </form>
-        </div>
-
-        <div id="page-scan" class="page">
-            <div class="page-header"><h2>掃碼加點</h2></div>
-            <div id="scan-container">
-                <div id="qr-reader" style="width: 100%; max-width: 500px; margin: 0 auto;"></div>
-                <div id="scan-result" style="display: none; max-width: 500px; margin: 0 auto;">
-                    <div class="form-group">
-                        <label for="user-id-display">掃描結果 (使用者 ID):</label>
-                        <input type="text" id="user-id-display" readonly style="background-color: #e9ecef; cursor: not-allowed;">
-                    </div>
-                </div>
-            </div>
-            <div class="form-group"><label for="reason-select">點數名稱 (原因):</label><select id="reason-select"><option value="消費回饋">消費回饋</option><option value="活動獎勵">活動獎勵</option><option value="新手獎勵">新手獎勵</option><option value="other">其他 (請手動輸入)</option></select><input type="text" id="custom-reason-input" placeholder="請輸入自訂原因" style="display: none; margin-top: 10px;"></div>
-            <div class="form-group"><label for="exp-input">經驗值點數:</label><input type="number" id="exp-input" placeholder="請輸入要新增的經驗值" min="1"></div>
-            <button id="submit-exp-btn" class="action-btn btn-save" style="width: 100%; padding: 12px; font-size: 1rem;">確認新增</button>
-            <button id="rescan-btn" class="action-btn btn-cancel" style="width: 100%; padding: 12px; font-size: 1rem; margin-top: 10px;">重新掃描</button>
-        </div>
-    </main>
+        </main>
     
-    <div id="edit-game-modal" class="modal-overlay"></div>
-    <div id="edit-tag-modal" class="modal-overlay"></div>
-
-    <div id="edit-news-modal" class="modal-overlay">
+    <div id="edit-tag-modal" class="modal-overlay">
         <div class="modal-content">
-            <div class="modal-header"><h3 id="modal-news-title">新增情報</h3><button class="modal-close">&times;</button></div>
-            <form id="edit-news-form">
-                <input type="hidden" id="edit-news-id">
-                <div class="form-group"><label for="edit-news-title">標題</label><input type="text" id="edit-news-title" required></div>
-                <div class="form-group"><label for="edit-news-category">分類</label><input type="text" id="edit-news-category" placeholder="例如：促銷活動" required></div>
-                <div class="form-group"><label for="edit-news-date">發布日期</label><input type="text" id="edit-news-date" required></div>
-                <div class="form-group"><label for="edit-news-image">圖片網址</label><input type="url" id="edit-news-image" placeholder="https://..."></div>
-                <div class="form-group"><label for="edit-news-content">詳細內文 (選填)</label><textarea id="edit-news-content" rows="8"></textarea></div>
-                <div class="form-group"><label style="display: flex; align-items: center;"><input type="checkbox" id="edit-news-published" checked style="width: auto; margin-right: 10px;">立即發布</label></div>
+            <div class="modal-header"><h3 id="modal-user-title">編輯標籤</h3><button class="modal-close btn-cancel">&times;</button></div>
+            <form id="edit-tag-form">
+                <input type="hidden" id="edit-user-id">
+                <div class="form-group">
+                    <label for="edit-tag-select">標籤</label>
+                    <select id="edit-tag-select">
+                        <option value="">無</option>
+                        <option value="會員">會員</option>
+                        <option value="員工">員工</option>
+                        <option value="特殊">特殊</option>
+                        <option value="other">其他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="edit-tag-other-input" placeholder="請輸入自訂標籤" style="display: none;">
+                </div>
                 <div class="form-actions">
                     <button type="button" class="action-btn btn-cancel">取消</button>
                     <button type="submit" class="action-btn btn-save">儲存</button>
-                    <button type="button" id="delete-news-btn" class="action-btn" style="display: none; background-color: #dc3545;">刪除</button>
                 </div>
             </form>
         </div>
     </div>
+
+    <div id="edit-game-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3 id="modal-game-title">編輯桌遊</h3><button class="modal-close">&times;</button></div>
+            <form id="edit-game-form">
+                <input type="hidden" id="edit-game-id">
+                <div class="form-group">
+                    <label for="edit-total-stock">總庫存</label>
+                    <input type="number" id="edit-total-stock" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-is-visible">是否上架</label>
+                    <select id="edit-is-visible">
+                        <option value="TRUE">是</option>
+                        <option value="FALSE">否</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-rental-type">租借類型</label>
+                    <select id="edit-rental-type">
+                        <option value="僅供內借">僅供內借</option>
+                        <option value="可外借">可外借</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="action-btn btn-cancel">取消</button>
+                    <button type="submit" class="action-btn btn-save">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="edit-news-modal" class="modal-overlay">
+        </div>
     
     <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
