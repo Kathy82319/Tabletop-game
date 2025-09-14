@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 全域狀態變數
     let allGames = []; // 遊戲資料只抓取一次
+    let allNews = []; // 用於儲存所有新聞
     let gamesPageInitialized = false;
     let profilePageInitialized = false;
     let pageHistory = [];
@@ -44,30 +45,22 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // 每次渲染後，重新觸發該頁面的初始化函式
             switch (pageId) {
-                case 'page-games':
-                    initializeGamesPage();
-                    break;
-                case 'page-profile':
-                    initializeProfilePage();
-                    break;
-                case 'page-booking':
-                    initializeBookingPage();
-                    break;
-                 case 'page-edit-profile': // 新增的 case
-                    initializeEditProfilePage();
-                   break;                    
+                case 'page-home': initializeHomePage(); break;
+                case 'page-games': initializeGamesPage(); break;
+                case 'page-profile': initializeProfilePage(); break;
+                case 'page-booking': initializeBookingPage(); break;
+                case 'page-info': initializeInfoPage(); break;
+                case 'page-edit-profile': initializeEditProfilePage(); break;
             }
         } else {
             console.error(`在 page-templates 中找不到樣板: ${pageId}`);
-            appContent.innerHTML = `<h1>找不到頁面: ${pageId}</h1>`;
         }
     }
 
     function goBackPage() {
         if (pageHistory.length > 1) {
             pageHistory.pop();
-            const previousPageId = pageHistory[pageHistory.length - 1];
-            showPage(previousPageId, true);
+            showPage(pageHistory[pageHistory.length - 1], true);
         } else {
             liff.closeWindow();
         }
@@ -76,19 +69,30 @@ document.addEventListener('DOMContentLoaded', () => {
     tabBar.addEventListener('click', (event) => {
         const button = event.target.closest('.tab-button');
         if (button) {
-            const targetPageId = button.dataset.target;
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
-            showPage(targetPageId);
+            showPage(button.dataset.target);
         }
     });
     
-    // 使用事件代理處理動態內容的點擊
     appContent.addEventListener('click', (event) => {
-        if (event.target.matches('.details-back-button')) {
-            goBackPage();
-        }
+        if (event.target.matches('.details-back-button')) goBackPage();
     });
+
+    liff.init({ liffId: myLiffId })
+        .then(() => {
+            if (!liff.isLoggedIn()) liff.login();
+            else return liff.getProfile();
+        })
+        .then(profile => {
+            userProfile = profile;
+            showPage('page-home');
+        })
+        .catch((err) => {
+            console.error("LIFF 初始化失敗", err);
+            showPage('page-home'); // 即使失敗也顯示首頁
+        });
+    
 
     // =================================================================
     // LIFF 初始化
@@ -561,6 +565,87 @@ elements.confirmBtn.addEventListener('click', async () => {
             }
         }
     });
+
+        // =================================================================
+    // ** 全新 ** 首頁 (最新情報)
+    // =================================================================
+    function renderNews(filterCategory = 'ALL') {
+        const container = document.getElementById('news-list-container');
+        if (!container) return;
+        
+        const filteredNews = (filterCategory === 'ALL')
+            ? allNews
+            : allNews.filter(news => news.category === filterCategory);
+
+        if (filteredNews.length === 0) {
+            container.innerHTML = '<p>這個分類目前沒有消息。</p>';
+            return;
+        }
+
+        container.innerHTML = filteredNews.map(news => `
+            <div class="news-card">
+                <div class="news-card-header">
+                    <span class="news-card-category">${news.category}</span>
+                    <span class="news-card-date">${news.published_date}</span>
+                </div>
+                <div class="news-card-content">
+                    <h3 class="news-card-title">${news.title}</h3>
+                    ${news.image_url ? `<img src="${news.image_url}" alt="${news.title}" class="news-card-image">` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function setupNewsFilters() {
+        const container = document.getElementById('news-filter-container');
+        if (!container) return;
+        const categories = ['ALL', ...new Set(allNews.map(news => news.category))];
+        
+        container.innerHTML = categories.map(cat => 
+            `<button class="news-filter-btn ${cat === 'ALL' ? 'active' : ''}" data-category="${cat}">${cat === 'ALL' ? '全部' : cat}</button>`
+        ).join('');
+        
+        container.querySelectorAll('.news-filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                container.querySelector('.active').classList.remove('active');
+                btn.classList.add('active');
+                renderNews(btn.dataset.category);
+            });
+        });
+    }
+
+    async function initializeHomePage() {
+        try {
+            const response = await fetch('/api/get-news');
+            if (!response.ok) throw new Error('無法獲取最新情報');
+            allNews = await response.json();
+            setupNewsFilters();
+            renderNews();
+        } catch (error) {
+            console.error(error);
+            const container = document.getElementById('news-list-container');
+            if(container) container.innerHTML = `<p style="color:red;">${error.message}</p>`;
+        }
+    }
+    
+    // =================================================================
+    // ** 全新 ** 店家資訊頁
+    // =================================================================
+    async function initializeInfoPage() {
+        try {
+            const response = await fetch('/api/get-store-info');
+            if (!response.ok) throw new Error('無法獲取店家資訊');
+            const info = await response.json();
+            document.getElementById('store-name').textContent = info.name;
+            document.getElementById('store-address').textContent = info.address;
+            document.getElementById('store-phone').textContent = info.phone;
+            document.getElementById('store-hours').textContent = info.opening_hours;
+            document.getElementById('store-description').textContent = info.description;
+        } catch (error) {
+             console.error(error);
+             document.getElementById('store-info-container').innerHTML = `<p style="color:red;">${error.message}</p>`;
+        }
+    }
     
     showPage('page-home');
 });

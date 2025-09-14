@@ -218,3 +218,89 @@ body {
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     border-color: var(--primary-accent);
 }
+
+/* =================================================================
+   ** 全新 ** 最新情報頁面樣式
+   ================================================================= */
+.news-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+.news-header-decoration {
+    height: 10px;
+    background-image: url('data:image/svg+xml;utf8,<svg width="100" height="10" xmlns="http://www.w3.org/2000/svg"><path d="M0 5 Q5 0, 10 5 T20 5 T30 5 T40 5 T50 5 T60 5 T70 5 T80 5 T90 5 T100 5" stroke="%23FFC371" fill="none" stroke-width="2"/></svg>');
+    background-repeat: repeat-x;
+    background-size: 20px 10px;
+    margin-bottom: 5px;
+}
+#news-filter-container {
+    display: flex; justify-content: center; gap: 10px;
+    margin-bottom: 25px; padding: 5px; background-color: #f0f0f0; border-radius: 20px;
+}
+.news-filter-btn {
+    padding: 8px 16px; font-size: 0.9rem; border: none;
+    background-color: transparent; border-radius: 16px;
+    cursor: pointer; transition: all 0.2s; color: #555;
+}
+.news-filter-btn.active {
+    background-color: var(--primary-accent); color: white;
+    font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+#news-list-container {
+    display: flex; flex-direction: column; gap: 20px;
+}
+.news-card {
+    background-color: var(--card-bg); border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden;
+}
+.news-card-header {
+    padding: 10px 15px; display: flex; justify-content: space-between; align-items: center;
+}
+.news-card-category {
+    font-size: 0.8rem; font-weight: bold; color: var(--primary-accent);
+    padding: 4px 10px; border: 1px solid var(--primary-accent); border-radius: 14px;
+}
+.news-card-date {
+    font-size: 0.8rem; color: #888;
+}
+.news-card-content {
+    padding: 0 15px 15px;
+}
+.news-card-title {
+    font-size: 1.1rem; margin: 0 0 10px 0;
+}
+.news-card-image {
+    width: 100%; height: auto; border-radius: 8px;
+}
+
+/* =================================================================
+   ** 全新 ** 店家資訊頁面樣式
+   ================================================================= */
+#page-info .info-section {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+#page-info .info-section h2 {
+    margin-top: 0;
+    font-size: 1.3rem;
+    color: var(--primary-accent);
+    border-bottom: 2px solid var(--secondary-accent);
+    padding-bottom: 10px;
+}
+#page-info .info-section p {
+    margin: 0 0 10px 0;
+    line-height: 1.6;
+    color: #333;
+}
+#page-info .info-section strong {
+    color: var(--text-color);
+    margin-right: 8px;
+}
+#page-info .info-section pre { /* 用 pre 標籤來保留換行 */
+    white-space: pre-wrap;
+    font-family: inherit;
+    margin: 0;
+}

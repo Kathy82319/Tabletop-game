@@ -22,6 +22,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // 訂位管理
     const bookingListTbody = document.getElementById('booking-list-tbody');
 
+    //最新資訊
+    const newsListTbody = document.getElementById('news-list-tbody');
+    
+    const storeInfoForm = document.getElementById('store-info-form');
+    
+    const editNewsModal = document.getElementById('edit-news-modal');
+    const editNewsForm = document.getElementById('edit-news-form');
+    const modalNewsTitle = document.getElementById('modal-news-title');
+    const deleteNewsBtn = document.getElementById('delete-news-btn');
+
     // ** 恢復：掃碼加點元素 **
     const qrReaderElement = document.getElementById('qr-reader');
     const scanResultSection = document.getElementById('scan-result');
@@ -56,6 +66,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pageId === 'inventory' && allGames.length === 0) fetchAllGames();
         if (pageId === 'bookings' && allBookings.length === 0) fetchAllBookings();
         if (pageId === 'scan') startScanner();
+        if (pageId === 'news' && allNews.length === 0) fetchAllNews();
+        if (pageId === 'store-info') fetchStoreInfo(); // 每次都重新獲取
     }
 
     mainNav.addEventListener('click', (event) => {
@@ -419,6 +431,145 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+        // =================================================================
+    // ** 全新 ** 情報管理模組
+    // =================================================================
+    function renderNewsList(newsItems) {
+        newsListTbody.innerHTML = '';
+        newsItems.forEach(news => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${news.title}</td>
+                <td>${news.category}</td>
+                <td>${news.published_date}</td>
+                <td>${news.is_published ? '已發布' : '草稿'}</td>
+                <td class="actions-cell">
+                    <button class="action-btn btn-edit" data-news-id="${news.id}">編輯</button>
+                </td>
+            `;
+            newsListTbody.appendChild(row);
+        });
+    }
+
+    async function fetchAllNews() {
+        try {
+            const response = await fetch('/api/admin/get-all-news');
+            if (!response.ok) throw new Error('無法獲取情報列表');
+            allNews = await response.json();
+            renderNewsList(allNews);
+        } catch (error) { console.error('獲取情報列表失敗:', error); }
+    }
+
+    function openEditNewsModal(news = null) {
+        editNewsForm.reset();
+        currentEditingNewsId = news ? news.id : null;
+        modalNewsTitle.textContent = news ? '編輯情報' : '新增情報';
+        
+        if (news) {
+            document.getElementById('edit-news-id').value = news.id;
+            document.getElementById('edit-news-title').value = news.title;
+            document.getElementById('edit-news-category').value = news.category;
+            document.getElementById('edit-news-date').value = news.published_date;
+            document.getElementById('edit-news-image').value = news.image_url;
+            document.getElementById('edit-news-content').value = news.content;
+            document.getElementById('edit-news-published').checked = !!news.is_published;
+            deleteNewsBtn.style.display = 'inline-block';
+        } else {
+            deleteNewsBtn.style.display = 'none';
+        }
+        
+        editNewsModal.style.display = 'flex';
+    }
+
+    document.getElementById('add-news-btn').addEventListener('click', () => openEditNewsModal());
+    editNewsModal.querySelector('.modal-close').addEventListener('click', () => editNewsModal.style.display = 'none');
+    editNewsModal.querySelector('.btn-cancel').addEventListener('click', () => editNewsModal.style.display = 'none');
+    
+    newsListTbody.addEventListener('click', (e) => {
+        if (e.target.classList.contains('btn-edit')) {
+            const newsId = e.target.dataset.newsId;
+            const newsItem = allNews.find(n => n.id == newsId);
+            openEditNewsModal(newsItem);
+        }
+    });
+
+    editNewsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = {
+            id: currentEditingNewsId,
+            title: document.getElementById('edit-news-title').value,
+            category: document.getElementById('edit-news-category').value,
+            published_date: document.getElementById('edit-news-date').value,
+            image_url: document.getElementById('edit-news-image').value,
+            content: document.getElementById('edit-news-content').value,
+            is_published: document.getElementById('edit-news-published').checked
+        };
+
+        const url = currentEditingNewsId ? '/api/admin/update-news' : '/api/admin/create-news';
+        try {
+            const response = await fetch(url, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || '儲存失敗');
+            alert('儲存成功！');
+            editNewsModal.style.display = 'none';
+            await fetchAllNews();
+        } catch (error) { alert(`錯誤：${error.message}`); }
+    });
+    
+    deleteNewsBtn.addEventListener('click', async () => {
+        if (!currentEditingNewsId || !confirm('確定要刪除這則情報嗎？此操作無法復原。')) return;
+        try {
+            const response = await fetch('/api/admin/delete-news', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: currentEditingNewsId })
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || '刪除失敗');
+            alert('刪除成功！');
+            editNewsModal.style.display = 'none';
+            await fetchAllNews();
+        } catch (error) { alert(`錯誤：${error.message}`); }
+    });
+
+    flatpickr("#edit-news-date", { dateFormat: "Y-m-d" });
+
+    // =================================================================
+    // ** 全新 ** 店家資訊管理模組
+    // =================================================================
+    async function fetchStoreInfo() {
+        try {
+            const response = await fetch('/api/get-store-info');
+            if (!response.ok) throw new Error('無法載入店家資訊');
+            const info = await response.json();
+            document.getElementById('info-address').value = info.address;
+            document.getElementById('info-phone').value = info.phone;
+            document.getElementById('info-hours').value = info.opening_hours;
+            document.getElementById('info-desc').value = info.description;
+        } catch (error) { alert(`錯誤：${error.message}`); }
+    }
+
+    storeInfoForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = {
+            address: document.getElementById('info-address').value,
+            phone: document.getElementById('info-phone').value,
+            opening_hours: document.getElementById('info-hours').value,
+            description: document.getElementById('info-desc').value
+        };
+        try {
+            const response = await fetch('/api/admin/update-store-info', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || '更新失敗');
+            alert('更新成功！');
+        } catch (error) { alert(`錯誤：${error.message}`); }
+    });
+
     // ---- 初始化 ----
     function initialize() {
         showPage('users');
