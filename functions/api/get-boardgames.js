@@ -2,7 +2,7 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import * as jose from 'jose';
 
-// ========= Google Sheets 工具函式 (從其他檔案整合而來) =========
+// ========= Google Sheets 工具函式 =========
 async function getAccessToken(env) {
     const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY } = env;
     if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) throw new Error('缺少 Google 服務帳號的環境變數。');
@@ -28,13 +28,12 @@ export async function onRequest(context) {
   const { request, env } = context;
   const { DB } = env;
 
-  // ** 關鍵改動：根據請求方法(GET/POST)執行不同任務 **
-
-  // ----------- 處理 GET 請求 (原有功能，保持不變) -----------
+  // --- 處理 GET 請求 (讀取 D1 資料庫的桌遊列表) ---
   if (request.method === 'GET') {
     try {
+      // ** 關鍵：現在 GET 請求統一從 D1 資料庫讀取，確保資料來源一致 **
       const stmt = DB.prepare(
-        'SELECT game_id, name, total_stock, is_visible, rental_type FROM BoardGames ORDER BY game_id ASC'
+        'SELECT * FROM BoardGames ORDER BY game_id ASC' // 讀取所有欄位
       );
       const { results } = await stmt.all();
       return new Response(JSON.stringify(results || []), {
@@ -48,7 +47,7 @@ export async function onRequest(context) {
     }
   }
 
-  // ----------- 處理 POST 請求 (新增的同步功能) -----------
+  // --- 處理 POST 請求 (從 Google Sheet 同步到 D1 資料庫) ---
   if (request.method === 'POST') {
     try {
         // 1. 連接並讀取 Google Sheet

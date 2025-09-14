@@ -468,7 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (allGames.length > 0) { renderGames(); populateFilters(); setupFilterEventListeners(); return; }
         const gameListContainer = appContent.querySelector('#game-list-container');
         try {
-            const res = await fetch('/api/games');
+            const res = await fetch('/api/get-boardgames'); 
             if (!res.ok) throw new Error('API 請求失敗');
             allGames = await res.json();
             renderGames();
