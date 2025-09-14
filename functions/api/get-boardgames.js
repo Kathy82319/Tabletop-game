@@ -1,0 +1,121 @@
+// functions/api/get-boardgames.js
+import { GoogleSpreadsheet } from 'google-spreadsheet';
+import * as jose from 'jose';
+
+// --- Google Sheets 工具函式 ---
+async function getAccessToken(env) {
+    const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY } = env;
+    if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) throw new Error('缺少 Google 服務帳號的環境變數。');
+    
+    const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
+    const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets' })
+      .setProtectedHeader({ alg: 'RS256', typ: 'JWT' }).setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
+      .setAudience('https://oauth2.googleapis.com/token').setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
+      .setIssuedAt().setExpirationTime('1h').sign(privateKey);
+
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type-jwt-bearer', assertion: jwt }),
+    });
+
+    const tokenData = await tokenResponse.json();
+    if (!tokenResponse.ok) throw new Error(`從 Google 取得 access token 失敗: ${tokenData.error_description || tokenData.error}`);
+    return tokenData.access_token;
+}
+
+async function getBoardGamesFromSheet(env) {
+    const { GOOGLE_SHEET_ID } = env;
+    if (!GOOGLE_SHEET_ID) throw new Error('缺少 GOOGLE_SHEET_ID 環境變數。');
+
+    const accessToken = await getAccessToken(env);
+    const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
+    
+    const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
+    await doc.loadInfo();
+    
+    const sheet = doc.sheetsByTitle['BoardGames'];
+    if (!sheet) throw new Error('在 Google Sheets 中找不到名為 "BoardGames" 的工作表。');
+
+    return await sheet.getRows();
+}
+
+// --- 同步邏輯 ---
+async function runBoardgameSync(env) {
+    const { DB } = env;
+
+    // 1. 從 Google Sheet 獲取所有桌遊資料
+    const rows = await getBoardGamesFromSheet(env);
+    if (rows.length === 0) {
+        return { success: true, message: 'Google Sheet 中沒有桌遊資料可同步。' };
+    }
+
+    // 2. 準備 D1 資料庫的 "UPSERT" (更新或插入) 指令
+    const stmt = DB.prepare(
+        `INSERT INTO BoardGames (game_id, name, description, image_url, min_players, max_players, difficulty, tags, total_stock, for_rent_stock, for_sale_stock, rent_price, sale_price, is_visible, rental_type)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(game_id) DO UPDATE SET
+           name = excluded.name, description = excluded.description, image_url = excluded.image_url,
+           min_players = excluded.min_players, max_players = excluded.max_players, difficulty = excluded.difficulty,
+           tags = excluded.tags, total_stock = excluded.total_stock, for_rent_stock = excluded.for_rent_stock,
+           for_sale_stock = excluded.for_sale_stock, rent_price = excluded.rent_price, sale_price = excluded.sale_price,
+           is_visible = excluded.is_visible, rental_type = excluded.rental_type`
+    );
+
+    // 3. 綁定資料
+    const operations = rows.map(row => {
+        const rowData = row.toObject();
+        // 將 'TRUE'/'FALSE' 字串轉換為 1/0
+        const isVisible = String(rowData.is_visible).toUpperCase() === 'TRUE' ? 1 : 0;
+        return stmt.bind(
+            rowData.game_id, rowData.name, rowData.description, rowData.image_url,
+            Number(rowData.min_players) || 1, Number(rowData.max_players) || 4, rowData.difficulty,
+            rowData.tags, Number(rowData.total_stock) || 0, Number(rowData.for_rent_stock) || 0,
+            Number(rowData.for_sale_stock) || 0, Number(rowData.rent_price) || 0,
+            Number(rowData.sale_price) || 0, isVisible, rowData.rental_type
+        );
+    });
+
+    // 4. 批次執行
+    await DB.batch(operations);
+
+    return { success: true, message: `成功從 Google Sheet 同步了 ${rows.length} 筆桌遊資料到資料庫。` };
+}
+
+// --- 主要請求處理 ---
+export async function onRequest(context) {
+    const { request, env } = context;
+
+    // 處理 LIFF 前台的 GET 請求 (從 D1 讀取，速度快)
+    if (request.method === 'GET') {
+        try {
+            const db = env.DB;
+            const stmt = db.prepare('SELECT * FROM BoardGames');
+            const { results } = await stmt.all();
+            return new Response(JSON.stringify(results || []), {
+                status: 200, headers: { 'Content-Type': 'application/json' },
+            });
+        } catch (error) {
+            console.error('Error in get-boardgames (GET):', error);
+            return new Response(JSON.stringify({ error: '獲取桌遊列表失敗。', details: error.message }), {
+                status: 500, headers: { 'Content-Type': 'application/json' },
+            });
+        }
+    }
+
+    // 處理後台的 POST 請求 (執行同步)
+    if (request.method === 'POST') {
+        try {
+            const result = await runBoardgameSync(env);
+            return new Response(JSON.stringify(result), {
+                status: 200, headers: { 'Content-Type': 'application/json' },
+            });
+        } catch (error) {
+            console.error('Error in get-boardgames (POST):', error);
+            return new Response(JSON.stringify({ error: '同步失敗。', details: error.message }), {
+                status: 500, headers: { 'Content-Type': 'application/json' },
+            });
+        }
+    }
+
+    return new Response('Invalid request method.', { status: 405 });
+}
