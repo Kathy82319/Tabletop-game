@@ -135,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
         editTagModal.style.display = 'flex';
     }
 
-    editTagModal.querySelector('.modal-close').addEventListener('click', () => editTagModal.style.display = 'none');
     editTagModal.querySelector('.btn-cancel').addEventListener('click', () => editTagModal.style.display = 'none');
     
     document.getElementById('edit-tag-select').addEventListener('change', (e) => {
