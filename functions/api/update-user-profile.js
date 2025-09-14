@@ -48,15 +48,14 @@ async function syncProfileUpdateToSheet(env, userData) {
         const userRow = rows.find(row => row.get('user_id') === userData.userId);
 
         if (userRow) {
-            // ** 關鍵改動：使用 assign 一次性更新所有需要的欄位 **
+            // ** 將 email 加回同步欄位 **
             userRow.assign({
                 'nickname': userData.nickname,
                 'phone': userData.phone,
-                'email': userData.email, // 新增 email
+                'email': userData.email, // 同步 email
                 'preferred_games': userData.preferredGames,
-                'line_display_name': userData.displayName,    // 更新 LINE 名稱
-                'line_picture_url': userData.pictureUrl      // 更新 LINE 頭像
-
+                'line_display_name': userData.displayName,
+                'line_picture_url': userData.pictureUrl
             });
             
             await userRow.save();
@@ -77,7 +76,7 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    // ** 關鍵改動：接收 email **
+    // ** 恢復接收 email **
     const { userId, nickname, phone, email, preferredGames, displayName, pictureUrl } = await context.request.json();
 
     if (!userId || !nickname || !phone) {
@@ -88,11 +87,11 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
-    // ** 關鍵改動：更新 D1 資料庫的指令，增加 email **
+    // ** 恢復更新 D1 資料庫的指令，包含 email **
     const stmt = db.prepare(
       'UPDATE Users SET nickname = ?, phone = ?, email = ?, preferred_games = ?, line_display_name = ?, line_picture_url = ? WHERE user_id = ?'
     );
-    // ** 關鍵改動：綁定 email **
+    // ** 恢復綁定 email **
     const result = await stmt.bind(
         nickname, 
         phone, 
@@ -109,7 +108,7 @@ export async function onRequest(context) {
       });
     }
 
-    // ** 關鍵改動：將新資料傳遞給背景同步任務 **
+    // ** 恢復將 email 傳遞給背景同步任務 **
     const userDataToSync = { userId, nickname, phone, email: email || '', preferredGames: preferredGames || '未提供', displayName, pictureUrl };
     context.waitUntil(syncProfileUpdateToSheet(context.env, userDataToSync));
 
