@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 訂位管理
     const bookingListTbody = document.getElementById('booking-list-tbody');
 
-    // 掃碼加點
+    // ** 恢復：掃碼加點元素 **
     const qrReaderElement = document.getElementById('qr-reader');
     const scanResultSection = document.getElementById('scan-result');
     const userIdDisplay = document.getElementById('user-id-display');
@@ -46,10 +46,12 @@ document.addEventListener('DOMContentLoaded', () => {
         pages.forEach(page => page.classList.remove('active'));
         const targetPage = document.getElementById(`page-${pageId}`);
         if (targetPage) targetPage.classList.add('active');
+
         document.querySelectorAll('.nav-tabs a').forEach(link => {
             link.classList.remove('active');
             if (link.getAttribute('href') === `#${pageId}`) link.classList.add('active');
         });
+
         if (pageId === 'users' && allUsers.length === 0) fetchAllUsers();
         if (pageId === 'inventory' && allGames.length === 0) fetchAllGames();
         if (pageId === 'bookings' && allBookings.length === 0) fetchAllBookings();
