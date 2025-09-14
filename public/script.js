@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     const myLiffId = "2008076323-GN1e7naW";
     let userProfile = null;
-    let bookingPageInitialized = false;
     const appContent = document.getElementById('app-content');
     const pageTemplates = document.getElementById('page-templates');
     const tabBar = document.getElementById('tab-bar');
@@ -13,22 +12,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const TOTAL_TABLES = 4;
     const PEOPLE_PER_TABLE = 4;
     const AVAILABLE_TIME_SLOTS = ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30'];
-    const PRICES = { weekday: 150, weekend: 250 };
-    const ADVANCE_BOOKING_DISCOUNT = 20;
 
     // 全域狀態變數
-    let allGames = []; // 遊戲資料只抓取一次
-    let allNews = []; // 用於儲存所有新聞
-    let gamesPageInitialized = false;
-    let profilePageInitialized = false;
-    let pageHistory = [];
+    let allGames = [];
+    let allNews = [];
+    let pageHistory = ['page-home']; // 初始頁面
     let activeFilters = { keyword: '', tag: null };
     let bookingData = {};
     let bookingHistoryStack = [];
     let dailyAvailability = { limit: TOTAL_TABLES, booked: 0, available: TOTAL_TABLES };
 
     // =================================================================
-    // 全新頁面切換邏輯 (強制渲染)
+    // 頁面切換邏輯
     // =================================================================
     function showPage(pageId, isBackAction = false) {
         const template = pageTemplates.querySelector(`#${pageId}`);
@@ -36,13 +31,16 @@ document.addEventListener('DOMContentLoaded', () => {
             appContent.innerHTML = template.innerHTML;
             
             if (!isBackAction) {
+                // 如果是主分頁，重置歷史紀錄
                 if (['page-home', 'page-games', 'page-profile', 'page-booking', 'page-info'].includes(pageId)) {
                     pageHistory = [pageId];
                 } else {
+                    // 否則，推進歷史紀錄
                     pageHistory.push(pageId);
                 }
             }
             
+            // 根據頁面ID執行初始化
             switch (pageId) {
                 case 'page-home': initializeHomePage(); break;
                 case 'page-games': initializeGamesPage(); break;
@@ -50,7 +48,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'page-booking': initializeBookingPage(); break;
                 case 'page-info': initializeInfoPage(); break;
                 case 'page-edit-profile': initializeEditProfilePage(); break;
+                case 'page-game-details': break; // 由 initializeGamesPage 內部處理
+                case 'page-news-details': break; // 由 initializeHomePage 內部處理
             }
+
+            // 更新分頁按鈕狀態
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.target === pageHistory[0]);
+            });
+
         } else {
             console.error(`在 page-templates 中找不到樣板: ${pageId}`);
         }
@@ -65,25 +71,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // ===== 開始插入新的程式碼區塊 =====
+    // 全域返回與詳情頁點擊事件監聽
     appContent.addEventListener('click', (event) => {
+        // 返回按鈕
         if (event.target.matches('.details-back-button')) {
              goBackPage();
              return;
         }
 
+        // 最新情報卡片
         const newsCard = event.target.closest('.news-card');
-        if (newsCard) {
+        if (newsCard && newsCard.dataset.newsId) {
             const newsId = parseInt(newsCard.dataset.newsId, 10);
             const newsItem = allNews.find(n => n.id === newsId);
             if (newsItem) {
+                showPage('page-news-details');
                 renderNewsDetails(newsItem);
+            }
+        }
+        
+        // 桌遊圖鑑卡片
+        const gameCard = event.target.closest('.game-card');
+        if (gameCard && gameCard.dataset.gameId) {
+            const gameId = gameCard.dataset.gameId;
+            const gameItem = allGames.find(g => g.game_id == gameId);
+            if (gameItem) {
+                showPage('page-game-details');
+                renderGameDetails(gameItem);
             }
         }
     });
 
     // =================================================================
-    // ** 全新 ** 首頁 (最新情報)
+    // 首頁 (最新情報)
     // =================================================================
     function renderNews(filterCategory = 'ALL') {
         const container = document.getElementById('news-list-container');
@@ -99,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         container.innerHTML = filteredNews.map(news => `
-            <div class="news-card" data-news-id="${news.id}" style="cursor: pointer;">
+            <div class="news-card" data-news-id="${news.id}">
                 <div class="news-card-header">
                     <span class="news-card-category">${news.category}</span>
                     <span class="news-card-date">${news.published_date}</span>
@@ -144,50 +164,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // =================================================================
-    // ** 全新 ** 店家資訊頁
-    // =================================================================
-    async function initializeInfoPage() {
-        try {
-            const response = await fetch('/api/get-store-info');
-            if (!response.ok) throw new Error('無法獲取店家資訊');
-            const info = await response.json();
-            document.getElementById('store-name').textContent = info.name;
-            document.getElementById('store-address').textContent = info.address;
-            document.getElementById('store-phone').textContent = info.phone;
-            document.getElementById('store-hours').innerHTML = info.opening_hours.replace(/\n/g, '<br>');
-            document.getElementById('store-description').innerHTML = info.description.replace(/\n/g, '<br>');
-        } catch (error) {
-             console.error(error);
-             document.getElementById('store-info-container').innerHTML = `<p style="color:red;">${error.message}</p>`;
-        }
-    }
     function renderNewsDetails(newsItem) {
-        // 進入詳情頁前，先記錄目前的頁面歷史
-        pageHistory.push('page-home');
+        document.getElementById('news-details-title').textContent = newsItem.title;
+        document.getElementById('news-details-category').textContent = newsItem.category;
+        document.getElementById('news-details-date').textContent = newsItem.published_date;
         
-        const template = pageTemplates.querySelector('#page-news-details');
-        if (template) {
-            appContent.innerHTML = template.innerHTML;
+        const contentEl = document.getElementById('news-details-content');
+        contentEl.innerHTML = newsItem.content 
+            ? newsItem.content.replace(/\n/g, '<br>') 
+            : '<p style="color: #888;">此消息沒有提供詳細內容。</p>';
 
-            document.getElementById('news-details-title').textContent = newsItem.title;
-            document.getElementById('news-details-category').textContent = newsItem.category;
-            document.getElementById('news-details-date').textContent = newsItem.published_date;
-            
-            const contentEl = document.getElementById('news-details-content');
-            // 將 \n 轉換為 <br>，並處理沒有內容的情況
-            contentEl.innerHTML = newsItem.content 
-                ? newsItem.content.replace(/\n/g, '<br>') 
-                : '<p style="color: #888;">此消息沒有提供詳細內容。</p>';
-
-            const imageEl = document.getElementById('news-details-image');
-            if (newsItem.image_url) {
-                imageEl.src = newsItem.image_url;
-                imageEl.alt = newsItem.title;
-                imageEl.style.display = 'block';
-            } else {
-                imageEl.style.display = 'none';
-            }
+        const imageEl = document.getElementById('news-details-image');
+        if (newsItem.image_url) {
+            imageEl.src = newsItem.image_url;
+            imageEl.alt = newsItem.title;
+            imageEl.style.display = 'block';
+        } else {
+            imageEl.style.display = 'none';
         }
     }
 
@@ -196,35 +189,51 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     liff.init({ liffId: myLiffId })
         .then(() => {
-            console.log("LIFF 初始化成功");
             if (!liff.isLoggedIn()) {
                 liff.login();
             } else {
                 liff.getProfile().then(profile => {
-                    userProfile = profile; // 將 LIFF 個人資料存到全域變數
+                    userProfile = profile;
                     showPage('page-home');
                 }).catch(err => console.error("獲取 LINE Profile 失敗", err));
             }
         })
         .catch((err) => {
             console.error("LIFF 初始化失敗", err);
-            showPage('page-home');
+            // 即使 LIFF 失敗，還是嘗試顯示首頁
+            showPage('page-home'); 
         });
 
     // =================================================================
-    // 使用者資料 & 個人資料頁
+    // 個人資料頁
     // =================================================================
-    function displayUserProfile() {
+    async function initializeProfilePage() {
         if (!userProfile) return;
+
+        // 填充基本 LINE Profile
         document.getElementById('display-name').textContent = userProfile.displayName;
         document.getElementById('status-message').textContent = userProfile.statusMessage || '';
         const profilePicture = document.getElementById('profile-picture');
         if (userProfile.pictureUrl) profilePicture.src = userProfile.pictureUrl;
+        
         const qrcodeElement = document.getElementById('qrcode');
         if(qrcodeElement) {
             qrcodeElement.innerHTML = '';
             new QRCode(qrcodeElement, { text: userProfile.userId, width: 200, height: 200 });
         }
+        
+        // ** START: 修正問題 1 - 綁定按鈕事件 **
+        const editProfileBtn = document.getElementById('edit-profile-btn');
+        if (editProfileBtn) {
+            editProfileBtn.addEventListener('click', () => {
+                showPage('page-edit-profile');
+            });
+        }
+        // ** END: 修正問題 1 **
+
+        // 獲取遊戲資料和預約紀錄
+        await fetchGameData(userProfile);
+        await fetchAndDisplayMyBookings(userProfile.userId);
     }
 
     async function fetchGameData(profile) { 
@@ -237,40 +246,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('無法取得會員遊戲資料');
             const gameData = await response.json();
             
-            const expToNextLevel = "10"; //修正經驗顯示欄位
-            const userClassEl = document.getElementById('user-class');
-            const userLevelEl = document.getElementById('user-level');
-            const userExpEl = document.getElementById('user-exp');
-            const userPerkEl = document.getElementById('user-perk');
-            const classSelectionEl = document.getElementById('class-selection');
-
-            if (userClassEl) {
-                userClassEl.textContent = (gameData.class && gameData.class !== '無') ? gameData.class : "初心者";
-            }
-            if (userLevelEl) userLevelEl.textContent = gameData.level;
-            if (userExpEl) userExpEl.textContent = `${gameData.current_exp} / ${expToNextLevel}`;
-            
-            if (userPerkEl) {
-                if (gameData.perk && gameData.perk !== '無特殊優惠') {
-                    userPerkEl.textContent = gameData.perk;
-                    userPerkEl.style.display = 'block';
-                } else {
-                    userPerkEl.style.display = 'none';
-                }
-            }
-
-            if (classSelectionEl) {
-                if (gameData.level >= 5 && gameData.class === '無') {
-                    classSelectionEl.style.display = 'block';
-                } else {
-                    classSelectionEl.style.display = 'none';
-                }
-            }
-            
-            const nicknameInput = document.getElementById('profile-nickname');
-            const phoneInput = document.getElementById('profile-phone');
-            if(nicknameInput) nicknameInput.value = gameData.nickname || '';
-            if(phoneInput) phoneInput.value = gameData.phone || '';
+            document.getElementById('user-class').textContent = gameData.class || "初心者";
+            document.getElementById('user-level').textContent = gameData.level;
+            document.getElementById('user-exp').textContent = `${gameData.current_exp} / 10`;
 
         } catch (error) {
             console.error('呼叫會員 API 失敗:', error);
@@ -289,98 +267,72 @@ document.addEventListener('DOMContentLoaded', () => {
                 container.innerHTML = '<p>您目前沒有即將到來的預約。</p>';
                 return;
             }
-            container.innerHTML = '';
-            bookings.forEach(booking => {
-                const card = document.createElement('div');
-                card.className = 'booking-info-card';
-                card.innerHTML = `<p class="booking-date-time">${booking.booking_date} - ${booking.time_slot}</p><p><strong>預約姓名：</strong> ${booking.contact_name}</p><p><strong>預約人數：</strong> ${booking.num_of_people} 人</p>`;
-                container.appendChild(card);
-            });
+            container.innerHTML = bookings.map(booking => `
+                <div class="booking-info-card">
+                    <p class="booking-date-time">${booking.booking_date} - ${booking.time_slot}</p>
+                    <p><strong>預約姓名：</strong> ${booking.contact_name}</p>
+                    <p><strong>預約人數：</strong> ${booking.num_of_people} 人</p>
+                </div>
+            `).join('');
         } catch (error) {
-            console.error('獲取個人預約失敗:', error);
             container.innerHTML = '<p style="color: red;">無法載入預約紀錄。</p>';
         }
     }
     
-    async function handleSetClass(className) {
-        const isConfirmed = confirm(`職業選擇後若需更換職業要到現場申請，確定要選擇「${className}」嗎？`);
-        if (isConfirmed) {
-            try {
-                const response = await fetch('/api/set-class', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: userProfile.userId, className: className })
-                });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error || '選擇職業失敗');
-                alert('恭喜！職業選擇成功！');
-                fetchGameData(userProfile);
-            } catch (error) {
-                console.error('設定職業失敗:', error);
-                alert(`錯誤：${error.message}`);
-            }
-        }
-    }
+    // =================================================================
+    // 編輯個人資料頁
+    // =================================================================
+    async function initializeEditProfilePage() {
+        if (!userProfile) return;
 
-    function initializeProfilePage() {
-        displayUserProfile();
-        if (userProfile) {
-            fetchGameData(userProfile);
-            fetchAndDisplayMyBookings(userProfile.userId);
-        }
-        
-        const classSelectionContainer = appContent.querySelector('#class-selection');
-        if (classSelectionContainer) {
-            classSelectionContainer.addEventListener('click', (event) => {
-                const button = event.target.closest('.class-btn');
-                if (button) {
-                    handleSetClass(button.dataset.class);
-                }
-            });
-        }
+        // 填充基本資料
+        document.getElementById('edit-profile-name').value = userProfile.displayName;
 
-        const modal = appContent.querySelector('#profile-modal');
-        const editBtn = appContent.querySelector('#edit-profile-btn');
-        const closeBtn = appContent.querySelector('.modal-close-btn');
-        const form = appContent.querySelector('#profile-form');
-        
-        if (!modal || !editBtn || !closeBtn || !form) return;
-
-        editBtn.addEventListener('click', () => { modal.style.display = 'flex'; });
-        closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
-        modal.addEventListener('click', (event) => {
-            if (event.target == modal) modal.style.display = 'none';
+        // 獲取已儲存的資料
+        const response = await fetch('/api/user', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userProfile.userId }),
         });
+        const userData = await response.json();
         
-        const gameSelect = appContent.querySelector('#profile-games');
-        const otherGameInput = appContent.querySelector('#profile-games-other');
-        gameSelect.addEventListener('change', () => {
-            otherGameInput.style.display = (gameSelect.value === '其他') ? 'block' : 'none';
+        document.getElementById('edit-profile-nickname').value = userData.nickname || '';
+        document.getElementById('edit-profile-phone').value = userData.phone || '';
+        document.getElementById('edit-profile-email').value = userData.email || '';
+        
+        const gamesSelect = document.getElementById('edit-profile-games');
+        const otherGamesInput = document.getElementById('edit-profile-games-other');
+        const standardGameTypes = Array.from(gamesSelect.options).map(opt => opt.value);
+        
+        if (userData.preferred_games && !standardGameTypes.includes(userData.preferred_games)) {
+            gamesSelect.value = '其他';
+            otherGamesInput.style.display = 'block';
+            otherGamesInput.value = userData.preferred_games;
+        } else {
+            gamesSelect.value = userData.preferred_games || '未提供';
+            otherGamesInput.style.display = 'none';
+        }
+
+        gamesSelect.addEventListener('change', () => {
+            otherGamesInput.style.display = (gamesSelect.value === '其他') ? 'block' : 'none';
         });
 
+        // 綁定表單提交事件
+        const form = document.getElementById('edit-profile-form');
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
-            const statusMsg = appContent.querySelector('#profile-form-status');
-            const phoneInput = appContent.querySelector('#profile-phone');
-            
-            // ** 關鍵改動 1：增加手機號碼格式驗證 **
-            const phoneValue = phoneInput.value.trim();
-            if (phoneValue.length !== 10 || !phoneValue.startsWith('09')) {
-                alert('請輸入正確的10碼手機號碼，且必須為 09 開頭。');
-                return;
-            }
-
+            const statusMsg = document.getElementById('edit-profile-form-status');
             statusMsg.textContent = '儲存中...';
-            let preferredGames = gameSelect.value === '其他' ? otherGameInput.value.trim() : gameSelect.value;
+            
+            let preferredGames = gamesSelect.value === '其他' ? otherGamesInput.value.trim() : gamesSelect.value;
 
-            // ** 關鍵改動 2：將 LINE 名稱與頭像 URL 加入要傳送的資料中 **
             const formData = {
                 userId: userProfile.userId,
-                nickname: appContent.querySelector('#profile-nickname').value,
-                phone: phoneValue,
+                nickname: document.getElementById('edit-profile-nickname').value,
+                phone: document.getElementById('edit-profile-phone').value,
+                email: document.getElementById('edit-profile-email').value,
                 preferredGames: preferredGames,
-                displayName: userProfile.displayName, // 自動加入 LINE 名稱
-                pictureUrl: userProfile.pictureUrl || '' // 自動加入 LINE 頭像
+                displayName: userProfile.displayName,
+                pictureUrl: userProfile.pictureUrl || ''
             };
 
             try {
@@ -389,98 +341,147 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || '儲存失敗');
-                statusMsg.textContent = '儲存成功！'; statusMsg.classList.add('success');
-                setTimeout(() => { modal.style.display = 'none'; statusMsg.textContent = ''; }, 1500);
+                
+                statusMsg.textContent = '儲存成功！';
+                statusMsg.style.color = 'green';
+                setTimeout(() => goBackPage(), 1500);
+
             } catch (error) {
-                statusMsg.textContent = `儲存失敗: ${error.message}`; statusMsg.classList.add('error');
+                statusMsg.textContent = `儲存失敗: ${error.message}`;
+                statusMsg.style.color = 'red';
             }
+        });
+    }
+    
+    // =================================================================
+    // 桌遊圖鑑頁
+    // =================================================================
+    function renderGameDetails(game) {
+        let priceHTML = `<p>請洽電內公告</p>`; // 預設文字
+        if (Number(game.sale_price) > 0 || Number(game.rent_price) > 0) {
+            priceHTML = `
+                <div class="price-grid">
+                    ${Number(game.for_sale_stock) > 0 ? `
+                    <div class="price-item">
+                        <p>售價</p><p class="price-value">$${game.sale_price}</p>
+                        <p class="stock-info">庫存: ${game.for_sale_stock}</p>
+                    </div>` : ''}
+                    ${Number(game.for_rent_stock) > 0 ? `
+                    <div class="price-item">
+                        <p>租金 (三天)</p><p class="price-value">$${game.rent_price}</p>
+                        <p class="stock-info">庫存: ${game.for_rent_stock}</p>
+                    </div>` : ''}
+                </div>`;
+        }
+        
+        appContent.querySelector('.details-image').src = game.image_url;
+        appContent.querySelector('.details-image').alt = game.name;
+        appContent.querySelector('.details-title').textContent = game.name;
+        appContent.querySelector('#game-intro-content').textContent = game.description;
+        appContent.querySelector('#game-price-content').innerHTML = priceHTML;
+    }
+
+    function renderGames() {
+        const container = document.getElementById('game-list-container');
+        if(!container) return;
+        
+        let filteredGames = allGames.filter(g => g.is_visible === 1);
+        const keyword = activeFilters.keyword.toLowerCase().trim();
+        if (keyword) { 
+            filteredGames = filteredGames.filter(g => 
+                g.name.toLowerCase().includes(keyword) || 
+                g.description.toLowerCase().includes(keyword)
+            );
+        }
+        if (activeFilters.tag) { 
+            filteredGames = filteredGames.filter(g => 
+                (g.tags || '').split(',').map(t => t.trim()).includes(activeFilters.tag)
+            ); 
+        }
+
+        if (filteredGames.length === 0) {
+            container.innerHTML = '<p>找不到符合條件的遊戲。</p>';
+            return;
+        }
+        
+        container.innerHTML = filteredGames.map(game => `
+            <div class="game-card" data-game-id="${game.game_id}">
+                <img src="${game.image_url}" alt="${game.name}" class="game-image">
+                <div class="game-info">
+                    <h3 class="game-title">${game.name}</h3>
+                    <p class="game-description">${game.description}</p>
+                    <div class="game-tags">
+                        ${(game.tags || '').split(',').map(t => t.trim()).filter(Boolean).map(tag => `<span class="game-tag">${tag}</span>`).join('')}
+                    </div>
+                    <div class="game-details">
+                        <span>👥 ${game.min_players}-${game.max_players} 人</span>
+                        <span>⭐ 難度: ${game.difficulty}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function populateFilters() {
+        const container = document.getElementById('tag-filters');
+        if(!container) return;
+        
+        const allTags = new Set(allGames.flatMap(g => (g.tags || '').split(',')).map(t => t.trim()).filter(Boolean));
+        
+        container.innerHTML = '';
+        allTags.forEach(tag => {
+            const btn = document.createElement('button');
+            btn.textContent = tag;
+            btn.dataset.tag = tag;
+            btn.addEventListener('click', () => {
+                if (btn.classList.contains('active')) {
+                    activeFilters.tag = null;
+                    btn.classList.remove('active');
+                } else {
+                    container.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                    activeFilters.tag = tag;
+                    btn.classList.add('active');
+                }
+                renderGames();
+            });
+            container.appendChild(btn);
+        });
+    }
+
+    async function initializeGamesPage() {
+        if (allGames.length === 0) {
+            try {
+                const res = await fetch('/api/get-boardgames');
+                if (!res.ok) throw new Error('API 請求失敗');
+                allGames = await res.json();
+            } catch (error) {
+                console.error('初始化桌遊圖鑑失敗:', error);
+                const container = document.getElementById('game-list-container');
+                if(container) container.innerHTML = '<p style="color: red;">讀取桌遊資料失敗。</p>';
+                return;
+            }
+        }
+        renderGames();
+        populateFilters();
+        
+        const keywordInput = document.getElementById('keyword-search');
+        keywordInput.addEventListener('input', e => { 
+            activeFilters.keyword = e.target.value; 
+            renderGames(); 
+        });
+
+        const clearBtn = document.getElementById('clear-filters');
+        clearBtn.addEventListener('click', () => {
+            activeFilters.keyword = '';
+            activeFilters.tag = null;
+            keywordInput.value = '';
+            document.querySelectorAll('#tag-filters button').forEach(b => b.classList.remove('active'));
+            renderGames();
         });
     }
 
     // =================================================================
-    // 桌遊圖鑑 & 詳情頁功能區塊 (此區塊無變動)
-    // =================================================================
-    function renderGameDetails(game) {
-        const detailsTemplate = pageTemplates.querySelector('#page-game-details');
-        if (!detailsTemplate) return;
-        appContent.innerHTML = detailsTemplate.innerHTML;
-        const isForSale = Number(game.for_sale_stock) > 0;
-        const isForRent = Number(game.for_rent_stock) > 0;
-        let priceHTML = '<div class="price-grid">';
-        if (isForSale) { priceHTML += `<div class="price-item"><p>售價</p><p class="price-value">$${game.sale_price}</p><p class="stock-info">可販售庫存: ${game.for_sale_stock}</p></div><div class="price-item"><p>押金</p><p class="price-value">$${game.sale_price}</p><p class="stock-info">&nbsp;</p></div>`; }
-        if (isForRent) { priceHTML += `<div class="price-item"><p>租金 (三天)</p><p class="price-value">$${game.rent_price}</p><p class="stock-info">可租借庫存: ${game.for_rent_stock}</p></div>`;}
-        priceHTML += '</div>';
-        const finalHTML = `<button class="details-back-button">← 返回圖鑑</button><div class="details-header"><img src="${game.image_url}" alt="${game.name}" class="details-image"><h1 class="details-title">${game.name}</h1></div><div class="details-section"><h3>遊戲簡介</h3><p>${game.description}</p></div><div class="details-section"><h3>價格與庫存</h3>${priceHTML}</div><div class="details-section"><h3>租借規則說明</h3><ol class="rules-list"><li>每筆租借基本天數為三天。</li><li>最長可延期至15天，每日 $20。</li><li>未提前申請延期且超過三天者視為逾期，逾期每日 $40 計算。</li><li>押金為該桌遊售價，歸還若發現缺件或毀損，將沒收押金。</li><li>每位使用者最多同時租借三款桌遊。</li></ol></div>`;
-        appContent.innerHTML = finalHTML;
-    }
-    function renderGames() {
-        const gameListContainer = appContent.querySelector('#game-list-container');
-        if(!gameListContainer) return;
-        let filteredGames = allGames.filter(g => g.is_visible === 'TRUE');
-        const keyword = activeFilters.keyword.toLowerCase().trim();
-        if (keyword) { filteredGames = filteredGames.filter(g => g.name.toLowerCase().includes(keyword) || g.description.toLowerCase().includes(keyword)); }
-        if (activeFilters.tag) { filteredGames = filteredGames.filter(g => g.tags.split(',').map(t => t.trim()).includes(activeFilters.tag)); }
-        gameListContainer.innerHTML = '';
-        if (filteredGames.length === 0) { gameListContainer.innerHTML = '<p>找不到符合條件的遊戲。</p>'; return; }
-        filteredGames.forEach(game => {
-            const gameCard = document.createElement('div'); gameCard.className = 'game-card';
-            gameCard.addEventListener('click', () => { pageHistory.push('page-games'); renderGameDetails(game); });
-            const img = document.createElement('img'); img.src = game.image_url; img.alt = game.name; img.className = 'game-image';
-            const info = document.createElement('div'); info.className = 'game-info';
-            const title = document.createElement('h3'); title.className = 'game-title'; title.textContent = game.name;
-            const desc = document.createElement('p'); desc.className = 'game-description'; desc.textContent = game.description;
-            const tags = document.createElement('div'); tags.className = 'game-tags';
-            game.tags.split(',').forEach(t => { if(t.trim()) { const tagEl = document.createElement('span'); tagEl.className = 'game-tag'; tagEl.textContent = t.trim(); tags.appendChild(tagEl); } });
-            const details = document.createElement('div'); details.className = 'game-details';
-            details.innerHTML = `<span>👥 ${game.min_players}-${game.max_players} 人</span><span>⭐ 難度: ${game.difficulty}</span>`;
-            info.append(title, desc, tags, details);
-            gameCard.append(img, info);
-            gameListContainer.appendChild(gameCard);
-        });
-    }
-    function populateFilters() {
-        const tagFiltersContainer = appContent.querySelector('#tag-filters');
-        if(!tagFiltersContainer) return;
-        const allTags = new Set(allGames.flatMap(g => g.tags.split(',')).map(t => t.trim()).filter(Boolean));
-        tagFiltersContainer.innerHTML = '';
-        allTags.forEach(tag => {
-            const btn = document.createElement('button'); btn.textContent = tag; btn.dataset.tag = tag;
-            btn.addEventListener('click', () => {
-                if (btn.classList.contains('active')) { activeFilters.tag = null; btn.classList.remove('active'); }
-                else { tagFiltersContainer.querySelectorAll('button').forEach(b => b.classList.remove('active')); activeFilters.tag = tag; btn.classList.add('active'); }
-                renderGames();
-            });
-            tagFiltersContainer.appendChild(btn);
-        });
-    }
-    function setupFilterEventListeners() {
-        const keywordSearchInput = appContent.querySelector('#keyword-search');
-        const clearFiltersButton = appContent.querySelector('#clear-filters');
-        if(!keywordSearchInput || !clearFiltersButton) return;
-        keywordSearchInput.addEventListener('input', e => { activeFilters.keyword = e.target.value; renderGames(); });
-        clearFiltersButton.addEventListener('click', () => {
-            activeFilters.keyword = ''; activeFilters.tag = null; keywordSearchInput.value = '';
-            appContent.querySelectorAll('#tag-filters button').forEach(b => b.classList.remove('active'));
-            renderGames();
-        });
-    }
-    async function initializeGamesPage() {
-        if (allGames.length > 0) { renderGames(); populateFilters(); setupFilterEventListeners(); return; }
-        const gameListContainer = appContent.querySelector('#game-list-container');
-        try {
-            const res = await fetch('/api/get-boardgames'); 
-            if (!res.ok) throw new Error('API 請求失敗');
-            allGames = await res.json();
-            renderGames();
-            populateFilters();
-            setupFilterEventListeners();
-        } catch (error) {
-            console.error('初始化桌遊圖鑑失敗:', error);
-            if(gameListContainer) gameListContainer.innerHTML = '<p style="color: red;">讀取桌遊資料失敗。</p>';
-        }
-    }
-    // =================================================================
-    // 場地預約功能區塊 (此區塊無變動)
+    // 場地預約頁
     // =================================================================
     function showBookingStep(stepId) {
         document.querySelectorAll('#booking-wizard-container .booking-step').forEach(step => step.classList.remove('active'));
@@ -488,89 +489,198 @@ document.addEventListener('DOMContentLoaded', () => {
         if (targetStep) targetStep.classList.add('active');
         if(bookingHistoryStack[bookingHistoryStack.length - 1] !== stepId) bookingHistoryStack.push(stepId);
     }
+
     function goBackBookingStep() {
-        if (bookingHistoryStack.length > 1) { bookingHistoryStack.pop(); const lastStep = bookingHistoryStack[bookingHistoryStack.length - 1]; showBookingStep(lastStep); return true; }
+        if (bookingHistoryStack.length > 1) {
+            bookingHistoryStack.pop();
+            const lastStep = bookingHistoryStack[bookingHistoryStack.length - 1];
+            showBookingStep(lastStep);
+            return true;
+        }
         return false;
     }
+
     function initializeBookingPage() {
         bookingHistoryStack = [];
         showBookingStep('step-preference');
-        const elements = { wizardContainer: document.getElementById('booking-wizard-container'), preferenceBtns: document.querySelectorAll('.preference-btn'), datepickerContainer: document.getElementById('booking-datepicker-container'), slotsWrapper: document.getElementById('booking-slots-wrapper'), slotsPlaceholder: document.getElementById('slots-placeholder'), slotsContainer: document.getElementById('booking-slots-container'), contactSummary: document.getElementById('contact-summary'), peopleInput: document.getElementById('booking-people'), nameInput: document.getElementById('contact-name'), phoneInput: document.getElementById('contact-phone'), toSummaryBtn: document.getElementById('to-summary-btn'), summaryCard: document.getElementById('booking-summary-card'), confirmBtn: document.getElementById('confirm-booking-btn'), resultContent: document.getElementById('booking-result-content'),};
-        elements.wizardContainer.addEventListener('click', e => { if (e.target.matches('.back-button')) goBackBookingStep(); });
-        elements.preferenceBtns.forEach(btn => { btn.addEventListener('click', () => { showBookingStep('step-date-and-slots'); }); });
-        const flatpickrInstance = flatpickr(elements.datepickerContainer, { inline: true, minDate: new Date().fp_incr(1), dateFormat: "Y-m-d", locale: "zh_tw", onChange: (selectedDates, dateStr) => { const day = selectedDates[0].getDay(); bookingData.isWeekend = (day === 0 || day === 5 || day === 6); const today = new Date(); today.setHours(0,0,0,0); bookingData.hasDiscount = Math.ceil((selectedDates[0] - today) / (1000 * 60 * 60 * 24)) >= 3; bookingData.date = dateStr; fetchAndRenderSlots(dateStr); }, });
-        async function fetchAndRenderSlots(date) {
-            elements.slotsPlaceholder.textContent = '正在查詢當日空位...';
-            elements.slotsContainer.innerHTML = '';
-            elements.slotsPlaceholder.style.display = 'block';
-            try {
-                const response = await fetch(`/api/bookings-check?date=${date}`);
-                if (!response.ok) throw new Error('查詢失敗');
-                dailyAvailability = await response.json();
-                elements.slotsContainer.innerHTML = '';
-                if (dailyAvailability.available <= 0) { elements.slotsPlaceholder.textContent = '抱歉，本日預約已額滿'; return; }
-                elements.slotsPlaceholder.style.display = 'none';
-                AVAILABLE_TIME_SLOTS.forEach(slot => { const btn = document.createElement('button'); btn.className = 'slot-button available'; btn.textContent = slot; btn.addEventListener('click', () => { bookingData.timeSlot = slot; elements.contactSummary.textContent = `${bookingData.date} 的 ${slot}`; showBookingStep('step-contact'); }); elements.slotsContainer.appendChild(btn); });
-            } catch (error) { elements.slotsPlaceholder.textContent = `查詢空位失敗：${error.message}`; elements.slotsPlaceholder.style.color = 'red'; }
-        }
-        elements.toSummaryBtn.addEventListener('click', () => {
-            bookingData.people = Number(elements.peopleInput.value); bookingData.name = elements.nameInput.value.trim(); bookingData.phone = elements.phoneInput.value.trim();
-            if (!bookingData.people || !bookingData.name || bookingData.phone.length < 10) { alert('請確實填寫所有資訊，並確認手機號碼為10碼！'); return; }
-            const tablesNeeded = Math.ceil(bookingData.people / PEOPLE_PER_TABLE);
-            if (tablesNeeded > dailyAvailability.available) { alert(`抱歉，座位不足！您需要 ${tablesNeeded} 桌，但當日僅剩 ${dailyAvailability.available} 桌可預約。`); return; }
-            renderSummary(); showBookingStep('step-summary');
+
+        const wizardContainer = document.getElementById('booking-wizard-container');
+        wizardContainer.addEventListener('click', e => {
+            if (e.target.matches('.back-button')) {
+                goBackBookingStep();
+            } else if (e.target.closest('.preference-btn')) {
+                showBookingStep('step-date-and-slots');
+            } else if (e.target.matches('#to-summary-btn')) {
+                const peopleInput = document.getElementById('booking-people');
+                const nameInput = document.getElementById('contact-name');
+                const phoneInput = document.getElementById('contact-phone');
+
+                bookingData.people = Number(peopleInput.value);
+                bookingData.name = nameInput.value.trim();
+                bookingData.phone = phoneInput.value.trim();
+
+                if (!bookingData.people || !bookingData.name || bookingData.phone.length < 10) {
+                    alert('請確實填寫所有資訊，並確認手機號碼為10碼！');
+                    return;
+                }
+                const tablesNeeded = Math.ceil(bookingData.people / PEOPLE_PER_TABLE);
+                if (tablesNeeded > dailyAvailability.available) {
+                    alert(`抱歉，座位不足！您需要 ${tablesNeeded} 桌，但當日僅剩 ${dailyAvailability.available} 桌可預約。`);
+                    return;
+                }
+                renderSummary();
+                showBookingStep('step-summary');
+            } else if (e.target.matches('#confirm-booking-btn')) {
+                handleBookingConfirmation(e.target);
+            }
         });
-        function renderSummary() {
-            const priceKey = bookingData.isWeekend ? 'weekend' : 'weekday'; const basePrice = PRICES[priceKey]; let finalPrice = basePrice * bookingData.people; let discountText = '';
-            if (bookingData.hasDiscount) { const totalDiscount = ADVANCE_BOOKING_DISCOUNT * bookingData.people; finalPrice -= totalDiscount; discountText = `<p class="discount-text"><span>早鳥優惠折扣:</span><span>-$${totalDiscount}</span></p>`; }
-            elements.summaryCard.innerHTML = `<p><span>姓名:</span><span>${bookingData.name}</span></p><p><span>電話:</span><span>${bookingData.phone}</span></p><p><span>日期:</span><span>${bookingData.date}</span></p><p><span>時段:</span><span>${bookingData.timeSlot}</span></p><p><span>人數:</span><span>${bookingData.people} 人</span></p><hr>${discountText}<p><span>預估總金額:</span><span class="final-price">$${finalPrice}</span></p>`;
-        }
-elements.confirmBtn.addEventListener('click', async () => {
-    // ** 關鍵修正：增加 isSubmitting 旗標防止重複提交 **
-    if (elements.confirmBtn.dataset.isSubmitting === 'true') return;
 
-    try {
-        elements.confirmBtn.dataset.isSubmitting = 'true'; // 標記為提交中
-        elements.confirmBtn.disabled = true;
-        elements.confirmBtn.textContent = '處理中...';
-        
-        const createRes = await fetch('/api/bookings-create', { /* ... fetch 內容不變 ... */ });
-        const result = await createRes.json();
-        if (!createRes.ok) throw new Error(result.error || '預約失敗');
-        
-        await fetch('/api/send-message', { /* ... fetch 內容不變 ... */ });
-
-        elements.resultContent.innerHTML = `<h2 class="success">✅ 預約成功！</h2><p>已將預約確認訊息發送至您的 LINE，我們到時見！</p><button id="booking-done-btn" class="cta-button">返回預約首頁</button>`;
-        showBookingStep('step-result');
-
-        document.getElementById('booking-done-btn').addEventListener('click', () => { /* ... 內容不變 ... */ });
-
-    } catch (error) {
-        alert(`預約失敗：${error.message}`);
-        // ** 關鍵修正：失敗時也要恢復按鈕狀態 **
-        elements.confirmBtn.dataset.isSubmitting = 'false';
-        elements.confirmBtn.disabled = false;
-        elements.confirmBtn.textContent = '確認送出';
-    }
+        flatpickr("#booking-datepicker-container", {
+            inline: true, minDate: "today", dateFormat: "Y-m-d", locale: "zh_tw",
+            onChange: (selectedDates, dateStr) => {
+                bookingData.date = dateStr;
+                fetchAndRenderSlots(dateStr);
+            },
         });
     }
 
+    async function fetchAndRenderSlots(date) {
+        const slotsPlaceholder = document.getElementById('slots-placeholder');
+        const slotsContainer = document.getElementById('booking-slots-container');
+        slotsPlaceholder.textContent = '正在查詢當日空位...';
+        slotsContainer.innerHTML = '';
+        slotsPlaceholder.style.display = 'block';
+
+        try {
+            const response = await fetch(`/api/bookings-check?date=${date}`);
+            if (!response.ok) throw new Error('查詢失敗');
+            dailyAvailability = await response.json();
+            
+            if (dailyAvailability.available <= 0) {
+                slotsPlaceholder.textContent = '抱歉，本日預約已額滿';
+                return;
+            }
+            
+            slotsPlaceholder.style.display = 'none';
+            slotsContainer.innerHTML = AVAILABLE_TIME_SLOTS.map(slot => `<button class="slot-button available">${slot}</button>`).join('');
+            
+            slotsContainer.querySelectorAll('.slot-button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    bookingData.timeSlot = btn.textContent;
+                    document.getElementById('contact-summary').textContent = `${bookingData.date} 的 ${bookingData.timeSlot}`;
+                    showBookingStep('step-contact');
+                });
+            });
+
+        } catch (error) {
+            slotsPlaceholder.textContent = `查詢空位失敗：${error.message}`;
+        }
+    }
+
+    function renderSummary() {
+        const summaryCard = document.getElementById('booking-summary-card');
+        summaryCard.innerHTML = `
+            <p><span>姓名:</span><span>${bookingData.name}</span></p>
+            <p><span>電話:</span><span>${bookingData.phone}</span></p>
+            <p><span>日期:</span><span>${bookingData.date}</span></p>
+            <p><span>時段:</span><span>${bookingData.timeSlot}</span></p>
+            <p><span>人數:</span><span>${bookingData.people} 人</span></p>
+        `;
+    }
+
+    async function handleBookingConfirmation(confirmBtn) {
+        if (confirmBtn.dataset.isSubmitting === 'true') return;
+
+        try {
+            confirmBtn.dataset.isSubmitting = 'true';
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = '處理中...';
+            
+            const bookingPayload = {
+                userId: userProfile.userId,
+                bookingDate: bookingData.date,
+                timeSlot: bookingData.timeSlot,
+                numOfPeople: bookingData.people,
+                contactName: bookingData.name,
+                contactPhone: bookingData.phone
+            };
+
+            const createRes = await fetch('/api/bookings-create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bookingPayload)
+            });
+
+            // 錯誤不是來自 createRes 本身，而是它回傳的內容
+            if (!createRes.ok) {
+                // 嘗試解析後端可能回傳的 JSON 錯誤訊息
+                try {
+                    const errorResult = await createRes.json();
+                    throw new Error(errorResult.error || '建立預約時發生未知錯誤');
+                } catch (e) {
+                    // 如果後端回傳的不是 JSON (例如 HTML 錯誤頁)，則顯示通用訊息
+                    throw new Error(`伺服器發生錯誤，狀態碼: ${createRes.status}`);
+                }
+            }
+            
+            const result = await createRes.json();
+            
+            // ** START: 修正問題 2 - 正確呼叫 send-message API **
+            const messagePayload = {
+                userId: userProfile.userId,
+                message: result.confirmationMessage 
+            };
+            
+            await fetch('/api/send-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(messagePayload)
+            });
+            // ** END: 修正問題 2 **
+
+            document.getElementById('booking-result-content').innerHTML = `
+                <h2 class="success">✅ 預約成功！</h2>
+                <p>已將預約確認訊息發送至您的 LINE，我們到時見！</p>
+                <button id="booking-done-btn" class="cta-button">返回預約首頁</button>`;
+            showBookingStep('step-result');
+
+            document.getElementById('booking-done-btn').addEventListener('click', () => showPage('page-booking'));
+
+        } catch (error) {
+            alert(`預約失敗：${error.message}`);
+        } finally {
+            confirmBtn.dataset.isSubmitting = 'false';
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = '確認送出';
+        }
+    }
+
+    // =================================================================
+    // 店家資訊頁
+    // =================================================================
+    async function initializeInfoPage() {
+        try {
+            const response = await fetch('/api/get-store-info');
+            if (!response.ok) throw new Error('無法獲取店家資訊');
+            const info = await response.json();
+            document.getElementById('store-address').textContent = info.address;
+            document.getElementById('store-phone').textContent = info.phone;
+            document.getElementById('store-hours').innerHTML = info.opening_hours.replace(/\n/g, '<br>');
+            document.getElementById('store-description').innerHTML = info.description.replace(/\n/g, '<br>');
+        } catch (error) {
+             document.getElementById('store-info-container').innerHTML = `<p style="color:red;">${error.message}</p>`;
+        }
+    }
+
+    // =================================================================
+    // Tab Bar 主導航
+    // =================================================================
     tabBar.addEventListener('click', (event) => {
         const button = event.target.closest('.tab-button');
         if (button) {
             const targetPageId = button.dataset.target;
             showPage(targetPageId);
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            
-            if (targetPageId === 'page-games') initializeGamesPage();
-            else if (targetPageId === 'page-profile') {
-                initializeProfilePage();
-            } else if (targetPageId === 'page-booking') {
-                initializeBookingPage();
-            }
         }
     });
     
-    showPage('page-home');
 });

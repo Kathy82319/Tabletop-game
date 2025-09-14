@@ -1,9 +1,46 @@
 // functions/api/bookings-create.js
+import { GoogleSpreadsheet } from 'google-spreadsheet';
+import * as jose from 'jose';
 
-// 將上面 bookings-check.js 的 getDailyBookingLimit 整個輔助函式複製到這裡
+// ** START: 修正問題 2 - 補上完整的函式 **
 async function getDailyBookingLimit(env, date) {
-    // ... (與上面 bookings-check.js 中完全相同的 getDailyBookingLimit 函式)
+    const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, GOOGLE_SHEET_ID, SETTINGS_SHEET_NAME } = env;
+    const DEFAULT_LIMIT = 4; // 預設上限
+
+    if (!SETTINGS_SHEET_NAME) return DEFAULT_LIMIT;
+
+    try {
+        const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
+        const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets.readonly' })
+          .setProtectedHeader({ alg: 'RS256', typ: 'JWT' }).setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
+          .setAudience('https://oauth2.googleapis.com/token').setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
+          .setIssuedAt().setExpirationTime('1h').sign(privateKey);
+        
+        const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type-jwt-bearer', assertion: jwt }),
+        });
+        if (!tokenResponse.ok) throw new Error('Auth failed');
+        const tokenData = await tokenResponse.json();
+        const accessToken = tokenData.access_token;
+        
+        const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
+        const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
+        await doc.loadInfo();
+
+        const sheet = doc.sheetsByTitle[SETTINGS_SHEET_NAME];
+        if (!sheet) return DEFAULT_LIMIT;
+
+        const rows = await sheet.getRows();
+        const setting = rows.find(row => row.get('date') === date);
+        
+        return setting ? Number(setting.get('booking_limit')) : DEFAULT_LIMIT;
+    } catch (error) {
+        console.error("讀取 Google Sheet 每日設定失敗:", error);
+        return DEFAULT_LIMIT;
+    }
 }
+// ** END: 修正問題 2 **
 
 export async function onRequest(context) {
   try {
@@ -16,13 +53,11 @@ export async function onRequest(context) {
     }
     
     const PEOPLE_PER_TABLE = 4;
-    // ** 關鍵改動 1：計算本次預約需要的桌數 **
     const tablesNeeded = Math.ceil(numOfPeople / PEOPLE_PER_TABLE);
 
     const db = context.env.DB;
     const dailyLimit = await getDailyBookingLimit(context.env, bookingDate);
     
-    // ** 關鍵改動 2：檢查剩餘桌數是否足夠 **
     const checkStmt = db.prepare("SELECT SUM(tables_occupied) as total_tables_booked FROM Bookings WHERE booking_date = ? AND status = 'confirmed'");
     const currentBooking = await checkStmt.bind(bookingDate).first();
     const tablesAlreadyBooked = currentBooking.total_tables_booked || 0;
@@ -31,7 +66,6 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: `抱歉，${bookingDate} 當日剩餘桌數不足以容納您的預約。` }), { status: 409 });
     }
     
-    // ** 關鍵改動 3：將計算出的桌數插入資料庫 **
     const insertStmt = db.prepare(
       'INSERT INTO Bookings (user_id, contact_name, contact_phone, booking_date, time_slot, num_of_people, tables_occupied) VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
@@ -42,6 +76,6 @@ export async function onRequest(context) {
     return new Response(JSON.stringify({ success: true, message: '預約成功！', confirmationMessage: message }), { status: 201 });
   } catch (error) {
     console.error('Error in bookings-create API:', error);
-    return new Response(JSON.stringify({ error: '建立預約失敗。' }), { status: 500 });
+    return new Response(JSON.stringify({ error: '建立預約失敗。', details: error.message }), { status: 500 });
   }
 }
