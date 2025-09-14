@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameSearchInput = document.getElementById('game-search-input');
     const editGameModal = document.getElementById('edit-game-modal');
     const editGameForm = document.getElementById('edit-game-form');
+    // ====== 新增的程式碼 Start ======
+    const visibilityFilter = document.getElementById('visibility-filter');
+    const rentalTypeFilter = document.getElementById('rental-type-filter');
+    // ====== 新增的程式碼 End ======
 
     // 訂位管理
     const bookingListTbody = document.getElementById('booking-list-tbody');
@@ -236,8 +240,14 @@ function setupFilterButtons(filterContainer, filterKey) {
     if (!filterContainer) return;
     filterContainer.addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON') {
-            filterContainer.querySelector('.active').classList.remove('active');
+            // 先移除同群組內所有按鈕的 'active' class
+            const currentActive = filterContainer.querySelector('.active');
+            if (currentActive) {
+                currentActive.classList.remove('active');
+            }
+            // 再為被點擊的按鈕加上 'active' class
             e.target.classList.add('active');
+            
             gameFilters[filterKey] = e.target.dataset.filter;
             applyGameFiltersAndRender();
         }
@@ -293,7 +303,6 @@ editGameForm.addEventListener('submit', async (e) => {
     }
 });
 
-// ** 關鍵修正：將 syncGamesBtn 的事件監聽器獨立出來 **
 const syncGamesBtn = document.getElementById('sync-games-btn');
     if (syncGamesBtn) {
         syncGamesBtn.addEventListener('click', async () => {
@@ -337,7 +346,7 @@ const syncGamesBtn = document.getElementById('sync-games-btn');
                 </td>
                 <td>${booking.num_of_people}</td>
                 <td class="actions-cell">
-                    <button class="action-btn btn-cancel-booking" data-bookingid="${booking.booking_id}">取消預約</button>
+                    <button class="action-btn btn-cancel-booking" data-bookingid="${booking.booking_id}" style="background-color: var(--danger-color);">取消預約</button>
                 </td>
             `;
             bookingListTbody.appendChild(row);
@@ -383,8 +392,10 @@ const syncGamesBtn = document.getElementById('sync-games-btn');
                 qrReaderElement.style.display = 'none';
                 scanResultSection.style.display = 'block';
                 userIdDisplay.value = decodedText;
-                scanStatusMessage.textContent = '掃描成功！請輸入點數。';
-                scanStatusMessage.className = 'success';
+                if(scanStatusMessage) {
+                    scanStatusMessage.textContent = '掃描成功！請輸入點數。';
+                    scanStatusMessage.className = 'success';
+                }
             }).catch(err => console.error("停止掃描失敗", err));
         }
     }
@@ -398,8 +409,10 @@ const syncGamesBtn = document.getElementById('sync-games-btn');
         html5QrCode = new Html5Qrcode("qr-reader");
         qrReaderElement.style.display = 'block';
         scanResultSection.style.display = 'none';
-        scanStatusMessage.textContent = '請將顧客的 QR Code 對準掃描框';
-        scanStatusMessage.className = '';
+        if(scanStatusMessage) {
+            scanStatusMessage.textContent = '請將顧客的 QR Code 對準掃描框';
+            scanStatusMessage.className = '';
+        }
         if(expInput) expInput.value = '';
         if(reasonSelect) reasonSelect.value = '消費回饋';
         if(customReasonInput) customReasonInput.style.display = 'none';
@@ -408,11 +421,10 @@ const syncGamesBtn = document.getElementById('sync-games-btn');
         html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
             .catch(err => {
                 console.error("無法啟動掃描器", err);
-                scanStatusMessage.textContent = '無法啟動相機，請檢查權限。';
+                if(scanStatusMessage) scanStatusMessage.textContent = '無法啟動相機，請檢查權限。';
             });
     }
     
-    // ** 關鍵修正：恢復掃碼頁面的按鈕事件監聽器 **
     if (reasonSelect) {
         reasonSelect.addEventListener('change', () => {
             customReasonInput.style.display = (reasonSelect.value === 'other') ? 'block' : 'none';
@@ -430,13 +442,17 @@ const syncGamesBtn = document.getElementById('sync-games-btn');
             let reason = reasonSelect.value;
             if (reason === 'other') reason = customReasonInput.value.trim();
             if (!userId || !expValue || expValue <= 0 || !reason) {
-                scanStatusMessage.textContent = '錯誤：所有欄位皆為必填。';
-                scanStatusMessage.className = 'error';
+                if(scanStatusMessage) {
+                    scanStatusMessage.textContent = '錯誤：所有欄位皆為必填。';
+                    scanStatusMessage.className = 'error';
+                }
                 return;
             }
             try {
-                scanStatusMessage.textContent = '正在處理中...';
-                scanStatusMessage.className = '';
+                if(scanStatusMessage) {
+                    scanStatusMessage.textContent = '正在處理中...';
+                    scanStatusMessage.className = '';
+                }
                 submitExpBtn.disabled = true;
                 const response = await fetch('/api/add-exp', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -444,20 +460,24 @@ const syncGamesBtn = document.getElementById('sync-games-btn');
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || '未知錯誤');
-                scanStatusMessage.textContent = `成功為 ${userId.substring(0, 10)}... 新增 ${expValue} 點經驗！`;
-                scanStatusMessage.className = 'success';
+                if(scanStatusMessage) {
+                    scanStatusMessage.textContent = `成功為 ${userId.substring(0, 10)}... 新增 ${expValue} 點經驗！`;
+                    scanStatusMessage.className = 'success';
+                }
                 expInput.value = '';
             } catch (error) {
-                scanStatusMessage.textContent = `新增失敗: ${error.message}`;
-                scanStatusMessage.className = 'error';
+                if(scanStatusMessage) {
+                    scanStatusMessage.textContent = `新增失敗: ${error.message}`;
+                    scanStatusMessage.className = 'error';
+                }
             } finally {
                 submitExpBtn.disabled = false;
             }
         });
     }
     
-        // =================================================================
-    // ** 全新 ** 情報管理模組
+    // =================================================================
+    // 情報管理模組
     // =================================================================
     function renderNewsList(newsItems) {
         newsListTbody.innerHTML = '';
@@ -506,7 +526,7 @@ const syncGamesBtn = document.getElementById('sync-games-btn');
         editNewsModal.style.display = 'flex';
     }
 
-    document.getElementById('add-news-btn').addEventListener('click', () => openEditNewsModal());
+    addNewsBtn.addEventListener('click', () => openEditNewsModal());
     editNewsModal.querySelector('.modal-close').addEventListener('click', () => editNewsModal.style.display = 'none');
     editNewsModal.querySelector('.btn-cancel').addEventListener('click', () => editNewsModal.style.display = 'none');
     
@@ -559,10 +579,10 @@ const syncGamesBtn = document.getElementById('sync-games-btn');
         } catch (error) { alert(`錯誤：${error.message}`); }
     });
 
-    flatpickr("#edit-news-date", { dateFormat: "YYYY-mm-dd" });
+    flatpickr("#edit-news-date", { dateFormat: "Y-m-d" });
 
     // =================================================================
-    // ** 全新 ** 店家資訊管理模組
+    // 店家資訊管理模組
     // =================================================================
     async function fetchStoreInfo() {
         try {
@@ -598,7 +618,6 @@ const syncGamesBtn = document.getElementById('sync-games-btn');
     // ---- 初始化 ----
     function initialize() {
         showPage('users');
-        fetchAllUsers();
     }
     
     initialize();
