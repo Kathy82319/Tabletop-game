@@ -159,8 +159,35 @@
     </main>
     
     <div id="edit-game-modal" class="modal-overlay"></div>
-    <div id="edit-tag-modal" class="modal-overlay"></div>
-
+    
+    <div id="edit-tag-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-user-title">編輯標籤</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="edit-tag-form">
+                <input type="hidden" id="edit-user-id">
+                <div class="form-group">
+                    <label for="edit-tag-select">選擇標籤</label>
+                    <select id="edit-tag-select">
+                        <option value="">無</option>
+                        <option value="會員">會員</option>
+                        <option value="員工">員工</option>
+                        <option value="特殊">特殊</option>
+                        <option value="other">其他 (自訂)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="edit-tag-other-input" placeholder="請輸入自訂標籤" style="display: none;">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="action-btn btn-cancel">取消</button>
+                    <button type="submit" class="action-btn btn-save">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <div id="edit-news-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header"><h3 id="modal-news-title">新增情報</h3><button class="modal-close">&times;</button></div>

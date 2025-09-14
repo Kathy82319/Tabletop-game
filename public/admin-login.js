@@ -228,17 +228,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchAllGames() {
         try {
-            // ** 關鍵修正：確保呼叫的是為後台建立的、專門讀取 Sheet 的 API **
-            const response = await fetch('/api/admin/get-sheet-boardgames'); 
+            // ** START: 修正第二個錯誤 **
+            const response = await fetch('/api/get-sheet-boardgames'); 
+            // ** END: 修正第二個錯誤 **
             
             if (!response.ok) {
                 let errorDetails = `伺服器回應錯誤碼: ${response.status}`;
                 try {
-                    // 嘗試解析後端回傳的 JSON 錯誤訊息
                     const errData = await response.json();
                     errorDetails = errData.details || errData.error || JSON.stringify(errData);
                 } catch (e) {
-                    // 如果後端回傳的不是 JSON (例如 HTML 錯誤頁面)，則顯示原始文字
                     errorDetails = await response.text();
                 }
                 throw new Error(errorDetails);
@@ -289,7 +288,6 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 syncGamesBtn.textContent = '同步中...';
                 syncGamesBtn.disabled = true;
-                // POST 請求到 /api/get-boardgames 會觸發同步到 D1 的動作，這個路徑是正確的
                 const response = await fetch('/api/get-boardgames', { method: 'POST' });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.details || '同步失敗');
