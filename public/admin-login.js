@@ -1,4 +1,4 @@
-// public/admin-login.js (最終完整版 - 已恢復掃碼功能)
+// public/admin-login.js (最終完整版 - 已恢復掃碼按鈕功能)
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM 元素宣告 ---
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 訂位管理
     const bookingListTbody = document.getElementById('booking-list-tbody');
 
-    // ** 恢復：掃碼加點元素 **
+    // 掃碼加點
     const qrReaderElement = document.getElementById('qr-reader');
     const scanResultSection = document.getElementById('scan-result');
     const userIdDisplay = document.getElementById('user-id-display');
@@ -46,12 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
         pages.forEach(page => page.classList.remove('active'));
         const targetPage = document.getElementById(`page-${pageId}`);
         if (targetPage) targetPage.classList.add('active');
-
         document.querySelectorAll('.nav-tabs a').forEach(link => {
             link.classList.remove('active');
             if (link.getAttribute('href') === `#${pageId}`) link.classList.add('active');
         });
-
         if (pageId === 'users' && allUsers.length === 0) fetchAllUsers();
         if (pageId === 'inventory' && allGames.length === 0) fetchAllGames();
         if (pageId === 'bookings' && allBookings.length === 0) fetchAllBookings();
@@ -76,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = document.createElement('tr');
             row.dataset.userId = user.user_id;
             row.innerHTML = `
-                <td style="text-align: left;">${user.line_display_name || 'N/A'}</td>
+                <td style="text-align: left; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${user.line_display_name || 'N/A'}</td>
                 <td>${user.level}</td>
                 <td>${user.current_exp} / 10</td>
                 <td><span class="tag-display">${user.tag || '無'}</span></td>
@@ -338,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // =================================================================
-    // ** 恢復：掃碼加點模組 **
+    // 掃碼加點模組
     // =================================================================
     function onScanSuccess(decodedText, decodedResult) {
         if (html5QrCode && html5QrCode.isScanning) {
@@ -374,7 +372,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 scanStatusMessage.textContent = '無法啟動相機，請檢查權限。';
             });
     }
-
+    
+    // ** 關鍵修正：恢復掃碼頁面的按鈕事件監聽器 **
     if (reasonSelect) {
         reasonSelect.addEventListener('change', () => {
             customReasonInput.style.display = (reasonSelect.value === 'other') ? 'block' : 'none';
