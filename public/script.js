@@ -69,17 +69,15 @@ document.addEventListener('DOMContentLoaded', () => {
     appContent.addEventListener('click', (event) => {
         if (event.target.matches('.details-back-button')) {
              goBackPage();
-             return; // 結束函式，避免執行下面的點擊邏輯
+             return;
         }
 
         const newsCard = event.target.closest('.news-card');
         if (newsCard) {
             const newsId = parseInt(newsCard.dataset.newsId, 10);
             const newsItem = allNews.find(n => n.id === newsId);
-            if (newsItem && newsItem.content) {
-                alert(`-- ${newsItem.title} --\n\n${newsItem.content}`);
-            } else if (newsItem) {
-                alert(`-- ${newsItem.title} --\n\n(此消息沒有詳細內容)`);
+            if (newsItem) {
+                renderNewsDetails(newsItem);
             }
         }
     });
@@ -158,10 +156,38 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('store-address').textContent = info.address;
             document.getElementById('store-phone').textContent = info.phone;
             document.getElementById('store-hours').innerHTML = info.opening_hours.replace(/\n/g, '<br>');
-            document.getElementById('store-description').textContent = info.description;
+            document.getElementById('store-description').textContent = info.description.replace(/\n/g, '<br>');
         } catch (error) {
              console.error(error);
              document.getElementById('store-info-container').innerHTML = `<p style="color:red;">${error.message}</p>`;
+        }
+    }
+    function renderNewsDetails(newsItem) {
+        // 進入詳情頁前，先記錄目前的頁面歷史
+        pageHistory.push('page-home');
+        
+        const template = pageTemplates.querySelector('#page-news-details');
+        if (template) {
+            appContent.innerHTML = template.innerHTML;
+
+            document.getElementById('news-details-title').textContent = newsItem.title;
+            document.getElementById('news-details-category').textContent = newsItem.category;
+            document.getElementById('news-details-date').textContent = newsItem.published_date;
+            
+            const contentEl = document.getElementById('news-details-content');
+            // 將 \n 轉換為 <br>，並處理沒有內容的情況
+            contentEl.innerHTML = newsItem.content 
+                ? newsItem.content.replace(/\n/g, '<br>') 
+                : '<p style="color: #888;">此消息沒有提供詳細內容。</p>';
+
+            const imageEl = document.getElementById('news-details-image');
+            if (newsItem.image_url) {
+                imageEl.src = newsItem.image_url;
+                imageEl.alt = newsItem.title;
+                imageEl.style.display = 'block';
+            } else {
+                imageEl.style.display = 'none';
+            }
         }
     }
 
