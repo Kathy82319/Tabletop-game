@@ -287,6 +287,38 @@ document.addEventListener('DOMContentLoaded', () => {
             if (gameIndex > -1) allGames[gameIndex] = { ...allGames[gameIndex], ...formData, name: allGames[gameIndex].name };
             applyGameFiltersAndRender();
         } catch (error) { alert(`錯誤：${error.message}`); }
+
+            const syncGamesBtn = document.getElementById('sync-games-btn');
+    if (syncGamesBtn) {
+        syncGamesBtn.addEventListener('click', async () => {
+            if (!confirm('確定要從 Google Sheet 覆蓋所有桌遊資料到此系統嗎？\n此操作會將資料庫更新為與 Google Sheet 完全一致。')) {
+                return;
+            }
+
+            try {
+                syncGamesBtn.textContent = '同步中...';
+                syncGamesBtn.disabled = true;
+
+                // ** 注意：我們呼叫的是 /api/get-boardgames，但用的是 POST 方法 **
+                const response = await fetch('/api/get-boardgames', {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.details || result.error || '同步失敗');
+                }
+
+                alert(result.message);
+                await fetchAllGames(); // 同步成功後，自動重新整理頁面上的列表
+
+            } catch (error) {
+                alert(`錯誤：${error.message}`);
+            } finally {
+                syncGamesBtn.textContent = '從 Google Sheet 同步';
+                syncGamesBtn.disabled = false;
+            }
+        });
     });
 
     // =================================================================
