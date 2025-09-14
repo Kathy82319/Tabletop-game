@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameSearchInput = document.getElementById('game-search-input');
     const editGameModal = document.getElementById('edit-game-modal');
     const editGameForm = document.getElementById('edit-game-form');
-    const syncGamesBtn = document.getElementById('sync-games-btn');
 
     // 訂位管理
     const bookingListTbody = document.getElementById('booking-list-tbody');
