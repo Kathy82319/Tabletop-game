@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (pageId === 'users' && allUsers.length === 0) fetchAllUsers();
-        if (pageId === 'inventory' && allGames.length === 0) fetchAllGames();
+        if (pageId === 'inventory') fetchAllGames();
         if (pageId === 'bookings' && allBookings.length === 0) fetchAllBookings();
         if (pageId === 'scan') startScanner();
         if (pageId === 'news' && allNews.length === 0) fetchAllNews();
@@ -76,7 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
             showPage(pageId);
         }
     });
-
     // =================================================================
     // 顧客管理模組
     // =================================================================
@@ -229,16 +228,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchAllGames() {
         try {
-            // ** 關鍵修正：將 API 路徑指向我們為後台專門建立的 API **
+            // ** 關鍵修正：確保呼叫的是為後台建立的、專門讀取 Sheet 的 API **
             const response = await fetch('/api/admin/get-sheet-boardgames'); 
             
             if (!response.ok) {
-                // 嘗試解析 JSON 錯誤訊息，如果失敗，則顯示文字內容
-                let errorDetails = '';
+                let errorDetails = `伺服器回應錯誤碼: ${response.status}`;
                 try {
+                    // 嘗試解析後端回傳的 JSON 錯誤訊息
                     const errData = await response.json();
-                    errorDetails = errData.details || errData.error || '無法獲取桌遊列表';
+                    errorDetails = errData.details || errData.error || JSON.stringify(errData);
                 } catch (e) {
+                    // 如果後端回傳的不是 JSON (例如 HTML 錯誤頁面)，則顯示原始文字
                     errorDetails = await response.text();
                 }
                 throw new Error(errorDetails);
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) { 
             console.error('從 Google Sheet 獲取桌遊列表失敗:', error); 
-            if(gameListTbody) gameListTbody.innerHTML = `<tr><td colspan="5" style="color: red; text-align: center;">讀取資料失敗: ${error.message}</td></tr>`;
+            if(gameListTbody) gameListTbody.innerHTML = `<tr><td colspan="5" style="color: red; text-align: center; white-space: pre-wrap;">讀取資料失敗:\n${error.message}</td></tr>`;
         }
     }
 
@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 syncGamesBtn.textContent = '同步中...';
                 syncGamesBtn.disabled = true;
-                // POST 請求到舊的 API，觸發同步到 D1 的動作 (這個路徑是正確的)
+                // POST 請求到 /api/get-boardgames 會觸發同步到 D1 的動作，這個路徑是正確的
                 const response = await fetch('/api/get-boardgames', { method: 'POST' });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.details || '同步失敗');
@@ -302,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    
+
     // =================================================================
     // 訂位管理模組
     // =================================================================
