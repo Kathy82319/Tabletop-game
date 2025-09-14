@@ -192,9 +192,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-// =================================================================
-// 庫存管理模組
-// =================================================================
+    // =================================================================
+    // 庫存管理模組
+    // =================================================================
     function applyGameFiltersAndRender() {
         if (!allGames) return;
         const searchTerm = gameSearchInput.value.toLowerCase().trim();
@@ -221,9 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${game.total_stock}</td>
                 <td>${isVisible ? '是' : '否'}</td>
                 <td>${game.rental_type || 'N/A'}</td>
-                <td class="actions-cell">
-                    <button class="action-btn btn-edit" data-gameid="${game.game_id}">編輯</button>
-                </td>
+                <td class="actions-cell"><button class="action-btn btn-edit" data-gameid="${game.game_id}">編輯</button></td>
             `;
             gameListTbody.appendChild(row);
         });
@@ -231,14 +229,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchAllGames() {
         try {
-            // ** 關鍵修改：呼叫新的 API 來直接讀取 Google Sheet **
-            const response = await fetch('/api/admin/get-sheet-boardgames');
+            // ** 關鍵修正：將 API 路徑指向我們為後台專門建立的 API **
+            const response = await fetch('/api/admin/get-sheet-boardgames'); 
+            
             if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.details || errData.error || '無法獲取桌遊列表');
+                // 嘗試解析 JSON 錯誤訊息，如果失敗，則顯示文字內容
+                let errorDetails = '';
+                try {
+                    const errData = await response.json();
+                    errorDetails = errData.details || errData.error || '無法獲取桌遊列表';
+                } catch (e) {
+                    errorDetails = await response.text();
+                }
+                throw new Error(errorDetails);
             }
+
             allGames = await response.json();
             applyGameFiltersAndRender();
+
         } catch (error) { 
             console.error('從 Google Sheet 獲取桌遊列表失敗:', error); 
             if(gameListTbody) gameListTbody.innerHTML = `<tr><td colspan="5" style="color: red; text-align: center;">讀取資料失敗: ${error.message}</td></tr>`;
@@ -262,8 +270,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFilterButtons(visibilityFilter, 'visibility');
     setupFilterButtons(rentalTypeFilter, 'rentalType');
 
-    // 注意：後台的編輯功能暫時無法直接修改 Google Sheet，
-    // 這裡的編輯是示意，實際要修改請直接在 Google Sheet 上操作。
     function openEditGameModal(gameId) {
         const game = allGames.find(g => g.game_id == gameId);
         if (!game) return;
@@ -283,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 syncGamesBtn.textContent = '同步中...';
                 syncGamesBtn.disabled = true;
-                // ** 關鍵：POST 請求到舊的 API，觸發同步到 D1 的動作 **
+                // POST 請求到舊的 API，觸發同步到 D1 的動作 (這個路徑是正確的)
                 const response = await fetch('/api/get-boardgames', { method: 'POST' });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.details || '同步失敗');
@@ -296,6 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    
     // =================================================================
     // 訂位管理模組
     // =================================================================
