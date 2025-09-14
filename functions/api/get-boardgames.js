@@ -15,7 +15,7 @@ async function getAccessToken(env) {
 
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt }),
+      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth-grant-type:jwt-bearer', assertion: jwt }),
     });
 
     const tokenData = await tokenResponse.json();
@@ -28,29 +28,37 @@ export async function onRequest(context) {
   const { request, env } = context;
   const { DB } = env;
 
-  // --- 處理 GET 請求 (讀取 D1 資料庫的桌遊列表) ---
+  // --- 處理 GET 請求 (直接讀取 Google Sheet 回傳給後台) ---
   if (request.method === 'GET') {
     try {
-      // ** 關鍵：現在 GET 請求統一從 D1 資料庫讀取，確保資料來源一致 **
-      const stmt = DB.prepare(
-        'SELECT * FROM BoardGames ORDER BY game_id ASC' // 讀取所有欄位
-      );
-      const { results } = await stmt.all();
-      return new Response(JSON.stringify(results || []), {
-        status: 200, headers: { 'Content-Type': 'application/json' },
-      });
+        const accessToken = await getAccessToken(env);
+        const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
+        const doc = new GoogleSpreadsheet(env.GOOGLE_SHEET_ID, simpleAuth);
+        
+        await doc.loadInfo();
+        const sheet = doc.sheetsByTitle['BoardGames'];
+        if (!sheet) throw new Error('在 Google Sheets 中找不到名為 "BoardGames" 的工作表。');
+        
+        const rows = await sheet.getRows();
+        // 將 google-spreadsheet 的 row 物件轉換成純粹的 JSON 物件陣列
+        const data = rows.map(row => row.toObject());
+
+        return new Response(JSON.stringify(data || []), {
+            status: 200, headers: { 'Content-Type': 'application/json' },
+        });
+
     } catch (error) {
-      console.error('Error in get-boardgames (GET):', error);
-      return new Response(JSON.stringify({ error: '獲取桌遊列表失敗。' }), {
-        status: 500, headers: { 'Content-Type': 'application/json' },
-      });
+        console.error('Error in get-boardgames (GET from Sheet):', error);
+        return new Response(JSON.stringify({ error: '從 Google Sheet 獲取桌遊列表失敗。', details: error.message }), {
+            status: 500, headers: { 'Content-Type': 'application/json' },
+        });
     }
   }
 
   // --- 處理 POST 請求 (從 Google Sheet 同步到 D1 資料庫) ---
   if (request.method === 'POST') {
     try {
-        // 1. 連接並讀取 Google Sheet
+        // 1. 連接並讀取 Google Sheet (再次讀取以確保資料最新)
         const accessToken = await getAccessToken(env);
         const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
         const doc = new GoogleSpreadsheet(env.GOOGLE_SHEET_ID, simpleAuth);
@@ -90,13 +98,13 @@ export async function onRequest(context) {
         // 4. 批次執行所有資料庫操作
         await DB.batch(operations);
 
-        return new Response(JSON.stringify({ success: true, message: `成功從 Google Sheet 同步了 ${rows.length} 筆桌遊資料。` }), {
+        return new Response(JSON.stringify({ success: true, message: `成功將 ${rows.length} 筆桌遊資料同步至資料庫。` }), {
             status: 200, headers: { 'Content-Type': 'application/json' },
         });
 
     } catch (error) {
-        console.error('Error in get-boardgames (POST):', error);
-        return new Response(JSON.stringify({ error: '同步失敗。', details: error.message }), { status: 500 });
+        console.error('Error in get-boardgames (POST to D1):', error);
+        return new Response(JSON.stringify({ error: '同步至資料庫失敗。', details: error.message }), { status: 500 });
     }
   }
 
