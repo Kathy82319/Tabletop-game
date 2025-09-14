@@ -569,7 +569,7 @@ if (syncGamesBtn) {
         } catch (error) { alert(`錯誤：${error.message}`); }
     });
 
-    flatpickr("#edit-news-date", { dateFormat: "Y-m-d" });
+    flatpickr("#edit-news-date", { dateFormat: "YYYY-mm-dd" });
 
     // =================================================================
     // ** 全新 ** 店家資訊管理模組
