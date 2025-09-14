@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('store-address').textContent = info.address;
             document.getElementById('store-phone').textContent = info.phone;
             document.getElementById('store-hours').innerHTML = info.opening_hours.replace(/\n/g, '<br>');
-            document.getElementById('store-description').textContent = info.description.replace(/\n/g, '<br>');
+            document.getElementById('store-description').innerHTML = info.description.replace(/\n/g, '<br>');
         } catch (error) {
              console.error(error);
              document.getElementById('store-info-container').innerHTML = `<p style="color:red;">${error.message}</p>`;
