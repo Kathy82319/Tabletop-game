@@ -1,5 +1,3 @@
-// public/admin-login.js (最終完整版 - 已恢復掃碼按鈕功能)
-
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM 元素宣告 ---
     const mainNav = document.querySelector('.nav-tabs');
@@ -14,25 +12,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // 庫存管理
     const gameListTbody = document.getElementById('game-list-tbody');
     const gameSearchInput = document.getElementById('game-search-input');
-    const visibilityFilter = document.getElementById('visibility-filter');
-    const rentalTypeFilter = document.getElementById('rental-type-filter');
     const editGameModal = document.getElementById('edit-game-modal');
     const editGameForm = document.getElementById('edit-game-form');
+    const syncGamesBtn = document.getElementById('sync-games-btn');
 
     // 訂位管理
     const bookingListTbody = document.getElementById('booking-list-tbody');
 
-    //最新資訊
+    // 情報管理
     const newsListTbody = document.getElementById('news-list-tbody');
-    
-    const storeInfoForm = document.getElementById('store-info-form');
-    
+    const addNewsBtn = document.getElementById('add-news-btn');
     const editNewsModal = document.getElementById('edit-news-modal');
     const editNewsForm = document.getElementById('edit-news-form');
     const modalNewsTitle = document.getElementById('modal-news-title');
     const deleteNewsBtn = document.getElementById('delete-news-btn');
+    
+    // 店家資訊
+    const storeInfoForm = document.getElementById('store-info-form');
 
-    // ** 恢復：掃碼加點元素 **
+    // 掃碼加點
     const qrReaderElement = document.getElementById('qr-reader');
     const scanResultSection = document.getElementById('scan-result');
     const userIdDisplay = document.getElementById('user-id-display');
@@ -44,9 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const scanStatusMessage = document.getElementById('scan-status-message');
 
     // --- 全域狀態變數 ---
-    let allUsers = [], allGames = [], allBookings = [];
+    let allUsers = [], allGames = [], allBookings = [], allNews = [];
     let gameFilters = { visibility: 'all', rentalType: 'all' };
     let html5QrCode = null;
+    let currentEditingNewsId = null;
 
     // ---- 頁面切換邏輯 ----
     function showPage(pageId) {
@@ -54,8 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
             html5QrCode.stop().catch(err => console.error("停止掃描器失敗", err));
         }
         pages.forEach(page => page.classList.remove('active'));
-        const targetPage = document.getElementById(`page-${pageId}`);
-        if (targetPage) targetPage.classList.add('active');
+        document.getElementById(`page-${pageId}`)?.classList.add('active');
 
         document.querySelectorAll('.nav-tabs a').forEach(link => {
             link.classList.remove('active');
@@ -67,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pageId === 'bookings' && allBookings.length === 0) fetchAllBookings();
         if (pageId === 'scan') startScanner();
         if (pageId === 'news' && allNews.length === 0) fetchAllNews();
-        if (pageId === 'store-info') fetchStoreInfo(); // 每次都重新獲取
+        if (pageId === 'store-info') fetchStoreInfo();
     }
 
     mainNav.addEventListener('click', (event) => {
@@ -198,14 +196,14 @@ document.addEventListener('DOMContentLoaded', () => {
 // 庫存管理模組
 // =================================================================
 function applyGameFiltersAndRender() {
-    const searchTerm = gameSearchInput.value.toLowerCase().trim();
-    let filteredGames = allGames;
-    if (searchTerm) filteredGames = filteredGames.filter(game => (game.name || '').toLowerCase().includes(searchTerm));
-    if (gameFilters.visibility !== 'all') filteredGames = filteredGames.filter(game => game.is_visible === gameFilters.visibility);
-    if (gameFilters.rentalType !== 'all') filteredGames = filteredGames.filter(game => game.rental_type === gameFilters.rentalType);
-    renderGameList(filteredGames);
+        const searchTerm = gameSearchInput.value.toLowerCase().trim();
+        let filteredGames = allGames.filter(game => 
+            (game.name || '').toLowerCase().includes(searchTerm) &&
+            (gameFilters.visibility === 'all' || game.is_visible === gameFilters.visibility) &&
+            (gameFilters.rentalType === 'all' || game.rental_type === gameFilters.rentalType)
+        );
+        renderGameList(filteredGames);
 }
-
 function renderGameList(games) {
     if (!gameListTbody) return;
     gameListTbody.innerHTML = '';
@@ -299,31 +297,25 @@ editGameForm.addEventListener('submit', async (e) => {
 
 // ** 關鍵修正：將 syncGamesBtn 的事件監聽器獨立出來 **
 const syncGamesBtn = document.getElementById('sync-games-btn');
-if (syncGamesBtn) {
-    syncGamesBtn.addEventListener('click', async () => {
-        if (!confirm('確定要從 Google Sheet 覆蓋所有桌遊資料到此系統嗎？\n此操作會將資料庫更新為與 Google Sheet 完全一致。')) {
-            return;
-        }
-        try {
-            syncGamesBtn.textContent = '同步中...';
-            syncGamesBtn.disabled = true;
-            const response = await fetch('/api/get-boardgames', {
-                method: 'POST'
-            });
-            const result = await response.json();
-            if (!response.ok) {
-                throw new Error(result.details || result.error || '同步失敗');
+    if (syncGamesBtn) {
+        syncGamesBtn.addEventListener('click', async () => {
+            if (!confirm('確定要從 Google Sheet 覆蓋所有桌遊資料到此系統嗎？')) return;
+            try {
+                syncGamesBtn.textContent = '同步中...';
+                syncGamesBtn.disabled = true;
+                const response = await fetch('/api/get-boardgames', { method: 'POST' });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.details || '同步失敗');
+                alert(result.message);
+                await fetchAllGames();
+            } catch (error) {
+                alert(`錯誤：${error.message}`);
+            } finally {
+                syncGamesBtn.textContent = '從 Google Sheet 同步';
+                syncGamesBtn.disabled = false;
             }
-            alert(result.message);
-            await fetchAllGames();
-        } catch (error) {
-            alert(`錯誤：${error.message}`);
-        } finally {
-            syncGamesBtn.textContent = '從 Google Sheet 同步';
-            syncGamesBtn.disabled = false;
-        }
-    });
-}
+        });
+    }
     // =================================================================
     // 訂位管理模組
     // =================================================================

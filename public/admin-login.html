@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>店務管理系統</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         :root {
             --primary-color: #007bff; --secondary-color: #6c757d; --danger-color: #dc3545;
@@ -18,8 +19,8 @@
         .nav-tabs a.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
         .main-content { padding: 1.5rem; }
         .page { display: none; } .page.active { display: block; }
-        .page-header { margin-bottom: 1.5rem; }
-        .page-header h2 { font-size: 1.8rem; color: var(--text-dark); margin:0; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .page-header h2 { margin: 0; font-size: 1.8rem; color: var(--text-dark); }
         
         table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; }
         th, td { padding: 0.8rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; text-align: center; }
@@ -29,36 +30,26 @@
         .compound-cell .main-info { font-weight: bold; }
         .compound-cell .sub-info { font-size: 0.8rem; color: var(--text-light); }
         .action-btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; border: none; border-radius: 5px; cursor: pointer; color: white; }
-  
         .btn-edit { background-color: #ffc107; color: #212529; }
         .btn-sync { background-color: #17a2b8; }
-        .btn-cancel-booking { background-color: var(--danger-color); }
-
+        
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px; }
         .modal-header h3 { margin: 0; }
         .modal-close { font-size: 1.5rem; font-weight: bold; border: none; background: none; cursor: pointer; }
+        
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
-        
-        /* ** 關鍵修正：將 textarea 加入，使其寬度與 input 一致 ** */
         .form-group input, .form-group select, .form-group textarea { 
-            width: 100%; 
-            padding: 8px; 
-            font-size: 1rem; 
-            border: 1px solid #ccc; 
-            border-radius: 4px; 
-            box-sizing: border-box; 
+            width: 100%; padding: 8px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; 
         }
-
         .form-actions { margin-top: 20px; text-align: right; }
         .btn-save { background-color: var(--primary-color); }
         .btn-cancel { background-color: var(--secondary-color); }
     </style>
 </head>
 <body>
-    
     <header class="header"><h1>店務管理系統</h1></header>
     <nav class="nav-tabs">
         <a href="#users" class="active">顧客管理</a>
@@ -70,12 +61,9 @@
     </nav>
 
     <main class="main-content">
-        
         <div id="page-users" class="page active">
             <div class="page-header"><h2>顧客總表</h2></div>
-            <div class="filter-controls">
-                <input type="text" id="user-search-input" placeholder="依 LINE 名稱搜尋...">
-            </div>
+            <input type="text" id="user-search-input" placeholder="依 LINE 名稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
             <table>
                 <thead>
                     <tr><th>LINE 名稱</th><th>等級</th><th>經驗值</th><th>標籤</th><th>操作</th></tr>
@@ -85,12 +73,11 @@
         </div>
 
         <div id="page-inventory" class="page">
-            <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="page-header">
                 <h2>庫存管理</h2>
                 <button id="sync-games-btn" class="action-btn" style="background-color: #28a745;">從 Google Sheet 同步</button>
             </div>
-            <div class="filter-controls">
-                </div>
+            <input type="text" id="game-search-input" placeholder="依桌遊名稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
             <table>
                 <thead>
                     <tr><th>遊戲</th><th>庫存</th><th>上架</th><th>類型</th><th>操作</th></tr>
@@ -110,7 +97,7 @@
         </div>
 
         <div id="page-news" class="page">
-            <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="page-header">
                 <h2>情報管理</h2>
                 <button id="add-news-btn" class="action-btn btn-save">新增情報</button>
             </div>
@@ -128,7 +115,7 @@
                 <div class="form-group"><label for="info-address">地址</label><input type="text" id="info-address" required></div>
                 <div class="form-group"><label for="info-phone">電話</label><input type="text" id="info-phone" required></div>
                 <div class="form-group"><label for="info-hours">營業時間 (換行請直接按 Enter)</label><textarea id="info-hours" rows="5" required></textarea></div>
-                <div class="form-group"><label for="info-desc">公會介紹</label><textarea id="info-desc" rows="5" required></textarea></div>
+                <div class="form-group"><label for="info-desc">公會介紹</label><textarea id="info-desc" rows="8" required></textarea></div>
                 <div class="form-actions"><button type="submit" class="action-btn btn-save">儲存變更</button></div>
             </form>
         </div>
@@ -143,18 +130,17 @@
                         <input type="text" id="user-id-display" readonly style="background-color: #e9ecef; cursor: not-allowed;">
                     </div>
                 </div>
-                <div id="scan-status-message" style="text-align: center; margin-top: 15px; font-weight: bold; min-height: 24px;"></div>
             </div>
-            <div class="form-group"><label for="reason-select">點數名稱 (原因):</label><select id="reason-select"></select><input type="text" id="custom-reason-input" style="display: none;"></div>
-            <div class="form-group"><label for="exp-input">經驗值點數:</label><input type="number" id="exp-input" min="1"></div>
-            <button id="submit-exp-btn" class="action-btn btn-save" style="width: 100%;">確認新增</button>
-            <button id="rescan-btn" class="action-btn btn-cancel" style="width: 100%; margin-top: 10px;">重新掃描</button>
+            <div class="form-group"><label for="reason-select">點數名稱 (原因):</label><select id="reason-select"><option value="消費回饋">消費回饋</option><option value="活動獎勵">活動獎勵</option><option value="新手獎勵">新手獎勵</option><option value="other">其他 (請手動輸入)</option></select><input type="text" id="custom-reason-input" placeholder="請輸入自訂原因" style="display: none; margin-top: 10px;"></div>
+            <div class="form-group"><label for="exp-input">經驗值點數:</label><input type="number" id="exp-input" placeholder="請輸入要新增的經驗值" min="1"></div>
+            <button id="submit-exp-btn" class="action-btn btn-save" style="width: 100%; padding: 12px; font-size: 1rem;">確認新增</button>
+            <button id="rescan-btn" class="action-btn btn-cancel" style="width: 100%; padding: 12px; font-size: 1rem; margin-top: 10px;">重新掃描</button>
         </div>
-
     </main>
     
     <div id="edit-game-modal" class="modal-overlay"></div>
     <div id="edit-tag-modal" class="modal-overlay"></div>
+
     <div id="edit-news-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header"><h3 id="modal-news-title">新增情報</h3><button class="modal-close">&times;</button></div>
@@ -165,7 +151,7 @@
                 <div class="form-group"><label for="edit-news-date">發布日期</label><input type="text" id="edit-news-date" required></div>
                 <div class="form-group"><label for="edit-news-image">圖片網址</label><input type="url" id="edit-news-image" placeholder="https://..."></div>
                 <div class="form-group"><label for="edit-news-content">詳細內文 (選填)</label><textarea id="edit-news-content" rows="8"></textarea></div>
-                <div class="form-group"><label><input type="checkbox" id="edit-news-published" checked>立即發布</label></div>
+                <div class="form-group"><label style="display: flex; align-items: center;"><input type="checkbox" id="edit-news-published" checked style="width: auto; margin-right: 10px;">立即發布</label></div>
                 <div class="form-actions">
                     <button type="button" class="action-btn btn-cancel">取消</button>
                     <button type="submit" class="action-btn btn-save">儲存</button>
