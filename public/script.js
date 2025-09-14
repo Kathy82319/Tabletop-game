@@ -79,21 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.target.matches('.details-back-button')) goBackPage();
     });
 
-    liff.init({ liffId: myLiffId })
-        .then(() => {
-            if (!liff.isLoggedIn()) liff.login();
-            else return liff.getProfile();
-        })
-        .then(profile => {
-            userProfile = profile;
-            showPage('page-home');
-        })
-        .catch((err) => {
-            console.error("LIFF 初始化失敗", err);
-            showPage('page-home'); // 即使失敗也顯示首頁
-        });
-    
-
     // =================================================================
     // LIFF 初始化
     // =================================================================
