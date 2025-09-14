@@ -53,6 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'page-booking':
                     initializeBookingPage();
                     break;
+                 case 'page-edit-profile': // 新增的 case
+                    initializeEditProfilePage();
+                   break;                    
             }
         } else {
             console.error(`在 page-templates 中找不到樣板: ${pageId}`);
@@ -110,9 +113,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 使用者資料 & 個人資料頁
     // =================================================================
-    function displayUserProfile() {
+    function displayUserProfile(gameData) { // ** 關鍵改動：接收 gameData 作為參數 **
         if (!userProfile) return;
-        document.getElementById('display-name').textContent = userProfile.displayName;
+
+        // ** 關鍵改動：優先顯示綽號，否則顯示 LINE 名稱 **
+        document.getElementById('display-name').textContent = gameData?.nickname || userProfile.displayName;
         document.getElementById('status-message').textContent = userProfile.statusMessage || '';
         const profilePicture = document.getElementById('profile-picture');
         if (userProfile.pictureUrl) profilePicture.src = userProfile.pictureUrl;
@@ -133,7 +138,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('無法取得會員遊戲資料');
             const gameData = await response.json();
             
-            const expToNextLevel = "10"; //修正經驗顯示欄位
+            // ** 關鍵改動：將 gameData 傳給 displayUserProfile **
+            displayUserProfile(gameData);
+            
+            const expToNextLevel = "10";
             const userClassEl = document.getElementById('user-class');
             const userLevelEl = document.getElementById('user-level');
             const userExpEl = document.getElementById('user-exp');
@@ -163,10 +171,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            const nicknameInput = document.getElementById('profile-nickname');
-            const phoneInput = document.getElementById('profile-phone');
-            if(nicknameInput) nicknameInput.value = gameData.nickname || '';
-            if(phoneInput) phoneInput.value = gameData.phone || '';
+            //const nicknameInput = document.getElementById('profile-nickname');
+            //const phoneInput = document.getElementById('profile-phone');
+            //if(nicknameInput) nicknameInput.value = gameData.nickname || '';
+            //if(phoneInput) phoneInput.value = gameData.phone || '';
 
         } catch (error) {
             console.error('呼叫會員 API 失敗:', error);
@@ -219,13 +227,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initializeProfilePage() {
-        displayUserProfile();
+        // ** 關鍵改動：簡化初始化流程 **
         if (userProfile) {
             fetchGameData(userProfile);
             fetchAndDisplayMyBookings(userProfile.userId);
         }
         
-        const classSelectionContainer = appContent.querySelector('#class-selection');
+        const classSelectionContainer = appContent.querySelector('.class-selection-container'); // 使用 class 選擇器
         if (classSelectionContainer) {
             classSelectionContainer.addEventListener('click', (event) => {
                 const button = event.target.closest('.class-btn');
@@ -237,6 +245,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const modal = appContent.querySelector('#profile-modal');
         const editBtn = appContent.querySelector('#edit-profile-btn');
+        if (!editBtn) return;
+
+        editBtn.addEventListener('click', () => { 
+            showPage('page-edit-profile'); 
+        });
         const closeBtn = appContent.querySelector('.modal-close-btn');
         const form = appContent.querySelector('#profile-form');
         
@@ -291,6 +304,87 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusMsg.textContent = `儲存失敗: ${error.message}`; statusMsg.classList.add('error');
             }
         });
+    }
+
+        // ** 這是一個全新的函式，用來初始化編輯頁面 **
+    async function initializeEditProfilePage() {
+        if (!userProfile) {
+            alert('無法獲取使用者資料，請稍後再試。');
+            goBackPage();
+            return;
+        }
+        
+        // 預設填入 LINE 名稱
+        const nameInput = appContent.querySelector('#edit-profile-name');
+        if(nameInput) nameInput.value = userProfile.displayName;
+
+        // 獲取已儲存的資料
+        const response = await fetch('/api/user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userProfile.userId, displayName: userProfile.displayName, pictureUrl: userProfile.pictureUrl }),
+        });
+        const savedData = await response.json();
+
+        // 填充表單
+        const nicknameInput = appContent.querySelector('#edit-profile-nickname');
+        const phoneInput = appContent.querySelector('#edit-profile-phone');
+        const emailInput = appContent.querySelector('#edit-profile-email');
+        if(nicknameInput) nicknameInput.value = savedData.nickname || '';
+        if(phoneInput) phoneInput.value = savedData.phone || '';
+        if(emailInput) emailInput.value = savedData.email || '';
+
+        // 設定偏好遊戲類型下拉選單的監聽器
+        const gameSelect = appContent.querySelector('#edit-profile-games');
+        const otherGameInput = appContent.querySelector('#edit-profile-games-other');
+        if (gameSelect) {
+            gameSelect.addEventListener('change', () => {
+                otherGameInput.style.display = (gameSelect.value === '其他') ? 'block' : 'none';
+            });
+        }
+        
+        // 設定表單提交事件
+        const form = appContent.querySelector('#edit-profile-form');
+        if (form) {
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const statusMsg = appContent.querySelector('#edit-profile-form-status');
+                
+                const phoneValue = phoneInput.value.trim();
+                if (phoneValue && (phoneValue.length !== 10 || !phoneValue.startsWith('09'))) {
+                    alert('請輸入正確的10碼手機號碼，且必須為 09 開頭。');
+                    return;
+                }
+
+                statusMsg.textContent = '儲存中...';
+                let preferredGames = gameSelect.value === '其他' ? otherGameInput.value.trim() : gameSelect.value;
+                if (preferredGames === "未提供") preferredGames = "";
+
+                const formData = {
+                    userId: userProfile.userId,
+                    nickname: nicknameInput.value.trim(),
+                    phone: phoneValue,
+                    email: emailInput.value.trim(),
+                    preferredGames: preferredGames,
+                    displayName: userProfile.displayName,
+                    pictureUrl: userProfile.pictureUrl || ''
+                };
+
+                try {
+                    const response = await fetch('/api/update-user-profile', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData)
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error || '儲存失敗');
+                    statusMsg.textContent = '儲存成功！';
+                    setTimeout(() => {
+                        goBackPage(); // 成功後返回個人資料頁
+                    }, 1000);
+                } catch (error) {
+                    statusMsg.textContent = `儲存失敗: ${error.message}`;
+                }
+            });
+        }
     }
 
     // =================================================================

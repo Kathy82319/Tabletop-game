@@ -34,7 +34,7 @@
              <h1>冒險者資料</h1>
              <div id="profile-info" style="text-align: center; margin-top: 20px;">
                  <img id="profile-picture" src="" alt="Profile Picture" style="width: 100px; height: 100px; border-radius: 50%;">
-                 <h2 id="display-name" h3 id="(profile-nickname)" style="margin-top: 10px;"></h2>
+                 <h2 id="display-name" style="margin-top: 10px;"></h2>
                  <p id="status-message" style="color: #aaa;"></p>
              </div>
              <div id="qrcode-container" style="background-color: white; padding: 20px; margin: 25px auto; width: 200px; height: 200px;">
@@ -43,36 +43,57 @@
              <div style="margin-top: 10px;">
                  <p>職業：<span id="user-class">--</span></p> 
                  <p>等級：<span id="user-level">--</span></p>
-                 <p>經驗值：<span id="user-exp">-- / --- </span></p>
+                 <p>經驗值：<span id="user-exp">-- / -- </span></p>
              </div>
+             
+             <div style="text-align: center; margin: 25px 0;">
+                <button id="edit-profile-btn" style="padding: 10px 20px; font-size: 1rem; cursor: pointer; border-radius: 8px; border: 1px solid var(--primary-accent); background-color: white; color: var(--primary-accent);">冒險者檔案</button>
+             </div>
+
              <div id="my-bookings-section">
                 <h2>我預約的冒險旅程</h2>
                 <div id="my-bookings-container"><p>正在查詢您的預約紀錄...</p></div>
              </div>
-             <div class="profile-actions">
-                <button id="edit-profile-btn" class="cta-button">完善冒險者登錄</button>
              </div>
-             <div id="profile-modal" class="modal-overlay" style="display: none;">
-                <div class="modal-content">
-                    <button class="modal-close-btn">&times;</button>
-                    <h2>冒險者登錄</h2>
-                    <p>填寫您的資料，讓我們更認識你！</p>
-                    <form id="profile-form">
-                        <div class="input-group"><label for="profile-nickname">暱稱</label><input type="text" id="profile-nickname" required></div>
-                        <div class="input-group"><label for="profile-phone">聯絡電話</label><input type="tel" id="profile-phone" maxlength="10" required></div>
-                        <div class="input-group">
-                            <label for="profile-games">偏好的遊戲類型</label>
-                            <select id="profile-games">
-                                <option value="策略">策略</option><option value="派對">派對</option><option value="家庭">家庭</option>
-                                <option value="陣營">陣營</option><option value="其他">其他 (請手動輸入)</option>
-                            </select>
-                            <input type="text" id="profile-games-other" placeholder="請輸入其他偏好類型" style="display: none; margin-top: 10px;">
-                        </div>
-                        <button type="submit" class="cta-button">儲存資料</button>
-                    </form>
-                    <p id="profile-form-status" class="form-status"></p>
-                </div>
+
+        <div id="page-edit-profile">
+            <button class="details-back-button" style="margin-bottom: 20px;">← 返回</button>
+            <div style="text-align: center;">
+                <h1>冒險者檔案</h1>
+                <p style="color: #666; margin-top: -10px; margin-bottom: 30px;">冒險者履歷，讓我們更了解你！</p>
             </div>
+            <form id="edit-profile-form">
+                <div class="input-group">
+                    <label for="edit-profile-name">姓名 (LINE)</label>
+                    <input type="text" id="edit-profile-name" readonly style="background-color: #e9ecef; cursor: not-allowed;">
+                </div>
+                <div class="input-group">
+                    <label for="edit-profile-nickname">綽號</label>
+                    <input type="text" id="edit-profile-nickname" placeholder="您希望我們怎麼稱呼您？">
+                </div>
+                <div class="input-group">
+                    <label for="edit-profile-phone">聯絡電話</label>
+                    <input type="tel" id="edit-profile-phone" maxlength="10" placeholder="用於訂位等聯絡事宜">
+                </div>
+                <div class="input-group">
+                    <label for="edit-profile-email">電子信箱</label>
+                    <input type="email" id="edit-profile-email" placeholder="用於接收活動通知 (選填)">
+                </div>
+                <div class="input-group">
+                    <label for="edit-profile-games">偏好的遊戲類型</label>
+                    <select id="edit-profile-games">
+                        <option value="未提供">-- 請選擇 --</option>
+                        <option value="策略">策略</option>
+                        <option value="派對">派對</option>
+                        <option value="家庭">家庭</option>
+                        <option value="陣營">陣營</option>
+                        <option value="其他">其他 (請手動輸入)</option>
+                    </select>
+                    <input type="text" id="edit-profile-games-other" placeholder="請輸入其他偏好類型" style="display: none; margin-top: 10px;">
+                </div>
+                <button type="submit" class="cta-button" style="margin-top: 20px;">儲存資料</button>
+            </form>
+            <p id="edit-profile-form-status" class="form-status"></p>
         </div>
 
         <div id="page-booking">

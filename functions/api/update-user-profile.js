@@ -52,9 +52,11 @@ async function syncProfileUpdateToSheet(env, userData) {
             userRow.assign({
                 'nickname': userData.nickname,
                 'phone': userData.phone,
+                'email': userData.email, // 新增 email
                 'preferred_games': userData.preferredGames,
                 'line_display_name': userData.displayName,    // 更新 LINE 名稱
-                'line_picture_url': userData.pictureUrl       // 更新 LINE 頭像
+                'line_picture_url': userData.pictureUrl      // 更新 LINE 頭像
+
             });
             
             await userRow.save();
@@ -75,8 +77,8 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    // ** 關鍵改動：接收 displayName 和 pictureUrl **
-    const { userId, nickname, phone, preferredGames, displayName, pictureUrl } = await context.request.json();
+    // ** 關鍵改動：接收 email **
+    const { userId, nickname, phone, email, preferredGames, displayName, pictureUrl } = await context.request.json();
 
     if (!userId || !nickname || !phone) {
       return new Response(JSON.stringify({ error: '使用者 ID、暱稱和電話為必填欄位。' }), {
@@ -86,16 +88,18 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
-    // ** 關鍵改動：更新 D1 資料庫的指令 **
+    // ** 關鍵改動：更新 D1 資料庫的指令，增加 email **
     const stmt = db.prepare(
-      'UPDATE Users SET nickname = ?, phone = ?, preferred_games = ?, line_display_name = ?, line_picture_url = ? WHERE user_id = ?'
+      'UPDATE Users SET nickname = ?, phone = ?, email = ?, preferred_games = ?, line_display_name = ?, line_picture_url = ? WHERE user_id = ?'
     );
+    // ** 關鍵改動：綁定 email **
     const result = await stmt.bind(
         nickname, 
         phone, 
+        email || '', // 綁定 email，如果沒有則存空字串
         preferredGames || '未提供', 
-        displayName, // 綁定 LINE 名稱
-        pictureUrl,  // 綁定 LINE 頭像
+        displayName,
+        pictureUrl,
         userId
     ).run();
     
@@ -106,7 +110,7 @@ export async function onRequest(context) {
     }
 
     // ** 關鍵改動：將新資料傳遞給背景同步任務 **
-    const userDataToSync = { userId, nickname, phone, preferredGames: preferredGames || '未提供', displayName, pictureUrl };
+    const userDataToSync = { userId, nickname, phone, email: email || '', preferredGames: preferredGames || '未提供', displayName, pictureUrl };
     context.waitUntil(syncProfileUpdateToSheet(context.env, userDataToSync));
 
     return new Response(JSON.stringify({ 
