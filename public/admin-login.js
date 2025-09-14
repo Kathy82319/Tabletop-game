@@ -15,7 +15,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const editGameModal = document.getElementById('edit-game-modal');
     const editGameForm = document.getElementById('edit-game-form');
     const visibilityFilter = document.getElementById('visibility-filter');
-    const rentalTypeFilter = document.getElementById('rental-type-filter');
+    // ** START: 關鍵修正 - 移除 rentalTypeFilter **
+    // const rentalTypeFilter = document.getElementById('rental-type-filter');
+    // ** END: 關鍵修正 **
 
     // 訂位管理
     const bookingListTbody = document.getElementById('booking-list-tbody');
@@ -44,7 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 全域狀態變數 ---
     let allUsers = [], allGames = [], allBookings = [], allNews = [];
-    let gameFilters = { visibility: 'all', rentalType: 'all' };
+    // ** START: 關鍵修正 - 移除 rentalType 過濾器 **
+    let gameFilters = { visibility: 'all' };
+    // ** END: 關鍵修正 **
     let html5QrCode = null;
     let currentEditingNewsId = null;
 
@@ -136,6 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editTagModal.style.display = 'flex';
     }
 
+    editTagModal.querySelector('.modal-close').addEventListener('click', () => editTagModal.style.display = 'none');
     editTagModal.querySelector('.btn-cancel').addEventListener('click', () => editTagModal.style.display = 'none');
     
     document.getElementById('edit-tag-select').addEventListener('change', (e) => {
@@ -197,11 +202,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function applyGameFiltersAndRender() {
         if (!allGames) return;
         const searchTerm = gameSearchInput.value.toLowerCase().trim();
+        // ** START: 關鍵修正 - 移除 rentalType 過濾邏輯 **
         let filteredGames = allGames.filter(game => 
             (game.name || '').toLowerCase().includes(searchTerm) &&
-            (gameFilters.visibility === 'all' || String(game.is_visible).toUpperCase() === gameFilters.visibility) &&
-            (gameFilters.rentalType === 'all' || game.rental_type === gameFilters.rentalType)
+            (gameFilters.visibility === 'all' || String(game.is_visible).toUpperCase() === gameFilters.visibility)
         );
+        // ** END: 關鍵修正 **
         renderGameList(filteredGames);
     }
 
@@ -210,8 +216,9 @@ document.addEventListener('DOMContentLoaded', () => {
         gameListTbody.innerHTML = '';
         games.forEach(game => {
             const row = document.createElement('tr');
-            const isVisible = String(game.is_visible).toUpperCase() === 'TRUE';
+            const isVisible = String(game.is_visible) === '1'; // D1 回傳的是 1 或 0
             
+            // ** START: 關鍵修正 - 移除 rental_type 顯示 **
             row.innerHTML = `
                 <td class="compound-cell">
                     <div class="main-info">${game.name}</div>
@@ -219,18 +226,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
                 <td>${game.total_stock}</td>
                 <td>${isVisible ? '是' : '否'}</td>
-                <td>${game.rental_type || 'N/A'}</td>
                 <td class="actions-cell"><button class="action-btn btn-edit" data-gameid="${game.game_id}">編輯</button></td>
             `;
+            // ** END: 關鍵修正 **
             gameListTbody.appendChild(row);
         });
     }
 
     async function fetchAllGames() {
         try {
-            // ** START: 修正第二個錯誤 **
             const response = await fetch('/api/get-sheet-boardgames'); 
-            // ** END: 修正第二個錯誤 **
             
             if (!response.ok) {
                 let errorDetails = `伺服器回應錯誤碼: ${response.status}`;
@@ -244,11 +249,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             allGames = await response.json();
+            // 在這裡處理 is_visible 從 1/0 到 'TRUE'/'FALSE' 的轉換，以匹配篩選器邏輯
+            allGames.forEach(game => {
+                game.is_visible = game.is_visible === 1 ? 'TRUE' : 'FALSE';
+            });
             applyGameFiltersAndRender();
 
         } catch (error) { 
             console.error('從 Google Sheet 獲取桌遊列表失敗:', error); 
-            if(gameListTbody) gameListTbody.innerHTML = `<tr><td colspan="5" style="color: red; text-align: center; white-space: pre-wrap;">讀取資料失敗:\n${error.message}</td></tr>`;
+            if(gameListTbody) gameListTbody.innerHTML = `<tr><td colspan="4" style="color: red; text-align: center; white-space: pre-wrap;">讀取資料失敗:\n${error.message}</td></tr>`;
         }
     }
 
@@ -267,7 +276,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     setupFilterButtons(visibilityFilter, 'visibility');
-    setupFilterButtons(rentalTypeFilter, 'rentalType');
+    // ** START: 關鍵修正 - 移除對 rentalTypeFilter 的事件綁定 **
+    // setupFilterButtons(rentalTypeFilter, 'rentalType');
+    // ** END: 關鍵修正 **
 
     function openEditGameModal(gameId) {
         const game = allGames.find(g => g.game_id == gameId);
@@ -292,6 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.details || '同步失敗');
                 alert(result.message);
+                await fetchAllGames(); // 同步成功後重新載入資料
             } catch (error) {
                 alert(`錯誤：${error.message}`);
             } finally {

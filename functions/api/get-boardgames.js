@@ -48,31 +48,30 @@ async function runBoardgameSync(env) {
         return { success: true, message: 'Google Sheet 中沒有桌遊資料可同步。' };
     }
 
+    // ** START: 關鍵修正 - 移除 rental_type 欄位 **
     const stmt = DB.prepare(
-        `INSERT INTO BoardGames (game_id, name, description, image_url, min_players, max_players, difficulty, tags, total_stock, for_rent_stock, for_sale_stock, rent_price, sale_price, is_visible, rental_type)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO BoardGames (game_id, name, description, image_url, min_players, max_players, difficulty, tags, total_stock, for_rent_stock, for_sale_stock, rent_price, sale_price, is_visible)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(game_id) DO UPDATE SET
            name = excluded.name, description = excluded.description, image_url = excluded.image_url,
            min_players = excluded.min_players, max_players = excluded.max_players, difficulty = excluded.difficulty,
            tags = excluded.tags, total_stock = excluded.total_stock, for_rent_stock = excluded.for_rent_stock,
            for_sale_stock = excluded.for_sale_stock, rent_price = excluded.rent_price, sale_price = excluded.sale_price,
-           is_visible = excluded.is_visible, rental_type = excluded.rental_type`
+           is_visible = excluded.is_visible`
     );
 
-    // ** START: 關鍵修正 - 為所有欄位增加預設值 **
     const operations = rows.map(row => {
         const rowData = row.toObject();
         
-        // 確保即使 game_id 為空也不會繼續執行，避免髒資料
         if (!rowData.game_id) {
             console.warn("跳過一筆缺少 game_id 的資料:", rowData);
-            return null; // 返回 null，後續會過濾掉
+            return null;
         }
 
         const isVisible = String(rowData.is_visible).toUpperCase() === 'TRUE' ? 1 : 0;
         
         return stmt.bind(
-            rowData.game_id || '', // 主鍵通常不應為空，但做防禦
+            rowData.game_id || '',
             rowData.name || '',
             rowData.description || '',
             rowData.image_url || '',
@@ -85,13 +84,11 @@ async function runBoardgameSync(env) {
             Number(rowData.for_sale_stock) || 0,
             Number(rowData.rent_price) || 0,
             Number(rowData.sale_price) || 0,
-            isVisible,
-            rowData.rental_type || '僅供內借'
+            isVisible
         );
-    }).filter(op => op !== null); // 過濾掉剛才返回 null 的無效操作
+    }).filter(op => op !== null);
     // ** END: 關鍵修正 **
-
-    // 如果過濾後沒有任何有效操作，則直接返回
+    
     if (operations.length === 0) {
         return { success: true, message: '在 Google Sheet 中沒有找到包含有效 game_id 的資料可同步。' };
     }

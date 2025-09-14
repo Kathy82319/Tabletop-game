@@ -80,7 +80,7 @@
         <div id="page-inventory" class="page">
             <div class="page-header">
                 <h2>庫存管理</h2>
-                <button id="sync-games-btn" class="action-btn" style="background-color: #28a745;">同步到資料庫</button>
+                <button id="sync-games-btn" class="action-btn" style="background-color: #28a745;">同步至資料庫</button>
             </div>
             <input type="text" id="game-search-input" placeholder="依桌遊名稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
             
@@ -91,17 +91,11 @@
                     <button data-filter="TRUE">是</button>
                     <button data-filter="FALSE">否</button>
                 </div>
-                <div id="rental-type-filter" class="filter-group">
-                    <span>租借類型：</span>
-                    <button class="active" data-filter="all">全部</button>
-                    <button data-filter="僅供內借">僅供內借</button>
-                    <button data-filter="可外借">可外借</button>
                 </div>
-            </div>
             <table>
                 <thead>
-                    <tr><th>遊戲</th><th>庫存</th><th>上架</th><th>類型</th><th>操作</th></tr>
-                </thead>
+                    <tr><th>遊戲</th><th>庫存</th><th>上架</th><th>操作</th></tr>
+                    </thead>
                 <tbody id="game-list-tbody"></tbody>
             </table>
         </div>
@@ -159,7 +153,6 @@
     </main>
     
     <div id="edit-game-modal" class="modal-overlay"></div>
-    
     <div id="edit-tag-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -188,6 +181,7 @@
             </form>
         </div>
     </div>
+
     <div id="edit-news-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header"><h3 id="modal-news-title">新增情報</h3><button class="modal-close">&times;</button></div>
