@@ -194,133 +194,136 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // =================================================================
-    // 庫存管理模組
-    // =================================================================
-    function applyGameFiltersAndRender() {
-        const searchTerm = gameSearchInput.value.toLowerCase().trim();
-        let filteredGames = allGames;
-        if (searchTerm) filteredGames = filteredGames.filter(game => (game.name || '').toLowerCase().includes(searchTerm));
-        if (gameFilters.visibility !== 'all') filteredGames = filteredGames.filter(game => game.is_visible === gameFilters.visibility);
-        if (gameFilters.rentalType !== 'all') filteredGames = filteredGames.filter(game => game.rental_type === gameFilters.rentalType);
-        renderGameList(filteredGames);
-    }
-    
-    function renderGameList(games) {
-        if (!gameListTbody) return;
-        gameListTbody.innerHTML = '';
-        games.forEach(game => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="compound-cell">
-                    <div class="main-info">${game.name}</div>
-                    <div class="sub-info">ID: ${game.game_id}</div>
-                </td>
-                <td>${game.total_stock}</td>
-                <td>${game.is_visible === 'TRUE' ? '是' : '否'}</td>
-                <td>${game.rental_type || 'N/A'}</td>
-                <td class="actions-cell"><button class="action-btn btn-edit" data-gameid="${game.game_id}">編輯</button></td>
-            `;
-            gameListTbody.appendChild(row);
-        });
-    }
+// =================================================================
+// 庫存管理模組
+// =================================================================
+function applyGameFiltersAndRender() {
+    const searchTerm = gameSearchInput.value.toLowerCase().trim();
+    let filteredGames = allGames;
+    if (searchTerm) filteredGames = filteredGames.filter(game => (game.name || '').toLowerCase().includes(searchTerm));
+    if (gameFilters.visibility !== 'all') filteredGames = filteredGames.filter(game => game.is_visible === gameFilters.visibility);
+    if (gameFilters.rentalType !== 'all') filteredGames = filteredGames.filter(game => game.rental_type === gameFilters.rentalType);
+    renderGameList(filteredGames);
+}
 
-    async function fetchAllGames() {
-        try {
-            const response = await fetch('/api/get-boardgames');
-            if (!response.ok) throw new Error('無法獲取桌遊列表');
-            allGames = await response.json();
-            applyGameFiltersAndRender();
-        } catch (error) { console.error('獲取桌遊列表失敗:', error); }
-    }
-
-    gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
-
-    function setupFilterButtons(filterContainer, filterKey) {
-        if (!filterContainer) return;
-        filterContainer.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                filterContainer.querySelector('.active').classList.remove('active');
-                e.target.classList.add('active');
-                gameFilters[filterKey] = e.target.dataset.filter;
-                applyGameFiltersAndRender();
-            }
-        });
-    }
-    setupFilterButtons(visibilityFilter, 'visibility');
-    setupFilterButtons(rentalTypeFilter, 'rentalType');
-    
-    function openEditGameModal(gameId) {
-        const game = allGames.find(g => g.game_id == gameId);
-        if (!game) return;
-        document.getElementById('modal-game-title').textContent = `編輯桌遊：${game.name}`;
-        document.getElementById('edit-game-id').value = game.game_id;
-        document.getElementById('edit-total-stock').value = game.total_stock;
-        document.getElementById('edit-is-visible').value = game.is_visible || 'TRUE';
-        document.getElementById('edit-rental-type').value = game.rental_type || '僅供內借';
-        editGameModal.style.display = 'flex';
-    }
-
-    gameListTbody.addEventListener('click', (e) => {
-        if (e.target.classList.contains('btn-edit')) openEditGameModal(e.target.dataset.gameid);
+function renderGameList(games) {
+    if (!gameListTbody) return;
+    gameListTbody.innerHTML = '';
+    games.forEach(game => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="compound-cell">
+                <div class="main-info">${game.name}</div>
+                <div class="sub-info">ID: ${game.game_id}</div>
+            </td>
+            <td>${game.total_stock}</td>
+            <td>${game.is_visible === 'TRUE' ? '是' : '否'}</td>
+            <td>${game.rental_type || 'N/A'}</td>
+            <td class="actions-cell"><button class="action-btn btn-edit" data-gameid="${game.game_id}">編輯</button></td>
+        `;
+        gameListTbody.appendChild(row);
     });
+}
 
-    editGameModal.querySelector('.modal-close').addEventListener('click', () => editGameModal.style.display = 'none');
-    editGameModal.querySelector('.btn-cancel').addEventListener('click', () => editGameModal.style.display = 'none');
-    
-    editGameForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const gameId = document.getElementById('edit-game-id').value;
-        const formData = {
-            gameId: Number(gameId), total_stock: Number(document.getElementById('edit-total-stock').value),
-            is_visible: document.getElementById('edit-is-visible').value, rental_type: document.getElementById('edit-rental-type').value
-        };
+async function fetchAllGames() {
+    try {
+        const response = await fetch('/api/get-boardgames');
+        if (!response.ok) throw new Error('無法獲取桌遊列表');
+        allGames = await response.json();
+        applyGameFiltersAndRender();
+    } catch (error) { console.error('獲取桌遊列表失敗:', error); }
+}
+
+gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
+
+function setupFilterButtons(filterContainer, filterKey) {
+    if (!filterContainer) return;
+    filterContainer.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            filterContainer.querySelector('.active').classList.remove('active');
+            e.target.classList.add('active');
+            gameFilters[filterKey] = e.target.dataset.filter;
+            applyGameFiltersAndRender();
+        }
+    });
+}
+setupFilterButtons(visibilityFilter, 'visibility');
+setupFilterButtons(rentalTypeFilter, 'rentalType');
+
+function openEditGameModal(gameId) {
+    const game = allGames.find(g => g.game_id == gameId);
+    if (!game) return;
+    document.getElementById('modal-game-title').textContent = `編輯桌遊：${game.name}`;
+    document.getElementById('edit-game-id').value = game.game_id;
+    document.getElementById('edit-total-stock').value = game.total_stock;
+    document.getElementById('edit-is-visible').value = game.is_visible || 'TRUE';
+    document.getElementById('edit-rental-type').value = game.rental_type || '僅供內借';
+    editGameModal.style.display = 'flex';
+}
+
+gameListTbody.addEventListener('click', (e) => {
+    if (e.target.classList.contains('btn-edit')) openEditGameModal(e.target.dataset.gameid);
+});
+
+editGameModal.querySelector('.modal-close').addEventListener('click', () => editGameModal.style.display = 'none');
+editGameModal.querySelector('.btn-cancel').addEventListener('click', () => editGameModal.style.display = 'none');
+
+editGameForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const gameId = document.getElementById('edit-game-id').value;
+    const formData = {
+        gameId: Number(gameId),
+        total_stock: Number(document.getElementById('edit-total-stock').value),
+        is_visible: document.getElementById('edit-is-visible').value,
+        rental_type: document.getElementById('edit-rental-type').value
+    };
+    try {
+        const response = await fetch('/api/update-boardgame', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || '更新失敗');
+        alert('更新成功！');
+        editGameModal.style.display = 'none';
+        const gameIndex = allGames.findIndex(g => g.game_id == gameId);
+        if (gameIndex > -1) {
+            allGames[gameIndex] = { ...allGames[gameIndex], ...formData };
+        }
+        applyGameFiltersAndRender();
+    } catch (error) {
+        alert(`錯誤：${error.message}`);
+    }
+});
+
+// ** 關鍵修正：將 syncGamesBtn 的事件監聽器獨立出來 **
+const syncGamesBtn = document.getElementById('sync-games-btn');
+if (syncGamesBtn) {
+    syncGamesBtn.addEventListener('click', async () => {
+        if (!confirm('確定要從 Google Sheet 覆蓋所有桌遊資料到此系統嗎？\n此操作會將資料庫更新為與 Google Sheet 完全一致。')) {
+            return;
+        }
         try {
-            const response = await fetch('/api/update-boardgame', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData)
+            syncGamesBtn.textContent = '同步中...';
+            syncGamesBtn.disabled = true;
+            const response = await fetch('/api/get-boardgames', {
+                method: 'POST'
             });
             const result = await response.json();
-            if (!response.ok) throw new Error(result.error || '更新失敗');
-            alert('更新成功！');
-            editGameModal.style.display = 'none';
-            const gameIndex = allGames.findIndex(g => g.game_id == gameId);
-            if (gameIndex > -1) allGames[gameIndex] = { ...allGames[gameIndex], ...formData, name: allGames[gameIndex].name };
-            applyGameFiltersAndRender();
-        } catch (error) { alert(`錯誤：${error.message}`); }
-
-            const syncGamesBtn = document.getElementById('sync-games-btn');
-    if (syncGamesBtn) {
-        syncGamesBtn.addEventListener('click', async () => {
-            if (!confirm('確定要從 Google Sheet 覆蓋所有桌遊資料到此系統嗎？\n此操作會將資料庫更新為與 Google Sheet 完全一致。')) {
-                return;
+            if (!response.ok) {
+                throw new Error(result.details || result.error || '同步失敗');
             }
-
-            try {
-                syncGamesBtn.textContent = '同步中...';
-                syncGamesBtn.disabled = true;
-
-                // ** 注意：我們呼叫的是 /api/get-boardgames，但用的是 POST 方法 **
-                const response = await fetch('/api/get-boardgames', {
-                    method: 'POST'
-                });
-
-                const result = await response.json();
-                if (!response.ok) {
-                    throw new Error(result.details || result.error || '同步失敗');
-                }
-
-                alert(result.message);
-                await fetchAllGames(); // 同步成功後，自動重新整理頁面上的列表
-
-            } catch (error) {
-                alert(`錯誤：${error.message}`);
-            } finally {
-                syncGamesBtn.textContent = '從 Google Sheet 同步';
-                syncGamesBtn.disabled = false;
-            }
-        });
+            alert(result.message);
+            await fetchAllGames();
+        } catch (error) {
+            alert(`錯誤：${error.message}`);
+        } finally {
+            syncGamesBtn.textContent = '從 Google Sheet 同步';
+            syncGamesBtn.disabled = false;
+        }
     });
-
+}
     // =================================================================
     // 訂位管理模組
     // =================================================================
