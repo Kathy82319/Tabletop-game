@@ -5,49 +5,36 @@ import * as jose from 'jose';
 // --- Google Sheets 工具函式 ---
 async function getAccessToken(env) {
     const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY } = env;
-    if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) {
-        throw new Error('缺少 Google 服務帳號的環境變數 (EMAIL 或 KEY)。');
-    }
+    if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) throw new Error('缺少 Google 服務帳號的環境變數。');
     
     const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
-    
     const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets' })
-      .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
-      .setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
-      .setAudience('https://oauth2.googleapis.com/token')
-      .setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
-      .setIssuedAt()
-      .setExpirationTime('1h')
-      .sign(privateKey);
+      .setProtectedHeader({ alg: 'RS256', typ: 'JWT' }).setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
+      .setAudience('https://oauth2.googleapis.com/token').setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
+      .setIssuedAt().setExpirationTime('1h').sign(privateKey);
 
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-        assertion: jwt
-      }),
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt }),
     });
 
     const tokenData = await tokenResponse.json();
-    if (!tokenResponse.ok) {
-        console.error("Google Auth Error Details:", tokenData);
-        throw new Error(`從 Google 取得 access token 失敗: ${tokenData.error_description || tokenData.error}`);
-    }
+    if (!tokenResponse.ok) throw new Error(`從 Google 取得 access token 失敗: ${tokenData.error_description || tokenData.error}`);
     return tokenData.access_token;
 }
 
 async function getBoardGamesFromSheet(env) {
+    const { GOOGLE_SHEET_ID } = env;
+    if (!GOOGLE_SHEET_ID) throw new Error('缺少 GOOGLE_SHEET_ID 環境變數。');
+
     const accessToken = await getAccessToken(env);
     const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
     
-    const doc = new GoogleSpreadsheet(env.GOOGLE_SHEET_ID, simpleAuth);
+    const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
     await doc.loadInfo();
     
     const sheet = doc.sheetsByTitle['BoardGames'];
-    if (!sheet) {
-        throw new Error('在 Google Sheets 中找不到名為 "BoardGames" 的工作表。');
-    }
+    if (!sheet) throw new Error('在 Google Sheets 中找不到名為 "BoardGames" 的工作表。');
 
     return await sheet.getRows();
 }
@@ -72,21 +59,46 @@ async function runBoardgameSync(env) {
            is_visible = excluded.is_visible, rental_type = excluded.rental_type`
     );
 
+    // ** START: 關鍵修正 - 為所有欄位增加預設值 **
     const operations = rows.map(row => {
         const rowData = row.toObject();
+        
+        // 確保即使 game_id 為空也不會繼續執行，避免髒資料
+        if (!rowData.game_id) {
+            console.warn("跳過一筆缺少 game_id 的資料:", rowData);
+            return null; // 返回 null，後續會過濾掉
+        }
+
         const isVisible = String(rowData.is_visible).toUpperCase() === 'TRUE' ? 1 : 0;
+        
         return stmt.bind(
-            rowData.game_id, rowData.name, rowData.description, rowData.image_url,
-            Number(rowData.min_players) || 1, Number(rowData.max_players) || 4, rowData.difficulty,
-            rowData.tags, Number(rowData.total_stock) || 0, Number(rowData.for_rent_stock) || 0,
-            Number(rowData.for_sale_stock) || 0, Number(rowData.rent_price) || 0,
-            Number(rowData.sale_price) || 0, isVisible, rowData.rental_type
+            rowData.game_id || '', // 主鍵通常不應為空，但做防禦
+            rowData.name || '',
+            rowData.description || '',
+            rowData.image_url || '',
+            Number(rowData.min_players) || 1,
+            Number(rowData.max_players) || 4,
+            rowData.difficulty || '普通',
+            rowData.tags || '',
+            Number(rowData.total_stock) || 0,
+            Number(rowData.for_rent_stock) || 0,
+            Number(rowData.for_sale_stock) || 0,
+            Number(rowData.rent_price) || 0,
+            Number(rowData.sale_price) || 0,
+            isVisible,
+            rowData.rental_type || '僅供內借'
         );
-    });
+    }).filter(op => op !== null); // 過濾掉剛才返回 null 的無效操作
+    // ** END: 關鍵修正 **
+
+    // 如果過濾後沒有任何有效操作，則直接返回
+    if (operations.length === 0) {
+        return { success: true, message: '在 Google Sheet 中沒有找到包含有效 game_id 的資料可同步。' };
+    }
 
     await DB.batch(operations);
 
-    return { success: true, message: `成功從 Google Sheet 同步了 ${rows.length} 筆桌遊資料到資料庫。` };
+    return { success: true, message: `成功從 Google Sheet 同步了 ${operations.length} 筆桌遊資料到資料庫。` };
 }
 
 // --- 主要請求處理 ---
@@ -96,7 +108,8 @@ export async function onRequest(context) {
     if (request.method === 'GET') {
         try {
             const db = env.DB;
-            const { results } = await db.prepare('SELECT * FROM BoardGames').all();
+            const stmt = db.prepare('SELECT * FROM BoardGames');
+            const { results } = await stmt.all();
             return new Response(JSON.stringify(results || []), {
                 status: 200, headers: { 'Content-Type': 'application/json' },
             });
