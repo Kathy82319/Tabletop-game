@@ -18,19 +18,20 @@
         .nav-tabs a.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
         .main-content { padding: 1.5rem; }
         .page { display: none; } .page.active { display: block; }
+        .page-header h2 { margin-bottom: 1.5rem; font-size: 1.8rem; color: var(--text-dark); }
         
         table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; table-layout: fixed; }
-        th, td { padding: 0.6rem 0.8rem; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
-        th { background-color: var(--light-gray); font-weight: 600; font-size: 0.9rem; text-align: center; } /* 置中 */
-        td { font-size: 0.9rem; }
+        th, td { padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        th { background-color: var(--light-gray); font-weight: 600; font-size: 0.9rem; text-align: center; }
+        /* ** 關鍵修正：讓表格內容也置中 ** */
+        td { font-size: 0.9rem; text-align: center; }
         
-        .compound-cell { text-align: center; }
         .compound-cell .main-info { font-weight: bold; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
         .compound-cell .sub-info { font-size: 0.8rem; color: var(--text-light); }
-        .actions-cell { text-align: center; }
         .actions-cell .action-btn { display: block; width: 80%; margin: 0 auto; text-align: center; }
         .actions-cell .action-btn:first-child { margin-bottom: 4px; }
         .action-btn { padding: 0.3rem 0.6rem; font-size: 0.8rem; border: none; border-radius: 5px; cursor: pointer; color: white; }
+  
         .btn-edit { background-color: #ffc107; color: #212529; }
         .btn-sync { background-color: #17a2b8; }
         .btn-cancel-booking { background-color: var(--danger-color); }

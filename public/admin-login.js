@@ -43,16 +43,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (html5QrCode && html5QrCode.isScanning) {
             html5QrCode.stop().catch(err => console.error("停止掃描器失敗", err));
         }
-
         pages.forEach(page => page.classList.remove('active'));
         const targetPage = document.getElementById(`page-${pageId}`);
         if (targetPage) targetPage.classList.add('active');
-
         document.querySelectorAll('.nav-tabs a').forEach(link => {
             link.classList.remove('active');
             if (link.getAttribute('href') === `#${pageId}`) link.classList.add('active');
         });
-
         if (pageId === 'users' && allUsers.length === 0) fetchAllUsers();
         if (pageId === 'inventory' && allGames.length === 0) fetchAllGames();
         if (pageId === 'bookings' && allBookings.length === 0) fetchAllBookings();
@@ -363,14 +360,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function startScanner() {
         if (!qrReaderElement) return;
-        
-        // ** 關鍵修正：如果已有實例且正在掃描，先停止它 **
         if (html5QrCode && html5QrCode.isScanning) {
             html5QrCode.stop().catch(err => console.log("掃描器已停止"));
         }
-        
-        html5QrCode = new Html5Qrcode("qr-reader");
-        
+        html5QrCode = new Html5QrCode("qr-reader");
         qrReaderElement.style.display = 'block';
         scanResultSection.style.display = 'none';
         scanStatusMessage.textContent = '請將顧客的 QR Code 對準掃描框';
@@ -378,15 +371,16 @@ document.addEventListener('DOMContentLoaded', () => {
         expInput.value = '';
         reasonSelect.value = '消費回饋';
         customReasonInput.style.display = 'none';
-
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
         html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
             .catch(err => {
+                console.error("無法啟動掃描器", err);
                 scanStatusMessage.textContent = '無法啟動相機，請檢查權限。';
                 scanStatusMessage.className = 'error';
             });
     }
 
+    // ** 關鍵修正：補上這三個事件監聽器 **
     reasonSelect.addEventListener('change', () => {
         customReasonInput.style.display = (reasonSelect.value === 'other') ? 'block' : 'none';
     });
