@@ -195,125 +195,95 @@ document.addEventListener('DOMContentLoaded', () => {
 // =================================================================
 // 庫存管理模組
 // =================================================================
-function applyGameFiltersAndRender() {
+    function applyGameFiltersAndRender() {
+        if (!allGames) return;
         const searchTerm = gameSearchInput.value.toLowerCase().trim();
         let filteredGames = allGames.filter(game => 
             (game.name || '').toLowerCase().includes(searchTerm) &&
-            (gameFilters.visibility === 'all' || game.is_visible === gameFilters.visibility) &&
+            (gameFilters.visibility === 'all' || String(game.is_visible).toUpperCase() === gameFilters.visibility) &&
             (gameFilters.rentalType === 'all' || game.rental_type === gameFilters.rentalType)
         );
         renderGameList(filteredGames);
-}
-
-// ** 關鍵修改：調整此函式以兼容 Google Sheet API 回傳的格式 **
-function renderGameList(games) {
-    if (!gameListTbody) return;
-    gameListTbody.innerHTML = '';
-    games.forEach(game => {
-        const row = document.createElement('tr');
-        // 檢查 is_visible 的值，Google Sheet 可能回傳 "TRUE" 或 "FALSE" 字串
-        const isVisible = game.is_visible === 'TRUE' || game.is_visible === true;
-        
-        row.innerHTML = `
-            <td class="compound-cell">
-                <div class="main-info">${game.name}</div>
-                <div class="sub-info">ID: ${game.game_id}</div>
-            </td>
-            <td>${game.total_stock}</td>
-            <td>${isVisible ? '是' : '否'}</td>
-            <td>${game.rental_type || 'N/A'}</td>
-            <td class="actions-cell"><button class="action-btn btn-edit" data-gameid="${game.game_id}">編輯</button></td>
-        `;
-        gameListTbody.appendChild(row);
-    });
-}
-
-async function fetchAllGames() {
-    try {
-        // GET 請求現在會從後端讀取 Google Sheet
-        const response = await fetch('/api/get-boardgames');
-        if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.details || errData.error || '無法獲取桌遊列表');
-        }
-        allGames = await response.json();
-        applyGameFiltersAndRender();
-    } catch (error) { 
-        console.error('獲取桌遊列表失敗:', error); 
-        if(gameListTbody) gameListTbody.innerHTML = `<tr><td colspan="5" style="color: red; text-align: center;">讀取資料失敗: ${error.message}</td></tr>`;
     }
-}
 
-gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
-
-function setupFilterButtons(filterContainer, filterKey) {
-    if (!filterContainer) return;
-    filterContainer.addEventListener('click', (e) => {
-        if (e.target.tagName === 'BUTTON') {
-            const currentActive = filterContainer.querySelector('.active');
-            if (currentActive) {
-                currentActive.classList.remove('active');
-            }
-            e.target.classList.add('active');
+    function renderGameList(games) {
+        if (!gameListTbody) return;
+        gameListTbody.innerHTML = '';
+        games.forEach(game => {
+            const row = document.createElement('tr');
+            const isVisible = String(game.is_visible).toUpperCase() === 'TRUE';
             
-            gameFilters[filterKey] = e.target.dataset.filter;
+            row.innerHTML = `
+                <td class="compound-cell">
+                    <div class="main-info">${game.name}</div>
+                    <div class="sub-info">ID: ${game.game_id}</div>
+                </td>
+                <td>${game.total_stock}</td>
+                <td>${isVisible ? '是' : '否'}</td>
+                <td>${game.rental_type || 'N/A'}</td>
+                <td class="actions-cell">
+                    <button class="action-btn btn-edit" data-gameid="${game.game_id}">編輯</button>
+                </td>
+            `;
+            gameListTbody.appendChild(row);
+        });
+    }
+
+    async function fetchAllGames() {
+        try {
+            // ** 關鍵修改：呼叫新的 API 來直接讀取 Google Sheet **
+            const response = await fetch('/api/admin/get-sheet-boardgames');
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.details || errData.error || '無法獲取桌遊列表');
+            }
+            allGames = await response.json();
             applyGameFiltersAndRender();
+        } catch (error) { 
+            console.error('從 Google Sheet 獲取桌遊列表失敗:', error); 
+            if(gameListTbody) gameListTbody.innerHTML = `<tr><td colspan="5" style="color: red; text-align: center;">讀取資料失敗: ${error.message}</td></tr>`;
+        }
+    }
+
+    gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
+
+    function setupFilterButtons(filterContainer, filterKey) {
+        if (!filterContainer) return;
+        filterContainer.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                const currentActive = filterContainer.querySelector('.active');
+                if (currentActive) currentActive.classList.remove('active');
+                e.target.classList.add('active');
+                gameFilters[filterKey] = e.target.dataset.filter;
+                applyGameFiltersAndRender();
+            }
+        });
+    }
+    setupFilterButtons(visibilityFilter, 'visibility');
+    setupFilterButtons(rentalTypeFilter, 'rentalType');
+
+    // 注意：後台的編輯功能暫時無法直接修改 Google Sheet，
+    // 這裡的編輯是示意，實際要修改請直接在 Google Sheet 上操作。
+    function openEditGameModal(gameId) {
+        const game = allGames.find(g => g.game_id == gameId);
+        if (!game) return;
+        alert(`此處為預覽，請直接在 Google Sheet 中編輯桌遊: ${game.name}`);
+    }
+
+    gameListTbody.addEventListener('click', (e) => {
+        if (e.target.classList.contains('btn-edit')) {
+            openEditGameModal(e.target.dataset.gameid);
         }
     });
-}
-setupFilterButtons(visibilityFilter, 'visibility');
-setupFilterButtons(rentalTypeFilter, 'rentalType');
 
-function openEditGameModal(gameId) {
-    const game = allGames.find(g => g.game_id == gameId);
-    if (!game) return;
-    document.getElementById('modal-game-title').textContent = `編輯桌遊：${game.name}`;
-    document.getElementById('edit-game-id').value = game.game_id;
-    document.getElementById('edit-total-stock').value = game.total_stock;
-    document.getElementById('edit-is-visible').value = game.is_visible || 'TRUE';
-    document.getElementById('edit-rental-type').value = game.rental_type || '僅供內借';
-    editGameModal.style.display = 'flex';
-}
-
-gameListTbody.addEventListener('click', (e) => {
-    if (e.target.classList.contains('btn-edit')) openEditGameModal(e.target.dataset.gameid);
-});
-
-editGameModal.querySelector('.modal-close').addEventListener('click', () => editGameModal.style.display = 'none');
-editGameModal.querySelector('.btn-cancel').addEventListener('click', () => editGameModal.style.display = 'none');
-
-editGameForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const gameId = document.getElementById('edit-game-id').value;
-    const formData = {
-        gameId: Number(gameId),
-        total_stock: Number(document.getElementById('edit-total-stock').value),
-        is_visible: document.getElementById('edit-is-visible').value,
-        rental_type: document.getElementById('edit-rental-type').value
-    };
-    try {
-        const response = await fetch('/api/update-boardgame', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || '更新失敗');
-        alert('更新成功！(注意：這只會更新 D1 資料庫和 Google Sheet，不會即時反映在此頁面上，請重新整理頁面查看結果)');
-        editGameModal.style.display = 'none';
-    } catch (error) {
-        alert(`錯誤：${error.message}`);
-    }
-});
-
-const syncGamesBtn = document.getElementById('sync-games-btn');
+    const syncGamesBtn = document.getElementById('sync-games-btn');
     if (syncGamesBtn) {
         syncGamesBtn.addEventListener('click', async () => {
-            if (!confirm('確定要用 Google Sheet 的內容覆蓋 D1 資料庫嗎？這將會影響 LIFF 前台顯示的資料。')) return;
+            if (!confirm('確定要用 Google Sheet 的內容覆寫 D1 資料庫嗎？這將會影響 LIFF 前台顯示的資料。')) return;
             try {
                 syncGamesBtn.textContent = '同步中...';
                 syncGamesBtn.disabled = true;
-                // POST 請求會觸發後端將 Sheet 寫入 D1 的邏輯
+                // ** 關鍵：POST 請求到舊的 API，觸發同步到 D1 的動作 **
                 const response = await fetch('/api/get-boardgames', { method: 'POST' });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.details || '同步失敗');
