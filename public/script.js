@@ -65,8 +65,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // ===== 開始插入新的程式碼區塊 =====
     appContent.addEventListener('click', (event) => {
-        if (event.target.matches('.details-back-button')) goBackPage();
+        if (event.target.matches('.details-back-button')) {
+             goBackPage();
+             return; // 結束函式，避免執行下面的點擊邏輯
+        }
+
+        const newsCard = event.target.closest('.news-card');
+        if (newsCard) {
+            const newsId = parseInt(newsCard.dataset.newsId, 10);
+            const newsItem = allNews.find(n => n.id === newsId);
+            if (newsItem && newsItem.content) {
+                alert(`-- ${newsItem.title} --\n\n${newsItem.content}`);
+            } else if (newsItem) {
+                alert(`-- ${newsItem.title} --\n\n(此消息沒有詳細內容)`);
+            }
+        }
     });
 
     // =================================================================
@@ -86,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         container.innerHTML = filteredNews.map(news => `
-            <div class="news-card">
+            <div class="news-card" data-news-id="${news.id}" style="cursor: pointer;">
                 <div class="news-card-header">
                     <span class="news-card-category">${news.category}</span>
                     <span class="news-card-date">${news.published_date}</span>
@@ -142,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('store-name').textContent = info.name;
             document.getElementById('store-address').textContent = info.address;
             document.getElementById('store-phone').textContent = info.phone;
-            document.getElementById('store-hours').textContent = info.opening_hours;
+            document.getElementById('store-hours').innerHTML = info.opening_hours.replace(/\n/g, '<br>');
             document.getElementById('store-description').textContent = info.description;
         } catch (error) {
              console.error(error);
