@@ -14,8 +14,16 @@
     <div id="page-templates" style="display: none;">
 
         <div id="page-home">
-            <h1>最新情報</h1>
-            <p>這裡是公會佈告欄，將來會顯示最新活動與公告。</p>
+            <div class="news-header">
+                <div class="news-header-decoration"></div>
+                <h1>最新情報</h1>
+            </div>
+            <div id="news-filter-container">
+                <p>讀取中...</p>
+            </div>
+            <div id="news-list-container">
+                <p>正在載入最新情報...</p>
+            </div>
         </div>
 
         <div id="page-games">
@@ -119,7 +127,21 @@
         
         <div id="page-info">
             <h1>店家資訊</h1>
-            <p>這裡有公會的規章、位置和聯繫方式。</p>
+            <div id="store-info-container">
+                <div class="info-section">
+                    <h2 id="store-name">讀取中...</h2>
+                    <p><strong>地址：</strong><span id="store-address">讀取中...</span></p>
+                    <p><strong>電話：</strong><span id="store-phone">讀取中...</span></p>
+                </div>
+                <div class="info-section">
+                    <h2>營業時間</h2>
+                    <p><pre id="store-hours">讀取中...</pre></p>
+                </div>
+                <div class="info-section">
+                    <h2>公會介紹</h2>
+                    <p id="store-description">讀取中...</p>
+                </div>
+            </div>
         </div>
     </div>
 
