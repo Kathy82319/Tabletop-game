@@ -1,4 +1,4 @@
-// public/admin-login.js
+// public/admin-login.js (最終完整版 - 已恢復掃碼功能)
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM 元素宣告 ---
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 訂位管理
     const bookingListTbody = document.getElementById('booking-list-tbody');
 
-    // 掃碼加點
+    // ** 恢復：掃碼加點元素 **
     const qrReaderElement = document.getElementById('qr-reader');
     const scanResultSection = document.getElementById('scan-result');
     const userIdDisplay = document.getElementById('user-id-display');
@@ -46,10 +46,12 @@ document.addEventListener('DOMContentLoaded', () => {
         pages.forEach(page => page.classList.remove('active'));
         const targetPage = document.getElementById(`page-${pageId}`);
         if (targetPage) targetPage.classList.add('active');
+
         document.querySelectorAll('.nav-tabs a').forEach(link => {
             link.classList.remove('active');
             if (link.getAttribute('href') === `#${pageId}`) link.classList.add('active');
         });
+
         if (pageId === 'users' && allUsers.length === 0) fetchAllUsers();
         if (pageId === 'inventory' && allGames.length === 0) fetchAllGames();
         if (pageId === 'bookings' && allBookings.length === 0) fetchAllBookings();
@@ -74,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = document.createElement('tr');
             row.dataset.userId = user.user_id;
             row.innerHTML = `
-                <td>${user.line_display_name || 'N/A'}</td>
+                <td style="text-align: left;">${user.line_display_name || 'N/A'}</td>
                 <td>${user.level}</td>
                 <td>${user.current_exp} / 10</td>
                 <td><span class="tag-display">${user.tag || '無'}</span></td>
@@ -101,19 +103,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const filteredUsers = searchTerm ? allUsers.filter(user => (user.line_display_name || '').toLowerCase().includes(searchTerm)) : allUsers;
         renderUserList(filteredUsers);
     });
-    
+
     function openEditTagModal(userId) {
         const user = allUsers.find(u => u.user_id === userId);
         if (!user) return;
-        
         const modalTitle = document.getElementById('modal-user-title');
         const userIdInput = document.getElementById('edit-user-id');
         const tagSelect = document.getElementById('edit-tag-select');
         const otherInput = document.getElementById('edit-tag-other-input');
-
         modalTitle.textContent = `編輯標籤：${user.line_display_name}`;
         userIdInput.value = user.user_id;
-        
         const standardTags = ["", "會員", "員工", "特殊"];
         if (user.tag && !standardTags.includes(user.tag)) {
             tagSelect.value = 'other';
@@ -140,7 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const tagSelect = document.getElementById('edit-tag-select');
         let newTag = tagSelect.value;
         if (newTag === 'other') newTag = document.getElementById('edit-tag-other-input').value.trim();
-
         try {
             const response = await fetch('/api/update-user-tag', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -148,10 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || '更新失敗');
-            
             const user = allUsers.find(u => u.user_id === userId);
             if (user) user.tag = newTag;
-            
             const currentSearch = userSearchInput.value;
             const filteredUsers = currentSearch ? allUsers.filter(u => (u.line_display_name || '').toLowerCase().includes(currentSearch.toLowerCase().trim())) : allUsers;
             renderUserList(filteredUsers);
@@ -211,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${game.total_stock}</td>
                 <td>${game.is_visible === 'TRUE' ? '是' : '否'}</td>
                 <td>${game.rental_type || 'N/A'}</td>
-                <td><button class="action-btn btn-edit" data-gameid="${game.game_id}">編輯</button></td>
+                <td class="actions-cell"><button class="action-btn btn-edit" data-gameid="${game.game_id}">編輯</button></td>
             `;
             gameListTbody.appendChild(row);
         });
@@ -229,6 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
     gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
 
     function setupFilterButtons(filterContainer, filterKey) {
+        if (!filterContainer) return;
         filterContainer.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
                 filterContainer.querySelector('.active').classList.remove('active');
@@ -263,15 +260,12 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const gameId = document.getElementById('edit-game-id').value;
         const formData = {
-            gameId: Number(gameId),
-            total_stock: Number(document.getElementById('edit-total-stock').value),
-            is_visible: document.getElementById('edit-is-visible').value,
-            rental_type: document.getElementById('edit-rental-type').value
+            gameId: Number(gameId), total_stock: Number(document.getElementById('edit-total-stock').value),
+            is_visible: document.getElementById('edit-is-visible').value, rental_type: document.getElementById('edit-rental-type').value
         };
         try {
             const response = await fetch('/api/update-boardgame', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData)
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || '更新失敗');
@@ -295,7 +289,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         bookings.forEach(booking => {
             const row = document.createElement('tr');
-            row.dataset.bookingId = booking.booking_id;
             row.innerHTML = `
                 <td class="compound-cell">
                     <div class="main-info">${booking.booking_date}</div>
@@ -328,7 +321,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const bookingId = event.target.dataset.bookingid;
             const booking = allBookings.find(b => b.booking_id == bookingId);
             if (!booking) return;
-
             if (confirm(`確定要取消 ${booking.booking_date} ${booking.contact_name} 的預約嗎？`)) {
                 try {
                     const response = await fetch('/api/update-booking-status', {
@@ -346,16 +338,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // =================================================================
-    // 掃碼加點模組
+    // ** 恢復：掃碼加點模組 **
     // =================================================================
     function onScanSuccess(decodedText, decodedResult) {
-        html5QrCode.stop().then(() => {
-            qrReaderElement.style.display = 'none';
-            scanResultSection.style.display = 'block';
-            userIdDisplay.value = decodedText;
-            scanStatusMessage.textContent = '掃描成功！請輸入點數。';
-            scanStatusMessage.className = 'success';
-        }).catch(err => console.error("停止掃描失敗", err));
+        if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().then(() => {
+                qrReaderElement.style.display = 'none';
+                scanResultSection.style.display = 'block';
+                userIdDisplay.value = decodedText;
+                scanStatusMessage.textContent = '掃描成功！請輸入點數。';
+                scanStatusMessage.className = 'success';
+            }).catch(err => console.error("停止掃描失敗", err));
+        }
     }
 
     function startScanner() {
@@ -363,65 +357,67 @@ document.addEventListener('DOMContentLoaded', () => {
         if (html5QrCode && html5QrCode.isScanning) {
             html5QrCode.stop().catch(err => console.log("掃描器已停止"));
         }
-        html5QrCode = new Html5QrCode("qr-reader");
+        
+        html5QrCode = new Html5Qrcode("qr-reader");
         qrReaderElement.style.display = 'block';
         scanResultSection.style.display = 'none';
         scanStatusMessage.textContent = '請將顧客的 QR Code 對準掃描框';
         scanStatusMessage.className = '';
-        expInput.value = '';
-        reasonSelect.value = '消費回饋';
-        customReasonInput.style.display = 'none';
+        if(expInput) expInput.value = '';
+        if(reasonSelect) reasonSelect.value = '消費回饋';
+        if(customReasonInput) customReasonInput.style.display = 'none';
+
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
         html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
             .catch(err => {
                 console.error("無法啟動掃描器", err);
                 scanStatusMessage.textContent = '無法啟動相機，請檢查權限。';
-                scanStatusMessage.className = 'error';
             });
     }
 
-    // ** 關鍵修正：補上這三個事件監聽器 **
-    reasonSelect.addEventListener('change', () => {
-        customReasonInput.style.display = (reasonSelect.value === 'other') ? 'block' : 'none';
-    });
+    if (reasonSelect) {
+        reasonSelect.addEventListener('change', () => {
+            customReasonInput.style.display = (reasonSelect.value === 'other') ? 'block' : 'none';
+        });
+    }
 
-    rescanBtn.addEventListener('click', startScanner);
+    if (rescanBtn) {
+        rescanBtn.addEventListener('click', startScanner);
+    }
 
-    submitExpBtn.addEventListener('click', async () => {
-        const userId = userIdDisplay.value;
-        const expValue = Number(expInput.value);
-        let reason = reasonSelect.value;
-        if (reason === 'other') reason = customReasonInput.value.trim();
-
-        if (!userId || !expValue || expValue <= 0 || !reason) {
-            scanStatusMessage.textContent = '錯誤：所有欄位皆為必填。';
-            scanStatusMessage.className = 'error';
-            return;
-        }
-
-        try {
-            scanStatusMessage.textContent = '正在處理中...';
-            scanStatusMessage.className = '';
-            submitExpBtn.disabled = true;
-
-            const response = await fetch('/api/add-exp', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, expValue, reason }),
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || '未知錯誤');
-            
-            scanStatusMessage.textContent = `成功為 ${userId.substring(0, 10)}... 新增 ${expValue} 點經驗！`;
-            scanStatusMessage.className = 'success';
-            expInput.value = '';
-        } catch (error) {
-            scanStatusMessage.textContent = `新增失敗: ${error.message}`;
-            scanStatusMessage.className = 'error';
-        } finally {
-            submitExpBtn.disabled = false;
-        }
-    });
-
+    if (submitExpBtn) {
+        submitExpBtn.addEventListener('click', async () => {
+            const userId = userIdDisplay.value;
+            const expValue = Number(expInput.value);
+            let reason = reasonSelect.value;
+            if (reason === 'other') reason = customReasonInput.value.trim();
+            if (!userId || !expValue || expValue <= 0 || !reason) {
+                scanStatusMessage.textContent = '錯誤：所有欄位皆為必填。';
+                scanStatusMessage.className = 'error';
+                return;
+            }
+            try {
+                scanStatusMessage.textContent = '正在處理中...';
+                scanStatusMessage.className = '';
+                submitExpBtn.disabled = true;
+                const response = await fetch('/api/add-exp', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, expValue, reason }),
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || '未知錯誤');
+                scanStatusMessage.textContent = `成功為 ${userId.substring(0, 10)}... 新增 ${expValue} 點經驗！`;
+                scanStatusMessage.className = 'success';
+                expInput.value = '';
+            } catch (error) {
+                scanStatusMessage.textContent = `新增失敗: ${error.message}`;
+                scanStatusMessage.className = 'error';
+            } finally {
+                submitExpBtn.disabled = false;
+            }
+        });
+    }
+    
     // ---- 初始化 ----
     function initialize() {
         showPage('users');
