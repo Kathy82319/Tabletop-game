@@ -15,7 +15,7 @@ async function getAccessToken(env) {
 
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth-grant-type:jwt-bearer', assertion: jwt }),
+      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt }),
     });
 
     const tokenData = await tokenResponse.json();
@@ -48,6 +48,7 @@ async function runBoardgameSync(env) {
         return { success: true, message: 'Google Sheet 中沒有桌遊資料可同步。' };
     }
 
+    // ** START: 關鍵修正 - 移除 rental_type 欄位 **
     const stmt = DB.prepare(
         `INSERT INTO BoardGames (game_id, name, description, image_url, min_players, max_players, difficulty, tags, total_stock, for_rent_stock, for_sale_stock, rent_price, sale_price, is_visible)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -69,11 +70,6 @@ async function runBoardgameSync(env) {
 
         const isVisible = String(rowData.is_visible).toUpperCase() === 'TRUE' ? 1 : 0;
         
-        // ** START: 關鍵修正 - 轉換數字前移除逗號 **
-        const rentPrice = Number(String(rowData.rent_price || '0').replace(/,/g, '')) || 0;
-        const salePrice = Number(String(rowData.sale_price || '0').replace(/,/g, '')) || 0;
-        // ** END: 關鍵修正 **
-
         return stmt.bind(
             rowData.game_id || '',
             rowData.name || '',
@@ -86,11 +82,12 @@ async function runBoardgameSync(env) {
             Number(rowData.total_stock) || 0,
             Number(rowData.for_rent_stock) || 0,
             Number(rowData.for_sale_stock) || 0,
-            rentPrice,  // 使用處理過後的價格
-            salePrice,  // 使用處理過後的價格
+            Number(rowData.rent_price) || 0,
+            Number(rowData.sale_price) || 0,
             isVisible
         );
     }).filter(op => op !== null);
+    // ** END: 關鍵修正 **
     
     if (operations.length === 0) {
         return { success: true, message: '在 Google Sheet 中沒有找到包含有效 game_id 的資料可同步。' };
