@@ -3,11 +3,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainNav = document.querySelector('.nav-tabs');
     const pages = document.querySelectorAll('.page');
     
-    // 顧客管理
+    // ** START: 關鍵修正 - 重新命名 modal 變數 **
     const userListTbody = document.getElementById('user-list-tbody');
     const userSearchInput = document.getElementById('user-search-input');
-    const editTagModal = document.getElementById('edit-tag-modal');
-    const editTagForm = document.getElementById('edit-tag-form');
+    const editUserModal = document.getElementById('edit-user-modal');
+    const editUserForm = document.getElementById('edit-user-form');
+    // ** END: 關鍵修正 **
     
     // 庫存管理
     const gameListTbody = document.getElementById('game-list-tbody');
@@ -15,9 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const editGameModal = document.getElementById('edit-game-modal');
     const editGameForm = document.getElementById('edit-game-form');
     const visibilityFilter = document.getElementById('visibility-filter');
-    // ** START: 關鍵修正 - 移除 rentalTypeFilter **
-    // const rentalTypeFilter = document.getElementById('rental-type-filter');
-    // ** END: 關鍵修正 **
 
     // 訂位管理
     const bookingListTbody = document.getElementById('booking-list-tbody');
@@ -46,9 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 全域狀態變數 ---
     let allUsers = [], allGames = [], allBookings = [], allNews = [];
-    // ** START: 關鍵修正 - 移除 rentalType 過濾器 **
     let gameFilters = { visibility: 'all' };
-    // ** END: 關鍵修正 **
     let html5QrCode = null;
     let currentEditingNewsId = null;
 
@@ -89,16 +85,19 @@ document.addEventListener('DOMContentLoaded', () => {
         users.forEach(user => {
             const row = document.createElement('tr');
             row.dataset.userId = user.user_id;
+            // ** START: 關鍵修正 - 顯示職業 **
             row.innerHTML = `
                 <td style="text-align: left; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${user.line_display_name || 'N/A'}</td>
                 <td>${user.level}</td>
                 <td>${user.current_exp} / 10</td>
+                <td>${user.class || '無'}</td>
                 <td><span class="tag-display">${user.tag || '無'}</span></td>
                 <td class="actions-cell">
-                    <button class="action-btn btn-edit" data-userid="${user.user_id}">編輯標籤</button>
+                    <button class="action-btn btn-edit" data-userid="${user.user_id}">編輯</button>
                     <button class="action-btn btn-sync" data-userid="${user.user_id}">同步</button>
                 </td>
             `;
+            // ** END: 關鍵修正 **
             userListTbody.appendChild(row);
         });
     }
@@ -118,64 +117,120 @@ document.addEventListener('DOMContentLoaded', () => {
         renderUserList(filteredUsers);
     });
 
-    function openEditTagModal(userId) {
+    // ** START: 關鍵修正 - 全新的編輯 modal 開啟邏輯 **
+    function openEditUserModal(userId) {
         const user = allUsers.find(u => u.user_id === userId);
         if (!user) return;
-        const modalTitle = document.getElementById('modal-user-title');
-        const userIdInput = document.getElementById('edit-user-id');
+        
+        // 填充表單預設值
+        document.getElementById('modal-user-title').textContent = `編輯：${user.line_display_name}`;
+        document.getElementById('edit-user-id').value = user.user_id;
+        document.getElementById('edit-level-input').value = user.level;
+        document.getElementById('edit-exp-input').value = user.current_exp;
+
+        // 處理標籤下拉選單
         const tagSelect = document.getElementById('edit-tag-select');
-        const otherInput = document.getElementById('edit-tag-other-input');
-        modalTitle.textContent = `編輯標籤：${user.line_display_name}`;
-        userIdInput.value = user.user_id;
+        const otherTagInput = document.getElementById('edit-tag-other-input');
         const standardTags = ["", "會員", "員工", "特殊"];
         if (user.tag && !standardTags.includes(user.tag)) {
             tagSelect.value = 'other';
-            otherInput.style.display = 'block';
-            otherInput.value = user.tag;
+            otherTagInput.style.display = 'block';
+            otherTagInput.value = user.tag;
         } else {
             tagSelect.value = user.tag || '';
-            otherInput.style.display = 'none';
-            otherInput.value = '';
+            otherTagInput.style.display = 'none';
+            otherTagInput.value = '';
         }
-        editTagModal.style.display = 'flex';
+        
+        // 處理職業下拉選單
+        const classSelect = document.getElementById('edit-class-select');
+        const otherClassInput = document.getElementById('edit-class-other-input');
+        const standardClasses = ["無", "戰士", "盜賊", "法師", "牧師"];
+        if (user.class && !standardClasses.includes(user.class)) {
+            classSelect.value = 'other';
+            otherClassInput.style.display = 'block';
+            otherClassInput.value = user.class;
+        } else {
+            classSelect.value = user.class || '無';
+            otherClassInput.style.display = 'none';
+            otherClassInput.value = '';
+        }
+        
+        editUserModal.style.display = 'flex';
     }
 
-    editTagModal.querySelector('.modal-close').addEventListener('click', () => editTagModal.style.display = 'none');
-    editTagModal.querySelector('.btn-cancel').addEventListener('click', () => editTagModal.style.display = 'none');
+    editUserModal.querySelector('.modal-close').addEventListener('click', () => editUserModal.style.display = 'none');
+    editUserModal.querySelector('.btn-cancel').addEventListener('click', () => editUserModal.style.display = 'none');
     
     document.getElementById('edit-tag-select').addEventListener('change', (e) => {
         document.getElementById('edit-tag-other-input').style.display = (e.target.value === 'other') ? 'block' : 'none';
     });
+    
+    document.getElementById('edit-class-select').addEventListener('change', (e) => {
+        document.getElementById('edit-class-other-input').style.display = (e.target.value === 'other') ? 'block' : 'none';
+    });
 
-    editTagForm.addEventListener('submit', async (e) => {
+    editUserForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const userId = document.getElementById('edit-user-id').value;
+        
+        // 獲取標籤值
         const tagSelect = document.getElementById('edit-tag-select');
         let newTag = tagSelect.value;
         if (newTag === 'other') newTag = document.getElementById('edit-tag-other-input').value.trim();
+
+        // 獲取職業值
+        const classSelect = document.getElementById('edit-class-select');
+        let newClass = classSelect.value;
+        if (newClass === 'other') newClass = document.getElementById('edit-class-other-input').value.trim();
+
+        const updatedData = {
+            userId: userId,
+            level: document.getElementById('edit-level-input').value,
+            current_exp: document.getElementById('edit-exp-input').value,
+            tag: newTag,
+            user_class: newClass
+        };
+
         try {
-            const response = await fetch('/api/update-user-tag', {
+            // 呼叫新的 API
+            const response = await fetch('/api/update-user-details', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, tag: newTag })
+                body: JSON.stringify(updatedData)
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || '更新失敗');
+            
+            // 更新前端的資料
             const user = allUsers.find(u => u.user_id === userId);
-            if (user) user.tag = newTag;
+            if (user) {
+                user.level = updatedData.level;
+                user.current_exp = updatedData.current_exp;
+                user.tag = updatedData.tag;
+                user.class = updatedData.user_class;
+            }
+            
+            // 重新渲染列表
             const currentSearch = userSearchInput.value;
             const filteredUsers = currentSearch ? allUsers.filter(u => (u.line_display_name || '').toLowerCase().includes(currentSearch.toLowerCase().trim())) : allUsers;
             renderUserList(filteredUsers);
-            editTagModal.style.display = 'none';
+            editUserModal.style.display = 'none';
+
         } catch (error) { alert(`錯誤：${error.message}`); }
     });
+    // ** END: 關鍵修正 **
 
     userListTbody.addEventListener('click', async (event) => {
         const target = event.target;
         const userId = target.dataset.userid;
         if (!userId) return;
-        if (target.classList.contains('btn-edit')) openEditTagModal(userId);
+        
+        if (target.classList.contains('btn-edit')) {
+            openEditUserModal(userId);
+        }
+        
         if (target.classList.contains('btn-sync')) {
-            if (!confirm(`確定要從 Google Sheet 同步使用者 ${userId} 的資料嗎？`)) return;
+            if (!confirm(`確定要從 Google Sheet 同步使用者 ${userId} 的資料嗎？這將會覆寫資料庫中的現有資料。`)) return;
             try {
                 target.textContent = '同步中...';
                 target.disabled = true;

@@ -170,16 +170,17 @@ body {
 .rules-list li { margin-bottom: 10px; }
 
 /* =================================================================
-   個人資料頁 - 職業選擇與優惠顯示
+   ** 修正 ** 個人資料頁 - 職業福利
    ================================================================= */
 .perk-display {
-    background-color: #e0f2f1; /* 淡淡的青色背景 */
-    color: #00796b; /* 深青色文字 */
-    padding: 10px;
+    background-color: #e0f2f1;
+    color: #00796b;
+    padding: 12px; /* 增加內距 */
     border-radius: 8px;
-    margin-top: 15px;
+    margin-top: 20px; /* 增加上方間距 */
     font-size: 0.9rem;
-    border: 1px solid #b2dfdb;
+    border-left: 5px solid #00796b; /* 左側加上強調線 */
+    line-height: 1.5; /* 增加行高 */
 }
 
 .class-selection-container {
@@ -316,4 +317,32 @@ body {
     white-space: pre-wrap;
     font-family: inherit;
     margin: 0;
+}
+
+/* =================================================================
+   ** 全新 ** 標籤篩選「更多」按鈕樣式
+   ================================================================= */
+#tag-filter-container {
+    flex-direction: column;
+    align-items: flex-start;
+}
+#more-tags-btn {
+    padding: 5px 12px;
+    font-size: 0.8rem;
+    border: 1px solid var(--primary-accent);
+    color: var(--primary-accent);
+    background-color: transparent;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+}
+#more-tags-btn:hover {
+    background-color: var(--secondary-accent);
+    color: white;
+    border-color: var(--secondary-accent);
+}
+#secondary-tags {
+    margin-top: 8px; /* 與上方按鈕的間距 */
+    width: 100%; /* 讓展開的標籤可以完整顯示 */
 }

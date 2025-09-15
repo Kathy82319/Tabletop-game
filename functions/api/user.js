@@ -2,7 +2,7 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import * as jose from 'jose';
 
-// --- 開始整合 Google Sheets 工具 ---
+// --- Google Sheets 工具函式 (保持不變) ---
 async function getAccessToken(env) {
     const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY } = env;
     if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) throw new Error('缺少 Google 服務帳號的環境變數。');
@@ -15,7 +15,7 @@ async function getAccessToken(env) {
 
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt }),
+      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type-jwt-bearer', assertion: jwt }),
     });
 
     const tokenData = await tokenResponse.json();
@@ -40,13 +40,15 @@ async function addRowToSheet(env, sheetName, rowData) {
 }
 // --- 結束整合 Google Sheets 工具 ---
 
-
+// ** START: 關鍵修正 - 新增職業福利對照表 **
 const CLASS_PERKS = {
-    '戰士': '被動技能：購買桌遊享 95 折優惠。',
-    '盜賊': '被動技能：租借桌遊享 95 折優惠。',
-    '法師': '被動技能：單點宇宙飲品可折抵 5 元。',
-    '牧師': '被動技能：預約場地費可額外折扣 5 元。',
+    '戰士': '購買桌遊95折',
+    '盜賊': '租借遊戲95折',
+    '法師': '單點飲料折抵5元',
+    '牧師': '預約額外折扣5元',
+    '無': '無特殊優惠'
 };
+// ** END: 關鍵修正 **
 
 export async function onRequest(context) {
   try {
@@ -64,7 +66,9 @@ export async function onRequest(context) {
     const expToNextLevel = 10;
 
     if (user) {
-      user.perk = CLASS_PERKS[user.class] || '無特殊優惠';
+      // ** START: 關鍵修正 - 加入職業福利 **
+      user.perk = CLASS_PERKS[user.class] || user.class; // 如果是自訂職業，福利就顯示職業名稱
+      // ** END: 關鍵修正 **
       return new Response(JSON.stringify({ ...user, expToNextLevel }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
     } else {
@@ -85,7 +89,9 @@ export async function onRequest(context) {
           }).catch(err => console.error("背景同步新使用者失敗:", err))
       );
       
+      // ** START: 關鍵修正 - 新使用者也要有福利 **
       newUser.perk = '無特殊優惠';
+      // ** END: 關鍵修正 **
       return new Response(JSON.stringify({ ...newUser, expToNextLevel }), { status: 201, headers: { 'Content-Type': 'application/json' } });
     }
   } catch (error) {

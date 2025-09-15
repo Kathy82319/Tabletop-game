@@ -10,15 +10,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const pageTemplates = document.getElementById('page-templates');
     const tabBar = document.getElementById('tab-bar');
 
-    // 全域設定常數
     const TOTAL_TABLES = 4;
     const PEOPLE_PER_TABLE = 4;
     const AVAILABLE_TIME_SLOTS = ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30'];
 
-    // 全域狀態變數
     let allGames = [];
     let allNews = [];
-    let pageHistory = ['page-home']; // 初始頁面
+    let pageHistory = ['page-home'];
     let activeFilters = { keyword: '', tag: null };
     let bookingData = {};
     let bookingHistoryStack = [];
@@ -27,8 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 頁面切換邏輯
     // =================================================================
-    
-    // ** START: 修正問題 1 - 修改 showPage 與新增 popstate 監聽 **
     function showPage(pageId, isBackAction = false) {
         const template = pageTemplates.querySelector(`#${pageId}`);
         if (template) {
@@ -40,16 +36,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!isBackAction) {
                 if (['page-home', 'page-games', 'page-profile', 'page-booking', 'page-info'].includes(pageId)) {
                     pageHistory = [pageId];
-                    // 對於主分頁，使用 replaceState 清除舊的歷史紀錄
                     history.replaceState(state, '', url);
                 } else {
                     pageHistory.push(pageId);
-                    // 對於子頁面，使用 pushState 新增歷史紀錄
                     history.pushState(state, '', url);
                 }
             }
             
-            // 根據頁面ID執行初始化
             switch (pageId) {
                 case 'page-home': initializeHomePage(); break;
                 case 'page-games': initializeGamesPage(); break;
@@ -61,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'page-news-details': break;
             }
 
-            // 更新分頁按鈕狀態
             document.querySelectorAll('.tab-button').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.target === pageHistory[0]);
             });
@@ -73,24 +65,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function goBackPage() {
         if (pageHistory.length > 1) {
-            history.back(); // 觸發 popstate 事件
+            history.back();
         } else {
             liff.closeWindow();
         }
     }
 
-    // 監聽瀏覽器的返回事件 (例如：手機的返回手勢)
     window.addEventListener('popstate', (event) => {
         if (pageHistory.length > 1) {
             pageHistory.pop();
             const previousPageId = pageHistory[pageHistory.length - 1];
-            // 直接呼叫 showPage，並標記為返回動作
             showPage(previousPageId, true);
         }
     });
-    // ** END: 修正問題 1 **
     
-    // 全域返回與詳情頁點擊事件監聽
     appContent.addEventListener('click', (event) => {
         if (event.target.matches('.details-back-button')) {
              goBackPage();
@@ -117,6 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
 
     // =================================================================
     // 首頁 (最新情報)
@@ -225,10 +214,10 @@ document.addEventListener('DOMContentLoaded', () => {
     async function initializeProfilePage() {
         if (!userProfile) return;
 
-        document.getElementById('display-name').textContent = userProfile.displayName;
-        document.getElementById('status-message').textContent = userProfile.statusMessage || '';
+        // ** START: 關鍵修正 - 顯示綽號與職業福利 **
         const profilePicture = document.getElementById('profile-picture');
         if (userProfile.pictureUrl) profilePicture.src = userProfile.pictureUrl;
+        document.getElementById('status-message').textContent = userProfile.statusMessage || '';
         
         const qrcodeElement = document.getElementById('qrcode');
         if(qrcodeElement) {
@@ -236,15 +225,13 @@ document.addEventListener('DOMContentLoaded', () => {
             new QRCode(qrcodeElement, { text: userProfile.userId, width: 200, height: 200 });
         }
         
-        const editProfileBtn = document.getElementById('edit-profile-btn');
-        if (editProfileBtn) {
-            editProfileBtn.addEventListener('click', () => {
-                showPage('page-edit-profile');
-            });
-        }
+        document.getElementById('edit-profile-btn').addEventListener('click', () => {
+            showPage('page-edit-profile');
+        });
         
-        await fetchGameData(userProfile);
-        await fetchAndDisplayMyBookings(userProfile.userId);
+        // 分開呼叫，讓畫面先顯示基本資訊
+        fetchGameData(userProfile);
+        fetchAndDisplayMyBookings(userProfile.userId);
     }
 
     async function fetchGameData(profile) { 
@@ -257,14 +244,29 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('無法取得會員遊戲資料');
             const gameData = await response.json();
             
-            document.getElementById('user-class').textContent = gameData.class || "初心者";
+            // 目標 2: 優先顯示綽號
+            document.getElementById('display-name').textContent = gameData.nickname || profile.displayName;
+            
+            // 目標 3: 顯示職業與福利
+            document.getElementById('user-class').textContent = gameData.class || "無";
             document.getElementById('user-level').textContent = gameData.level;
             document.getElementById('user-exp').textContent = `${gameData.current_exp} / 10`;
 
+            const perkDisplay = document.getElementById('user-perk-display');
+            const perkSpan = document.getElementById('user-perk');
+            if (gameData.perk && gameData.class !== '無') {
+                perkSpan.textContent = gameData.perk;
+                perkDisplay.style.display = 'block';
+            } else {
+                perkDisplay.style.display = 'none';
+            }
+
         } catch (error) {
             console.error('呼叫會員 API 失敗:', error);
+            document.getElementById('display-name').textContent = profile.displayName; // API 失敗時，至少顯示 LINE 名稱
         }
     }
+    // ** END: 關鍵修正 **
 
     async function fetchAndDisplayMyBookings(userId) {
         const container = document.getElementById('my-bookings-container');
@@ -278,13 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 container.innerHTML = '<p>您目前沒有即將到來的預約。</p>';
                 return;
             }
-            container.innerHTML = bookings.map(booking => `
-                <div class="booking-info-card">
-                    <p class="booking-date-time">${booking.booking_date} - ${booking.time_slot}</p>
-                    <p><strong>預約姓名：</strong> ${booking.contact_name}</p>
-                    <p><strong>預約人數：</strong> ${booking.num_of_people} 人</p>
-                </div>
-            `).join('');
+            container.innerHTML = bookings.map(booking => `<div class="booking-info-card"><p class="booking-date-time">${booking.booking_date} - ${booking.time_slot}</p><p><strong>預約姓名：</strong> ${booking.contact_name}</p><p><strong>預約人數：</strong> ${booking.num_of_people} 人</p></div>`).join('');
         } catch (error) {
             container.innerHTML = '<p style="color: red;">無法載入預約紀錄。</p>';
         }
@@ -367,21 +363,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderGameDetails(game) {
         let priceHTML = `<p>請洽店內公告</p>`;
         if (Number(game.sale_price) > 0 || Number(game.rent_price) > 0) {
-            priceHTML = `
-                <div class="price-grid">
-                    ${Number(game.for_sale_stock) > 0 ? `
-                    <div class="price-item">
-                        <p>售價</p><p class="price-value">$${game.sale_price}</p>
-                        <p class="stock-info">庫存: ${game.for_sale_stock}</p>
-                    </div>` : ''}
-                    ${Number(game.for_rent_stock) > 0 ? `
-                    <div class="price-item">
-                        <p>租金 (三天)</p><p class="price-value">$${game.rent_price}</p>
-                        <p class="stock-info">庫存: ${game.for_rent_stock}</p>
-                    </div>` : ''}
-                </div>`;
+            priceHTML = `<div class="price-grid">${Number(game.for_sale_stock) > 0 ? `<div class="price-item"><p>售價</p><p class="price-value">$${game.sale_price}</p><p class="stock-info">庫存: ${game.for_sale_stock}</p></div>` : ''}${Number(game.for_rent_stock) > 0 ? `<div class="price-item"><p>租金 (三天)</p><p class="price-value">$${game.rent_price}</p><p class="stock-info">庫存: ${game.for_rent_stock}</p></div>` : ''}</div>`;
         }
-        
         appContent.querySelector('.details-image').src = game.image_url;
         appContent.querySelector('.details-image').alt = game.name;
         appContent.querySelector('.details-title').textContent = game.name;
@@ -392,69 +375,66 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderGames() {
         const container = document.getElementById('game-list-container');
         if(!container) return;
-        
         let filteredGames = allGames.filter(g => g.is_visible === 1);
         const keyword = activeFilters.keyword.toLowerCase().trim();
-        if (keyword) { 
-            filteredGames = filteredGames.filter(g => 
-                g.name.toLowerCase().includes(keyword) || 
-                g.description.toLowerCase().includes(keyword)
-            );
-        }
-        if (activeFilters.tag) { 
-            filteredGames = filteredGames.filter(g => 
-                (g.tags || '').split(',').map(t => t.trim()).includes(activeFilters.tag)
-            ); 
-        }
-
+        if (keyword) { filteredGames = filteredGames.filter(g => g.name.toLowerCase().includes(keyword) || g.description.toLowerCase().includes(keyword)); }
+        if (activeFilters.tag) { filteredGames = filteredGames.filter(g => (g.tags || '').split(',').map(t => t.trim()).includes(activeFilters.tag)); }
         if (filteredGames.length === 0) {
             container.innerHTML = '<p>找不到符合條件的遊戲。</p>';
             return;
         }
-        
-        container.innerHTML = filteredGames.map(game => `
-            <div class="game-card" data-game-id="${game.game_id}">
-                <img src="${game.image_url}" alt="${game.name}" class="game-image">
-                <div class="game-info">
-                    <h3 class="game-title">${game.name}</h3>
-                    <p class="game-description">${game.description}</p>
-                    <div class="game-tags">
-                        ${(game.tags || '').split(',').map(t => t.trim()).filter(Boolean).map(tag => `<span class="game-tag">${tag}</span>`).join('')}
-                    </div>
-                    <div class="game-details">
-                        <span>👥 ${game.min_players}-${game.max_players} 人</span>
-                        <span>⭐ 難度: ${game.difficulty}</span>
-                    </div>
-                </div>
-            </div>
-        `).join('');
+        container.innerHTML = filteredGames.map(game => `<div class="game-card" data-game-id="${game.game_id}"><img src="${game.image_url}" alt="${game.name}" class="game-image"><div class="game-info"><h3 class="game-title">${game.name}</h3><p class="game-description">${game.description}</p><div class="game-tags">${(game.tags || '').split(',').map(t => t.trim()).filter(Boolean).map(tag => `<span class="game-tag">${tag}</span>`).join('')}</div><div class="game-details"><span>👥 ${game.min_players}-${game.max_players} 人</span><span>⭐ 難度: ${game.difficulty}</span></div></div></div>`).join('');
     }
 
+    // ** START: 關鍵修正 - 標籤篩選優化 **
     function populateFilters() {
-        const container = document.getElementById('tag-filters');
-        if(!container) return;
+        const primaryContainer = document.getElementById('primary-tags');
+        const secondaryContainer = document.getElementById('secondary-tags');
+        const moreBtn = document.getElementById('more-tags-btn');
+        if(!primaryContainer || !secondaryContainer || !moreBtn) return;
         
-        const allTags = new Set(allGames.flatMap(g => (g.tags || '').split(',')).map(t => t.trim()).filter(Boolean));
+        const primaryTags = ["家庭", "兒童", "派對", "陣營", "小品", "策略"];
+        const allTags = [...new Set(allGames.flatMap(g => (g.tags || '').split(',')).map(t => t.trim()).filter(Boolean))];
         
-        container.innerHTML = '';
+        primaryContainer.innerHTML = '';
+        secondaryContainer.innerHTML = '';
+
         allTags.forEach(tag => {
             const btn = document.createElement('button');
             btn.textContent = tag;
             btn.dataset.tag = tag;
             btn.addEventListener('click', () => {
-                if (btn.classList.contains('active')) {
+                const currentActive = document.querySelector('#tag-filter-container button.active');
+                if (currentActive) currentActive.classList.remove('active');
+                
+                if (activeFilters.tag === tag) {
                     activeFilters.tag = null;
-                    btn.classList.remove('active');
                 } else {
-                    container.querySelectorAll('button').forEach(b => b.classList.remove('active'));
                     activeFilters.tag = tag;
                     btn.classList.add('active');
                 }
                 renderGames();
             });
-            container.appendChild(btn);
+
+            if (primaryTags.includes(tag)) {
+                primaryContainer.appendChild(btn);
+            } else {
+                secondaryContainer.appendChild(btn);
+            }
         });
+
+        if (secondaryContainer.children.length > 0) {
+            moreBtn.style.display = 'inline-block';
+            moreBtn.addEventListener('click', () => {
+                const isHidden = secondaryContainer.style.display === 'none';
+                secondaryContainer.style.display = isHidden ? 'flex' : 'none';
+                moreBtn.textContent = isHidden ? '收起標籤' : '更多標籤';
+            });
+        } else {
+            moreBtn.style.display = 'none';
+        }
     }
+    // ** END: 關鍵修正 **
 
     async function initializeGamesPage() {
         if (allGames.length === 0) {
@@ -471,19 +451,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         renderGames();
         populateFilters();
-        
-        const keywordInput = document.getElementById('keyword-search');
-        keywordInput.addEventListener('input', e => { 
-            activeFilters.keyword = e.target.value; 
-            renderGames(); 
-        });
-
-        const clearBtn = document.getElementById('clear-filters');
-        clearBtn.addEventListener('click', () => {
+        document.getElementById('keyword-search').addEventListener('input', e => { activeFilters.keyword = e.target.value; renderGames(); });
+        document.getElementById('clear-filters').addEventListener('click', () => {
             activeFilters.keyword = '';
             activeFilters.tag = null;
-            keywordInput.value = '';
-            document.querySelectorAll('#tag-filters button').forEach(b => b.classList.remove('active'));
+            document.getElementById('keyword-search').value = '';
+            document.querySelectorAll('#tag-filter-container button').forEach(b => b.classList.remove('active'));
             renderGames();
         });
     }

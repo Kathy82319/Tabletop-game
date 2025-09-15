@@ -2,7 +2,7 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import * as jose from 'jose';
 
-// --- 開始整合 Google Sheets 工具 ---
+// --- Google Sheets 工具函式 (保持不變) ---
 async function getAccessToken(env) {
     const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY } = env;
     if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) throw new Error('缺少 Google 服務帳號的環境變數。');
@@ -40,7 +40,6 @@ async function getSheet(env, sheetName) {
 }
 // --- 結束整合 Google Sheets 工具 ---
 
-
 export async function onRequest(context) {
     try {
         if (context.request.method !== 'POST') {
@@ -63,12 +62,17 @@ export async function onRequest(context) {
             return new Response(JSON.stringify({ error: `在 Google Sheet 中找不到使用者 ID: ${userId}` }), { status: 404 });
         }
         
+        // ** START: 關鍵修正 - 為所有可能為空的欄位提供預設值 **
         const userData = {
-            line_display_name: userRowFromSheet.get('line_display_name'),
-            nickname: userRowFromSheet.get('nickname'), phone: userRowFromSheet.get('phone'),
-            class: userRowFromSheet.get('class'), level: Number(userRowFromSheet.get('level')) || 1,
-            current_exp: Number(userRowFromSheet.get('current_exp')) || 0, tag: userRowFromSheet.get('tag')
+            line_display_name: userRowFromSheet.get('line_display_name') || '未提供名稱',
+            nickname: userRowFromSheet.get('nickname') || '',
+            phone: userRowFromSheet.get('phone') || '',
+            class: userRowFromSheet.get('class') || '無',
+            level: Number(userRowFromSheet.get('level')) || 1,
+            current_exp: Number(userRowFromSheet.get('current_exp')) || 0,
+            tag: userRowFromSheet.get('tag') || ''
         };
+        // ** END: 關鍵修正 **
 
         const stmt = db.prepare(
             `UPDATE Users SET line_display_name = ?, nickname = ?, phone = ?, class = ?, 

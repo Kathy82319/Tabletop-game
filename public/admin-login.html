@@ -52,6 +52,14 @@
         .form-actions { margin-top: 20px; text-align: right; }
         .btn-save { background-color: var(--primary-color); }
         .btn-cancel { background-color: var(--secondary-color); }
+        
+        /* ** START: 關鍵修正 - 讓 modal 可以滾動 ** */
+        .modal-overlay {
+            overflow-y: auto;
+            align-items: flex-start;
+            padding-top: 5vh;
+        }
+        /* ** END: 關鍵修正 ** */
     </style>
 </head>
 <body>
@@ -71,8 +79,8 @@
             <input type="text" id="user-search-input" placeholder="依 LINE 名稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
             <table>
                 <thead>
-                    <tr><th>LINE 名稱</th><th>等級</th><th>經驗值</th><th>標籤</th><th>操作</th></tr>
-                </thead>
+                    <tr><th>LINE 名稱</th><th>等級</th><th>經驗值</th><th>職業</th><th>標籤</th><th>操作</th></tr>
+                    </thead>
                 <tbody id="user-list-tbody"></tbody>
             </table>
         </div>
@@ -152,17 +160,36 @@
         </div>
     </main>
     
-    <div id="edit-game-modal" class="modal-overlay"></div>
-    <div id="edit-tag-modal" class="modal-overlay">
+    <div id="edit-user-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modal-user-title">編輯標籤</h3>
+                <h3 id="modal-user-title">編輯使用者</h3>
                 <button class="modal-close">&times;</button>
             </div>
-            <form id="edit-tag-form">
+            <form id="edit-user-form">
                 <input type="hidden" id="edit-user-id">
                 <div class="form-group">
-                    <label for="edit-tag-select">選擇標籤</label>
+                    <label for="edit-level-input">等級</label>
+                    <input type="number" id="edit-level-input" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-exp-input">經驗值</label>
+                    <input type="number" id="edit-exp-input" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-class-select">職業</label>
+                    <select id="edit-class-select">
+                        <option value="無">無</option>
+                        <option value="戰士">戰士 (購買桌遊95折)</option>
+                        <option value="盜賊">盜賊 (租借遊戲95折)</option>
+                        <option value="法師">法師 (單點飲料折抵5元)</option>
+                        <option value="牧師">牧師 (預約額外折扣5元)</option>
+                        <option value="other">其他 (自訂)</option>
+                    </select>
+                    <input type="text" id="edit-class-other-input" placeholder="請輸入自訂職業" style="display: none; margin-top: 10px;">
+                </div>
+                <div class="form-group">
+                    <label for="edit-tag-select">標籤</label>
                     <select id="edit-tag-select">
                         <option value="">無</option>
                         <option value="會員">會員</option>
@@ -170,16 +197,14 @@
                         <option value="特殊">特殊</option>
                         <option value="other">其他 (自訂)</option>
                     </select>
-                </div>
-                <div class="form-group">
-                    <input type="text" id="edit-tag-other-input" placeholder="請輸入自訂標籤" style="display: none;">
+                    <input type="text" id="edit-tag-other-input" placeholder="請輸入自訂標籤" style="display: none; margin-top: 10px;">
                 </div>
                 <div class="form-actions">
                     <button type="button" class="action-btn btn-cancel">取消</button>
                     <button type="submit" class="action-btn btn-save">儲存</button>
                 </div>
             </form>
-        </div>
+            </div>
     </div>
 
     <div id="edit-news-modal" class="modal-overlay">

@@ -29,7 +29,11 @@
         <div id="page-games">
             <div id="filter-controls">
                 <input type="search" id="keyword-search" placeholder="搜尋關鍵字 (遊戲名稱、描述)...">
-                <div id="tag-filter-container"><div id="tag-filters" class="filter-group"></div></div>
+                <div id="tag-filter-container">
+                    <div id="primary-tags" class="filter-group"></div>
+                    <button id="more-tags-btn">更多標籤</button>
+                    <div id="secondary-tags" class="filter-group" style="display: none;"></div>
+                </div>
                 <button id="clear-filters">清除所有篩選</button>
             </div>
             <div id="game-list-container"><p>正在載入桌遊資料...</p></div>
@@ -50,6 +54,7 @@
                 <div id="game-price-content"></div>
             </div>
         </div>
+
         <div id="page-news-details">
             <button class="details-back-button">← 返回列表</button>
             <div class="details-header">
@@ -63,7 +68,7 @@
                 <h3>詳細內容</h3>
                 <div id="news-details-content"></div>
             </div>
-        </div>
+        </div>            
 
         <div id="page-profile">
              <h1>冒險者資料</h1>
@@ -79,7 +84,10 @@
                  <p>職業：<span id="user-class">--</span></p> 
                  <p>等級：<span id="user-level">--</span></p>
                  <p>經驗值：<span id="user-exp">-- / -- </span></p>
-             </div>
+                 <div id="user-perk-display" class="perk-display" style="display: none;">
+                     <strong>✨ 職業福利：</strong><span id="user-perk"></span>
+                 </div>
+                 </div>
              
              <div style="text-align: center; margin: 25px 0;">
                 <button id="edit-profile-btn" style="padding: 10px 20px; font-size: 1rem; cursor: pointer; border-radius: 8px; border: 1px solid var(--primary-accent); background-color: white; color: var(--primary-accent);">冒險者檔案</button>
