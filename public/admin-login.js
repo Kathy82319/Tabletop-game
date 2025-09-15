@@ -44,9 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 全域狀態變數 ---
     let allUsers = [], allGames = [], allBookings = [], allNews = [];
-    // ** START: 關鍵修正 - 新增變數儲存職業設定 **
-    let classPerks = {};
-    // ** END: 關鍵修正 **
+    let classPerks = {}; // 儲存從 Google Sheet 來的職業設定
     let gameFilters = { visibility: 'all' };
     let html5QrCode = null;
     let currentEditingNewsId = null;
@@ -120,19 +118,70 @@ document.addEventListener('DOMContentLoaded', () => {
         renderUserList(filteredUsers);
     });
 
-    // ** START: 關鍵修正 - 全新的編輯 modal 開啟邏輯 **
-    async function openEditUserModal(userId) {
+ // ** START: 關鍵修正 - 全面重構編輯 Modal 邏輯 **
+    function openEditUserModal(userId) {
         const user = allUsers.find(u => u.user_id === userId);
         if (!user) return;
-        
+
+        // 填充基本資料
         document.getElementById('modal-user-title').textContent = `編輯：${user.line_display_name}`;
         document.getElementById('edit-user-id').value = user.user_id;
         document.getElementById('edit-level-input').value = user.level;
         document.getElementById('edit-exp-input').value = user.current_exp;
 
-        // 處理標籤下拉選單
+        // 獲取所有表單元素
+        const classSelect = document.getElementById('edit-class-select');
+        const otherClassInput = document.getElementById('edit-class-other-input');
+        const perkSelect = document.getElementById('edit-perk-select');
+        const otherPerkInput = document.getElementById('edit-perk-other-input');
         const tagSelect = document.getElementById('edit-tag-select');
         const otherTagInput = document.getElementById('edit-tag-other-input');
+
+        // --- 動態填充職業和福利下拉選單 ---
+        classSelect.innerHTML = '';
+        perkSelect.innerHTML = '';
+        
+        // 根據 classPerks 物件建立選項
+        for (const className in classPerks) {
+            const classOption = document.createElement('option');
+            classOption.value = className;
+            classOption.textContent = className;
+            classSelect.appendChild(classOption);
+
+            const perkOption = document.createElement('option');
+            perkOption.value = classPerks[className];
+            perkOption.textContent = classPerks[className];
+            perkSelect.appendChild(perkOption);
+        }
+
+        // 為兩個下拉選單都加上 "其他" 選項
+        classSelect.appendChild(new Option('其他 (自訂)', 'other'));
+        perkSelect.appendChild(new Option('其他 (自訂)', 'other'));
+
+        // --- 設定表單的預設值 ---
+        
+        // 1. 設定職業 (Class)
+        if (classPerks[user.class]) { // 如果是標準職業
+            classSelect.value = user.class;
+            otherClassInput.style.display = 'none';
+        } else { // 如果是自訂或其他
+            classSelect.value = 'other';
+            otherClassInput.style.display = 'block';
+            otherClassInput.value = user.class || '';
+        }
+
+        // 2. 設定福利 (Perk)
+        const standardPerks = Object.values(classPerks);
+        if (standardPerks.includes(user.perk)) { // 如果是標準福利
+            perkSelect.value = user.perk;
+            otherPerkInput.style.display = 'none';
+        } else { // 如果是自訂福利
+            perkSelect.value = 'other';
+            otherPerkInput.style.display = 'block';
+            otherPerkInput.value = user.perk || '';
+        }
+
+        // 3. 設定標籤 (Tag) - 邏輯不變
         const standardTags = ["", "會員", "員工", "特殊"];
         if (user.tag && !standardTags.includes(user.tag)) {
             tagSelect.value = 'other';
@@ -143,75 +192,65 @@ document.addEventListener('DOMContentLoaded', () => {
             otherTagInput.style.display = 'none';
             otherTagInput.value = '';
         }
-        
-        // 處理職業下拉選單
-        // 動態填充職業下拉選單
-        const classSelect = document.getElementById('edit-class-select');
-        const otherClassInput = document.getElementById('edit-class-other-input');
-        classSelect.innerHTML = ''; // 清空舊選項
 
-        for (const className in classPerks) {
-            const option = document.createElement('option');
-            option.value = className;
-            option.textContent = `${className} (${classPerks[className]})`;
-            classSelect.appendChild(option);
-        }
-        // 加入 "其他" 選項
-        const otherOption = document.createElement('option');
-        otherOption.value = 'other';
-        otherOption.textContent = '其他 (自訂)';
-        classSelect.appendChild(otherOption);
-
-        // 設定職業下拉選單的預設值
-        const standardClasses = Object.keys(classPerks);
-        if (user.class && !standardClasses.includes(user.class)) {
-            classSelect.value = 'other';
-            otherClassInput.style.display = 'block';
-            otherClassInput.value = user.class;
-        } else {
-            classSelect.value = user.class || '無';
-            otherClassInput.style.display = 'none';
-            otherClassInput.value = '';
-        }
-        
         editUserModal.style.display = 'flex';
     }
 
-    editUserModal.querySelector('.modal-close').addEventListener('click', () => editUserModal.style.display = 'none');
-    editUserModal.querySelector('.btn-cancel').addEventListener('click', () => editUserModal.style.display = 'none');
+    // --- 設定下拉選單連動和 "其他" 輸入框的顯示邏輯 ---
+    document.getElementById('edit-class-select').addEventListener('change', (e) => {
+        const otherClassInput = document.getElementById('edit-class-other-input');
+        const perkSelect = document.getElementById('edit-perk-select');
+        const otherPerkInput = document.getElementById('edit-perk-other-input');
+        
+        if (e.target.value === 'other') {
+            otherClassInput.style.display = 'block';
+            perkSelect.value = 'other'; // 選了自訂職業，福利也應該是自訂
+            otherPerkInput.style.display = 'block';
+        } else {
+            otherClassInput.style.display = 'none';
+            perkSelect.value = classPerks[e.target.value]; // 自動選擇對應的福利
+            otherPerkInput.style.display = 'none';
+        }
+    });
+
+    document.getElementById('edit-perk-select').addEventListener('change', (e) => {
+        document.getElementById('edit-perk-other-input').style.display = (e.target.value === 'other') ? 'block' : 'none';
+    });
     
     document.getElementById('edit-tag-select').addEventListener('change', (e) => {
         document.getElementById('edit-tag-other-input').style.display = (e.target.value === 'other') ? 'block' : 'none';
     });
-    
-    document.getElementById('edit-class-select').addEventListener('change', (e) => {
-        document.getElementById('edit-class-other-input').style.display = (e.target.value === 'other') ? 'block' : 'none';
-    });
 
+    editUserModal.querySelector('.modal-close').addEventListener('click', () => editUserModal.style.display = 'none');
+    editUserModal.querySelector('.btn-cancel').addEventListener('click', () => editUserModal.style.display = 'none');
+
+    // --- 更新表單提交邏輯 ---
     editUserForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const userId = document.getElementById('edit-user-id').value;
         
-        // 獲取標籤值
-        const tagSelect = document.getElementById('edit-tag-select');
-        let newTag = tagSelect.value;
-        if (newTag === 'other') newTag = document.getElementById('edit-tag-other-input').value.trim();
-
         // 獲取職業值
-        const classSelect = document.getElementById('edit-class-select');
-        let newClass = classSelect.value;
+        let newClass = document.getElementById('edit-class-select').value;
         if (newClass === 'other') newClass = document.getElementById('edit-class-other-input').value.trim();
+
+        // 獲取福利值
+        let newPerk = document.getElementById('edit-perk-select').value;
+        if (newPerk === 'other') newPerk = document.getElementById('edit-perk-other-input').value.trim();
+        
+        // 獲取標籤值
+        let newTag = document.getElementById('edit-tag-select').value;
+        if (newTag === 'other') newTag = document.getElementById('edit-tag-other-input').value.trim();
 
         const updatedData = {
             userId: userId,
             level: document.getElementById('edit-level-input').value,
             current_exp: document.getElementById('edit-exp-input').value,
             tag: newTag,
-            user_class: newClass
+            user_class: newClass,
+            perk: newPerk // 新增 perk
         };
 
         try {
-            // 呼叫新的 API
             const response = await fetch('/api/update-user-details', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedData)
@@ -219,19 +258,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || '更新失敗');
             
-            // 更新前端的資料
             const user = allUsers.find(u => u.user_id === userId);
             if (user) {
                 user.level = updatedData.level;
                 user.current_exp = updatedData.current_exp;
                 user.tag = updatedData.tag;
                 user.class = updatedData.user_class;
+                user.perk = updatedData.perk;
             }
             
-            // 重新渲染列表
-            const currentSearch = userSearchInput.value;
-            const filteredUsers = currentSearch ? allUsers.filter(u => (u.line_display_name || '').toLowerCase().includes(currentSearch.toLowerCase().trim())) : allUsers;
-            renderUserList(filteredUsers);
+            renderUserList(allUsers); // 直接渲染 allUsers 即可
             editUserModal.style.display = 'none';
 
         } catch (error) { alert(`錯誤：${error.message}`); }
@@ -683,16 +719,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- 初始化 ----
     async function initialize() {
-        // ** START: 關鍵修正 - 應用程式啟動時先獲取職業設定 **
         try {
             const response = await fetch('/api/get-class-perks');
-            if (!response.ok) throw new Error('無法獲取職業設定');
+            if (!response.ok) {
+                // 如果 API 回應不 ok，嘗試解析錯誤訊息
+                const errData = await response.json();
+                throw new Error(errData.details || `伺服器錯誤: ${response.status}`);
+            }
             classPerks = await response.json();
         } catch (error) {
             console.error('初始化職業設定失敗:', error);
-            alert('警告：無法從 Google Sheet 獲取職業設定，編輯功能可能不完整。');
+            alert(`警告：無法從 Google Sheet 獲取職業設定，編輯功能可能不完整。\n錯誤詳情: ${error.message}`);
         }
-        // ** END: 關鍵修正 **
         showPage('users');
     }
     
