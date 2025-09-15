@@ -59,12 +59,12 @@ body {
     border-radius: 10px;
     cursor: pointer;
     margin-top: auto; /* 將按鈕推到 flex 容器底部 */
-    box-shadow: 0 4px 10px rgba(255, 140, 66, 0.4);
+    box-shadow: 0 4px 10px hwb(46 4% 11%);
     transition: all 0.2s;
 }
 .cta-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(255, 140, 66, 0.5);
+    box-shadow: 0 6px 15px rgba(66, 255, 161, 0.5);
 }
 
 /* =================================================================
@@ -149,7 +149,7 @@ body {
 #qrcode-container { border: 1px solid var(--subtle-border); }
 .profile-actions {
     display: grid; /* 使用 Grid 佈局 */
-    grid-template-columns: repeat(3, 1fr); /* 建立三個等寬的欄位 */
+    grid-template-columns: repeat(4, 1fr); /* 建立三個等寬的欄位 */
     gap: 10px; /* 按鈕之間的間距 */
     margin-top: 30px;
     padding-top: 20px;

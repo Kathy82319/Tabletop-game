@@ -97,7 +97,6 @@
                 <button id="sync-games-btn" class="action-btn" style="background-color: #28a745;">同步至資料庫</button>
             </div>
             <input type="text" id="game-search-input" placeholder="依桌遊名稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
-            
             <div class="filter-bar">
                 <div id="visibility-filter" class="filter-group">
                     <span>上架狀態：</span>
@@ -105,11 +104,11 @@
                     <button data-filter="TRUE">是</button>
                     <button data-filter="FALSE">否</button>
                 </div>
-                </div>
+            </div>
             <table>
                 <thead>
                     <tr><th>遊戲</th><th>庫存</th><th>上架</th><th>操作</th></tr>
-                    </thead>
+                </thead>
                 <tbody id="game-list-tbody"></tbody>
             </table>
         </div>
@@ -124,6 +123,25 @@
             </table>
         </div>
 
+        <div id="page-exp-history" class="page">
+            <div class="page-header">
+                <h2>經驗紀錄查詢</h2>
+            </div>
+            <div class="filter-bar">
+                <input type="search" id="exp-user-filter-input" placeholder="依使用者名稱或 LINE ID 搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px;">
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>使用者</th>
+                        <th>日期</th>
+                        <th>原因</th>
+                        <th>經驗值</th>
+                    </tr>
+                </thead>
+                <tbody id="exp-history-tbody"></tbody>
+            </table>
+        </div>
         <div id="page-news" class="page">
             <div class="page-header">
                 <h2>情報管理</h2>
@@ -147,29 +165,6 @@
                 <div class="form-actions"><button type="submit" class="action-btn btn-save">儲存變更</button></div>
             </form>
         </div>
-        
-        <div id="page-exp-history" class="page">
-            <div class="page-header">
-                <h2>經驗紀錄查詢</h2>
-            </div>
-            <div class="filter-bar">
-                <input type="search" id="exp-user-filter-input" placeholder="依使用者名稱或 LINE ID 搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px;">
-            </div>
-                </select>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>使用者</th>
-                        <th>日期</th>
-                        <th>原因</th>
-                        <th>經驗值</th>
-                    </tr>
-                </thead>
-                <tbody id="exp-history-tbody">
-                    </tbody>
-            </table>
-        </div>
 
         <div id="page-scan" class="page">
             <div class="page-header"><h2>掃碼加點</h2></div>
@@ -186,6 +181,7 @@
             <div class="form-group"><label for="exp-input">經驗值點數:</label><input type="number" id="exp-input" placeholder="請輸入要新增的經驗值" min="1"></div>
             <button id="submit-exp-btn" class="action-btn btn-save" style="width: 100%; padding: 12px; font-size: 1rem;">確認新增</button>
             <button id="rescan-btn" class="action-btn btn-cancel" style="width: 100%; padding: 12px; font-size: 1rem; margin-top: 10px;">重新掃描</button>
+            <div id="scan-status-container" style="margin-top: 15px; text-align: center;"></div>
         </div>
     </main>
     
