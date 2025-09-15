@@ -360,24 +360,23 @@ document.addEventListener('DOMContentLoaded', () => {
         renderGameList(filteredGames);
     }
 
+    // --- 【修改】庫存管理模組的 renderGameList 函式 ---
     function renderGameList(games) {
         if (!gameListTbody) return;
         gameListTbody.innerHTML = '';
         games.forEach(game => {
             const row = document.createElement('tr');
-            const isVisible = String(game.is_visible) === '1'; // D1 回傳的是 1 或 0
+            const isVisible = String(game.is_visible) === 'TRUE'; // 保持原本邏輯
             
-            // ** START: 關鍵修正 - 移除 rental_type 顯示 **
-row.innerHTML = `
-    <td class="compound-cell">
-        <div class="main-info">${game.name}</div>
-        <div class="sub-info">ID: ${game.game_id}</div>
-    </td>
-    <td>${game.total_stock}</td>
-    <td>${isVisible ? '是' : '否'}</td>
-    <td class="actions-cell"><button class="action-btn btn-rent" data-gameid="${game.game_id}" style="background-color: #007bff;">出借</button></td>
-`;
-            // ** END: 關鍵修正 **
+            row.innerHTML = `
+                <td class="compound-cell">
+                    <div class="main-info">${game.name}</div>
+                    <div class="sub-info">ID: ${game.game_id}</div>
+                </td>
+                <td>${game.for_rent_stock}</td> 
+                <td>${isVisible ? '是' : '否'}</td>
+                <td class="actions-cell"><button class="action-btn btn-rent" data-gameid="${game.game_id}" style="background-color: #007bff;">出借</button></td>
+            `;
             gameListTbody.appendChild(row);
         });
     }
@@ -468,6 +467,21 @@ gameListTbody.addEventListener('click', (e) => {
 let allRentals = [];
 let selectedRentalUser = null;
 
+    // 新增篩選並渲染的函式
+    function applyRentalFiltersAndRender() {
+        if (!allRentals) return;
+        const keyword = rentalFilters.keyword.toLowerCase().trim();
+        let filteredRentals = allRentals.filter(rental => {
+            const statusMatch = rentalFilters.status === 'all' || rental.status === rentalFilters.status;
+            const keywordMatch = !keyword || 
+                                 (rental.game_name || '').toLowerCase().includes(keyword) ||
+                                 (rental.line_display_name || '').toLowerCase().includes(keyword) ||
+                                 (rental.nickname || '').toLowerCase().includes(keyword);
+            return statusMatch && keywordMatch;
+        });
+        renderRentalList(filteredRentals);
+    }
+
 function renderRentalList(rentals) {
     if (!rentalListTbody) return;
     rentalListTbody.innerHTML = '';
@@ -480,27 +494,93 @@ function renderRentalList(rentals) {
             case 'returned': statusBadge = '<span class="tag-display" style="background-color: #28a745;">已歸還</span>'; break;
             default: statusBadge = `<span class="tag-display">${rental.status}</span>`;
         }
-        row.innerHTML = `
-            <td>${statusBadge}</td>
-            <td>${rental.game_name}</td>
-            <td>${userName}</td>
-            <td>${rental.due_date}</td>
-            <td class="actions-cell">
-                <button class="action-btn btn-return" data-rentalid="${rental.rental_id}" style="background-color:#17a2b8;">還書</button>
-            </td>
-        `;
-        rentalListTbody.appendChild(row);
-    });
-}
+            row.innerHTML = `
+                <td>${statusBadge}</td>
+                <td>${rental.game_name}</td>
+                <td>${userName}</td>
+                <td>${rental.due_date}</td>
+                <td class="actions-cell">
+                    <button class="action-btn btn-return" data-rentalid="${rental.rental_id}" style="background-color:#17a2b8;" ${rental.status === 'returned' ? 'disabled' : ''}>歸還</button>
+                </td>
+            `;
+            rentalListTbody.appendChild(row);
+        });
+    }
 
-async function fetchAllRentals() {
-    try {
-        const response = await fetch('/api/admin/get-all-rentals');
-        if (!response.ok) throw new Error('無法獲取租借列表');
-        allRentals = await response.json();
-        renderRentalList(allRentals);
-    } catch (error) { console.error('獲取租借列表失敗:', error); }
-}
+    async function fetchAllRentals() {
+        try {
+            const response = await fetch('/api/admin/get-all-rentals');
+            if (!response.ok) throw new Error('無法獲取租借列表');
+            allRentals = await response.json();
+            applyRentalFiltersAndRender(); // 改為呼叫這個
+        } catch (error) { console.error('獲取租借列表失敗:', error); }
+    }
+        // 【新增】事件監聽器
+    if (rentalStatusFilter) {
+        rentalStatusFilter.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                rentalStatusFilter.querySelector('.active').classList.remove('active');
+                e.target.classList.add('active');
+                rentalFilters.status = e.target.dataset.filter;
+                applyRentalFiltersAndRender();
+            }
+        });
+    }
+
+    if(rentalSearchInput) {
+        rentalSearchInput.addEventListener('input', () => {
+            rentalFilters.keyword = rentalSearchInput.value;
+            applyRentalFiltersAndRender();
+        });
+    }
+    
+    if(rentalListTbody) {
+        rentalListTbody.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('btn-return')) {
+                const rentalId = e.target.dataset.rentalid;
+                const rental = allRentals.find(r => r.rental_id == rentalId);
+                if (!rental) return;
+                
+                if (confirm(`確定要將《${rental.game_name}》標記為已歸還嗎？`)) {
+                    try {
+                        const response = await fetch('/api/admin/update-rental-status', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ rentalId: Number(rentalId), status: 'returned' })
+                        });
+                        const result = await response.json();
+                        if (!response.ok) throw new Error(result.error || '歸還失敗');
+                        alert('歸還成功！');
+                        // 更新本地資料並重新渲染
+                        rental.status = 'returned';
+                        rental.return_date = new Date().toISOString().split('T')[0];
+                        applyRentalFiltersAndRender();
+                    } catch (error) {
+                        alert(`錯誤：${error.message}`);
+                    }
+                }
+            }
+        });
+    }
+    
+    if (syncRentalsBtn) {
+        syncRentalsBtn.addEventListener('click', async () => {
+            if (!confirm('確定要用目前資料庫 (D1) 的所有租借紀錄，完整覆蓋 Google Sheet 上的「Rentals」工作表嗎？')) return;
+            try {
+                syncRentalsBtn.textContent = '同步中...';
+                syncRentalsBtn.disabled = true;
+                const response = await fetch('/api/admin/sync-rentals', { method: 'POST' });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.details || '同步失敗');
+                alert(result.message || '同步成功！');
+            } catch (error) {
+                alert(`錯誤：${error.message}`);
+            } finally {
+                syncRentalsBtn.textContent = '同步至 Google Sheet';
+                syncRentalsBtn.disabled = false;
+            }
+        });
+    }
 
 function openCreateRentalModal(gameId) {
     const game = allGames.find(g => g.game_id == gameId);
