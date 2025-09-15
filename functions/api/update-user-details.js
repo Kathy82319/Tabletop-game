@@ -50,9 +50,7 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    // ** START: 關鍵修正 - 新增接收 perk 欄位 **
     const { userId, level, current_exp, tag, user_class, perk } = await context.request.json();
-    // ** END: 關鍵修正 **
 
     if (!userId) {
       return new Response(JSON.stringify({ error: '缺少使用者 ID。' }), { status: 400 });
@@ -60,32 +58,40 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
-    // ** START: 關鍵修正 - 新增更新 perk 欄位 **
+    // ================================================================
+    // 任務一：立即更新 D1 資料庫
+    // 這是主要的事實來源，供 LIFF App 使用
+    // ================================================================
+    console.log(`[任務一] 正在更新 D1 資料庫中的使用者: ${userId}`);
     const stmt = db.prepare('UPDATE Users SET level = ?, current_exp = ?, tag = ?, class = ?, perk = ? WHERE user_id = ?');
     const result = await stmt.bind(Number(level) || 1, Number(current_exp) || 0, tag, user_class, perk, userId).run();
-    // ** END: 關鍵修正 **
 
     if (result.meta.changes === 0) {
-      return new Response(JSON.stringify({ error: `找不到使用者 ID: ${userId}，無法更新資料。` }), {
+      return new Response(JSON.stringify({ error: `在 D1 中找不到使用者 ID: ${userId}，無法更新資料。` }), {
         status: 404
       });
     }
 
+    // ================================================================
+    // 任務二：在背景同步更新 Google Sheet
+    // 這確保了您的備份和下拉選單選項的來源也是最新的
+    // ================================================================
+    console.log(`[任務二] 已觸發背景任務，將更新 Google Sheet 中的使用者: ${userId}`);
     const dataToSync = {
         level: level,
         current_exp: current_exp,
         tag: tag,
         class: user_class,
-        // ** START: 關鍵修正 - 同步 perk 至 Google Sheet **
         perk: perk
-        // ** END: 關鍵修正 **
     };
+
+    // context.waitUntil 會讓這個任務在背景執行，不會拖慢給使用者的回應速度
     context.waitUntil(
         updateRowInSheet(context.env, '使用者列表', 'user_id', userId, dataToSync)
-        .catch(err => console.error("背景同步使用者詳細資料失敗:", err))
+        .catch(err => console.error(`背景同步 Google Sheet 失敗 (使用者: ${userId}):`, err))
     );
 
-    return new Response(JSON.stringify({ success: true, message: '成功更新使用者資料！' }), {
+    return new Response(JSON.stringify({ success: true, message: '成功更新使用者資料！(D1 已更新，Google Sheet 已觸發背景同步)' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
