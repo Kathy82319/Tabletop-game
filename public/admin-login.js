@@ -1,28 +1,25 @@
+// public/admin-login.js
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM 元素宣告 ---
     const mainNav = document.querySelector('.nav-tabs');
     const pages = document.querySelectorAll('.page');
     const expHistoryTbody = document.getElementById('exp-history-tbody');
     const expUserFilter = document.getElementById('exp-user-filter');
-    // ** START: 關鍵修正 - 重新命名 modal 變數 **
     const userListTbody = document.getElementById('user-list-tbody');
     const userSearchInput = document.getElementById('user-search-input');
     const editUserModal = document.getElementById('edit-user-modal');
     const editUserForm = document.getElementById('edit-user-form');
     const syncD1ToSheetBtn = document.getElementById('sync-d1-to-sheet-btn');
 
-    
     // 庫存管理
     const gameListTbody = document.getElementById('game-list-tbody');
     const gameSearchInput = document.getElementById('game-search-input');
-    const editGameModal = document.getElementById('edit-game-modal');
-    const editGameForm = document.getElementById('edit-game-form');
     const visibilityFilter = document.getElementById('visibility-filter');
 
     // 訂位管理
     const bookingListTbody = document.getElementById('booking-list-tbody');
 
-    // **【新增】** 租借管理
+    // **【修正處】** 新增所有租借管理頁面會用到的元素宣告
     const rentalListTbody = document.getElementById('rental-list-tbody');
     const createRentalModal = document.getElementById('create-rental-modal');
     const createRentalForm = document.getElementById('create-rental-form');
@@ -30,12 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const rentalStatusFilter = document.getElementById('rental-status-filter');
     const rentalSearchInput = document.getElementById('rental-search-input');
 
-
-    // 在 "訂位管理" 和 "情報管理" 之間加入
-    const rentalListTbody = document.getElementById('rental-list-tbody');
-    const createRentalModal = document.getElementById('create-rental-modal');
-    const createRentalForm = document.getElementById('create-rental-form');
-    
     // 情報管理
     const newsListTbody = document.getElementById('news-list-tbody');
     const addNewsBtn = document.getElementById('add-news-btn');
@@ -59,20 +50,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const scanStatusMessage = document.getElementById('scan-status-message');
 
     // --- 全域狀態變數 ---
-    let allUsers = [], allGames = [], allBookings = [], allNews = [], allExpHistory = [];
-    let classPerks = {}; // 儲存從 Google Sheet 來的職業設定
+    let allUsers = [], allGames = [], allBookings = [], allNews = [], allExpHistory = [], allRentals = [];
+    let classPerks = {};
     let gameFilters = { visibility: 'all' };
+    let rentalFilters = { status: 'all', keyword: '' };
     let html5QrCode = null;
     let currentEditingNewsId = null;
+    let selectedRentalUser = null;
 
     // ---- 頁面切換邏輯 ----
     function showPage(pageId) {
-        if (pageId === 'rentals') fetchAllRentals(); // 新增這行
         if (html5QrCode && html5QrCode.isScanning) {
             html5QrCode.stop().catch(err => console.error("停止掃描器失敗", err));
         }
         pages.forEach(page => page.classList.remove('active'));
-        document.getElementById(`page-${pageId}`)?.classList.add('active');
+        const pageElement = document.getElementById(`page-${pageId}`);
+        if(pageElement) pageElement.classList.add('active');
 
         document.querySelectorAll('.nav-tabs a').forEach(link => {
             link.classList.remove('active');
@@ -86,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pageId === 'scan') startScanner();
         if (pageId === 'news' && allNews.length === 0) fetchAllNews();
         if (pageId === 'store-info') fetchStoreInfo();
+        if (pageId === 'rentals' && allRentals.length === 0) fetchAllRentals();
     }
 
     mainNav.addEventListener('click', (event) => {
@@ -95,6 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
             showPage(pageId);
         }
     });
+
+
     // =================================================================
     // 顧客管理模組
     // =================================================================
@@ -372,7 +368,8 @@ document.addEventListener('DOMContentLoaded', () => {
         gameListTbody.innerHTML = '';
         games.forEach(game => {
             const row = document.createElement('tr');
-            const isVisible = String(game.is_visible) === 'TRUE';
+            // is_visible 的處理邏輯保持不變
+            const isVisible = game.is_visible === 1 || String(game.is_visible).toUpperCase() === 'TRUE';
             
             row.innerHTML = `
                 <td class="compound-cell">
@@ -389,30 +386,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchAllGames() {
         try {
-            const response = await fetch('/api/get-sheet-boardgames'); 
-            
-            if (!response.ok) {
-                let errorDetails = `伺服器回應錯誤碼: ${response.status}`;
-                try {
-                    const errData = await response.json();
-                    errorDetails = errData.details || errData.error || JSON.stringify(errData);
-                } catch (e) {
-                    errorDetails = await response.text();
-                }
-                throw new Error(errorDetails);
-            }
-
+            const response = await fetch('/api/get-sheet-boardgames');
+            if (!response.ok) throw new Error('無法獲取桌遊列表');
             allGames = await response.json();
-            // 在這裡處理 is_visible 從 1/0 到 'TRUE'/'FALSE' 的轉換，以匹配篩選器邏輯
-            allGames.forEach(game => {
-                game.is_visible = game.is_visible === 1 ? 'TRUE' : 'FALSE';
-            });
             applyGameFiltersAndRender();
-
-        } catch (error) { 
-            console.error('從 Google Sheet 獲取桌遊列表失敗:', error); 
-            if(gameListTbody) gameListTbody.innerHTML = `<tr><td colspan="4" style="color: red; text-align: center; white-space: pre-wrap;">讀取資料失敗:\n${error.message}</td></tr>`;
-        }
+        } catch (error) { console.error('獲取桌遊列表失敗:', error); }
     }
 
     gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
@@ -441,10 +419,10 @@ function setupFilterButtons(filterContainer, filterKey) {
         alert(`此處為預覽，請直接在 Google Sheet 中編輯桌遊: ${game.name}`);
     }
 
-gameListTbody.addEventListener('click', (e) => {
-    if (e.target.classList.contains('btn-rent')) { // class 從 btn-edit 改為 btn-rent
-        openCreateRentalModal(e.target.dataset.gameid); // 函式名稱改變
-    }
+    gameListTbody.addEventListener('click', (e) => {
+        if (e.target.classList.contains('btn-rent')) {
+            openCreateRentalModal(e.target.dataset.gameid);
+        }
 });
 
     const syncGamesBtn = document.getElementById('sync-games-btn');
@@ -471,9 +449,6 @@ gameListTbody.addEventListener('click', (e) => {
 // =================================================================
 // 桌遊租借模組
 // =================================================================
-    // =================================================================
-    // 【全新/修改】桌遊租借模組
-    // =================================================================
     function applyRentalFiltersAndRender() {
         if (!allRentals) return;
         const keyword = rentalFilters.keyword.toLowerCase().trim();
@@ -496,9 +471,9 @@ gameListTbody.addEventListener('click', (e) => {
             const userName = rental.nickname || rental.line_display_name || '未知用戶';
             let statusBadge = '';
             switch(rental.status) {
-                case 'rented': statusBadge = '<span class="tag-display" style="background-color: #ffc107; color: #000;">租借中</span>'; break;
-                case 'returned': statusBadge = '<span class="tag-display" style="background-color: #28a745;">已歸還</span>'; break;
-                default: statusBadge = `<span class="tag-display">${rental.status}</span>`;
+                case 'rented': statusBadge = '<span style="background-color: #ffc107; color: #000; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">租借中</span>'; break;
+                case 'returned': statusBadge = '<span style="background-color: #28a745; color: #fff; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">已歸還</span>'; break;
+                default: statusBadge = `<span>${rental.status}</span>`;
             }
             row.innerHTML = `
                 <td>${statusBadge}</td>
@@ -551,7 +526,7 @@ gameListTbody.addEventListener('click', (e) => {
     createRentalModal.querySelector('.btn-cancel').addEventListener('click', () => createRentalModal.style.display = 'none');
     createRentalForm.addEventListener('submit', async (e) => { /* ... 送出邏輯不變 ... */ });
     
-    // 【新增】事件監聽
+    // 事件監聽
     if (rentalStatusFilter) {
         rentalStatusFilter.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
@@ -599,7 +574,22 @@ gameListTbody.addEventListener('click', (e) => {
     }
     
     if (syncRentalsBtn) {
-        syncRentalsBtn.addEventListener('click', async () => { /* ... 同步邏輯不變 ... */ });
+        syncRentalsBtn.addEventListener('click', async () => {
+             if (!confirm('確定要用目前資料庫 (D1) 的所有租借紀錄，完整覆蓋 Google Sheet 上的「Rentals」工作表嗎？')) return;
+            try {
+                syncRentalsBtn.textContent = '同步中...';
+                syncRentalsBtn.disabled = true;
+                const response = await fetch('/api/admin/sync-rentals', { method: 'POST' });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.details || '同步失敗');
+                alert(result.message || '同步成功！');
+            } catch (error) {
+                alert(`錯誤：${error.message}`);
+            } finally {
+                syncRentalsBtn.textContent = '同步至 Google Sheet';
+                syncRentalsBtn.disabled = false;
+            }
+        });
     }
     
     flatpickr("#rental-due-date", { dateFormat: "Y-m-d", minDate: "today" });
@@ -958,19 +948,16 @@ gameListTbody.addEventListener('click', (e) => {
     async function initialize() {
         try {
             const response = await fetch('/api/get-class-perks');
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.details || `伺服器錯誤: ${response.status}`);
-            }
+            if (!response.ok) throw new Error('無法獲取職業設定');
             classPerks = await response.json();
         } catch (error) {
             console.error('初始化職業設定失敗:', error);
-            alert(`警告：無法從 Google Sheet 獲取職業設定，編輯功能可能不完整。\n錯誤詳情: ${error.message}`);
+            alert(`警告：無法從 Google Sheet 獲取職業設定。`);
         }
-        // 初始載入顧客列表，因為出借時需要
-        await fetchAllUsers(); 
+        await fetchAllUsers(); // 初始載入顧客列表
         showPage('users');
     }
     
     initialize();
+    
 });
