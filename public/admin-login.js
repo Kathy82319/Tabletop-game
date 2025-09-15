@@ -1,54 +1,42 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- DOM 元素宣告 ---
+    
+    // --- 【模組名稱：全域變數與 DOM 宣告】 ---
     const mainNav = document.querySelector('.nav-tabs');
     const pages = document.querySelectorAll('.page');
-    const expHistoryTbody = document.getElementById('exp-history-tbody');
-    const expUserFilter = document.getElementById('exp-user-filter');
+
+    // 顧客管理
     const userListTbody = document.getElementById('user-list-tbody');
     const userSearchInput = document.getElementById('user-search-input');
     const editUserModal = document.getElementById('edit-user-modal');
     const editUserForm = document.getElementById('edit-user-form');
+    // 【修正】將 syncD1ToSheetBtn 的宣告加回來
     const syncD1ToSheetBtn = document.getElementById('sync-d1-to-sheet-btn');
-
+    
     // 庫存管理
     const gameListTbody = document.getElementById('game-list-tbody');
     const gameSearchInput = document.getElementById('game-search-input');
     const editGameModal = document.getElementById('edit-game-modal');
     const editGameForm = document.getElementById('edit-game-form');
-    const visibilityFilter = document.getElementById('visibility-filter');
 
-    // 訂位管理
-    const bookingListTbody = document.getElementById('booking-list-tbody');
-
-    // **【新增】** 租借管理
+    // 租借管理
     const rentalListTbody = document.getElementById('rental-list-tbody');
-    const createRentalModal = document.getElementById('create-rental-modal');
-    const createRentalForm = document.getElementById('create-rental-form');
-    const syncRentalsBtn = document.getElementById('sync-rentals-btn');
     const rentalStatusFilter = document.getElementById('rental-status-filter');
     const rentalSearchInput = document.getElementById('rental-search-input');
-
-    // 情報管理
-    const newsListTbody = document.getElementById('news-list-tbody');
-    const addNewsBtn = document.getElementById('add-news-btn');
-    const editNewsModal = document.getElementById('edit-news-modal');
-    const editNewsForm = document.getElementById('edit-news-form');
-    const modalNewsTitle = document.getElementById('modal-news-title');
-    const deleteNewsBtn = document.getElementById('delete-news-btn');
+    const createRentalModal = document.getElementById('create-rental-modal');
+    const createRentalForm = document.getElementById('create-rental-form');
     
-    // 店家資訊
-    const storeInfoForm = document.getElementById('store-info-form');
+    // 其他頁面元素
+    const bookingListTbody = document.getElementById('booking-list-tbody');
+    const expHistoryTbody = document.getElementById('exp-history-tbody');
+    const newsListTbody = document.getElementById('news-list-tbody');
+    // ...
 
-    // 掃碼加點
-    const qrReaderElement = document.getElementById('qr-reader');
-    const scanResultSection = document.getElementById('scan-result');
-    const userIdDisplay = document.getElementById('user-id-display');
-    const reasonSelect = document.getElementById('reason-select');
-    const customReasonInput = document.getElementById('custom-reason-input');
-    const expInput = document.getElementById('exp-input');
-    const submitExpBtn = document.getElementById('submit-exp-btn');
-    const rescanBtn = document.getElementById('rescan-btn');
-    const scanStatusMessage = document.getElementById('scan-status-message');
+    // 全域狀態變數
+    let allUsers = [], allGames = [], allRentals = [], allBookings = [], allExpHistory = [], allNews = [];
+    let classPerks = {};
+    let rentalFilters = { status: 'all', keyword: '' };
+    let selectedRentalUser = null;
+    let html5QrCode = null;
 
     // --- 全域狀態變數 ---
     let allUsers = [], allGames = [], allBookings = [], allNews = [], allExpHistory = [], allRentals = [];
