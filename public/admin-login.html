@@ -268,41 +268,64 @@
 
 <div id="create-rental-modal" class="modal-overlay">
     <div class="modal-content">
-        <div class="modal-header">
-            <h3>建立租借紀錄</h3>
-            <button class="modal-close">&times;</button>
-        </div>
         <form id="create-rental-form">
             <input type="hidden" id="rental-game-id">
             <div class="form-group">
                 <label>租借品項</label>
-                <input type="text" id="rental-game-name" readonly style="background-color: #e9ecef;">
+                <input type="text" id="rental-game-name" readonly>
             </div>
             <div class="form-group">
-                <label for="rental-user-search">搜尋租借會員 (LINE 名稱)</label>
+                <label for="rental-user-search">搜尋租借會員 (LINE 名稱或 ID)</label>
                 <input type="text" id="rental-user-search" placeholder="請至少輸入 2 個字元...">
                 <select id="rental-user-select" style="margin-top: 10px; display: none;"></select>
             </div>
-            <hr style="margin: 20px 0;">
             <div class="form-group">
-                <label for="rental-due-date">預計歸還日期</label>
-                <input type="text" id="rental-due-date" required>
-            </div>
-             <div class="form-group">
-                <label for="rental-deposit">押金</label>
-                <input type="number" id="rental-deposit" min="0" required>
+                <label for="rental-contact-name">租借人姓名</label>
+                <input type="text" id="rental-contact-name" required>
             </div>
             <div class="form-group">
-                <label for="rental-late-fee">逾期每日費用</label>
-                <input type="number" id="rental-late-fee" min="0" required>
+                <label for="rental-contact-phone">聯絡電話</label>
+                <input type="tel" id="rental-contact-phone" required maxlength="10">
+            </div>
+            <hr>
+            </form>
+    </div>
+</div>
+
+<div id="edit-game-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-game-title">編輯遊戲</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <form id="edit-game-form">
+            <input type="hidden" id="edit-game-id">
+            <div class="form-group">
+                <label for="edit-for-rent-stock">可租借庫存</label>
+                <input type="number" id="edit-for-rent-stock" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-sale-price">售價</label>
+                <input type="number" id="edit-sale-price" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-rent-price">租金</label>
+                <input type="number" id="edit-rent-price" min="0" required>
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center;">
+                    <input type="checkbox" id="edit-is-visible" style="width: auto; margin-right: 10px;">
+                    是否上架 (顯示於 LIFF)
+                </label>
             </div>
             <div class="form-actions">
                 <button type="button" class="action-btn btn-cancel">取消</button>
-                <button type="submit" class="action-btn btn-save">下一步</button>
+                <button type="submit" class="action-btn btn-save">儲存變更</button>
             </div>
         </form>
     </div>
-</div>    
+</div>
+
     
     <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>

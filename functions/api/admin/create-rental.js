@@ -41,32 +41,58 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    const { userId, gameId, dueDate, deposit, lateFeePerDay } = await context.request.json();
+    // 【修改 #3】 接收新的 name 和 phone 欄位
+    const { userId, gameId, dueDate, deposit, lateFeePerDay, name, phone } = await context.request.json();
 
-    if (!userId || !gameId || !dueDate || deposit === undefined || lateFeePerDay === undefined) {
-      return new Response(JSON.stringify({ error: '缺少必要的租借資訊。' }), { status: 400 });
+    if (!userId || !gameId || !dueDate || !name || !phone) {
+      return new Response(JSON.stringify({ error: '缺少必要的租借資訊 (會員/遊戲/日期/姓名/電話)。' }), { status: 400 });
     }
 
     const db = context.env.DB;
 
-    // 1. 新增租借紀錄到 D1，並使用 RETURNING 獲取新紀錄的 ID
-    const stmt = db.prepare(
-      'INSERT INTO Rentals (user_id, game_id, due_date, deposit, late_fee_per_day) VALUES (?, ?, ?, ?, ?) RETURNING *'
-    );
-    const newRental = await stmt.bind(userId, gameId, dueDate, deposit, lateFeePerDay).first();
+    // --- 【新增 #2】 庫存 -1 ---
+    const game = await db.prepare('SELECT name, for_rent_stock FROM BoardGames WHERE game_id = ?').bind(gameId).first();
+    if (!game) {
+        return new Response(JSON.stringify({ error: '找不到指定的遊戲。' }), { status: 404 });
+    }
+    if (game.for_rent_stock <= 0) {
+        return new Response(JSON.stringify({ error: `《${game.name}》目前已無可租借庫存。` }), { status: 409 });
+    }
+    // --- 庫存檢查結束 ---
+    
+    // 使用資料庫 Transaction 確保兩項操作都成功
+    const batch = [
+      // 【修改 #3】 新增租借紀錄，包含 name 和 phone
+      db.prepare(
+        'INSERT INTO Rentals (user_id, game_id, due_date, deposit, late_fee_per_day, name, phone) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      ).bind(userId, gameId, dueDate, deposit, lateFeePerDay, name, phone),
+      // 【修改 #2】 更新桌遊庫存
+      db.prepare(
+        'UPDATE BoardGames SET for_rent_stock = for_rent_stock - 1 WHERE game_id = ?'
+      ).bind(gameId)
+    ];
+
+    await db.batch(batch);
+    
+    // 重新獲取剛才新增的紀錄，以便同步到 Google Sheet
+    const newRental = await db.prepare('SELECT * FROM Rentals ORDER BY rental_id DESC LIMIT 1').first();
 
 
-    // 2. 準備發送給使用者的通知訊息
-    const game = await db.prepare('SELECT name FROM BoardGames WHERE game_id = ?').bind(gameId).first();
-    const gameName = game ? game.name : '未知遊戲';
+    // 【修改 #5】 更新 LINE 通知訊息格式
+    const rentalDate = new Date(newRental.rental_date);
+    const rentalDateStr = rentalDate.toISOString().split('T')[0];
+    const rentalDuration = Math.round((new Date(dueDate) - rentalDate) / (1000 * 60 * 60 * 24));
 
-    const message = `📦 桌遊租借成功！\n\n` +
-                    `遊戲名稱：${gameName}\n` +
-                    `押金：$${deposit}\n` +
-                    `預計歸還日：${dueDate}\n\n` +
-                    `請務必在此日期前歸還，感謝您的租借！`;
+    const message = `姓名：${name}\n` +
+                    `電話：${phone}\n` +
+                    `日期：${rentalDateStr}\n` +
+                    `租借時間：${rentalDuration}天\n` +
+                    `歸還日期：${dueDate}\n` +
+                    `租借遊戲：${game.name}\n\n` +
+                    `如上面資訊沒有問題，請回覆「ok」\n`+
+                    `感謝您的預約！`;
 
-    // 3. 觸發一個背景任務去發送 LINE 訊息
+    // 觸發 LINE 通知 (保持不變)
     context.waitUntil(
         fetch(new URL('/api/send-message', context.request.url), {
             method: 'POST',
@@ -75,14 +101,13 @@ export async function onRequest(context) {
         }).catch(err => console.error("背景發送租借通知失敗:", err))
     );
     
-    // 4. **【新增】** 觸發背景任務將此筆紀錄同步到 Google Sheet
+    // 【修改 #1】 觸發 Google Sheet 同步 (保持不變，但會同步新欄位)
     context.waitUntil(
         addRowToSheet(context.env, 'Rentals', newRental)
         .catch(err => console.error("背景同步新增租借紀錄失敗:", err))
     );
 
-
-    return new Response(JSON.stringify({ success: true, message: '租借紀錄已建立，並已通知使用者！' }), {
+    return new Response(JSON.stringify({ success: true, message: '租借紀錄已建立，庫存已更新！' }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' },
     });
