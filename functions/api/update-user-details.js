@@ -4,61 +4,34 @@ import * as jose from 'jose';
 
 // --- Google Sheets 工具函式 ---
 async function getAccessToken(env) {
-    // ** START: 關鍵修正 - 增加詳細的認證日誌 **
-    console.log("[Auth] 開始 getAccessToken 流程");
-
     const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY } = env;
-
-    if (!GOOGLE_SERVICE_ACCOUNT_EMAIL) throw new Error('環境變數 GOOGLE_SERVICE_ACCOUNT_EMAIL 未設定或為空。');
-    if (!GOOGLE_PRIVATE_KEY) throw new Error('環境變數 GOOGLE_PRIVATE_KEY 未設定或為空。');
+    if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) throw new Error('缺少 Google 服務帳號的環境變數。');
     
-    // 檢查 Email 格式是否正確
-    console.log(`[Auth] 讀取到的服務帳號 Email: ${GOOGLE_SERVICE_ACCOUNT_EMAIL}`);
-    if (!GOOGLE_SERVICE_ACCOUNT_EMAIL.endsWith('gserviceaccount.com')) {
-        console.warn("[Auth] 警告：服務帳號 Email 格式看起來不正確。");
-    }
-
-    // 檢查私鑰是否包含標準的開頭和結尾
-    if (!GOOGLE_PRIVATE_KEY.includes('-----BEGIN PRIVATE KEY-----')) {
-        console.error("[Auth] 錯誤：私鑰內容不完整，缺少 '-----BEGIN PRIVATE KEY-----'");
-    }
-
-    // 將 Cloudflare 環境變數中的 \\n 替換為實際的換行符 \n
     const formattedPrivateKey = GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
-    
-    console.log("[Auth] 準備使用 jose.importPKCS8 匯入私鑰");
     const privateKey = await jose.importPKCS8(formattedPrivateKey, 'RS256');
-    console.log("[Auth] 私鑰匯入成功");
 
     const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets' })
-      .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
-      .setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
-      .setAudience('https://oauth2.googleapis.com/token')
-      .setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
-      .setIssuedAt()
-      .setExpirationTime('1h')
-      .sign(privateKey);
-    console.log("[Auth] JWT 簽署成功");
+      .setProtectedHeader({ alg: 'RS256', typ: 'JWT' }).setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
+      .setAudience('https://oauth2.googleapis.com/token').setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
+      .setIssuedAt().setExpirationTime('1h').sign(privateKey);
+
+    // ** START: 關鍵修正 - 手動建立請求 Body **
+    const grantType = 'urn:ietf:params:oauth:grant-type:jwt-bearer';
+    const body = `grant_type=${encodeURIComponent(grantType)}&assertion=${encodeURIComponent(jwt)}`;
 
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'urn:ietf:params:oauth:grant-type-jwt-bearer',
-        assertion: jwt
-      }),
+      body: body,
     });
-    console.log(`[Auth] 已向 Google 發送 Token 請求，回應狀態: ${tokenResponse.status}`);
+    // ** END: 關鍵修正 **
 
     const tokenData = await tokenResponse.json();
     if (!tokenResponse.ok) {
         console.error("[Auth] 從 Google 獲取 Access Token 失敗，詳細錯誤:", tokenData);
         throw new Error(`從 Google 取得 access token 失敗: ${tokenData.error_description || tokenData.error}`);
     }
-    
-    console.log("[Auth] 成功獲取 Access Token");
     return tokenData.access_token;
-    // ** END: 關鍵修正 **
 }
 
 // ** START: 關鍵修正 - 強化 updateRowInSheet 函式 **

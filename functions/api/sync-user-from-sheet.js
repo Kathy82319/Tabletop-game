@@ -7,27 +7,36 @@ async function getAccessToken(env) {
     const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY } = env;
     if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) throw new Error('缺少 Google 服務帳號的環境變數。');
     
-    const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
-    const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets' })
+    const formattedPrivateKey = GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
+    const privateKey = await jose.importPKCS8(formattedPrivateKey, 'RS256');
+
+    const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets.readonly' })
       .setProtectedHeader({ alg: 'RS256', typ: 'JWT' }).setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
       .setAudience('https://oauth2.googleapis.com/token').setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
       .setIssuedAt().setExpirationTime('1h').sign(privateKey);
+    
+    // ** START: 關鍵修正 - 手動建立請求 Body **
+    const grantType = 'urn:ietf:params:oauth:grant-type:jwt-bearer';
+    const body = `grant_type=${encodeURIComponent(grantType)}&assertion=${encodeURIComponent(jwt)}`;
 
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt }),
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body,
     });
+    // ** END: 關鍵修正 **
 
     const tokenData = await tokenResponse.json();
     if (!tokenResponse.ok) throw new Error(`從 Google 取得 access token 失敗: ${tokenData.error_description || tokenData.error}`);
     return tokenData.access_token;
 }
 
+// ** START: 關鍵修正 - getSheet 也需要 getAccessToken **
 async function getSheet(env, sheetName) {
     const { GOOGLE_SHEET_ID } = env;
     if (!GOOGLE_SHEET_ID) throw new Error('缺少 GOOGLE_SHEET_ID 環境變數。');
 
-    const accessToken = await getAccessToken(env);
+    const accessToken = await getAccessToken(env); // 呼叫修正後的函式
     const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
     
     const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
@@ -38,7 +47,7 @@ async function getSheet(env, sheetName) {
 
     return sheet;
 }
-// --- 結束整合 Google Sheets 工具 ---
+// ** END: 關鍵修正 **
 
 export async function onRequest(context) {
     try {
