@@ -1,3 +1,5 @@
+// public/script.js
+
 document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 核心DOM元素與全域變數
@@ -25,18 +27,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 頁面切換邏輯
     // =================================================================
+    
+    // ** START: 修正問題 1 - 修改 showPage 與新增 popstate 監聽 **
     function showPage(pageId, isBackAction = false) {
         const template = pageTemplates.querySelector(`#${pageId}`);
         if (template) {
             appContent.innerHTML = template.innerHTML;
             
+            const state = { page: pageId };
+            const url = `#${pageId}`;
+
             if (!isBackAction) {
-                // 如果是主分頁，重置歷史紀錄
                 if (['page-home', 'page-games', 'page-profile', 'page-booking', 'page-info'].includes(pageId)) {
                     pageHistory = [pageId];
+                    // 對於主分頁，使用 replaceState 清除舊的歷史紀錄
+                    history.replaceState(state, '', url);
                 } else {
-                    // 否則，推進歷史紀錄
                     pageHistory.push(pageId);
+                    // 對於子頁面，使用 pushState 新增歷史紀錄
+                    history.pushState(state, '', url);
                 }
             }
             
@@ -48,8 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'page-booking': initializeBookingPage(); break;
                 case 'page-info': initializeInfoPage(); break;
                 case 'page-edit-profile': initializeEditProfilePage(); break;
-                case 'page-game-details': break; // 由 initializeGamesPage 內部處理
-                case 'page-news-details': break; // 由 initializeHomePage 內部處理
+                case 'page-game-details': break;
+                case 'page-news-details': break;
             }
 
             // 更新分頁按鈕狀態
@@ -64,22 +73,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function goBackPage() {
         if (pageHistory.length > 1) {
-            pageHistory.pop();
-            showPage(pageHistory[pageHistory.length - 1], true);
+            history.back(); // 觸發 popstate 事件
         } else {
             liff.closeWindow();
         }
     }
+
+    // 監聽瀏覽器的返回事件 (例如：手機的返回手勢)
+    window.addEventListener('popstate', (event) => {
+        if (pageHistory.length > 1) {
+            pageHistory.pop();
+            const previousPageId = pageHistory[pageHistory.length - 1];
+            // 直接呼叫 showPage，並標記為返回動作
+            showPage(previousPageId, true);
+        }
+    });
+    // ** END: 修正問題 1 **
     
     // 全域返回與詳情頁點擊事件監聽
     appContent.addEventListener('click', (event) => {
-        // 返回按鈕
         if (event.target.matches('.details-back-button')) {
              goBackPage();
              return;
         }
 
-        // 最新情報卡片
         const newsCard = event.target.closest('.news-card');
         if (newsCard && newsCard.dataset.newsId) {
             const newsId = parseInt(newsCard.dataset.newsId, 10);
@@ -90,7 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // 桌遊圖鑑卡片
         const gameCard = event.target.closest('.game-card');
         if (gameCard && gameCard.dataset.gameId) {
             const gameId = gameCard.dataset.gameId;
@@ -200,7 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch((err) => {
             console.error("LIFF 初始化失敗", err);
-            // 即使 LIFF 失敗，還是嘗試顯示首頁
             showPage('page-home'); 
         });
 
@@ -210,7 +225,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function initializeProfilePage() {
         if (!userProfile) return;
 
-        // 填充基本 LINE Profile
         document.getElementById('display-name').textContent = userProfile.displayName;
         document.getElementById('status-message').textContent = userProfile.statusMessage || '';
         const profilePicture = document.getElementById('profile-picture');
@@ -222,16 +236,13 @@ document.addEventListener('DOMContentLoaded', () => {
             new QRCode(qrcodeElement, { text: userProfile.userId, width: 200, height: 200 });
         }
         
-        // ** START: 修正問題 1 - 綁定按鈕事件 **
         const editProfileBtn = document.getElementById('edit-profile-btn');
         if (editProfileBtn) {
             editProfileBtn.addEventListener('click', () => {
                 showPage('page-edit-profile');
             });
         }
-        // ** END: 修正問題 1 **
-
-        // 獲取遊戲資料和預約紀錄
+        
         await fetchGameData(userProfile);
         await fetchAndDisplayMyBookings(userProfile.userId);
     }
@@ -285,10 +296,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function initializeEditProfilePage() {
         if (!userProfile) return;
 
-        // 填充基本資料
         document.getElementById('edit-profile-name').value = userProfile.displayName;
 
-        // 獲取已儲存的資料
         const response = await fetch('/api/user', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: userProfile.userId }),
@@ -316,7 +325,6 @@ document.addEventListener('DOMContentLoaded', () => {
             otherGamesInput.style.display = (gamesSelect.value === '其他') ? 'block' : 'none';
         });
 
-        // 綁定表單提交事件
         const form = document.getElementById('edit-profile-form');
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
@@ -357,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 桌遊圖鑑頁
     // =================================================================
     function renderGameDetails(game) {
-        let priceHTML = `<p>請洽電內公告</p>`; // 預設文字
+        let priceHTML = `<p>請洽店內公告</p>`;
         if (Number(game.sale_price) > 0 || Number(game.rent_price) > 0) {
             priceHTML = `
                 <div class="price-grid">
@@ -611,21 +619,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(bookingPayload)
             });
 
-            // 錯誤不是來自 createRes 本身，而是它回傳的內容
             if (!createRes.ok) {
-                // 嘗試解析後端可能回傳的 JSON 錯誤訊息
                 try {
                     const errorResult = await createRes.json();
                     throw new Error(errorResult.error || '建立預約時發生未知錯誤');
                 } catch (e) {
-                    // 如果後端回傳的不是 JSON (例如 HTML 錯誤頁)，則顯示通用訊息
                     throw new Error(`伺服器發生錯誤，狀態碼: ${createRes.status}`);
                 }
             }
             
             const result = await createRes.json();
             
-            // ** START: 修正問題 2 - 正確呼叫 send-message API **
             const messagePayload = {
                 userId: userProfile.userId,
                 message: result.confirmationMessage 
@@ -636,7 +640,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(messagePayload)
             });
-            // ** END: 修正問題 2 **
 
             document.getElementById('booking-result-content').innerHTML = `
                 <h2 class="success">✅ 預約成功！</h2>
