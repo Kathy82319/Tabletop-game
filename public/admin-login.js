@@ -112,7 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
             renderUserList(allUsers);
         } catch (error) { console.error('獲取使用者列表失敗:', error); }
     }
-    // ** START: 關鍵修正 - 為新按鈕新增事件監聽器 **
+
+    // 按鈕的事件監聽器 (獨立區塊)
     if (syncD1ToSheetBtn) {
         syncD1ToSheetBtn.addEventListener('click', async () => {
             if (!confirm('確定要用目前資料庫 (D1) 的所有使用者資料，完整覆蓋 Google Sheet 上的「使用者列表」嗎？\n\n這個操作通常用於手動備份。')) return;
@@ -121,7 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 syncD1ToSheetBtn.textContent = '同步中...';
                 syncD1ToSheetBtn.disabled = true;
                 
-                // 呼叫我們之前建立的 API 端點
                 const response = await fetch('/api/sync-d1-to-sheet', { method: 'POST' });
                 const result = await response.json();
                 
@@ -137,11 +137,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 syncD1ToSheetBtn.textContent = '同步至 Google Sheet';
                 syncD1ToSheetBtn.disabled = false;
             }
-    userSearchInput.addEventListener('input', () => {
-        const searchTerm = userSearchInput.value.toLowerCase().trim();
-        const filteredUsers = searchTerm ? allUsers.filter(user => (user.line_display_name || '').toLowerCase().includes(searchTerm)) : allUsers;
-        renderUserList(filteredUsers);
-    });
+        });
+    }
 
  // ** START: 關鍵修正 - 全面重構編輯 Modal 邏輯 **
     function openEditUserModal(userId) {
