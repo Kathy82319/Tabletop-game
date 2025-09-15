@@ -73,14 +73,17 @@
         <a href="#scan">掃碼加點</a>
     </nav>
 
-    <main class="main-content">
+<main class="main-content">
         <div id="page-users" class="page active">
-            <div class="page-header"><h2>顧客總表</h2></div>
+            <div class="page-header">
+                <h2>顧客總表</h2>
+                <button id="sync-d1-to-sheet-btn" class="action-btn" style="background-color: #28a745;">同步至 Google Sheet</button>
+            </div>
             <input type="text" id="user-search-input" placeholder="依 LINE 名稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
             <table>
                 <thead>
                     <tr><th>LINE 名稱</th><th>等級</th><th>經驗值</th><th>職業</th><th>標籤</th><th>操作</th></tr>
-                    </thead>
+                </thead>
                 <tbody id="user-list-tbody"></tbody>
             </table>
         </div>

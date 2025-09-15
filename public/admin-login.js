@@ -8,7 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const userSearchInput = document.getElementById('user-search-input');
     const editUserModal = document.getElementById('edit-user-modal');
     const editUserForm = document.getElementById('edit-user-form');
-    // ** END: 關鍵修正 **
+    const syncD1ToSheetBtn = document.getElementById('sync-d1-to-sheet-btn');
+
     
     // 庫存管理
     const gameListTbody = document.getElementById('game-list-tbody');
@@ -111,7 +112,31 @@ document.addEventListener('DOMContentLoaded', () => {
             renderUserList(allUsers);
         } catch (error) { console.error('獲取使用者列表失敗:', error); }
     }
+    // ** START: 關鍵修正 - 為新按鈕新增事件監聽器 **
+    if (syncD1ToSheetBtn) {
+        syncD1ToSheetBtn.addEventListener('click', async () => {
+            if (!confirm('確定要用目前資料庫 (D1) 的所有使用者資料，完整覆蓋 Google Sheet 上的「使用者列表」嗎？\n\n這個操作通常用於手動備份。')) return;
+            
+            try {
+                syncD1ToSheetBtn.textContent = '同步中...';
+                syncD1ToSheetBtn.disabled = true;
+                
+                // 呼叫我們之前建立的 API 端點
+                const response = await fetch('/api/sync-d1-to-sheet', { method: 'POST' });
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.details || '同步失敗');
+                }
+                
+                alert(result.message || '同步成功！');
 
+            } catch (error) {
+                alert(`錯誤：${error.message}`);
+            } finally {
+                syncD1ToSheetBtn.textContent = '同步至 Google Sheet';
+                syncD1ToSheetBtn.disabled = false;
+            }
     userSearchInput.addEventListener('input', () => {
         const searchTerm = userSearchInput.value.toLowerCase().trim();
         const filteredUsers = searchTerm ? allUsers.filter(user => (user.line_display_name || '').toLowerCase().includes(searchTerm)) : allUsers;
