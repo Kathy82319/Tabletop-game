@@ -67,6 +67,7 @@
     <nav class="nav-tabs">
         <a href="#users" class="active">顧客管理</a>
         <a href="#inventory">庫存管理</a>
+        <a href="#rentals">桌遊租借</a>
         <a href="#bookings">訂位管理</a>
         <a href="#exp-history">經驗紀錄</a>
         <a href="#news">情報管理</a>
@@ -112,6 +113,19 @@
                 <tbody id="game-list-tbody"></tbody>
             </table>
         </div>
+
+<div id="page-rentals" class="page">
+    <div class="page-header">
+        <h2>桌遊租借總表</h2>
+    </div>
+    <input type="text" id="rental-search-input" placeholder="依遊戲或會員名稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
+    <table>
+        <thead>
+            <tr><th>狀態</th><th>遊戲名稱</th><th>租借人</th><th>預計歸還日</th><th>操作</th></tr>
+        </thead>
+        <tbody id="rental-list-tbody"></tbody>
+    </table>
+</div>
 
         <div id="page-bookings" class="page">
             <div class="page-header"><h2>訂位管理</h2></div>
@@ -251,6 +265,44 @@
             </form>
         </div>
     </div>
+
+<div id="create-rental-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>建立租借紀錄</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <form id="create-rental-form">
+            <input type="hidden" id="rental-game-id">
+            <div class="form-group">
+                <label>租借品項</label>
+                <input type="text" id="rental-game-name" readonly style="background-color: #e9ecef;">
+            </div>
+            <div class="form-group">
+                <label for="rental-user-search">搜尋租借會員 (LINE 名稱)</label>
+                <input type="text" id="rental-user-search" placeholder="請至少輸入 2 個字元...">
+                <select id="rental-user-select" style="margin-top: 10px; display: none;"></select>
+            </div>
+            <hr style="margin: 20px 0;">
+            <div class="form-group">
+                <label for="rental-due-date">預計歸還日期</label>
+                <input type="text" id="rental-due-date" required>
+            </div>
+             <div class="form-group">
+                <label for="rental-deposit">押金</label>
+                <input type="number" id="rental-deposit" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="rental-late-fee">逾期每日費用</label>
+                <input type="number" id="rental-late-fee" min="0" required>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="action-btn btn-cancel">取消</button>
+                <button type="submit" class="action-btn btn-save">下一步</button>
+            </div>
+        </form>
+    </div>
+</div>    
     
     <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>

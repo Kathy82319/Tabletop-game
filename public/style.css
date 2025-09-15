@@ -406,3 +406,57 @@ body {
     color: #dc3545; /* 紅色 */
     background-color: #fbebed;
 }
+
+/* =================================================================
+   ** 全新 ** 租借紀錄頁面樣式
+   ================================================================= */
+.rental-card {
+    display: flex;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+    overflow: hidden;
+    padding: 15px;
+    gap: 15px;
+    align-items: center;
+}
+.rental-game-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.rental-info {
+    flex-grow: 1;
+}
+.rental-game-title {
+    font-size: 1.2rem;
+    margin: 0 0 10px 0;
+}
+.rental-info p {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 4px 0;
+}
+.rental-status {
+    margin-top: 10px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    padding: 5px 10px;
+    border-radius: 15px;
+    display: inline-block;
+}
+.rental-status.rented {
+    background-color: #e3f2fd;
+    color: #1e88e5;
+}
+.rental-status.returned {
+    background-color: #e8f5e9;
+    color: #388e3c;
+}
+.rental-status.overdue {
+    background-color: #fbebed;
+    color: #dc3545;
+}
