@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const userSearchInput = document.getElementById('user-search-input');
     const editUserModal = document.getElementById('edit-user-modal');
     const editUserForm = document.getElementById('edit-user-form');
-    // 【修正】將 syncD1ToSheetBtn 的宣告加回來
     const syncD1ToSheetBtn = document.getElementById('sync-d1-to-sheet-btn');
     
     // 庫存管理
@@ -25,18 +24,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const createRentalModal = document.getElementById('create-rental-modal');
     const createRentalForm = document.getElementById('create-rental-form');
     
-    // 其他頁面元素
+    // 訂位管理
     const bookingListTbody = document.getElementById('booking-list-tbody');
+    
+    // 經驗紀錄
     const expHistoryTbody = document.getElementById('exp-history-tbody');
-    const newsListTbody = document.getElementById('news-list-tbody');
-    // ...
+    const expUserFilterInput = document.getElementById('exp-user-filter-input');
 
-    // 全域狀態變數
-    let allUsers = [], allGames = [], allRentals = [], allBookings = [], allExpHistory = [], allNews = [];
-    let classPerks = {};
-    let rentalFilters = { status: 'all', keyword: '' };
-    let selectedRentalUser = null;
-    let html5QrCode = null;
+    // 情報管理
+    const newsListTbody = document.getElementById('news-list-tbody');
+    const addNewsBtn = document.getElementById('add-news-btn');
+    const editNewsModal = document.getElementById('edit-news-modal');
+    const editNewsForm = document.getElementById('edit-news-form');
+    const modalNewsTitle = document.getElementById('modal-news-title');
+    const deleteNewsBtn = document.getElementById('delete-news-btn');
+    
+    // 店家資訊
+    const storeInfoForm = document.getElementById('store-info-form');
+
+    // 掃碼加點
+    const qrReaderElement = document.getElementById('qr-reader');
+    const scanResultSection = document.getElementById('scan-result');
+    const userIdDisplay = document.getElementById('user-id-display');
+    const reasonSelect = document.getElementById('reason-select');
+    const customReasonInput = document.getElementById('custom-reason-input');
+    const expInput = document.getElementById('exp-input');
+    const submitExpBtn = document.getElementById('submit-exp-btn');
+    const rescanBtn = document.getElementById('rescan-btn');
+    const scanStatusMessage = document.querySelector('#scan-status-container');
+
 
     // --- 全域狀態變數 ---
     let allUsers = [], allGames = [], allBookings = [], allNews = [], allExpHistory = [], allRentals = [];
@@ -89,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
         users.forEach(user => {
             const row = document.createElement('tr');
             row.dataset.userId = user.user_id;
-            // ** START: 關鍵修正 - 顯示職業 **
             row.innerHTML = `
                 <td style="text-align: left; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${user.line_display_name || 'N/A'}</td>
                 <td>${user.level}</td>
@@ -101,7 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="action-btn btn-sync" data-userid="${user.user_id}">同步</button>
                 </td>
             `;
-            // ** END: 關鍵修正 **
             userListTbody.appendChild(row);
         });
     }
@@ -115,7 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { console.error('獲取使用者列表失敗:', error); }
     }
 
-    // 按鈕的事件監聽器 (獨立區塊)
     if (syncD1ToSheetBtn) {
         syncD1ToSheetBtn.addEventListener('click', async () => {
             if (!confirm('確定要用目前資料庫 (D1) 的所有使用者資料，完整覆蓋 Google Sheet 上的「使用者列表」嗎？\n\n這個操作通常用於手動備份。')) return;
@@ -142,25 +155,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 搜尋框的事件監聽器 (獨立區塊，從上面移出來)
     userSearchInput.addEventListener('input', () => {
         const searchTerm = userSearchInput.value.toLowerCase().trim();
         const filteredUsers = searchTerm ? allUsers.filter(user => (user.line_display_name || '').toLowerCase().includes(searchTerm)) : allUsers;
         renderUserList(filteredUsers);
     });
 
- // ** START: 關鍵修正 - 全面重構編輯 Modal 邏輯 **
     function openEditUserModal(userId) {
         const user = allUsers.find(u => u.user_id === userId);
         if (!user) return;
 
-        // 填充基本資料
         document.getElementById('modal-user-title').textContent = `編輯：${user.line_display_name}`;
         document.getElementById('edit-user-id').value = user.user_id;
         document.getElementById('edit-level-input').value = user.level;
         document.getElementById('edit-exp-input').value = user.current_exp;
 
-        // 獲取所有表單元素
         const classSelect = document.getElementById('edit-class-select');
         const otherClassInput = document.getElementById('edit-class-other-input');
         const perkSelect = document.getElementById('edit-perk-select');
@@ -168,11 +177,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const tagSelect = document.getElementById('edit-tag-select');
         const otherTagInput = document.getElementById('edit-tag-other-input');
 
-        // --- 動態填充職業和福利下拉選單 ---
         classSelect.innerHTML = '';
         perkSelect.innerHTML = '';
         
-        // 根據 classPerks 物件建立選項
         for (const className in classPerks) {
             const classOption = document.createElement('option');
             classOption.value = className;
@@ -185,34 +192,28 @@ document.addEventListener('DOMContentLoaded', () => {
             perkSelect.appendChild(perkOption);
         }
 
-        // 為兩個下拉選單都加上 "其他" 選項
         classSelect.appendChild(new Option('其他 (自訂)', 'other'));
         perkSelect.appendChild(new Option('其他 (自訂)', 'other'));
 
-        // --- 設定表單的預設值 ---
-        
-        // 1. 設定職業 (Class)
-        if (classPerks[user.class]) { // 如果是標準職業
+        if (classPerks[user.class]) {
             classSelect.value = user.class;
             otherClassInput.style.display = 'none';
-        } else { // 如果是自訂或其他
+        } else {
             classSelect.value = 'other';
             otherClassInput.style.display = 'block';
             otherClassInput.value = user.class || '';
         }
 
-        // 2. 設定福利 (Perk)
         const standardPerks = Object.values(classPerks);
-        if (standardPerks.includes(user.perk)) { // 如果是標準福利
+        if (standardPerks.includes(user.perk)) {
             perkSelect.value = user.perk;
             otherPerkInput.style.display = 'none';
-        } else { // 如果是自訂福利
+        } else {
             perkSelect.value = 'other';
             otherPerkInput.style.display = 'block';
             otherPerkInput.value = user.perk || '';
         }
 
-        // 3. 設定標籤 (Tag) - 邏輯不變
         const standardTags = ["", "會員", "員工", "特殊"];
         if (user.tag && !standardTags.includes(user.tag)) {
             tagSelect.value = 'other';
@@ -227,7 +228,6 @@ document.addEventListener('DOMContentLoaded', () => {
         editUserModal.style.display = 'flex';
     }
 
-    // --- 設定下拉選單連動和 "其他" 輸入框的顯示邏輯 ---
     document.getElementById('edit-class-select').addEventListener('change', (e) => {
         const otherClassInput = document.getElementById('edit-class-other-input');
         const perkSelect = document.getElementById('edit-perk-select');
@@ -235,11 +235,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (e.target.value === 'other') {
             otherClassInput.style.display = 'block';
-            perkSelect.value = 'other'; // 選了自訂職業，福利也應該是自訂
+            perkSelect.value = 'other';
             otherPerkInput.style.display = 'block';
         } else {
             otherClassInput.style.display = 'none';
-            perkSelect.value = classPerks[e.target.value]; // 自動選擇對應的福利
+            perkSelect.value = classPerks[e.target.value];
             otherPerkInput.style.display = 'none';
         }
     });
@@ -255,20 +255,16 @@ document.addEventListener('DOMContentLoaded', () => {
     editUserModal.querySelector('.modal-close').addEventListener('click', () => editUserModal.style.display = 'none');
     editUserModal.querySelector('.btn-cancel').addEventListener('click', () => editUserModal.style.display = 'none');
 
-    // --- 更新表單提交邏輯 ---
     editUserForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const userId = document.getElementById('edit-user-id').value;
         
-        // 獲取職業值
         let newClass = document.getElementById('edit-class-select').value;
         if (newClass === 'other') newClass = document.getElementById('edit-class-other-input').value.trim();
 
-        // 獲取福利值
         let newPerk = document.getElementById('edit-perk-select').value;
         if (newPerk === 'other') newPerk = document.getElementById('edit-perk-other-input').value.trim();
         
-        // 獲取標籤值
         let newTag = document.getElementById('edit-tag-select').value;
         if (newTag === 'other') newTag = document.getElementById('edit-tag-other-input').value.trim();
 
@@ -278,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
             current_exp: document.getElementById('edit-exp-input').value,
             tag: newTag,
             user_class: newClass,
-            perk: newPerk // 新增 perk
+            perk: newPerk
         };
 
         try {
@@ -298,12 +294,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 user.perk = updatedData.perk;
             }
             
-            renderUserList(allUsers); // 直接渲染 allUsers 即可
+            renderUserList(allUsers);
             editUserModal.style.display = 'none';
 
         } catch (error) { alert(`錯誤：${error.message}`); }
     });
-    // ** END: 關鍵修正 **
 
     userListTbody.addEventListener('click', async (event) => {
         const target = event.target;
@@ -315,21 +310,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (target.classList.contains('btn-sync')) {
-            // ** START: 關鍵修正 - 加入強烈警告 **
             if (!confirm(`警告：此操作將使用 Google Sheet 的資料覆蓋此使用者 (${userId}) 在資料庫中的資料。\n\n僅在確認資料庫資料異常時使用。\n\n確定要繼續嗎？`)) return;
-            // ** END: 關鍵修正 **
             
             try {
                 target.textContent = '還原中...';
                 target.disabled = true;
-                const response = await fetch('/api/sync-user-from-sheet', { // API 端點不變
+                const response = await fetch('/api/sync-user-from-sheet', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId })
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.details || result.error || '還原失敗');
                 alert('還原成功！將重新整理列表資料。');
-                await fetchAllUsers(); // 重新獲取資料以更新畫面
+                await fetchAllUsers();
             } catch (error) {
                 alert(`錯誤：${error.message}`);
             } finally {
@@ -456,9 +449,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-// =================================================================
-// 桌遊租借模組
-// =================================================================
+    // =================================================================
+    // 桌遊租借模組
+    // =================================================================
     function applyRentalFiltersAndRender() {
         if (!allRentals) return;
         const keyword = rentalSearchInput.value.toLowerCase().trim();
@@ -667,6 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     flatpickr("#rental-due-date", { dateFormat: "Y-m-d", minDate: "today" });
+
     // =================================================================
     // 訂位管理模組
     // =================================================================
@@ -821,7 +815,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =================================================================
-    // ** 全新 ** 經驗紀錄模組
+    // 經驗紀錄模組
     // =================================================================
     async function initializeExpHistoryPage() {
         try {
