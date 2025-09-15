@@ -1,27 +1,32 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- 【模組名稱：全域變數與 DOM 宣告】 ---
-    // 【修正 #3】 重新整理並清除所有重複的宣告
+    // --- DOM 元素宣告 ---
     const mainNav = document.querySelector('.nav-tabs');
     const pages = document.querySelectorAll('.page');
-
-    // 顧客管理
+    const expHistoryTbody = document.getElementById('exp-history-tbody');
+    const expUserFilter = document.getElementById('exp-user-filter');
     const userListTbody = document.getElementById('user-list-tbody');
     const userSearchInput = document.getElementById('user-search-input');
     const editUserModal = document.getElementById('edit-user-modal');
     const editUserForm = document.getElementById('edit-user-form');
-    
+    const syncD1ToSheetBtn = document.getElementById('sync-d1-to-sheet-btn');
+
     // 庫存管理
     const gameListTbody = document.getElementById('game-list-tbody');
     const gameSearchInput = document.getElementById('game-search-input');
     const editGameModal = document.getElementById('edit-game-modal');
     const editGameForm = document.getElementById('edit-game-form');
+    const visibilityFilter = document.getElementById('visibility-filter');
 
-    // 租借管理
+    // 訂位管理
+    const bookingListTbody = document.getElementById('booking-list-tbody');
+
+    // **【新增】** 租借管理
     const rentalListTbody = document.getElementById('rental-list-tbody');
-    const rentalStatusFilter = document.getElementById('rental-status-filter');
-    const rentalSearchInput = document.getElementById('rental-search-input');
     const createRentalModal = document.getElementById('create-rental-modal');
     const createRentalForm = document.getElementById('create-rental-form');
+    const syncRentalsBtn = document.getElementById('sync-rentals-btn');
+    const rentalStatusFilter = document.getElementById('rental-status-filter');
+    const rentalSearchInput = document.getElementById('rental-search-input');
 
     // 情報管理
     const newsListTbody = document.getElementById('news-list-tbody');
@@ -46,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const scanStatusMessage = document.getElementById('scan-status-message');
 
     // --- 全域狀態變數 ---
-    let allUsers = [], allGames = [], allRentals = [], allBookings = [], allExpHistory = [], allNews = [];
+    let allUsers = [], allGames = [], allBookings = [], allNews = [], allExpHistory = [], allRentals = [];
     let classPerks = {};
     let gameFilters = { visibility: 'all' };
     let rentalFilters = { status: 'all', keyword: '' };
