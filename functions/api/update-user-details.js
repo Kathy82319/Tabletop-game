@@ -2,7 +2,7 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import * as jose from 'jose';
 
-// --- Google Sheets 工具函式 (保持不變) ---
+// --- Google Sheets 工具函式 ---
 async function getAccessToken(env) {
     // ... (此函式內容不變)
     const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY } = env;
@@ -21,29 +21,39 @@ async function getAccessToken(env) {
     return tokenData.access_token;
 }
 
+// ** START: 關鍵修正 - 強化 updateRowInSheet 函式 **
 async function updateRowInSheet(env, sheetName, matchColumn, matchValue, updateData) {
-    // ... (此函式內容不變)
     const { GOOGLE_SHEET_ID } = env;
     if (!GOOGLE_SHEET_ID) throw new Error('缺少 GOOGLE_SHEET_ID 環境變數。');
+
     const accessToken = await getAccessToken(env);
     const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
+    
     const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
     await doc.loadInfo();
+    
     const sheet = doc.sheetsByTitle[sheetName];
     if (!sheet) throw new Error(`在 Google Sheets 中找不到名為 "${sheetName}" 的工作表。`);
+
+    // 預先載入儲存格資料，這對後續的 .save() 很重要
+    await sheet.loadCells();
     const rows = await sheet.getRows();
     const rowToUpdate = rows.find(row => row.get(matchColumn) == matchValue);
+
     if (rowToUpdate) {
-        for (const key in updateData) {
-            rowToUpdate.set(key, updateData[key]);
-        }
+        console.log(`[背景任務] 找到要更新的列 (User: ${matchValue})，準備寫入新資料...`);
+        // 使用 .assign() 方法一次性更新所有欄位，比 .set() 更穩定
+        rowToUpdate.assign(updateData);
+        // 呼叫 save() 將變更寫回 Google Sheet
         await rowToUpdate.save();
+        console.log(`[背景任務] 成功更新 Google Sheet 中的使用者: ${matchValue}`);
     } else {
-        console.warn(`在工作表 "${sheetName}" 中找不到 ${matchColumn} 為 "${matchValue}" 的資料列，無法更新。`);
+        console.warn(`[背景任務] 在工作表 "${sheetName}" 中找不到 ${matchColumn} 為 "${matchValue}" 的資料列，無法更新。`);
     }
 }
-// --- 結束 Google Sheets 工具函式 ---
+// ** END: 關鍵修正 **
 
+// --- 主要 API 邏輯 (保持不變) ---
 export async function onRequest(context) {
   try {
     if (context.request.method !== 'POST') {
@@ -58,11 +68,7 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
-    // ================================================================
-    // 任務一：立即更新 D1 資料庫
-    // 這是主要的事實來源，供 LIFF App 使用
-    // ================================================================
-    console.log(`[任務一] 正在更新 D1 資料庫中的使用者: ${userId}`);
+    console.log(`[API] 正在更新 D1 資料庫中的使用者: ${userId}`);
     const stmt = db.prepare('UPDATE Users SET level = ?, current_exp = ?, tag = ?, class = ?, perk = ? WHERE user_id = ?');
     const result = await stmt.bind(Number(level) || 1, Number(current_exp) || 0, tag, user_class, perk, userId).run();
 
@@ -72,11 +78,7 @@ export async function onRequest(context) {
       });
     }
 
-    // ================================================================
-    // 任務二：在背景同步更新 Google Sheet
-    // 這確保了您的備份和下拉選單選項的來源也是最新的
-    // ================================================================
-    console.log(`[任務二] 已觸發背景任務，將更新 Google Sheet 中的使用者: ${userId}`);
+    console.log(`[API] 已觸發背景任務，將更新 Google Sheet 中的使用者: ${userId}`);
     const dataToSync = {
         level: level,
         current_exp: current_exp,
@@ -84,14 +86,13 @@ export async function onRequest(context) {
         class: user_class,
         perk: perk
     };
-
-    // context.waitUntil 會讓這個任務在背景執行，不會拖慢給使用者的回應速度
+    
     context.waitUntil(
         updateRowInSheet(context.env, '使用者列表', 'user_id', userId, dataToSync)
         .catch(err => console.error(`背景同步 Google Sheet 失敗 (使用者: ${userId}):`, err))
     );
 
-    return new Response(JSON.stringify({ success: true, message: '成功更新使用者資料！(D1 已更新，Google Sheet 已觸發背景同步)' }), {
+    return new Response(JSON.stringify({ success: true, message: '成功更新使用者資料！' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
