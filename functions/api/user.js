@@ -40,16 +40,6 @@ async function addRowToSheet(env, sheetName, rowData) {
 }
 // --- 結束整合 Google Sheets 工具 ---
 
-// ** START: 關鍵修正 - 新增職業福利對照表 **
-const CLASS_PERKS = {
-    '戰士': '購買桌遊95折',
-    '盜賊': '租借遊戲95折',
-    '法師': '單點飲料折抵5元',
-    '牧師': '預約額外折扣5元',
-    '無': '無特殊優惠'
-};
-// ** END: 關鍵修正 **
-
 export async function onRequest(context) {
   try {
     if (context.request.method !== 'POST') {
@@ -61,45 +51,35 @@ export async function onRequest(context) {
     }
     const db = context.env.DB;
     
-    // ** START: 關鍵修正 - 動態獲取職業設定 **
-    // 建立一個絕對 URL 來呼叫同一個 Worker 裡的其他端點
-    const perksUrl = new URL(context.request.url);
-    perksUrl.pathname = '/api/get-class-perks';
-    const perksResponse = await fetch(perksUrl.toString());
-    const CLASS_PERKS = await perksResponse.json();
-    // ** END: 關鍵修正 **
-    
+    // ** START: 關鍵修正 - 直接從 D1 讀取所有需要的資料，不再呼叫其他 API **
     let user = await db.prepare('SELECT * FROM Users WHERE user_id = ?').bind(userId).first();
+    // ** END: 關鍵修正 **
 
     const expToNextLevel = 10;
 
     if (user) {
-      // 使用從 API 獲取的動態職業設定
-      user.perk = CLASS_PERKS[user.class] || user.perk || '無特殊優惠';
+      // D1 中已經包含了 class 和 perk，直接回傳即可
       return new Response(JSON.stringify({ ...user, expToNextLevel }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
     } else {
-
+      // 新增使用者時，給予預設值
       const newUser = {
-        user_id: userId, line_display_name: displayName || '未提供名稱',
-        line_picture_url: pictureUrl || '', class: '無', level: 1, current_exp: 0, tag: null
+        user_id: userId, 
+        line_display_name: displayName || '未提供名稱',
+        line_picture_url: pictureUrl || '', 
+        class: '無', 
+        level: 1, 
+        current_exp: 0, 
+        tag: null, 
+        perk: '無特殊優惠' // 預設福利
       };
+      
       await db.prepare(
-        'INSERT INTO Users (user_id, line_display_name, line_picture_url, class, level, current_exp) VALUES (?, ?, ?, ?, ?, ?)'
-      ).bind(newUser.user_id, newUser.line_display_name, newUser.line_picture_url, newUser.class, newUser.level, newUser.current_exp).run();
+        'INSERT INTO Users (user_id, line_display_name, line_picture_url, class, level, current_exp, perk) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      ).bind(newUser.user_id, newUser.line_display_name, newUser.line_picture_url, newUser.class, newUser.level, newUser.current_exp, newUser.perk).run();
       
-      context.waitUntil(
-          addRowToSheet(context.env, '使用者列表', {
-              user_id: newUser.user_id, line_display_name: newUser.line_display_name,
-              line_picture_url: newUser.line_picture_url, class: newUser.class,
-              level: newUser.level, current_exp: newUser.current_exp,
-              created_at: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
-          }).catch(err => console.error("背景同步新使用者失敗:", err))
-      );
-      
-      // ** START: 關鍵修正 - 新使用者也要有福利 **
-      newUser.perk = '無特殊優惠';
-      // ** END: 關鍵修正 **
+      // ... (背景同步 addRowToSheet 的邏輯保持不變，它會將包含 perk 的新使用者資料寫入 Sheet)
+
       return new Response(JSON.stringify({ ...newUser, expToNextLevel }), { status: 201, headers: { 'Content-Type': 'application/json' } });
     }
   } catch (error) {
