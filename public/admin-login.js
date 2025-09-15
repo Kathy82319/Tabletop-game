@@ -856,7 +856,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const expUserFilterInput = document.getElementById('exp-user-filter-input');
     if (expUserFilterInput) {
         expUserFilterInput.addEventListener('input', () => {
             const searchTerm = expUserFilterInput.value.toLowerCase().trim();
