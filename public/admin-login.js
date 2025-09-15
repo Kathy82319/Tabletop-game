@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editUserModal = document.getElementById('edit-user-modal');
     const editUserForm = document.getElementById('edit-user-form');
     const syncD1ToSheetBtn = document.getElementById('sync-d1-to-sheet-btn');
-    const editGameModal = document.getElementById('edit-game-modal');
+
     const editGameForm = document.getElementById('edit-game-form');
 
     // 庫存管理
