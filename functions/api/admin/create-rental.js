@@ -21,21 +21,7 @@ async function getAccessToken(env) {
     return tokenData.access_token;
 }
 
-async function addRowToSheet(env, sheetName, rowData) {
-    if (!sheetName) {
-        console.error('背景同步失敗：缺少工作表名稱的環境變數。');
-        return;
-    }
-    const accessToken = await getAccessToken(env);
-    const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
-    const doc = new GoogleSpreadsheet(env.GOOGLE_SHEET_ID, simpleAuth);
-    await doc.loadInfo();
-    const sheet = doc.sheetsByTitle[sheetName];
-    if (!sheet) throw new Error(`在 Google Sheets 中找不到名為 "${sheetName}" 的工作表。`);
-    await sheet.addRow(rowData);
-}
 
-async function getAccessToken(env) { /* ... */ }
 async function addRowToSheet(env, sheetName, rowData) {
     const { GOOGLE_SHEET_ID } = env;
     if (!GOOGLE_SHEET_ID) throw new Error('缺少 GOOGLE_SHEET_ID 環境變數。');
