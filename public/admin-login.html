@@ -98,34 +98,40 @@
                 <button id="sync-games-btn" class="action-btn" style="background-color: #28a745;">同步至資料庫</button>
             </div>
             <input type="text" id="game-search-input" placeholder="依桌遊名稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
-            <div class="filter-bar">
-                <div id="visibility-filter" class="filter-group">
-                    <span>上架狀態：</span>
-            <button class="active" data-filter="all">全部</button>
-            <button data-filter="rented">租借中</button>
-            <button data-filter="returned">已歸還</button>
-                </div>
-            </div>
             <table>
                 <thead>
-                    <tr><th>遊戲</th><th>庫存</th><th>上架</th><th>操作</th></tr>
+                    <tr>
+                        <th>遊戲</th>
+                        <th>可租借庫存</th>
+                        <th>上架</th>
+                        <th>操作</th>
+                    </tr>
                 </thead>
                 <tbody id="game-list-tbody"></tbody>
             </table>
         </div>
 
-<div id="page-rentals" class="page">
-    <div class="page-header">
-        <h2>桌遊租借總表</h2>
-    </div>
-    <input type="text" id="rental-search-input" placeholder="依遊戲或會員名稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
-    <table>
-        <thead>
-            <tr><th>狀態</th><th>遊戲名稱</th><th>租借人</th><th>預計歸還日</th><th>操作</th></tr>
-        </thead>
-        <tbody id="rental-list-tbody"></tbody>
-    </table>
-</div>
+        <div id="page-rentals" class="page">
+            <div class="page-header">
+                <h2>桌遊租借總表</h2>
+                <button id="sync-rentals-btn" class="action-btn" style="background-color: #28a745;">同步至 Google Sheet</button>
+            </div>
+            <div class="filter-bar">
+                <div id="rental-status-filter" class="filter-group">
+                    <span>狀態：</span>
+                    <button class="active" data-filter="all">全部</button>
+                    <button data-filter="rented">租借中</button>
+                    <button data-filter="returned">已歸還</button>
+                </div>
+            </div>
+            <input type="text" id="rental-search-input" placeholder="依遊戲或會員名稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
+            <table>
+                <thead>
+                    <tr><th>狀態</th><th>遊戲名稱</th><th>租借人</th><th>預計歸還日</th><th>操作</th></tr>
+                </thead>
+                <tbody id="rental-list-tbody"></tbody>
+            </table>
+        </div>
 
         <div id="page-bookings" class="page">
             <div class="page-header"><h2>訂位管理</h2></div>

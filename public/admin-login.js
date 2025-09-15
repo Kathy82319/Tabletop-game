@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 庫存管理
     const gameListTbody = document.getElementById('game-list-tbody');
     const gameSearchInput = document.getElementById('game-search-input');
-    const visibilityFilter = document.getElementById('visibility-filter');
+    const editGameModal = document.getElementById('edit-game-modal');
 
     // 訂位管理
     const bookingListTbody = document.getElementById('booking-list-tbody');
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const scanStatusMessage = document.getElementById('scan-status-message');
 
     // --- 全域狀態變數 ---
-    let allUsers = [], allGames = [], allBookings = [], allNews = [], allExpHistory = [], allRentals = [];
+    let allUsers = [], allGames = [], allRentals = [], allBookings = [], allExpHistory = [], allNews = [];
     let classPerks = {};
     let gameFilters = { visibility: 'all' };
     let rentalFilters = { status: 'all', keyword: '' };
@@ -358,9 +358,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function applyGameFiltersAndRender() {
         if (!allGames) return;
         const searchTerm = gameSearchInput.value.toLowerCase().trim();
+        // 移除 is_visible 的篩選
         let filteredGames = allGames.filter(game => 
-            (game.name || '').toLowerCase().includes(searchTerm) &&
-            (gameFilters.visibility === 'all' || String(game.is_visible).toUpperCase() === gameFilters.visibility)
+            (game.name || '').toLowerCase().includes(searchTerm)
         );
         renderGameList(filteredGames);
     }
@@ -371,7 +371,6 @@ document.addEventListener('DOMContentLoaded', () => {
         games.forEach(game => {
             const row = document.createElement('tr');
             const isVisible = game.is_visible === 1 || String(game.is_visible).toUpperCase() === 'TRUE';
-            
             row.innerHTML = `
                 <td class="compound-cell">
                     <div class="main-info">${game.name}</div>
@@ -392,13 +391,34 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchAllGames() {
         try {
             const response = await fetch('/api/get-sheet-boardgames');
-            if (!response.ok) throw new Error('無法獲取桌遊列表');
+            if (!response.ok) throw new Error('從 Sheet 獲取桌遊列表失敗');
             allGames = await response.json();
             applyGameFiltersAndRender();
-        } catch (error) { console.error('獲取桌遊列表失敗:', error); }
+        } catch (error) { 
+            console.error('獲取桌遊列表失敗:', error);
+            if(gameListTbody) gameListTbody.innerHTML = `<tr><td colspan="4" style="color: red;">讀取資料失敗</td></tr>`;
+        }
     }
 
-    gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
+    // 【修正 #3】 確保事件監聽器只被建立一次
+    if (gameSearchInput) {
+        gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
+    }
+    
+    if (gameListTbody) {
+        gameListTbody.addEventListener('click', (e) => {
+            const target = e.target;
+            const gameId = target.dataset.gameid;
+            if (!gameId) return;
+
+            if (target.classList.contains('btn-rent')) {
+                openCreateRentalModal(gameId);
+            }
+            if (target.classList.contains('btn-edit-game')) {
+                openEditGameModal(gameId);
+            }
+        });
+    }
 
 // 輔助函式，用於設定篩選按鈕的通用邏輯
 function setupFilterButtons(filterContainer, filterKey) {
@@ -482,13 +502,13 @@ function setupFilterButtons(filterContainer, filterKey) {
 // =================================================================
     function applyRentalFiltersAndRender() {
         if (!allRentals) return;
-        const keyword = rentalFilters.keyword.toLowerCase().trim();
+        const keyword = rentalSearchInput.value.toLowerCase().trim();
         let filteredRentals = allRentals.filter(rental => {
+            // **【修正 #2】** 篩選邏輯，rented 代表未歸還
             const statusMatch = rentalFilters.status === 'all' || rental.status === rentalFilters.status;
             const keywordMatch = !keyword || 
                                  (rental.game_name || '').toLowerCase().includes(keyword) ||
-                                 (rental.line_display_name || '').toLowerCase().includes(keyword) ||
-                                 (rental.nickname || '').toLowerCase().includes(keyword);
+                                 (rental.nickname || rental.line_display_name || '').toLowerCase().includes(keyword);
             return statusMatch && keywordMatch;
         });
         renderRentalList(filteredRentals);
@@ -526,6 +546,33 @@ function setupFilterButtons(filterContainer, filterKey) {
             allRentals = await response.json();
             applyRentalFiltersAndRender();
         } catch (error) { console.error('獲取租借列表失敗:', error); }
+    }
+
+        // 【修正 #3】 確保事件監聽器只被建立一次
+    if (rentalStatusFilter) {
+        rentalStatusFilter.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                rentalStatusFilter.querySelector('.active').classList.remove('active');
+                e.target.classList.add('active');
+                rentalFilters.status = e.target.dataset.filter;
+                applyRentalFiltersAndRender();
+            }
+        });
+    }
+
+    if(rentalSearchInput) {
+        rentalSearchInput.addEventListener('input', () => {
+            rentalFilters.keyword = rentalSearchInput.value;
+            applyRentalFiltersAndRender();
+        });
+    }
+
+    if (rentalListTbody) {
+        rentalListTbody.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('btn-return')) {
+                // ... (歸還按鈕的邏輯不變) ...
+            }
+        });
     }
 
     function openCreateRentalModal(gameId) {
