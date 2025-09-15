@@ -603,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         createRentalModal.querySelector('.modal-close').addEventListener('click', () => createRentalModal.style.display = 'none');
-        createRentalModal.querySelector('.btn-cancel').addEventListener('click', () => createRentalModal.style.display = 'none');
+
 
         createRentalForm.addEventListener('submit', async (e) => {
             e.preventDefault();
