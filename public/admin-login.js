@@ -140,6 +140,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // 搜尋框的事件監聽器 (獨立區塊，從上面移出來)
+    userSearchInput.addEventListener('input', () => {
+        const searchTerm = userSearchInput.value.toLowerCase().trim();
+        const filteredUsers = searchTerm ? allUsers.filter(user => (user.line_display_name || '').toLowerCase().includes(searchTerm)) : allUsers;
+        renderUserList(filteredUsers);
+    });
+
  // ** START: 關鍵修正 - 全面重構編輯 Modal 邏輯 **
     function openEditUserModal(userId) {
         const user = allUsers.find(u => u.user_id === userId);
