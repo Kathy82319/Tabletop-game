@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', () => {
     
     // --- 【模組名稱：全域變數與 DOM 宣告】 ---
@@ -17,7 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameSearchInput = document.getElementById('game-search-input');
     const editGameModal = document.getElementById('edit-game-modal');
     const editGameForm = document.getElementById('edit-game-form');
-
+    const syncGamesBtn = document.getElementById('sync-games-btn');
+    
     // 租借管理
     const rentalListTbody = document.getElementById('rental-list-tbody');
     const rentalStatusFilter = document.getElementById('rental-status-filter');
@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pageId === 'users' && allUsers.length === 0) fetchAllUsers();
         if (pageId === 'inventory') fetchAllGames();
         if (pageId === 'bookings' && allBookings.length === 0) fetchAllBookings();
-        if (pageId === 'exp-history' && allExpHistory.length === 0) initializeExpHistoryPage();
+        if (pageId === 'exp-history' && allExpHistory.length === 0) fetchAllExpHistory();
         if (pageId === 'scan') startScanner();
         if (pageId === 'news' && allNews.length === 0) fetchAllNews();
         if (pageId === 'store-info') fetchStoreInfo();
@@ -156,11 +156,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    userSearchInput.addEventListener('input', () => {
-        const searchTerm = userSearchInput.value.toLowerCase().trim();
-        const filteredUsers = searchTerm ? allUsers.filter(user => (user.line_display_name || '').toLowerCase().includes(searchTerm)) : allUsers;
-        renderUserList(filteredUsers);
-    });
+    if(userSearchInput){
+        userSearchInput.addEventListener('input', () => {
+            const searchTerm = userSearchInput.value.toLowerCase().trim();
+            const filteredUsers = searchTerm ? allUsers.filter(user => (user.line_display_name || '').toLowerCase().includes(searchTerm)) : allUsers;
+            renderUserList(filteredUsers);
+        });
+    }
 
     function openEditUserModal(userId) {
         const user = allUsers.find(u => u.user_id === userId);
@@ -229,115 +231,127 @@ document.addEventListener('DOMContentLoaded', () => {
         editUserModal.style.display = 'flex';
     }
 
-    document.getElementById('edit-class-select').addEventListener('change', (e) => {
-        const otherClassInput = document.getElementById('edit-class-other-input');
-        const perkSelect = document.getElementById('edit-perk-select');
-        const otherPerkInput = document.getElementById('edit-perk-other-input');
-        
-        if (e.target.value === 'other') {
-            otherClassInput.style.display = 'block';
-            perkSelect.value = 'other';
-            otherPerkInput.style.display = 'block';
-        } else {
-            otherClassInput.style.display = 'none';
-            perkSelect.value = classPerks[e.target.value];
-            otherPerkInput.style.display = 'none';
-        }
-    });
-
-    document.getElementById('edit-perk-select').addEventListener('change', (e) => {
-        document.getElementById('edit-perk-other-input').style.display = (e.target.value === 'other') ? 'block' : 'none';
-    });
-    
-    document.getElementById('edit-tag-select').addEventListener('change', (e) => {
-        document.getElementById('edit-tag-other-input').style.display = (e.target.value === 'other') ? 'block' : 'none';
-    });
-
-    editUserModal.querySelector('.modal-close').addEventListener('click', () => editUserModal.style.display = 'none');
-    editUserModal.querySelector('.btn-cancel').addEventListener('click', () => editUserModal.style.display = 'none');
-
-    editUserForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const userId = document.getElementById('edit-user-id').value;
-        
-        let newClass = document.getElementById('edit-class-select').value;
-        if (newClass === 'other') newClass = document.getElementById('edit-class-other-input').value.trim();
-
-        let newPerk = document.getElementById('edit-perk-select').value;
-        if (newPerk === 'other') newPerk = document.getElementById('edit-perk-other-input').value.trim();
-        
-        let newTag = document.getElementById('edit-tag-select').value;
-        if (newTag === 'other') newTag = document.getElementById('edit-tag-other-input').value.trim();
-
-        const updatedData = {
-            userId: userId,
-            level: document.getElementById('edit-level-input').value,
-            current_exp: document.getElementById('edit-exp-input').value,
-            tag: newTag,
-            user_class: newClass,
-            perk: newPerk
-        };
-
-        try {
-            const response = await fetch('/api/update-user-details', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedData)
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || '更新失敗');
+    if(document.getElementById('edit-class-select')) {
+        document.getElementById('edit-class-select').addEventListener('change', (e) => {
+            const otherClassInput = document.getElementById('edit-class-other-input');
+            const perkSelect = document.getElementById('edit-perk-select');
+            const otherPerkInput = document.getElementById('edit-perk-other-input');
             
-            const user = allUsers.find(u => u.user_id === userId);
-            if (user) {
-                user.level = updatedData.level;
-                user.current_exp = updatedData.current_exp;
-                user.tag = updatedData.tag;
-                user.class = updatedData.user_class;
-                user.perk = updatedData.perk;
+            if (e.target.value === 'other') {
+                otherClassInput.style.display = 'block';
+                perkSelect.value = 'other';
+                otherPerkInput.style.display = 'block';
+            } else {
+                otherClassInput.style.display = 'none';
+                perkSelect.value = classPerks[e.target.value];
+                otherPerkInput.style.display = 'none';
             }
-            
-            renderUserList(allUsers);
-            editUserModal.style.display = 'none';
+        });
+    }
+    
+    if(document.getElementById('edit-perk-select')){
+        document.getElementById('edit-perk-select').addEventListener('change', (e) => {
+            document.getElementById('edit-perk-other-input').style.display = (e.target.value === 'other') ? 'block' : 'none';
+        });
+    }
 
-        } catch (error) { alert(`錯誤：${error.message}`); }
-    });
+    if(document.getElementById('edit-tag-select')){
+        document.getElementById('edit-tag-select').addEventListener('change', (e) => {
+            document.getElementById('edit-tag-other-input').style.display = (e.target.value === 'other') ? 'block' : 'none';
+        });
+    }
 
-    userListTbody.addEventListener('click', async (event) => {
-        const target = event.target;
-        const userId = target.dataset.userid;
-        if (!userId) return;
-        
-        if (target.classList.contains('btn-edit')) {
-            openEditUserModal(userId);
-        }
-        
-        if (target.classList.contains('btn-sync')) {
-            if (!confirm(`警告：此操作將使用 Google Sheet 的資料覆蓋此使用者 (${userId}) 在資料庫中的資料。\n\n僅在確認資料庫資料異常時使用。\n\n確定要繼續嗎？`)) return;
+    if(editUserModal){
+        editUserModal.querySelector('.modal-close').addEventListener('click', () => editUserModal.style.display = 'none');
+        editUserModal.querySelector('.btn-cancel').addEventListener('click', () => editUserModal.style.display = 'none');
+    }
+
+    if(editUserForm) {
+        editUserForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userId = document.getElementById('edit-user-id').value;
             
+            let newClass = document.getElementById('edit-class-select').value;
+            if (newClass === 'other') newClass = document.getElementById('edit-class-other-input').value.trim();
+
+            let newPerk = document.getElementById('edit-perk-select').value;
+            if (newPerk === 'other') newPerk = document.getElementById('edit-perk-other-input').value.trim();
+            
+            let newTag = document.getElementById('edit-tag-select').value;
+            if (newTag === 'other') newTag = document.getElementById('edit-tag-other-input').value.trim();
+
+            const updatedData = {
+                userId: userId,
+                level: document.getElementById('edit-level-input').value,
+                current_exp: document.getElementById('edit-exp-input').value,
+                tag: newTag,
+                user_class: newClass,
+                perk: newPerk
+            };
+
             try {
-                target.textContent = '還原中...';
-                target.disabled = true;
-                const response = await fetch('/api/sync-user-from-sheet', {
+                const response = await fetch('/api/update-user-details', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId })
+                    body: JSON.stringify(updatedData)
                 });
                 const result = await response.json();
-                if (!response.ok) throw new Error(result.details || result.error || '還原失敗');
-                alert('還原成功！將重新整理列表資料。');
-                await fetchAllUsers();
-            } catch (error) {
-                alert(`錯誤：${error.message}`);
-            } finally {
-                target.textContent = '同步';
-                target.disabled = false;
+                if (!response.ok) throw new Error(result.error || '更新失敗');
+                
+                const user = allUsers.find(u => u.user_id === userId);
+                if (user) {
+                    user.level = updatedData.level;
+                    user.current_exp = updatedData.current_exp;
+                    user.tag = updatedData.tag;
+                    user.class = updatedData.user_class;
+                    user.perk = updatedData.perk;
+                }
+                
+                renderUserList(allUsers);
+                editUserModal.style.display = 'none';
+
+            } catch (error) { alert(`錯誤：${error.message}`); }
+        });
+    }
+
+    if(userListTbody) {
+        userListTbody.addEventListener('click', async (event) => {
+            const target = event.target;
+            const userId = target.dataset.userid;
+            if (!userId) return;
+            
+            if (target.classList.contains('btn-edit')) {
+                openEditUserModal(userId);
             }
-        }
-    });
+            
+            if (target.classList.contains('btn-sync')) {
+                if (!confirm(`警告：此操作將使用 Google Sheet 的資料覆蓋此使用者 (${userId}) 在資料庫中的資料。\n\n僅在確認資料庫資料異常時使用。\n\n確定要繼續嗎？`)) return;
+                
+                try {
+                    target.textContent = '還原中...';
+                    target.disabled = true;
+                    const response = await fetch('/api/sync-user-from-sheet', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId })
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.details || result.error || '還原失敗');
+                    alert('還原成功！將重新整理列表資料。');
+                    await fetchAllUsers();
+                } catch (error) {
+                    alert(`錯誤：${error.message}`);
+                } finally {
+                    target.textContent = '同步';
+                    target.disabled = false;
+                }
+            }
+        });
+    }
 
     // =================================================================
     // 庫存管理模組
     // =================================================================
     function applyGameFiltersAndRender() {
-        if (!allGames) return;
+        if (!allGames || !gameSearchInput) return;
         const searchTerm = gameSearchInput.value.toLowerCase().trim();
         const filteredGames = searchTerm
             ? allGames.filter(game => (game.name || '').toLowerCase().includes(searchTerm))
@@ -383,6 +397,29 @@ document.addEventListener('DOMContentLoaded', () => {
         gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
     }
     
+    if (syncGamesBtn) {
+        syncGamesBtn.addEventListener('click', async () => {
+            if (!confirm('確定要從 Google Sheet 同步所有桌遊資料到資料庫嗎？\n\n這將會用 Sheet 上的資料覆蓋現有資料。')) return;
+
+            try {
+                syncGamesBtn.textContent = '同步中...';
+                syncGamesBtn.disabled = true;
+                const response = await fetch('/api/get-boardgames', { method: 'POST' });
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.details || '同步失敗');
+                }
+                alert(result.message || '同步成功！');
+                await fetchAllGames();
+            } catch (error) {
+                alert(`錯誤：${error.message}`);
+            } finally {
+                syncGamesBtn.textContent = '同步至資料庫';
+                syncGamesBtn.disabled = false;
+            }
+        });
+    }
+
     if (gameListTbody) {
         gameListTbody.addEventListener('click', (e) => {
             const target = e.target;
@@ -402,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const game = allGames.find(g => g.game_id == gameId);
         if (!game) return alert('找不到遊戲資料');
 
-        editGameForm.reset();
+        if(editGameForm) editGameForm.reset();
         document.getElementById('modal-game-title').textContent = `編輯：${game.name}`;
         document.getElementById('edit-game-id').value = game.game_id;
         document.getElementById('edit-for-rent-stock').value = game.for_rent_stock || 0;
@@ -410,54 +447,62 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-rent-price').value = game.rent_price || 0;
         document.getElementById('edit-is-visible').checked = game.is_visible === 1 || String(game.is_visible).toUpperCase() === 'TRUE';
         
-        editGameModal.style.display = 'flex';
+        if(editGameModal) editGameModal.style.display = 'flex';
     }
 
     if(editGameModal) {
         editGameModal.querySelector('.modal-close').addEventListener('click', () => editGameModal.style.display = 'none');
         editGameModal.querySelector('.btn-cancel').addEventListener('click', () => editGameModal.style.display = 'none');
 
-        editGameForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const gameId = document.getElementById('edit-game-id').value;
-            const updatedData = {
-                gameId: gameId,
-                for_rent_stock: document.getElementById('edit-for-rent-stock').value,
-                sale_price: document.getElementById('edit-sale-price').value,
-                rent_price: document.getElementById('edit-rent-price').value,
-                is_visible: document.getElementById('edit-is-visible').checked
-            };
-            try {
-                const response = await fetch('/api/admin/update-boardgame-details', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updatedData)
-                });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error || '更新失敗');
-                
-                const game = allGames.find(g => g.game_id === gameId);
-                if (game) {
-                    Object.assign(game, updatedData, { is_visible: updatedData.is_visible ? 1 : 0 });
+        if(editGameForm) {
+            editGameForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const gameId = document.getElementById('edit-game-id').value;
+                const updatedData = {
+                    gameId: gameId,
+                    for_rent_stock: document.getElementById('edit-for-rent-stock').value,
+                    sale_price: document.getElementById('edit-sale-price').value,
+                    rent_price: document.getElementById('edit-rent-price').value,
+                    is_visible: document.getElementById('edit-is-visible').checked
+                };
+                try {
+                    const response = await fetch('/api/admin/update-boardgame-details', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedData)
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error || '更新失敗');
+                    
+                    const game = allGames.find(g => g.game_id === gameId);
+                    if (game) {
+                        Object.assign(game, updatedData, { is_visible: updatedData.is_visible ? 1 : 0 });
+                    }
+                    
+                    applyGameFiltersAndRender();
+                    editGameModal.style.display = 'none';
+                    alert('更新成功！');
+                } catch (error) {
+                    alert(`錯誤：${error.message}`);
                 }
-                
-                applyGameFiltersAndRender();
-                editGameModal.style.display = 'none';
-                alert('更新成功！');
-            } catch (error) {
-                alert(`錯誤：${error.message}`);
-            }
-        });
+            });
+        }
     }
 
     // =================================================================
     // 桌遊租借模組
     // =================================================================
     function applyRentalFiltersAndRender() {
-        if (!allRentals) return;
+        if (!allRentals || !rentalSearchInput) return;
         const keyword = rentalSearchInput.value.toLowerCase().trim();
+        let rentalStatus = 'all';
+        if(rentalStatusFilter) {
+            const activeFilter = rentalStatusFilter.querySelector('.active');
+            if(activeFilter) rentalStatus = activeFilter.dataset.filter;
+        }
+
         let filteredRentals = allRentals.filter(rental => {
-            const statusMatch = rentalFilters.status === 'all' || rental.status === rentalFilters.status;
+            const statusMatch = rentalStatus === 'all' || rental.status === rentalStatus;
             const keywordMatch = !keyword || 
                                  (rental.game_name || '').toLowerCase().includes(keyword) ||
                                  (rental.nickname || rental.line_display_name || '').toLowerCase().includes(keyword);
@@ -503,19 +548,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (rentalStatusFilter) {
         rentalStatusFilter.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
-                rentalStatusFilter.querySelector('.active').classList.remove('active');
+                const currentActive = rentalStatusFilter.querySelector('.active');
+                if(currentActive) currentActive.classList.remove('active');
                 e.target.classList.add('active');
-                rentalFilters.status = e.target.dataset.filter;
                 applyRentalFiltersAndRender();
             }
         });
     }
 
     if(rentalSearchInput) {
-        rentalSearchInput.addEventListener('input', () => {
-            rentalFilters.keyword = rentalSearchInput.value;
-            applyRentalFiltersAndRender();
-        });
+        rentalSearchInput.addEventListener('input', applyRentalFiltersAndRender);
     }
 
     if (rentalListTbody) {
@@ -537,7 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         alert('歸還成功！');
                         
                         const returnedGame = allGames.find(g => g.game_id === rental.game_id);
-                        if(returnedGame) returnedGame.for_rent_stock++;
+                        if(returnedGame) returnedGame.for_rent_stock = Number(returnedGame.for_rent_stock) + 1;
                         
                         rental.status = 'returned';
                         applyRentalFiltersAndRender();
@@ -553,9 +595,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function openCreateRentalModal(gameId) {
         const game = allGames.find(g => g.game_id == gameId);
         if (!game) { alert('找不到遊戲資料！'); return; }
-        createRentalForm.reset();
+        if (createRentalForm) createRentalForm.reset();
         selectedRentalUser = null;
-        document.getElementById('rental-user-select').style.display = 'none';
+        
+        const userSelect = document.getElementById('rental-user-select');
+        if(userSelect) userSelect.style.display = 'none';
+
         document.getElementById('rental-game-id').value = game.game_id;
         document.getElementById('rental-game-name').value = game.name;
         document.getElementById('rental-deposit').value = game.deposit || 0;
@@ -565,101 +610,115 @@ document.addEventListener('DOMContentLoaded', () => {
         today.setDate(today.getDate() + 3);
         document.getElementById('rental-due-date').value = today.toISOString().split('T')[0];
 
-        createRentalModal.style.display = 'flex';
+        if(createRentalModal) createRentalModal.style.display = 'flex';
     }
-
+    
     if(createRentalModal) {
         const rentalUserSearch = document.getElementById('rental-user-search');
         const rentalUserSelect = document.getElementById('rental-user-select');
 
-        rentalUserSearch.addEventListener('input', () => {
-            const searchTerm = rentalUserSearch.value.toLowerCase().trim();
-            if (searchTerm.length < 2) {
-                rentalUserSelect.style.display = 'none';
-                return;
-            }
-            const filteredUsers = allUsers.filter(user => 
-                (user.line_display_name || '').toLowerCase().includes(searchTerm) ||
-                (user.nickname || '').toLowerCase().includes(searchTerm) ||
-                (user.user_id || '').toLowerCase().includes(searchTerm)
-            );
-            
-            rentalUserSelect.innerHTML = '<option value="">-- 請選擇會員 --</option>';
-            filteredUsers.forEach(user => {
-                const option = document.createElement('option');
-                option.value = user.user_id;
-                const displayName = user.nickname || user.line_display_name;
-                option.textContent = `${displayName} (${user.user_id.substring(0, 10)}...)`;
-                rentalUserSelect.appendChild(option);
-            });
-            rentalUserSelect.style.display = 'block';
-        });
-
-        rentalUserSelect.addEventListener('change', () => {
-            selectedRentalUser = allUsers.find(u => u.user_id === rentalUserSelect.value);
-            if (selectedRentalUser) {
-                document.getElementById('rental-contact-name').value = selectedRentalUser.nickname || selectedRentalUser.line_display_name || '';
-                document.getElementById('rental-contact-phone').value = selectedRentalUser.phone || '';
-            }
-        });
-
         createRentalModal.querySelector('.modal-close').addEventListener('click', () => createRentalModal.style.display = 'none');
-
-
-        createRentalForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!selectedRentalUser) {
-                alert('請務必搜尋並選擇一位租借會員！');
-                return;
-            }
-
-            const rentalData = {
-                userId: selectedRentalUser.user_id,
-                gameId: document.getElementById('rental-game-id').value,
-                dueDate: document.getElementById('rental-due-date').value,
-                deposit: Number(document.getElementById('rental-deposit').value),
-                lateFeePerDay: Number(document.getElementById('rental-late-fee').value),
-                name: document.getElementById('rental-contact-name').value,
-                phone: document.getElementById('rental-contact-phone').value
-            };
-
-            if (!rentalData.name || !rentalData.phone) {
-                alert('租借人姓名與電話為必填欄位！');
-                return;
-            }
-
-            const confirmationMessage = `請確認租借資訊：\n\n` +
-                `會員：${selectedRentalUser.nickname || selectedRentalUser.line_display_name}\n` +
-                `遊戲：${document.getElementById('rental-game-name').value}\n` +
-                `租借人：${rentalData.name}\n` +
-                `電話：${rentalData.phone}\n` +
-                `歸還日：${rentalData.dueDate}`;
-
-            if (!confirm(confirmationMessage)) return;
-            
-            try {
-                const response = await fetch('/api/admin/create-rental', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(rentalData)
-                });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error || '建立失敗');
-                alert('租借成功！');
-                createRentalModal.style.display = 'none';
+        createRentalModal.querySelector('.btn-cancel').addEventListener('click', () => createRentalModal.style.display = 'none');
+        
+        if (rentalUserSearch) {
+            rentalUserSearch.addEventListener('input', () => {
+                const searchTerm = rentalUserSearch.value.toLowerCase().trim();
+                if (searchTerm.length < 2) {
+                    if(rentalUserSelect) rentalUserSelect.style.display = 'none';
+                    return;
+                }
+                const filteredUsers = allUsers.filter(user => 
+                    (user.line_display_name || '').toLowerCase().includes(searchTerm) ||
+                    (user.nickname || '').toLowerCase().includes(searchTerm) ||
+                    (user.user_id || '').toLowerCase().includes(searchTerm)
+                );
                 
-                const rentedGame = allGames.find(g => g.game_id === rentalData.gameId);
-                if(rentedGame) rentedGame.for_rent_stock--;
-                applyGameFiltersAndRender();
+                if(rentalUserSelect) {
+                    rentalUserSelect.innerHTML = '<option value="">-- 請選擇會員 --</option>';
+                    filteredUsers.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user.user_id;
+                        const displayName = user.nickname || user.line_display_name;
+                        option.textContent = `${displayName} (${user.user_id.substring(0, 10)}...)`;
+                        rentalUserSelect.appendChild(option);
+                    });
+                    rentalUserSelect.style.display = 'block';
+                }
+            });
+        }
+
+        if (rentalUserSelect) {
+            rentalUserSelect.addEventListener('change', () => {
+                selectedRentalUser = allUsers.find(u => u.user_id === rentalUserSelect.value);
+                if (selectedRentalUser) {
+                    const nameInput = document.getElementById('rental-contact-name');
+                    const phoneInput = document.getElementById('rental-contact-phone');
+                    if(nameInput) nameInput.value = selectedRentalUser.nickname || selectedRentalUser.line_display_name || '';
+                    if(phoneInput) phoneInput.value = selectedRentalUser.phone || '';
+                }
+            });
+        }
+
+        if (createRentalForm) {
+            createRentalForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!selectedRentalUser) {
+                    alert('請務必搜尋並選擇一位租借會員！');
+                    return;
+                }
+
+                const rentalData = {
+                    userId: selectedRentalUser.user_id,
+                    gameId: document.getElementById('rental-game-id').value,
+                    dueDate: document.getElementById('rental-due-date').value,
+                    deposit: Number(document.getElementById('rental-deposit').value),
+                    lateFeePerDay: Number(document.getElementById('rental-late-fee').value),
+                    name: document.getElementById('rental-contact-name').value,
+                    phone: document.getElementById('rental-contact-phone').value
+                };
+
+                if (!rentalData.name || !rentalData.phone) {
+                    alert('租借人姓名與電話為必填欄位！');
+                    return;
+                }
+
+                const confirmationMessage = `請確認租借資訊：\n\n` +
+                    `會員：${selectedRentalUser.nickname || selectedRentalUser.line_display_name}\n` +
+                    `遊戲：${document.getElementById('rental-game-name').value}\n` +
+                    `租借人：${rentalData.name}\n` +
+                    `電話：${rentalData.phone}\n` +
+                    `歸還日：${rentalData.dueDate}`;
+
+                if (!confirm(confirmationMessage)) return;
                 
-                await fetchAllRentals();
-                showPage('rentals');
-            } catch (error) {
-                alert(`錯誤：${error.message}`);
-            }
-        });
+                try {
+                    const response = await fetch('/api/admin/create-rental', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(rentalData)
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error || '建立失敗');
+                    alert('租借成功！');
+                    createRentalModal.style.display = 'none';
+                    
+                    // START: 修正前端畫面同步
+                    const rentedGame = allGames.find(g => g.game_id === rentalData.gameId);
+                    if(rentedGame) {
+                        rentedGame.for_rent_stock = Number(rentedGame.for_rent_stock) - 1;
+                    }
+                    applyGameFiltersAndRender();
+                    // END: 修正前端畫面同步
+                    
+                    await fetchAllRentals();
+                    showPage('rentals');
+                } catch (error) {
+                    alert(`錯誤：${error.message}`);
+                }
+            });
+        }
     }
-
+    
     flatpickr("#rental-due-date", { dateFormat: "Y-m-d", minDate: "today" });
 
     // =================================================================
@@ -701,26 +760,28 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { console.error('獲取預約列表失敗:', error); }
     }
 
-    bookingListTbody.addEventListener('click', async (event) => {
-        if (event.target.classList.contains('btn-cancel-booking')) {
-            const bookingId = event.target.dataset.bookingid;
-            const booking = allBookings.find(b => b.booking_id == bookingId);
-            if (!booking) return;
-            if (confirm(`確定要取消 ${booking.booking_date} ${booking.contact_name} 的預約嗎？`)) {
-                try {
-                    const response = await fetch('/api/update-booking-status', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ bookingId: Number(bookingId), status: 'cancelled' })
-                    });
-                    const result = await response.json();
-                    if (!response.ok) throw new Error(result.error || '取消預約失敗');
-                    alert('預約已成功取消！');
-                    allBookings = allBookings.filter(b => b.booking_id != bookingId);
-                    renderBookingList(allBookings);
-                } catch (error) { alert(`錯誤：${error.message}`); }
+    if(bookingListTbody){
+        bookingListTbody.addEventListener('click', async (event) => {
+            if (event.target.classList.contains('btn-cancel-booking')) {
+                const bookingId = event.target.dataset.bookingid;
+                const booking = allBookings.find(b => b.booking_id == bookingId);
+                if (!booking) return;
+                if (confirm(`確定要取消 ${booking.booking_date} ${booking.contact_name} 的預約嗎？`)) {
+                    try {
+                        const response = await fetch('/api/update-booking-status', {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ bookingId: Number(bookingId), status: 'cancelled' })
+                        });
+                        const result = await response.json();
+                        if (!response.ok) throw new Error(result.error || '取消預約失敗');
+                        alert('預約已成功取消！');
+                        allBookings = allBookings.filter(b => b.booking_id != bookingId);
+                        renderBookingList(allBookings);
+                    } catch (error) { alert(`錯誤：${error.message}`); }
+                }
             }
-        }
-    });
+        });
+    }
 
     // =================================================================
     // 掃碼加點模組
@@ -728,9 +789,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function onScanSuccess(decodedText, decodedResult) {
         if (html5QrCode && html5QrCode.isScanning) {
             html5QrCode.stop().then(() => {
-                qrReaderElement.style.display = 'none';
-                scanResultSection.style.display = 'block';
-                userIdDisplay.value = decodedText;
+                if(qrReaderElement) qrReaderElement.style.display = 'none';
+                if(scanResultSection) scanResultSection.style.display = 'block';
+                if(userIdDisplay) userIdDisplay.value = decodedText;
                 if(scanStatusMessage) {
                     scanStatusMessage.textContent = '掃描成功！請輸入點數。';
                     scanStatusMessage.className = 'success';
@@ -747,7 +808,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         html5QrCode = new Html5Qrcode("qr-reader");
         qrReaderElement.style.display = 'block';
-        scanResultSection.style.display = 'none';
+        if(scanResultSection) scanResultSection.style.display = 'none';
         if(scanStatusMessage) {
             scanStatusMessage.textContent = '請將顧客的 QR Code 對準掃描框';
             scanStatusMessage.className = '';
@@ -766,7 +827,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (reasonSelect) {
         reasonSelect.addEventListener('change', () => {
-            customReasonInput.style.display = (reasonSelect.value === 'other') ? 'block' : 'none';
+            if(customReasonInput) customReasonInput.style.display = (reasonSelect.value === 'other') ? 'block' : 'none';
         });
     }
 
@@ -803,7 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     scanStatusMessage.textContent = `成功為 ${userId.substring(0, 10)}... 新增 ${expValue} 點經驗！`;
                     scanStatusMessage.className = 'success';
                 }
-                expInput.value = '';
+                if(expInput) expInput.value = '';
             } catch (error) {
                 if(scanStatusMessage) {
                     scanStatusMessage.textContent = `新增失敗: ${error.message}`;
@@ -818,7 +879,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 經驗紀錄模組
     // =================================================================
-    async function initializeExpHistoryPage() {
+    async function fetchAllExpHistory() {
         try {
             const response = await fetch('/api/admin/get-exp-history');
             if (!response.ok) throw new Error('無法獲取經驗紀錄');
@@ -877,6 +938,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 情報管理模組
     // =================================================================
     function renderNewsList(newsItems) {
+        if(!newsListTbody) return;
         newsListTbody.innerHTML = '';
         newsItems.forEach(news => {
             const row = document.createElement('tr');
@@ -903,9 +965,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function openEditNewsModal(news = null) {
-        editNewsForm.reset();
+        if(editNewsForm) editNewsForm.reset();
         currentEditingNewsId = news ? news.id : null;
-        modalNewsTitle.textContent = news ? '編輯情報' : '新增情報';
+        if(modalNewsTitle) modalNewsTitle.textContent = news ? '編輯情報' : '新增情報';
         
         if (news) {
             document.getElementById('edit-news-id').value = news.id;
@@ -915,66 +977,73 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('edit-news-image').value = news.image_url;
             document.getElementById('edit-news-content').value = news.content;
             document.getElementById('edit-news-published').checked = !!news.is_published;
-            deleteNewsBtn.style.display = 'inline-block';
+            if(deleteNewsBtn) deleteNewsBtn.style.display = 'inline-block';
         } else {
-            deleteNewsBtn.style.display = 'none';
+            if(deleteNewsBtn) deleteNewsBtn.style.display = 'none';
         }
         
-        editNewsModal.style.display = 'flex';
+        if(editNewsModal) editNewsModal.style.display = 'flex';
     }
 
-    addNewsBtn.addEventListener('click', () => openEditNewsModal());
-    editNewsModal.querySelector('.modal-close').addEventListener('click', () => editNewsModal.style.display = 'none');
-    editNewsModal.querySelector('.btn-cancel').addEventListener('click', () => editNewsModal.style.display = 'none');
+    if(addNewsBtn) addNewsBtn.addEventListener('click', () => openEditNewsModal());
+    if(editNewsModal) {
+        editNewsModal.querySelector('.modal-close').addEventListener('click', () => editNewsModal.style.display = 'none');
+        editNewsModal.querySelector('.btn-cancel').addEventListener('click', () => editNewsModal.style.display = 'none');
+    }
     
-    newsListTbody.addEventListener('click', (e) => {
-        if (e.target.classList.contains('btn-edit')) {
-            const newsId = e.target.dataset.newsId;
-            const newsItem = allNews.find(n => n.id == newsId);
-            openEditNewsModal(newsItem);
-        }
-    });
+    if(newsListTbody) {
+        newsListTbody.addEventListener('click', (e) => {
+            if (e.target.classList.contains('btn-edit')) {
+                const newsId = e.target.dataset.newsId;
+                const newsItem = allNews.find(n => n.id == newsId);
+                openEditNewsModal(newsItem);
+            }
+        });
+    }
 
-    editNewsForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = {
-            id: currentEditingNewsId,
-            title: document.getElementById('edit-news-title').value,
-            category: document.getElementById('edit-news-category').value,
-            published_date: document.getElementById('edit-news-date').value,
-            image_url: document.getElementById('edit-news-image').value,
-            content: document.getElementById('edit-news-content').value,
-            is_published: document.getElementById('edit-news-published').checked
-        };
-
-        const url = currentEditingNewsId ? '/api/admin/update-news' : '/api/admin/create-news';
-        try {
-            const response = await fetch(url, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || '儲存失敗');
-            alert('儲存成功！');
-            editNewsModal.style.display = 'none';
-            await fetchAllNews();
-        } catch (error) { alert(`錯誤：${error.message}`); }
-    });
+    if(editNewsForm) {
+        editNewsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = {
+                id: currentEditingNewsId,
+                title: document.getElementById('edit-news-title').value,
+                category: document.getElementById('edit-news-category').value,
+                published_date: document.getElementById('edit-news-date').value,
+                image_url: document.getElementById('edit-news-image').value,
+                content: document.getElementById('edit-news-content').value,
+                is_published: document.getElementById('edit-news-published').checked
+            };
+            const url = currentEditingNewsId ? '/api/admin/update-news' : '/api/admin/create-news';
+            try {
+                const response = await fetch(url, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || '儲存失敗');
+                alert('儲存成功！');
+                if(editNewsModal) editNewsModal.style.display = 'none';
+                await fetchAllNews();
+            } catch (error) { alert(`錯誤：${error.message}`); }
+        });
+    }
     
-    deleteNewsBtn.addEventListener('click', async () => {
-        if (!currentEditingNewsId || !confirm('確定要刪除這則情報嗎？此操作無法復原。')) return;
-        try {
-            const response = await fetch('/api/admin/delete-news', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: currentEditingNewsId })
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || '刪除失敗');
-            alert('刪除成功！');
-            editNewsModal.style.display = 'none';
-            await fetchAllNews();
-        } catch (error) { alert(`錯誤：${error.message}`); }
-    });
+    if(deleteNewsBtn) {
+        deleteNewsBtn.addEventListener('click', async () => {
+            if (!currentEditingNewsId || !confirm('確定要刪除這則情報嗎？此操作無法復原。')) return;
+            try {
+                const response = await fetch('/api/admin/delete-news', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: currentEditingNewsId })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || '刪除失敗');
+                alert('刪除成功！');
+                if(editNewsModal) editNewsModal.style.display = 'none';
+                await fetchAllNews();
+            } catch (error) { alert(`錯誤：${error.message}`); }
+        });
+    }
 
     flatpickr("#edit-news-date", { dateFormat: "Y-m-d" });
 
@@ -993,24 +1062,26 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { alert(`錯誤：${error.message}`); }
     }
 
-    storeInfoForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = {
-            address: document.getElementById('info-address').value,
-            phone: document.getElementById('info-phone').value,
-            opening_hours: document.getElementById('info-hours').value,
-            description: document.getElementById('info-desc').value
-        };
-        try {
-            const response = await fetch('/api/admin/update-store-info', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || '更新失敗');
-            alert('更新成功！');
-        } catch (error) { alert(`錯誤：${error.message}`); }
-    });
+    if(storeInfoForm) {
+        storeInfoForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = {
+                address: document.getElementById('info-address').value,
+                phone: document.getElementById('info-phone').value,
+                opening_hours: document.getElementById('info-hours').value,
+                description: document.getElementById('info-desc').value
+            };
+            try {
+                const response = await fetch('/api/admin/update-store-info', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || '更新失敗');
+                alert('更新成功！');
+            } catch (error) { alert(`錯誤：${error.message}`); }
+        });
+    }
 
     // ---- 初始化 ----
     async function initialize() {
@@ -1022,7 +1093,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('初始化職業設定失敗:', error);
             alert(`警告：無法從 Google Sheet 獲取職業設定。`);
         }
-        await fetchAllUsers(); // 初始載入顧客列表
+        await fetchAllUsers();
         showPage('users');
     }
     

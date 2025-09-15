@@ -21,7 +21,6 @@ async function getAccessToken(env) {
     return tokenData.access_token;
 }
 
-
 async function addRowToSheet(env, sheetName, rowData) {
     const { GOOGLE_SHEET_ID } = env;
     if (!GOOGLE_SHEET_ID) throw new Error('缺少 GOOGLE_SHEET_ID 環境變數。');
@@ -34,6 +33,27 @@ async function addRowToSheet(env, sheetName, rowData) {
     await sheet.addRow(rowData);
 }
 
+// START: 新增 updateRowInSheet 函式
+async function updateRowInSheet(env, sheetName, matchColumn, matchValue, updateData) {
+    const { GOOGLE_SHEET_ID } = env;
+    if (!GOOGLE_SHEET_ID) throw new Error('缺少 GOOGLE_SHEET_ID 環境變數。');
+    const accessToken = await getAccessToken(env);
+    const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
+    const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
+    await doc.loadInfo();
+    const sheet = doc.sheetsByTitle[sheetName];
+    if (!sheet) throw new Error(`在 Google Sheets 中找不到名為 "${sheetName}" 的工作表。`);
+    const rows = await sheet.getRows();
+    const rowToUpdate = rows.find(row => row.get(matchColumn) == matchValue);
+    if (rowToUpdate) {
+        rowToUpdate.assign(updateData);
+        await rowToUpdate.save();
+    } else {
+        console.warn(`在工作表 "${sheetName}" 中找不到 ${matchColumn} 為 "${matchValue}" 的資料列，無法更新。`);
+    }
+}
+// END: 新增 updateRowInSheet 函式
+
 
 export async function onRequest(context) {
   try {
@@ -41,7 +61,6 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    // 【修改 #3】 接收新的 name 和 phone 欄位
     const { userId, gameId, dueDate, deposit, lateFeePerDay, name, phone } = await context.request.json();
 
     if (!userId || !gameId || !dueDate || !name || !phone) {
@@ -50,7 +69,6 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
 
-    // --- 【新增 #2】 庫存 -1 ---
     const game = await db.prepare('SELECT name, for_rent_stock FROM BoardGames WHERE game_id = ?').bind(gameId).first();
     if (!game) {
         return new Response(JSON.stringify({ error: '找不到指定的遊戲。' }), { status: 404 });
@@ -58,15 +76,11 @@ export async function onRequest(context) {
     if (game.for_rent_stock <= 0) {
         return new Response(JSON.stringify({ error: `《${game.name}》目前已無可租借庫存。` }), { status: 409 });
     }
-    // --- 庫存檢查結束 ---
     
-    // 使用資料庫 Transaction 確保兩項操作都成功
     const batch = [
-      // 【修改 #3】 新增租借紀錄，包含 name 和 phone
       db.prepare(
         'INSERT INTO Rentals (user_id, game_id, due_date, deposit, late_fee_per_day, name, phone) VALUES (?, ?, ?, ?, ?, ?, ?)'
       ).bind(userId, gameId, dueDate, deposit, lateFeePerDay, name, phone),
-      // 【修改 #2】 更新桌遊庫存
       db.prepare(
         'UPDATE BoardGames SET for_rent_stock = for_rent_stock - 1 WHERE game_id = ?'
       ).bind(gameId)
@@ -74,11 +88,8 @@ export async function onRequest(context) {
 
     await db.batch(batch);
     
-    // 重新獲取剛才新增的紀錄，以便同步到 Google Sheet
     const newRental = await db.prepare('SELECT * FROM Rentals ORDER BY rental_id DESC LIMIT 1').first();
 
-
-    // 【修改 #5】 更新 LINE 通知訊息格式
     const rentalDate = new Date(newRental.rental_date);
     const rentalDateStr = rentalDate.toISOString().split('T')[0];
     const rentalDuration = Math.round((new Date(dueDate) - rentalDate) / (1000 * 60 * 60 * 24));
@@ -92,7 +103,6 @@ export async function onRequest(context) {
                     `如上面資訊沒有問題，請回覆「ok」\n`+
                     `感謝您的預約！`;
 
-    // 觸發 LINE 通知 (保持不變)
     context.waitUntil(
         fetch(new URL('/api/send-message', context.request.url), {
             method: 'POST',
@@ -101,11 +111,20 @@ export async function onRequest(context) {
         }).catch(err => console.error("背景發送租借通知失敗:", err))
     );
     
-    // 【修改 #1】 觸發 Google Sheet 同步 (保持不變，但會同步新欄位)
     context.waitUntil(
         addRowToSheet(context.env, 'Rentals', newRental)
         .catch(err => console.error("背景同步新增租借紀錄失敗:", err))
     );
+
+    // START: 新增背景任務，同步更新 BoardGames 工作表的庫存
+    const updatedStock = {
+        for_rent_stock: game.for_rent_stock - 1
+    };
+    context.waitUntil(
+        updateRowInSheet(context.env, 'BoardGames', 'game_id', gameId, updatedStock)
+        .catch(err => console.error(`背景同步桌遊庫存失敗 (GameID: ${gameId}):`, err))
+    );
+    // END: 新增背景任務
 
     return new Response(JSON.stringify({ success: true, message: '租借紀錄已建立，庫存已更新！' }), {
       status: 201,
