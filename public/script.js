@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'page-profile': initializeProfilePage(); break;
                 case 'page-my-bookings': initializeMyBookingsPage(); break;
                 case 'page-my-exp-history': initializeMyExpHistoryPage(); break;
+                case 'page-rental-history': /* 未來可在此加入初始化函式 */ break;
                 case 'page-booking': initializeBookingPage(); break;
                 case 'page-info': initializeInfoPage(); break;
                 case 'page-edit-profile': initializeEditProfilePage(); break;
@@ -227,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
             new QRCode(qrcodeElement, { text: userProfile.userId, width: 200, height: 200 });
         }
         
-        // ** START: 關鍵修正 - 綁定三個按鈕的事件 **
+        // ** START: 關鍵修正 - 綁定四個按鈕的事件 **
         document.getElementById('edit-profile-btn').addEventListener('click', () => {
             showPage('page-edit-profile');
         });
@@ -236,6 +237,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.getElementById('my-exp-history-btn').addEventListener('click', () => {
             showPage('page-my-exp-history');
+        });
+        document.getElementById('rental-history-btn').addEventListener('click', () => {
+            showPage('page-rental-history');
         });
         // ** END: 關鍵修正 **
         

@@ -614,12 +614,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     async function initializeExpHistoryPage() {
         try {
-            // 確保我們有最新的使用者列表來填充下拉選單
-            if (allUsers.length === 0) {
-                await fetchAllUsers();
-            }
-            populateUserFilter();
-
             const response = await fetch('/api/admin/get-exp-history');
             if (!response.ok) throw new Error('無法獲取經驗紀錄');
             allExpHistory = await response.json();
@@ -628,19 +622,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('獲取經驗紀錄失敗:', error);
             if (expHistoryTbody) expHistoryTbody.innerHTML = `<tr><td colspan="4" style="color:red;">讀取紀錄失敗</td></tr>`;
         }
-    }
-
-    function populateUserFilter() {
-        if (!expUserFilter) return;
-        // 清空舊選項，保留第一個 "全部"
-        expUserFilter.length = 1; 
-        allUsers.forEach(user => {
-            const option = document.createElement('option');
-            option.value = user.user_id;
-            // 優先使用綽號，否則用 LINE 名稱
-            option.textContent = user.nickname || user.line_display_name;
-            expUserFilter.appendChild(option);
-        });
     }
 
     function renderExpHistoryList(records) {
@@ -670,15 +651,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (expUserFilter) {
-        expUserFilter.addEventListener('change', () => {
-            const selectedUserId = expUserFilter.value;
-            if (selectedUserId === 'all') {
+    const expUserFilterInput = document.getElementById('exp-user-filter-input');
+    if (expUserFilterInput) {
+        expUserFilterInput.addEventListener('input', () => {
+            const searchTerm = expUserFilterInput.value.toLowerCase().trim();
+            if (!searchTerm) {
                 renderExpHistoryList(allExpHistory);
-            } else {
-                const filteredRecords = allExpHistory.filter(record => record.user_id === selectedUserId);
-                renderExpHistoryList(filteredRecords);
+                return;
             }
+            const filteredRecords = allExpHistory.filter(record => {
+                const displayName = record.nickname || record.line_display_name || '';
+                const userId = record.user_id || '';
+                return displayName.toLowerCase().includes(searchTerm) || userId.toLowerCase().includes(searchTerm);
+            });
+            renderExpHistoryList(filteredRecords);
         });
     }
 
