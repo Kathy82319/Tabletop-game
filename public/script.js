@@ -47,6 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'page-home': initializeHomePage(); break;
                 case 'page-games': initializeGamesPage(); break;
                 case 'page-profile': initializeProfilePage(); break;
+                case 'page-my-bookings': initializeMyBookingsPage(); break;
+                case 'page-my-exp-history': initializeMyExpHistoryPage(); break;
                 case 'page-booking': initializeBookingPage(); break;
                 case 'page-info': initializeInfoPage(); break;
                 case 'page-edit-profile': initializeEditProfilePage(); break;
@@ -225,13 +227,19 @@ document.addEventListener('DOMContentLoaded', () => {
             new QRCode(qrcodeElement, { text: userProfile.userId, width: 200, height: 200 });
         }
         
+        // ** START: 關鍵修正 - 綁定三個按鈕的事件 **
         document.getElementById('edit-profile-btn').addEventListener('click', () => {
             showPage('page-edit-profile');
         });
+        document.getElementById('my-bookings-btn').addEventListener('click', () => {
+            showPage('page-my-bookings');
+        });
+        document.getElementById('my-exp-history-btn').addEventListener('click', () => {
+            showPage('page-my-exp-history');
+        });
+        // ** END: 關鍵修正 **
         
-        // 分開呼叫，讓畫面先顯示基本資訊
-        fetchGameData(userProfile);
-        fetchAndDisplayMyBookings(userProfile.userId);
+        await fetchGameData(userProfile);
     }
 
     async function fetchGameData(profile) { 
@@ -268,23 +276,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // ** END: 關鍵修正 **
 
-    async function fetchAndDisplayMyBookings(userId) {
+    // ** START: 關鍵修正 - 建立獨立的預約紀錄頁面初始化函式 **
+    async function initializeMyBookingsPage() {
+        if (!userProfile) return;
         const container = document.getElementById('my-bookings-container');
         if (!container) return;
         container.innerHTML = '<p>正在查詢您的預約紀錄...</p>';
         try {
-            const response = await fetch(`/api/my-bookings?userId=${userId}`);
+            const response = await fetch(`/api/my-bookings?userId=${userProfile.userId}`);
             if (!response.ok) throw new Error('查詢預約失敗');
             const bookings = await response.json();
             if (bookings.length === 0) {
                 container.innerHTML = '<p>您目前沒有即將到來的預約。</p>';
                 return;
             }
-            container.innerHTML = bookings.map(booking => `<div class="booking-info-card"><p class="booking-date-time">${booking.booking_date} - ${booking.time_slot}</p><p><strong>預約姓名：</strong> ${booking.contact_name}</p><p><strong>預約人數：</strong> ${booking.num_of_people} 人</p></div>`).join('');
+            container.innerHTML = bookings.map(booking => `
+                <div class="booking-info-card">
+                    <p class="booking-date-time">${booking.booking_date} - ${booking.time_slot}</p>
+                    <p><strong>預約姓名：</strong> ${booking.contact_name}</p>
+                    <p><strong>預約人數：</strong> ${booking.num_of_people} 人</p>
+                </div>
+            `).join('');
         } catch (error) {
             container.innerHTML = '<p style="color: red;">無法載入預約紀錄。</p>';
         }
     }
+    // ** END: 關鍵修正 **
+
+    // ** START: 關鍵修正 - 建立新的經驗紀錄頁面初始化函式 **
+    async function initializeMyExpHistoryPage() {
+        if (!userProfile) return;
+        const container = document.getElementById('my-exp-history-container');
+        if (!container) return;
+        container.innerHTML = '<p>正在查詢您的經驗紀錄...</p>';
+        try {
+            const response = await fetch(`/api/my-exp-history?userId=${userProfile.userId}`);
+            if (!response.ok) throw new Error('查詢紀錄失敗');
+            const records = await response.json();
+            if (records.length === 0) {
+                container.innerHTML = '<p>您目前沒有任何經驗值紀錄。</p>';
+                return;
+            }
+            container.innerHTML = records.map(record => {
+                // 格式化日期，只取 YYYY-MM-DD
+                const date = new Date(record.created_at).toLocaleDateString('sv'); 
+                const expClass = record.exp_added > 0 ? 'exp-gain' : 'exp-loss';
+                const expSign = record.exp_added > 0 ? '+' : '';
+                return `
+                    <div class="exp-record-card">
+                        <div class="exp-record-date">${date}</div>
+                        <div class="exp-record-reason">${record.reason}</div>
+                        <div class="exp-record-value ${expClass}">${expSign}${record.exp_added}</div>
+                    </div>
+                `;
+            }).join('');
+        } catch (error) {
+            container.innerHTML = `<p style="color: red;">無法載入經驗紀錄。</p>`;
+        }
+    }
+    // ** END: 關鍵修正 **
+
     
     // =================================================================
     // 編輯個人資料頁

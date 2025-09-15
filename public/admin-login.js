@@ -2,7 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- DOM 元素宣告 ---
     const mainNav = document.querySelector('.nav-tabs');
     const pages = document.querySelectorAll('.page');
-    
+    const expHistoryTbody = document.getElementById('exp-history-tbody');
+    const expUserFilter = document.getElementById('exp-user-filter');
     // ** START: 關鍵修正 - 重新命名 modal 變數 **
     const userListTbody = document.getElementById('user-list-tbody');
     const userSearchInput = document.getElementById('user-search-input');
@@ -44,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const scanStatusMessage = document.getElementById('scan-status-message');
 
     // --- 全域狀態變數 ---
-    let allUsers = [], allGames = [], allBookings = [], allNews = [];
+    let allUsers = [], allGames = [], allBookings = [], allNews = [], allExpHistory = [];
     let classPerks = {}; // 儲存從 Google Sheet 來的職業設定
     let gameFilters = { visibility: 'all' };
     let html5QrCode = null;
@@ -66,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pageId === 'users' && allUsers.length === 0) fetchAllUsers();
         if (pageId === 'inventory') fetchAllGames();
         if (pageId === 'bookings' && allBookings.length === 0) fetchAllBookings();
+        if (pageId === 'exp-history' && allExpHistory.length === 0) initializeExpHistoryPage();
         if (pageId === 'scan') startScanner();
         if (pageId === 'news' && allNews.length === 0) fetchAllNews();
         if (pageId === 'store-info') fetchStoreInfo();
@@ -606,7 +608,80 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    
+
+    // =================================================================
+    // ** 全新 ** 經驗紀錄模組
+    // =================================================================
+    async function initializeExpHistoryPage() {
+        try {
+            // 確保我們有最新的使用者列表來填充下拉選單
+            if (allUsers.length === 0) {
+                await fetchAllUsers();
+            }
+            populateUserFilter();
+
+            const response = await fetch('/api/admin/get-exp-history');
+            if (!response.ok) throw new Error('無法獲取經驗紀錄');
+            allExpHistory = await response.json();
+            renderExpHistoryList(allExpHistory);
+        } catch (error) {
+            console.error('獲取經驗紀錄失敗:', error);
+            if (expHistoryTbody) expHistoryTbody.innerHTML = `<tr><td colspan="4" style="color:red;">讀取紀錄失敗</td></tr>`;
+        }
+    }
+
+    function populateUserFilter() {
+        if (!expUserFilter) return;
+        // 清空舊選項，保留第一個 "全部"
+        expUserFilter.length = 1; 
+        allUsers.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.user_id;
+            // 優先使用綽號，否則用 LINE 名稱
+            option.textContent = user.nickname || user.line_display_name;
+            expUserFilter.appendChild(option);
+        });
+    }
+
+    function renderExpHistoryList(records) {
+        if (!expHistoryTbody) return;
+        expHistoryTbody.innerHTML = '';
+        if (records.length === 0) {
+            expHistoryTbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">找不到符合條件的紀錄。</td></tr>`;
+            return;
+        }
+        records.forEach(record => {
+            const row = document.createElement('tr');
+            const displayName = record.nickname || record.line_display_name || '未知使用者';
+            const date = new Date(record.created_at).toLocaleString('sv').replace(' ', '\n');
+            const expClass = record.exp_added > 0 ? 'exp-gain' : 'exp-loss';
+            const expSign = record.exp_added > 0 ? '+' : '';
+
+            row.innerHTML = `
+                <td class="compound-cell">
+                    <div class="main-info">${displayName}</div>
+                    <div class="sub-info">${record.user_id}</div>
+                </td>
+                <td style="white-space: pre-wrap;">${date}</td>
+                <td>${record.reason}</td>
+                <td class="${expClass}" style="font-weight:bold;">${expSign}${record.exp_added}</td>
+            `;
+            expHistoryTbody.appendChild(row);
+        });
+    }
+
+    if (expUserFilter) {
+        expUserFilter.addEventListener('change', () => {
+            const selectedUserId = expUserFilter.value;
+            if (selectedUserId === 'all') {
+                renderExpHistoryList(allExpHistory);
+            } else {
+                const filteredRecords = allExpHistory.filter(record => record.user_id === selectedUserId);
+                renderExpHistoryList(filteredRecords);
+            }
+        });
+    }
+
     // =================================================================
     // 情報管理模組
     // =================================================================

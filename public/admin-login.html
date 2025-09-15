@@ -68,11 +68,14 @@
         <a href="#users" class="active">顧客管理</a>
         <a href="#inventory">庫存管理</a>
         <a href="#bookings">訂位管理</a>
+        <a href="#exp-history">經驗紀錄</a>
         <a href="#news">情報管理</a>
         <a href="#store-info">店家資訊</a>
         <a href="#scan">掃碼加點</a>
     </nav>
 
+
+    
 <main class="main-content">
         <div id="page-users" class="page active">
             <div class="page-header">
@@ -143,6 +146,30 @@
                 <div class="form-group"><label for="info-desc">公會介紹</label><textarea id="info-desc" rows="8" required></textarea></div>
                 <div class="form-actions"><button type="submit" class="action-btn btn-save">儲存變更</button></div>
             </form>
+        </div>
+        
+        <div id="page-exp-history" class="page">
+            <div class="page-header">
+                <h2>經驗紀錄查詢</h2>
+            </div>
+            <div class="filter-bar">
+                <label for="exp-user-filter">篩選使用者：</label>
+                <select id="exp-user-filter" style="min-width: 200px; padding: 8px;">
+                    <option value="all">顯示全部使用者</option>
+                </select>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>使用者</th>
+                        <th>日期</th>
+                        <th>原因</th>
+                        <th>經驗值</th>
+                    </tr>
+                </thead>
+                <tbody id="exp-history-tbody">
+                    </tbody>
+            </table>
         </div>
 
         <div id="page-scan" class="page">
