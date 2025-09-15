@@ -283,6 +283,18 @@
                     <label for="rental-contact-phone">聯絡電話</label>
                     <input type="tel" id="rental-contact-phone" required maxlength="10">
                 </div>
+                <div class="form-group">
+                    <label for="rental-due-date">歸還日期</label>
+                    <input type="text" id="rental-due-date" required>
+                </div>
+                <div class="form-group" style="display:none;">
+                    <label for="rental-deposit">押金</label>
+                    <input type="number" id="rental-deposit" value="0">
+                </div>
+                <div class="form-group" style="display:none;">
+                    <label for="rental-late-fee">每日逾期費用</label>
+                    <input type="number" id="rental-late-fee" value="50">
+                </div>
                 <div class="form-actions">
                     <button type="button" class="action-btn btn-cancel">取消</button>
                     <button type="submit" class="action-btn btn-save">確認租借</button>
