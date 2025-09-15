@@ -62,7 +62,6 @@ export async function onRequest(context) {
             return new Response(JSON.stringify({ error: `在 Google Sheet 中找不到使用者 ID: ${userId}` }), { status: 404 });
         }
         
-        // ** START: 關鍵修正 - 為所有可能為空的欄位提供預設值 **
         const userData = {
             line_display_name: userRowFromSheet.get('line_display_name') || '未提供名稱',
             nickname: userRowFromSheet.get('nickname') || '',
@@ -70,26 +69,38 @@ export async function onRequest(context) {
             class: userRowFromSheet.get('class') || '無',
             level: Number(userRowFromSheet.get('level')) || 1,
             current_exp: Number(userRowFromSheet.get('current_exp')) || 0,
-            tag: userRowFromSheet.get('tag') || ''
+            tag: userRowFromSheet.get('tag') || '',
+            // ** START: 關鍵修正 - 新增 perk 欄位 **
+            perk: userRowFromSheet.get('perk') || '無特殊優惠'
+            // ** END: 關鍵修正 **
         };
-        // ** END: 關鍵修正 **
 
+        // 使用 UPSERT (Update or Insert) 邏輯，如果 D1 中沒有此使用者，會自動新增
         const stmt = db.prepare(
-            `UPDATE Users SET line_display_name = ?, nickname = ?, phone = ?, class = ?, 
-                level = ?, current_exp = ?, tag = ? WHERE user_id = ?`
+            `INSERT INTO Users (user_id, line_display_name, nickname, phone, class, level, current_exp, tag, perk) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) 
+             ON CONFLICT(user_id) DO UPDATE SET
+               line_display_name = excluded.line_display_name,
+               nickname = excluded.nickname,
+               phone = excluded.phone,
+               class = excluded.class,
+               level = excluded.level,
+               current_exp = excluded.current_exp,
+               tag = excluded.tag,
+               perk = excluded.perk`
         );
         await stmt.bind(
-            userData.line_display_name, userData.nickname, userData.phone, userData.class,
-            userData.level, userData.current_exp, userData.tag, userId
+            userId, userData.line_display_name, userData.nickname, userData.phone, userData.class,
+            userData.level, userData.current_exp, userData.tag, userData.perk
         ).run();
 
-        return new Response(JSON.stringify({ success: true, message: '成功從 Google Sheet 同步單筆使用者資料！' }), {
+        return new Response(JSON.stringify({ success: true, message: '成功從 Google Sheet 還原單筆使用者資料至資料庫！' }), {
             status: 200, headers: { 'Content-Type': 'application/json' },
         });
 
     } catch (error) {
         console.error('Error in sync-user-from-sheet API:', error);
-        return new Response(JSON.stringify({ error: '同步失敗。', details: error.message }), {
+        return new Response(JSON.stringify({ error: '還原失敗。', details: error.message }), {
             status: 500
         });
     }

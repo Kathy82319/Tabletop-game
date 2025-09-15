@@ -61,17 +61,25 @@ export async function onRequest(context) {
     }
     const db = context.env.DB;
     
+    // ** START: 關鍵修正 - 動態獲取職業設定 **
+    // 建立一個絕對 URL 來呼叫同一個 Worker 裡的其他端點
+    const perksUrl = new URL(context.request.url);
+    perksUrl.pathname = '/api/get-class-perks';
+    const perksResponse = await fetch(perksUrl.toString());
+    const CLASS_PERKS = await perksResponse.json();
+    // ** END: 關鍵修正 **
+    
     let user = await db.prepare('SELECT * FROM Users WHERE user_id = ?').bind(userId).first();
 
     const expToNextLevel = 10;
 
     if (user) {
-      // ** START: 關鍵修正 - 加入職業福利 **
-      user.perk = CLASS_PERKS[user.class] || user.class; // 如果是自訂職業，福利就顯示職業名稱
-      // ** END: 關鍵修正 **
+      // 使用從 API 獲取的動態職業設定
+      user.perk = CLASS_PERKS[user.class] || user.perk || '無特殊優惠';
       return new Response(JSON.stringify({ ...user, expToNextLevel }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
     } else {
+
       const newUser = {
         user_id: userId, line_display_name: displayName || '未提供名稱',
         line_picture_url: pictureUrl || '', class: '無', level: 1, current_exp: 0, tag: null

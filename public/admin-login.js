@@ -44,6 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 全域狀態變數 ---
     let allUsers = [], allGames = [], allBookings = [], allNews = [];
+    // ** START: 關鍵修正 - 新增變數儲存職業設定 **
+    let classPerks = {};
+    // ** END: 關鍵修正 **
     let gameFilters = { visibility: 'all' };
     let html5QrCode = null;
     let currentEditingNewsId = null;
@@ -118,11 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ** START: 關鍵修正 - 全新的編輯 modal 開啟邏輯 **
-    function openEditUserModal(userId) {
+    async function openEditUserModal(userId) {
         const user = allUsers.find(u => u.user_id === userId);
         if (!user) return;
         
-        // 填充表單預設值
         document.getElementById('modal-user-title').textContent = `編輯：${user.line_display_name}`;
         document.getElementById('edit-user-id').value = user.user_id;
         document.getElementById('edit-level-input').value = user.level;
@@ -143,9 +145,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // 處理職業下拉選單
+        // 動態填充職業下拉選單
         const classSelect = document.getElementById('edit-class-select');
         const otherClassInput = document.getElementById('edit-class-other-input');
-        const standardClasses = ["無", "戰士", "盜賊", "法師", "牧師"];
+        classSelect.innerHTML = ''; // 清空舊選項
+
+        for (const className in classPerks) {
+            const option = document.createElement('option');
+            option.value = className;
+            option.textContent = `${className} (${classPerks[className]})`;
+            classSelect.appendChild(option);
+        }
+        // 加入 "其他" 選項
+        const otherOption = document.createElement('option');
+        otherOption.value = 'other';
+        otherOption.textContent = '其他 (自訂)';
+        classSelect.appendChild(otherOption);
+
+        // 設定職業下拉選單的預設值
+        const standardClasses = Object.keys(classPerks);
         if (user.class && !standardClasses.includes(user.class)) {
             classSelect.value = 'other';
             otherClassInput.style.display = 'block';
@@ -230,18 +248,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (target.classList.contains('btn-sync')) {
-            if (!confirm(`確定要從 Google Sheet 同步使用者 ${userId} 的資料嗎？這將會覆寫資料庫中的現有資料。`)) return;
+            // ** START: 關鍵修正 - 加入強烈警告 **
+            if (!confirm(`警告：此操作將使用 Google Sheet 的資料覆蓋此使用者 (${userId}) 在資料庫中的資料。\n\n僅在確認資料庫資料異常時使用。\n\n確定要繼續嗎？`)) return;
+            // ** END: 關鍵修正 **
+            
             try {
-                target.textContent = '同步中...';
+                target.textContent = '還原中...';
                 target.disabled = true;
-                const response = await fetch('/api/sync-user-from-sheet', {
+                const response = await fetch('/api/sync-user-from-sheet', { // API 端點不變
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId })
                 });
                 const result = await response.json();
-                if (!response.ok) throw new Error(result.details || result.error || '同步失敗');
-                alert('同步成功！將重新整理列表資料。');
-                await fetchAllUsers();
+                if (!response.ok) throw new Error(result.details || result.error || '還原失敗');
+                alert('還原成功！將重新整理列表資料。');
+                await fetchAllUsers(); // 重新獲取資料以更新畫面
             } catch (error) {
                 alert(`錯誤：${error.message}`);
             } finally {
@@ -661,7 +682,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ---- 初始化 ----
-    function initialize() {
+    async function initialize() {
+        // ** START: 關鍵修正 - 應用程式啟動時先獲取職業設定 **
+        try {
+            const response = await fetch('/api/get-class-perks');
+            if (!response.ok) throw new Error('無法獲取職業設定');
+            classPerks = await response.json();
+        } catch (error) {
+            console.error('初始化職業設定失敗:', error);
+            alert('警告：無法從 Google Sheet 獲取職業設定，編輯功能可能不完整。');
+        }
+        // ** END: 關鍵修正 **
         showPage('users');
     }
     
