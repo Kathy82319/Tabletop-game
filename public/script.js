@@ -425,12 +425,10 @@ async function initializeRentalHistoryPage() {
 
         document.getElementById('edit-profile-name').value = userProfile.displayName;
 
-        const response = await fetch('/api/user', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: userProfile.userId }),
-        });
-        const userData = await response.json();
+        const userData = await fetchGameData();
+        if (!userData) return;
         
+        document.getElementById('edit-profile-real-name').value = userData.real_name || '';
         document.getElementById('edit-profile-nickname').value = userData.nickname || '';
         document.getElementById('edit-profile-phone').value = userData.phone || '';
         document.getElementById('edit-profile-email').value = userData.email || '';
@@ -453,14 +451,10 @@ async function initializeRentalHistoryPage() {
         });
 
         const form = document.getElementById('edit-profile-form');
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault();
-        const form = document.getElementById('edit-profile-form');
-        form.onsubmit = async (event) => { // 使用 onsubmit 避免重複綁定
+        form.onsubmit = async (event) => {
             event.preventDefault();
             const statusMsg = document.getElementById('edit-profile-form-status');
 
-            // 目標 2: 字數驗證
             const realNameInput = document.getElementById('edit-profile-real-name');
             const realName = realNameInput.value.trim();
             const chineseCharCount = (realName.match(/[\u4e00-\u9fa5]/g) || []).length;
@@ -481,8 +475,10 @@ async function initializeRentalHistoryPage() {
             
             let preferredGames = gamesSelect.value === '其他' ? otherGamesInput.value.trim() : gamesSelect.value;
 
+            // ** 這裡是修正的關鍵 **
             const formData = {
                 userId: userProfile.userId,
+                realName: realName,
                 nickname: document.getElementById('edit-profile-nickname').value,
                 phone: document.getElementById('edit-profile-phone').value,
                 email: document.getElementById('edit-profile-email').value,
@@ -498,7 +494,7 @@ async function initializeRentalHistoryPage() {
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || '儲存失敗');
                 
-                gameData = {}; // 清空快取，下次進入 Profile 頁時會重新抓取
+                gameData = {};
                 statusMsg.textContent = '儲存成功！';
                 statusMsg.style.color = 'green';
                 setTimeout(() => goBackPage(), 1500);
@@ -507,7 +503,7 @@ async function initializeRentalHistoryPage() {
                 statusMsg.textContent = `儲存失敗: ${error.message}`;
                 statusMsg.style.color = 'red';
             }
-        });
+        };
     }
     
     // =================================================================
