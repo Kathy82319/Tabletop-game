@@ -21,7 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeFilters = { keyword: '', tag: null };
     let bookingData = {};
     let bookingHistoryStack = [];
-    let dailyAvailability = { limit: TOTAL_TABLES, booked: 0, available: TOTAL_TABLES };
+    let dailyAvailability = { limit: 4, booked: 0, available: 4 };
+    let disabledDatesByAdmin = []; // 新增：用於存放後台設定的禁用日期
 
     // =================================================================
     // 頁面切換邏輯
@@ -218,7 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function initializeProfilePage() {
         if (!userProfile) return;
 
-        // ** START: 關鍵修正 - 顯示綽號與職業福利 **
         const profilePicture = document.getElementById('profile-picture');
         if (userProfile.pictureUrl) profilePicture.src = userProfile.pictureUrl;
         document.getElementById('status-message').textContent = userProfile.statusMessage || '';
@@ -281,6 +281,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // ** END: 關鍵修正 **
 
+    function updateProfileDisplay(data) {
+        document.getElementById('display-name').textContent = data.nickname || userProfile.displayName;
+        document.getElementById('user-class').textContent = data.class || "無";
+        document.getElementById('user-level').textContent = data.level;
+        document.getElementById('user-exp').textContent = `${data.current_exp} / 10`;
+
+        const perkDisplay = document.getElementById('user-perk-display');
+        const perkSpan = document.getElementById('user-perk');
+        if (data.perk && data.class !== '無') {
+            perkSpan.textContent = data.perk;
+            perkDisplay.style.display = 'block';
+        } else {
+            perkDisplay.style.display = 'none';
+        }
+    }
     // ** START: 關鍵修正 - 建立獨立的預約紀錄頁面初始化函式 **
     async function initializeMyBookingsPage() {
         if (!userProfile) return;
@@ -295,11 +310,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 container.innerHTML = '<p>您目前沒有即將到來的預約。</p>';
                 return;
             }
+            // 目標 4-3: 顯示報到狀態
             container.innerHTML = bookings.map(booking => `
                 <div class="booking-info-card">
                     <p class="booking-date-time">${booking.booking_date} - ${booking.time_slot}</p>
                     <p><strong>預約姓名：</strong> ${booking.contact_name}</p>
                     <p><strong>預約人數：</strong> ${booking.num_of_people} 人</p>
+                    <p><strong>狀態：</strong> <span class="booking-status-${booking.status}">${booking.status_text}</span></p>
                 </div>
             `).join('');
         } catch (error) {
@@ -438,7 +455,28 @@ async function initializeRentalHistoryPage() {
         const form = document.getElementById('edit-profile-form');
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
+        const form = document.getElementById('edit-profile-form');
+        form.onsubmit = async (event) => { // 使用 onsubmit 避免重複綁定
+            event.preventDefault();
             const statusMsg = document.getElementById('edit-profile-form-status');
+
+            // 目標 2: 字數驗證
+            const realNameInput = document.getElementById('edit-profile-real-name');
+            const realName = realNameInput.value.trim();
+            const chineseCharCount = (realName.match(/[\u4e00-\u9fa5]/g) || []).length;
+            const englishCharCount = (realName.match(/[a-zA-Z]/g) || []).length;
+
+            if (chineseCharCount > 10) {
+                statusMsg.textContent = '錯誤：姓名欄位中文字數不可超過 10 個字。';
+                statusMsg.style.color = 'red';
+                return;
+            }
+            if (englishCharCount > 20) {
+                statusMsg.textContent = '錯誤：姓名欄位英文字母不可超過 20 個。';
+                statusMsg.style.color = 'red';
+                return;
+            }
+
             statusMsg.textContent = '儲存中...';
             
             let preferredGames = gamesSelect.value === '其他' ? otherGamesInput.value.trim() : gamesSelect.value;
@@ -460,6 +498,7 @@ async function initializeRentalHistoryPage() {
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || '儲存失敗');
                 
+                gameData = {}; // 清空快取，下次進入 Profile 頁時會重新抓取
                 statusMsg.textContent = '儲存成功！';
                 statusMsg.style.color = 'green';
                 setTimeout(() => goBackPage(), 1500);
@@ -598,9 +637,23 @@ async function initializeRentalHistoryPage() {
     function initializeBookingPage() {
         bookingHistoryStack = [];
         showBookingStep('step-preference');
+                // 目標 4-4: 綁定按鈕事件
+        document.getElementById('view-my-bookings-btn').addEventListener('click', () => {
+            showPage('page-my-bookings');
+        });
 
-        const wizardContainer = document.getElementById('booking-wizard-container');
-        wizardContainer.addEventListener('click', e => {
+        // 預先獲取後台設定的禁用日期
+        try {
+            const response = await fetch('/api/bookings-check?month-init=true');
+            const data = await response.json();
+            disabledDatesByAdmin = data.disabledDates || [];
+        } catch (error) {
+            console.error("獲取禁用日期失敗:", error);
+            disabledDatesByAdmin = [];
+        }
+
+            const wizardContainer = document.getElementById('booking-wizard-container');
+            wizardContainer.addEventListener('click', async e => {
             if (e.target.matches('.back-button')) {
                 goBackBookingStep();
             } else if (e.target.closest('.preference-btn')) {
@@ -637,8 +690,15 @@ async function initializeRentalHistoryPage() {
                 fetchAndRenderSlots(dateStr);
             },
         });
+        // 目標 3: 自動帶入資料
+        const userData = await fetchGameData();
+        if (userData) {
+            const nameInput = document.getElementById('contact-name');
+            const phoneInput = document.getElementById('contact-phone');
+            if(nameInput) nameInput.value = userData.real_name || '';
+            if(phoneInput) phoneInput.value = userData.phone || '';        
     }
-
+  }
     async function fetchAndRenderSlots(date) {
         const slotsPlaceholder = document.getElementById('slots-placeholder');
         const slotsContainer = document.getElementById('booking-slots-container');
@@ -657,8 +717,24 @@ async function initializeRentalHistoryPage() {
             }
             
             slotsPlaceholder.style.display = 'none';
-            slotsContainer.innerHTML = AVAILABLE_TIME_SLOTS.map(slot => `<button class="slot-button available">${slot}</button>`).join('');
-            
+            // 目標 4-2: 過濾掉已過的時間
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const isToday = (date === todayStr);
+
+
+            slotsContainer.innerHTML = AVAILABLE_TIME_SLOTS.map(slot => {
+                let isDisabled = false;
+                if (isToday) {
+                    const [hour, minute] = slot.split(':');
+                    const slotTime = new Date();
+                    slotTime.setHours(hour, minute, 0, 0);
+                    if (slotTime < now) {
+                        isDisabled = true;
+                    }
+                            }
+                return `<button class="slot-button" ${isDisabled ? 'disabled' : ''}>${slot}</button>`;
+            }).join('');
             slotsContainer.querySelectorAll('.slot-button').forEach(btn => {
                 btn.addEventListener('click', () => {
                     bookingData.timeSlot = btn.textContent;

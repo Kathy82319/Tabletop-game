@@ -48,11 +48,11 @@ async function syncProfileUpdateToSheet(env, userData) {
         const userRow = rows.find(row => row.get('user_id') === userData.userId);
 
         if (userRow) {
-            // ** 將 email 加回同步欄位 **
             userRow.assign({
+                'real_name': userData.realName, // 同步 real_name
                 'nickname': userData.nickname,
                 'phone': userData.phone,
-                'email': userData.email, // 同步 email
+                'email': userData.email,
                 'preferred_games': userData.preferredGames,
                 'line_display_name': userData.displayName,
                 'line_picture_url': userData.pictureUrl
@@ -76,8 +76,7 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    // ** 恢復接收 email **
-    const { userId, nickname, phone, email, preferredGames, displayName, pictureUrl } = await context.request.json();
+    const { userId, realName, nickname, phone, email, preferredGames, displayName, pictureUrl } = await context.request.json();
 
     if (!userId || !nickname || !phone) {
       return new Response(JSON.stringify({ error: '使用者 ID、暱稱和電話為必填欄位。' }), {
@@ -87,15 +86,14 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
-    // ** 恢復更新 D1 資料庫的指令，包含 email **
     const stmt = db.prepare(
-      'UPDATE Users SET nickname = ?, phone = ?, email = ?, preferred_games = ?, line_display_name = ?, line_picture_url = ? WHERE user_id = ?'
+      'UPDATE Users SET real_name = ?, nickname = ?, phone = ?, email = ?, preferred_games = ?, line_display_name = ?, line_picture_url = ? WHERE user_id = ?'
     );
-    // ** 恢復綁定 email **
     const result = await stmt.bind(
+        realName || '', // 綁定 realName
         nickname, 
         phone, 
-        email || '', // 綁定 email，如果沒有則存空字串
+        email || '',
         preferredGames || '未提供', 
         displayName,
         pictureUrl,
@@ -108,8 +106,7 @@ export async function onRequest(context) {
       });
     }
 
-    // ** 恢復將 email 傳遞給背景同步任務 **
-    const userDataToSync = { userId, nickname, phone, email: email || '', preferredGames: preferredGames || '未提供', displayName, pictureUrl };
+    const userDataToSync = { userId, realName: realName || '', nickname, phone, email: email || '', preferredGames: preferredGames || '未提供', displayName, pictureUrl };
     context.waitUntil(syncProfileUpdateToSheet(context.env, userDataToSync));
 
     return new Response(JSON.stringify({ 

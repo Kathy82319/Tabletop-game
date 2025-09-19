@@ -15,7 +15,7 @@ async function getAccessToken(env) {
 
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type-jwt-bearer', assertion: jwt }),
+      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt }),
     });
 
     const tokenData = await tokenResponse.json();
@@ -51,34 +51,34 @@ export async function onRequest(context) {
     }
     const db = context.env.DB;
     
-    // ** START: 關鍵修正 - 直接從 D1 讀取所有需要的資料，不再呼叫其他 API **
     let user = await db.prepare('SELECT * FROM Users WHERE user_id = ?').bind(userId).first();
-    // ** END: 關鍵修正 **
 
     const expToNextLevel = 10;
 
     if (user) {
-      // D1 中已經包含了 class 和 perk，直接回傳即可
       return new Response(JSON.stringify({ ...user, expToNextLevel }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
     } else {
-      // 新增使用者時，給予預設值
       const newUser = {
         user_id: userId, 
         line_display_name: displayName || '未提供名稱',
-        line_picture_url: pictureUrl || '', 
+        line_picture_url: pictureUrl || '',
+        real_name: '', // 新增 real_name 預設值
         class: '無', 
         level: 1, 
         current_exp: 0, 
         tag: null, 
-        perk: '無特殊優惠' // 預設福利
+        perk: '無特殊優惠'
       };
       
       await db.prepare(
-        'INSERT INTO Users (user_id, line_display_name, line_picture_url, class, level, current_exp, perk) VALUES (?, ?, ?, ?, ?, ?, ?)'
-      ).bind(newUser.user_id, newUser.line_display_name, newUser.line_picture_url, newUser.class, newUser.level, newUser.current_exp, newUser.perk).run();
+        'INSERT INTO Users (user_id, line_display_name, line_picture_url, real_name, class, level, current_exp, perk) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(newUser.user_id, newUser.line_display_name, newUser.line_picture_url, newUser.real_name, newUser.class, newUser.level, newUser.current_exp, newUser.perk).run();
       
-      // ... (背景同步 addRowToSheet 的邏輯保持不變，它會將包含 perk 的新使用者資料寫入 Sheet)
+      // 背景同步邏輯需要更新以包含 real_name
+      const sheetData = { ...newUser };
+      delete sheetData.user_id; // addRowToSheet 通常不需要 user_id
+      context.waitUntil(addRowToSheet(context.env, context.env.USERS_SHEET_NAME, sheetData));
 
       return new Response(JSON.stringify({ ...newUser, expToNextLevel }), { status: 201, headers: { 'Content-Type': 'application/json' } });
     }

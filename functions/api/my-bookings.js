@@ -15,12 +15,18 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
-    // 查詢該使用者所有「預約日期」大於或等於「今天」的已確認預約
+    // 查詢該使用者所有「預約日期」大於或等於「今天」的預約
     // 並按照預約日期排序
     const stmt = db.prepare(
-      `SELECT * FROM Bookings 
+      `SELECT *, 
+        CASE 
+          WHEN status = 'confirmed' THEN '預約成功'
+          WHEN status = 'checked-in' THEN '已報到'
+          WHEN status = 'cancelled' THEN '已取消'
+          ELSE '處理中'
+        END as status_text
+       FROM Bookings 
        WHERE user_id = ? 
-       AND status = 'confirmed' 
        AND booking_date >= date('now', 'localtime')
        ORDER BY booking_date ASC, time_slot ASC`
     );
