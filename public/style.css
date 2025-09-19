@@ -460,3 +460,33 @@ body {
     background-color: #fbebed;
     color: #dc3545;
 }
+
+/* =================================================================
+   ** 全新 ** 預約狀態文字樣式
+   ================================================================= */
+.booking-info-card p .booking-status-confirmed {
+    font-weight: bold;
+    color: #28a745; /* 綠色 */
+}
+
+.booking-info-card p .booking-status-checked-in {
+    font-weight: bold;
+    color: #17a2b8; /* 藍綠色 */
+    background-color: #e0f7fa;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.booking-info-card p .booking-status-cancelled {
+    font-weight: normal;
+    color: #6c757d; /* 灰色 */
+    text-decoration: line-through;
+}
+
+
+/* =================================================================
+   ** 修正 ** 場地預約頁按鈕間距
+   ================================================================= */
+#page-booking #step-preference .cta-button {
+    margin-bottom: 15px; /* 為按鈕下方增加一些間距 */
+}
