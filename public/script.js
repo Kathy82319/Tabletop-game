@@ -45,18 +45,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            switch (pageId) {
-                case 'page-home': initializeHomePage(); break;
-                case 'page-games': initializeGamesPage(); break;
-                case 'page-profile': initializeProfilePage(); break;
-                case 'page-my-bookings': initializeMyBookingsPage(); break;
-                case 'page-my-exp-history': initializeMyExpHistoryPage(); break;
-                case 'page-rental-history': initializeRentalHistoryPage(); break;
-                case 'page-booking': initializeBookingPage(); break;
-                case 'page-info': initializeInfoPage(); break;
-                case 'page-edit-profile': initializeEditProfilePage(); break;
-                case 'page-game-details': break;
-                case 'page-news-details': break;
+            // 根據 pageId 執行對應的初始化函式
+            const pageInitializers = {
+                'page-home': initializeHomePage,
+                'page-games': initializeGamesPage,
+                'page-profile': initializeProfilePage,
+                'page-my-bookings': initializeMyBookingsPage,
+                'page-my-exp-history': initializeMyExpHistoryPage,
+                'page-rental-history': initializeRentalHistoryPage,
+                'page-booking': initializeBookingPage,
+                'page-info': initializeInfoPage,
+                'page-edit-profile': initializeEditProfilePage,
+            };
+
+            // 確保非同步函式被正確呼叫
+            if (pageInitializers[pageId]) {
+                pageInitializers[pageId]();
             }
 
             document.querySelectorAll('.tab-button').forEach(btn => {
@@ -111,10 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-
-    // =================================================================
-    // 首頁 (最新情報)
-    // =================================================================
     function renderNews(filterCategory = 'ALL') {
         const container = document.getElementById('news-list-container');
         if (!container) return;
@@ -210,6 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch((err) => {
             console.error("LIFF 初始化失敗", err);
+            // 即使 LIFF 失敗，也嘗試顯示首頁內容
             showPage('page-home'); 
         });
 
@@ -229,7 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
             new QRCode(qrcodeElement, { text: userProfile.userId, width: 200, height: 200 });
         }
         
-        // ** START: 關鍵修正 - 綁定四個按鈕的事件 **
         document.getElementById('edit-profile-btn').addEventListener('click', () => {
             showPage('page-edit-profile');
         });
@@ -242,44 +242,29 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('rental-history-btn').addEventListener('click', () => {
             showPage('page-rental-history');
         });
-        // ** END: 關鍵修正 **
         
-        await fetchGameData(userProfile);
+        await fetchGameData();
     }
 
-    async function fetchGameData(profile) { 
+    async function fetchGameData() { 
+        if (gameData.user_id) return gameData;
         try {
             const response = await fetch('/api/user', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: profile.userId, displayName: profile.displayName, pictureUrl: profile.pictureUrl }),
+                body: JSON.stringify({ userId: userProfile.userId, displayName: userProfile.displayName, pictureUrl: userProfile.pictureUrl }),
             });
             if (!response.ok) throw new Error('無法取得會員遊戲資料');
-            const gameData = await response.json();
+            gameData = await response.json();
             
-            // 目標 2: 優先顯示綽號
-            document.getElementById('display-name').textContent = gameData.nickname || profile.displayName;
-            
-            // 目標 3: 顯示職業與福利
-            document.getElementById('user-class').textContent = gameData.class || "無";
-            document.getElementById('user-level').textContent = gameData.level;
-            document.getElementById('user-exp').textContent = `${gameData.current_exp} / 10`;
-
-            const perkDisplay = document.getElementById('user-perk-display');
-            const perkSpan = document.getElementById('user-perk');
-            if (gameData.perk && gameData.class !== '無') {
-                perkSpan.textContent = gameData.perk;
-                perkDisplay.style.display = 'block';
-            } else {
-                perkDisplay.style.display = 'none';
-            }
-
+            updateProfileDisplay(gameData);
+            return gameData;
         } catch (error) {
             console.error('呼叫會員 API 失敗:', error);
-            document.getElementById('display-name').textContent = profile.displayName; // API 失敗時，至少顯示 LINE 名稱
+            document.getElementById('display-name').textContent = userProfile.displayName;
+            return null;
         }
     }
-    // ** END: 關鍵修正 **
 
     function updateProfileDisplay(data) {
         document.getElementById('display-name').textContent = data.nickname || userProfile.displayName;
@@ -296,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
             perkDisplay.style.display = 'none';
         }
     }
-    // ** START: 關鍵修正 - 建立獨立的預約紀錄頁面初始化函式 **
+
     async function initializeMyBookingsPage() {
         if (!userProfile) return;
         const container = document.getElementById('my-bookings-container');
@@ -310,7 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 container.innerHTML = '<p>您目前沒有即將到來的預約。</p>';
                 return;
             }
-            // 目標 4-3: 顯示報到狀態
             container.innerHTML = bookings.map(booking => `
                 <div class="booking-info-card">
                     <p class="booking-date-time">${booking.booking_date} - ${booking.time_slot}</p>
@@ -323,9 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
             container.innerHTML = '<p style="color: red;">無法載入預約紀錄。</p>';
         }
     }
-    // ** END: 關鍵修正 **
 
-    // ** START: 關鍵修正 - 建立新的經驗紀錄頁面初始化函式 **
     async function initializeMyExpHistoryPage() {
         if (!userProfile) return;
         const container = document.getElementById('my-exp-history-container');
@@ -340,7 +322,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             container.innerHTML = records.map(record => {
-                // 格式化日期，只取 YYYY-MM-DD
                 const date = new Date(record.created_at).toLocaleDateString('sv'); 
                 const expClass = record.exp_added > 0 ? 'exp-gain' : 'exp-loss';
                 const expSign = record.exp_added > 0 ? '+' : '';
@@ -356,67 +337,64 @@ document.addEventListener('DOMContentLoaded', () => {
             container.innerHTML = `<p style="color: red;">無法載入經驗紀錄。</p>`;
         }
     }
-    // ** END: 關鍵修正 **
-// 在 initializeMyExpHistoryPage 函式後面，新增這個新函式
-async function initializeRentalHistoryPage() {
-    if (!userProfile) return;
-    const container = document.getElementById('rental-history-container');
-    if (!container) return;
-    container.innerHTML = '<p>正在查詢您的租借紀錄...</p>';
 
-    try {
-        const response = await fetch(`/api/my-rental-history?userId=${userProfile.userId}`);
-        if (!response.ok) throw new Error('查詢租借紀錄失敗');
-        myRentals = await response.json();
+    async function initializeRentalHistoryPage() {
+        if (!userProfile) return;
+        const container = document.getElementById('rental-history-container');
+        if (!container) return;
+        container.innerHTML = '<p>正在查詢您的租借紀錄...</p>';
 
-        if (myRentals.length === 0) {
-            container.innerHTML = '<p>您目前沒有任何租借紀錄。</p>';
-            return;
-        }
+        try {
+            const response = await fetch(`/api/my-rental-history?userId=${userProfile.userId}`);
+            if (!response.ok) throw new Error('查詢租借紀錄失敗');
+            myRentals = await response.json();
 
-        // 計算逾期天數的輔助函式
-        const calculateOverdueDays = (dueDateStr) => {
-            if (!dueDateStr) return 0;
-            const today = new Date();
-            const dueDate = new Date(dueDateStr);
-            today.setHours(0, 0, 0, 0); // 忽略時間，只比較日期
-            dueDate.setHours(0, 0, 0, 0);
-            if (today <= dueDate) return 0;
-            const diffTime = Math.abs(today - dueDate);
-            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        };
-
-        container.innerHTML = myRentals.map(rental => {
-            const isReturned = rental.status === 'returned';
-            const overdueDays = isReturned ? 0 : calculateOverdueDays(rental.due_date);
-
-            let statusHTML = '';
-            if (isReturned) {
-                statusHTML = `<div class="rental-status returned">已於 ${rental.return_date || ''} 歸還</div>`;
-            } else if (overdueDays > 0) {
-                statusHTML = `<div class="rental-status overdue">已逾期 ${overdueDays} 天</div>`;
-            } else {
-                statusHTML = `<div class="rental-status rented">租借中</div>`;
+            if (myRentals.length === 0) {
+                container.innerHTML = '<p>您目前沒有任何租借紀錄。</p>';
+                return;
             }
 
-            return `
-                <div class="rental-card">
-                    <img src="${rental.game_image_url || 'placeholder.jpg'}" class="rental-game-image">
-                    <div class="rental-info">
-                        <h3 class="rental-game-title">${rental.game_name}</h3>
-                        <p>租借日期：${rental.rental_date}</p>
-                        <p>應還日期：${rental.due_date}</p>
-                        ${statusHTML}
-                    </div>
-                </div>
-            `;
-        }).join('');
+            const calculateOverdueDays = (dueDateStr) => {
+                if (!dueDateStr) return 0;
+                const today = new Date();
+                const dueDate = new Date(dueDateStr);
+                today.setHours(0, 0, 0, 0);
+                dueDate.setHours(0, 0, 0, 0);
+                if (today <= dueDate) return 0;
+                const diffTime = Math.abs(today - dueDate);
+                return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            };
 
-    } catch (error) {
-        container.innerHTML = `<p style="color: red;">無法載入租借紀錄: ${error.message}</p>`;
+            container.innerHTML = myRentals.map(rental => {
+                const isReturned = rental.status === 'returned';
+                const overdueDays = isReturned ? 0 : calculateOverdueDays(rental.due_date);
+
+                let statusHTML = '';
+                if (isReturned) {
+                    statusHTML = `<div class="rental-status returned">已於 ${rental.return_date || ''} 歸還</div>`;
+                } else if (overdueDays > 0) {
+                    statusHTML = `<div class="rental-status overdue">已逾期 ${overdueDays} 天</div>`;
+                } else {
+                    statusHTML = `<div class="rental-status rented">租借中</div>`;
+                }
+
+                return `
+                    <div class="rental-card">
+                        <img src="${rental.game_image_url || 'placeholder.jpg'}" class="rental-game-image">
+                        <div class="rental-info">
+                            <h3 class="rental-game-title">${rental.game_name}</h3>
+                            <p>租借日期：${rental.rental_date}</p>
+                            <p>應還日期：${rental.due_date}</p>
+                            ${statusHTML}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+        } catch (error) {
+            container.innerHTML = `<p style="color: red;">無法載入租借紀錄: ${error.message}</p>`;
+        }
     }
-}
-    
     // =================================================================
     // 編輯個人資料頁
     // =================================================================
@@ -475,7 +453,6 @@ async function initializeRentalHistoryPage() {
             
             let preferredGames = gamesSelect.value === '其他' ? otherGamesInput.value.trim() : gamesSelect.value;
 
-            // ** 這裡是修正的關鍵 **
             const formData = {
                 userId: userProfile.userId,
                 realName: realName,
@@ -494,7 +471,7 @@ async function initializeRentalHistoryPage() {
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || '儲存失敗');
                 
-                gameData = {};
+                gameData = {}; // 清空快取，下次進入 Profile 頁時會重新抓取
                 statusMsg.textContent = '儲存成功！';
                 statusMsg.style.color = 'green';
                 setTimeout(() => goBackPage(), 1500);
@@ -630,15 +607,14 @@ async function initializeRentalHistoryPage() {
         return false;
     }
 
-    function initializeBookingPage() {
+    async function initializeBookingPage() {
         bookingHistoryStack = [];
         showBookingStep('step-preference');
-                // 目標 4-4: 綁定按鈕事件
+
         document.getElementById('view-my-bookings-btn').addEventListener('click', () => {
             showPage('page-my-bookings');
         });
 
-        // 預先獲取後台設定的禁用日期
         try {
             const response = await fetch('/api/bookings-check?month-init=true');
             const data = await response.json();
@@ -648,8 +624,8 @@ async function initializeRentalHistoryPage() {
             disabledDatesByAdmin = [];
         }
 
-            const wizardContainer = document.getElementById('booking-wizard-container');
-            wizardContainer.addEventListener('click', async e => {
+        const wizardContainer = document.getElementById('booking-wizard-container');
+        wizardContainer.addEventListener('click', async (e) => {
             if (e.target.matches('.back-button')) {
                 goBackBookingStep();
             } else if (e.target.closest('.preference-btn')) {
@@ -675,26 +651,28 @@ async function initializeRentalHistoryPage() {
                 renderSummary();
                 showBookingStep('step-summary');
             } else if (e.target.matches('#confirm-booking-btn')) {
-                handleBookingConfirmation(e.target);
+                await handleBookingConfirmation(e.target);
             }
         });
 
         flatpickr("#booking-datepicker-container", {
             inline: true, minDate: "today", dateFormat: "Y-m-d", locale: "zh_tw",
+            disable: disabledDatesByAdmin,
             onChange: (selectedDates, dateStr) => {
                 bookingData.date = dateStr;
                 fetchAndRenderSlots(dateStr);
             },
         });
-        // 目標 3: 自動帶入資料
+
         const userData = await fetchGameData();
         if (userData) {
             const nameInput = document.getElementById('contact-name');
             const phoneInput = document.getElementById('contact-phone');
             if(nameInput) nameInput.value = userData.real_name || '';
-            if(phoneInput) phoneInput.value = userData.phone || '';        
+            if(phoneInput) phoneInput.value = userData.phone || '';
+        }
     }
-  }
+
     async function fetchAndRenderSlots(date) {
         const slotsPlaceholder = document.getElementById('slots-placeholder');
         const slotsContainer = document.getElementById('booking-slots-container');
@@ -713,11 +691,10 @@ async function initializeRentalHistoryPage() {
             }
             
             slotsPlaceholder.style.display = 'none';
-            // 目標 4-2: 過濾掉已過的時間
+            
             const now = new Date();
             const todayStr = now.toISOString().split('T')[0];
             const isToday = (date === todayStr);
-
 
             slotsContainer.innerHTML = AVAILABLE_TIME_SLOTS.map(slot => {
                 let isDisabled = false;
@@ -728,10 +705,11 @@ async function initializeRentalHistoryPage() {
                     if (slotTime < now) {
                         isDisabled = true;
                     }
-                            }
+                }
                 return `<button class="slot-button" ${isDisabled ? 'disabled' : ''}>${slot}</button>`;
             }).join('');
-            slotsContainer.querySelectorAll('.slot-button').forEach(btn => {
+            
+            slotsContainer.querySelectorAll('.slot-button:not([disabled])').forEach(btn => {
                 btn.addEventListener('click', () => {
                     bookingData.timeSlot = btn.textContent;
                     document.getElementById('contact-summary').textContent = `${bookingData.date} 的 ${bookingData.timeSlot}`;
@@ -779,25 +757,16 @@ async function initializeRentalHistoryPage() {
             });
 
             if (!createRes.ok) {
-                try {
-                    const errorResult = await createRes.json();
-                    throw new Error(errorResult.error || '建立預約時發生未知錯誤');
-                } catch (e) {
-                    throw new Error(`伺服器發生錯誤，狀態碼: ${createRes.status}`);
-                }
+                const errorResult = await createRes.json();
+                throw new Error(errorResult.error || '建立預約時發生未知錯誤');
             }
             
             const result = await createRes.json();
             
-            const messagePayload = {
-                userId: userProfile.userId,
-                message: result.confirmationMessage 
-            };
-            
             await fetch('/api/send-message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(messagePayload)
+                body: JSON.stringify({ userId: userProfile.userId, message: result.confirmationMessage })
             });
 
             document.getElementById('booking-result-content').innerHTML = `

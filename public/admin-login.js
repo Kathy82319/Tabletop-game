@@ -27,7 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 訂位管理
     const bookingListTbody = document.getElementById('booking-list-tbody');
-    const manageBookingDatesBtn = document.getElementById('manage-booking-dates-btn'); // 新增
+    const manageBookingDatesBtn = document.getElementById('manage-booking-dates-btn');
+    const bookingSettingsModal = document.getElementById('booking-settings-modal'); 
+    let bookingDatepicker = null; 
+    let disabledDates = [];
     
     // 經驗紀錄
     const expHistoryTbody = document.getElementById('exp-history-tbody');
@@ -64,8 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let html5QrCode = null;
     let currentEditingNewsId = null;
     let selectedRentalUser = null;
-    let bookingDatepicker = null; // 新增
-    let disabledDates = []; // 新增
 
     // ---- 頁面切換邏輯 ----
     function showPage(pageId) {
@@ -98,7 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
             showPage(pageId);
         }
     });
-
 
     // =================================================================
     // 顧客管理模組
@@ -361,6 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
             : allGames;
         renderGameList(filteredGames);
     }
+
 
     function renderGameList(games) {
         if (!gameListTbody) return;
@@ -736,7 +737,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         bookings.forEach(booking => {
             const row = document.createElement('tr');
-            // 新增狀態顯示
             let statusText = '預約成功';
             if (booking.status === 'checked-in') statusText = '已報到';
             if (booking.status === 'cancelled') statusText = '已取消';
@@ -754,7 +754,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${statusText}</td>
                 <td class="actions-cell">
                     <button class="action-btn btn-check-in" data-bookingid="${booking.booking_id}" style="background-color: #28a745;" ${booking.status !== 'confirmed' ? 'disabled' : ''}>報到</button>
-                    <button class="action-btn btn-cancel-booking" data-bookingid="${booking.booking_id}" style="background-color: var(--danger-color);" ${booking.status === 'cancelled' ? 'disabled' : ''}>取消</button>
+                    <button class="action-btn btn-cancel-booking" data-bookingid="${booking.booking_id}" style="background-color: var(--danger-color);" ${booking.status === 'cancelled' ? 'disabled' : ''}>取消預約</button>
                 </td>
             `;
             bookingListTbody.appendChild(row);
@@ -770,10 +770,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { console.error('獲取預約列表失敗:', error); }
     }
     
-    // 新增：初始化日期管理功能
     async function initializeBookingSettings() {
         try {
             const response = await fetch('/api/admin/booking-settings');
+            if (!response.ok) throw new Error('Failed to fetch booking settings');
             disabledDates = await response.json();
 
             bookingDatepicker = flatpickr("#booking-datepicker-admin-container", {
@@ -783,9 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 defaultDate: disabledDates,
                 onClose: async (selectedDates, dateStr, instance) => {
                     const newDisabledDates = instance.selectedDates.map(d => instance.formatDate(d, "Y-m-d"));
-                    // 找出被新增的日期
                     const datesToAdd = newDisabledDates.filter(d => !disabledDates.includes(d));
-                    // 找出被移除的日期
                     const datesToRemove = disabledDates.filter(d => !newDisabledDates.includes(d));
 
                     for (const date of datesToAdd) {
@@ -794,21 +792,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     for (const date of datesToRemove) {
                         await updateBookingSetting(date, 'remove');
                     }
-                    disabledDates = newDisabledDates; // 更新本地狀態
+                    disabledDates = newDisabledDates;
                 }
             });
         } catch (error) {
             console.error("初始化公休日設定失敗:", error);
+            alert("初始化公休日設定失敗，請檢查 API。");
         }
     }
 
     async function updateBookingSetting(date, action) {
         try {
-            await fetch('/api/admin/booking-settings', {
+            const response = await fetch('/api/admin/booking-settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ date, action })
             });
+            if(!response.ok) throw new Error('API request failed');
         } catch (error) {
             alert(`更新 ${date} 設定失敗!`);
         }
@@ -816,23 +816,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if(manageBookingDatesBtn) {
         manageBookingDatesBtn.addEventListener('click', () => {
-            if (!bookingDatepicker) initializeBookingSettings();
-            bookingSettingsModal.style.display = 'flex';
+            if (!bookingDatepicker) {
+                initializeBookingSettings();
+            }
+            if (bookingSettingsModal) {
+                bookingSettingsModal.style.display = 'flex';
+            }
         });
     }
+
     if(bookingSettingsModal) {
         bookingSettingsModal.querySelector('.modal-close').addEventListener('click', () => bookingSettingsModal.style.display = 'none');
         bookingSettingsModal.querySelector('.btn-cancel').addEventListener('click', () => bookingSettingsModal.style.display = 'none');
     }
 
-
     if(bookingListTbody){
         bookingListTbody.addEventListener('click', async (event) => {
-            const bookingId = event.target.dataset.bookingid;
+            const target = event.target;
+            const bookingId = target.dataset.bookingid;
             if (!bookingId) return;
 
-            // 新增：處理報到按鈕點擊
-            if (event.target.classList.contains('btn-check-in')) {
+            if (target.classList.contains('btn-check-in')) {
                 const booking = allBookings.find(b => b.booking_id == bookingId);
                 if (!booking) return;
                 if (confirm(`確定要將 ${booking.booking_date} ${booking.contact_name} 的預約標示為「已報到」嗎？`)) {
@@ -841,16 +845,31 @@ document.addEventListener('DOMContentLoaded', () => {
                             method: 'POST', headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ bookingId: Number(bookingId), status: 'checked-in' })
                         });
-                        if (!response.ok) throw new Error('報到失敗');
+                        const result = await response.json();
+                        if (!response.ok) throw new Error(result.error || '報到失敗');
                         alert('報到成功！');
-                        booking.status = 'checked-in'; // 更新本地資料
-                        renderBookingList(allBookings); // 重新渲染列表
+                        booking.status = 'checked-in';
+                        renderBookingList(allBookings);
                     } catch (error) { alert(`錯誤：${error.message}`); }
                 }
             }
             
-            if (event.target.classList.contains('btn-cancel-booking')) {
-                // ... (取消預約的邏輯保持不變) ...
+            if (target.classList.contains('btn-cancel-booking')) {
+                const booking = allBookings.find(b => b.booking_id == bookingId);
+                if (!booking) return;
+                if (confirm(`確定要取消 ${booking.booking_date} ${booking.contact_name} 的預約嗎？`)) {
+                    try {
+                        const response = await fetch('/api/update-booking-status', {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ bookingId: Number(bookingId), status: 'cancelled' })
+                        });
+                        const result = await response.json();
+                        if (!response.ok) throw new Error(result.error || '取消預約失敗');
+                        alert('預約已成功取消！');
+                        booking.status = 'cancelled'; // 直接更新本地狀態
+                        renderBookingList(allBookings);
+                    } catch (error) { alert(`錯誤：${error.message}`); }
+                }
             }
         });
     }
@@ -1164,9 +1183,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('初始化職業設定失敗:', error);
             alert(`警告：無法從 Google Sheet 獲取職業設定。`);
         }
-        await fetchAllUsers();
+        await fetchAllUsers(); // 先載入使用者資料，租借功能會用到
         showPage('users');
-        initializeBookingSettings(); // 預先初始化
     }
     
     initialize();
