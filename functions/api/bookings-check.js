@@ -92,34 +92,3 @@ export async function onRequest(context) {
   }
 }
 
-export async function onRequest(context) {
-  try {
-    const url = new URL(context.request.url);
-    const date = url.searchParams.get('date');
-    if (!date) {
-      return new Response(JSON.stringify({ error: '缺少日期參數。' }), { status: 400 });
-    }
-    const dailyLimit = await getDailyBookingLimit(context.env, date);
-    const db = context.env.DB;
-    
-    // ** 關鍵改動：從 COUNT(*) 改為 SUM(tables_occupied) **
-    const stmt = db.prepare(
-      "SELECT SUM(tables_occupied) as total_tables_booked FROM Bookings WHERE booking_date = ? AND status = 'confirmed'"
-    );
-    const result = await stmt.bind(date).first();
-    const tablesBooked = result ? (result.total_tables_booked || 0) : 0;
-    const tablesAvailable = dailyLimit - tablesBooked;
-    
-    return new Response(JSON.stringify({
-        date: date,
-        limit: dailyLimit,
-        booked: tablesBooked,
-        available: tablesAvailable > 0 ? tablesAvailable : 0
-    }), {
-      status: 200, headers: { 'Content-Type': 'application/json' }
-    });
-  } catch (error) {
-    console.error('Error in bookings-check API:', error);
-    return new Response(JSON.stringify({ error: '查詢預約狀況失敗。' }), { status: 500 });
-  }
-}
