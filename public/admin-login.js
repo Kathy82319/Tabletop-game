@@ -771,29 +771,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     async function initializeBookingSettings() {
+        if (bookingDatepicker) return; // 如果已初始化，則不再執行
+
         try {
             const response = await fetch('/api/admin/booking-settings');
-            if (!response.ok) throw new Error('Failed to fetch booking settings');
+            if (!response.ok) throw new Error('無法獲取公休日設定');
             disabledDates = await response.json();
 
             bookingDatepicker = flatpickr("#booking-datepicker-admin-container", {
                 inline: true,
                 mode: "multiple",
                 dateFormat: "Y-m-d",
-                defaultDate: disabledDates,
-                onClose: async (selectedDates, dateStr, instance) => {
-                    const newDisabledDates = instance.selectedDates.map(d => instance.formatDate(d, "Y-m-d"));
-                    const datesToAdd = newDisabledDates.filter(d => !disabledDates.includes(d));
-                    const datesToRemove = disabledDates.filter(d => !newDisabledDates.includes(d));
-
-                    for (const date of datesToAdd) {
-                        await updateBookingSetting(date, 'add');
-                    }
-                    for (const date of datesToRemove) {
-                        await updateBookingSetting(date, 'remove');
-                    }
-                    disabledDates = newDisabledDates;
-                }
+                defaultDate: disabledDates
             });
         } catch (error) {
             console.error("初始化公休日設定失敗:", error);
@@ -801,24 +790,57 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function updateBookingSetting(date, action) {
+    async function saveBookingSettings() {
+        const saveBtn = document.getElementById('save-booking-settings-btn');
+        if (!bookingDatepicker || !saveBtn) return;
+        
+        saveBtn.textContent = '儲存中...';
+        saveBtn.disabled = true;
+
         try {
-            const response = await fetch('/api/admin/booking-settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ date, action })
+            const newDisabledDates = bookingDatepicker.selectedDates.map(d => bookingDatepicker.formatDate(d, "Y-m-d"));
+            
+            // 找出需要新增和刪除的日期
+            const datesToAdd = newDisabledDates.filter(d => !disabledDates.includes(d));
+            const datesToRemove = disabledDates.filter(d => !newDisabledDates.includes(d));
+
+            // 建立所有需要執行的 API 請求
+            const promises = [];
+            datesToAdd.forEach(date => {
+                promises.push(fetch('/api/admin/booking-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date, action: 'add' })
+                }));
             });
-            if(!response.ok) throw new Error('API request failed');
+            datesToRemove.forEach(date => {
+                promises.push(fetch('/api/admin/booking-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date, action: 'remove' })
+                }));
+            });
+
+            // 等待所有請求完成
+            await Promise.all(promises);
+
+            // 成功後，更新本地的日期列表
+            disabledDates = newDisabledDates;
+            alert('公休日設定已成功儲存！');
+            if (bookingSettingsModal) bookingSettingsModal.style.display = 'none';
+
         } catch (error) {
-            alert(`更新 ${date} 設定失敗!`);
+            console.error("儲存公休日設定失敗:", error);
+            alert("儲存失敗，請再試一次。");
+        } finally {
+            saveBtn.textContent = '儲存設定';
+            saveBtn.disabled = false;
         }
     }
 
     if(manageBookingDatesBtn) {
         manageBookingDatesBtn.addEventListener('click', () => {
-            if (!bookingDatepicker) {
-                initializeBookingSettings();
-            }
+            initializeBookingSettings(); // 確保日曆已初始化
             if (bookingSettingsModal) {
                 bookingSettingsModal.style.display = 'flex';
             }
@@ -828,6 +850,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if(bookingSettingsModal) {
         bookingSettingsModal.querySelector('.modal-close').addEventListener('click', () => bookingSettingsModal.style.display = 'none');
         bookingSettingsModal.querySelector('.btn-cancel').addEventListener('click', () => bookingSettingsModal.style.display = 'none');
+        // 綁定新的儲存按鈕事件
+        const saveBtn = bookingSettingsModal.querySelector('#save-booking-settings-btn');
+        if(saveBtn) saveBtn.addEventListener('click', saveBookingSettings);
     }
 
     if(bookingListTbody){
@@ -836,6 +861,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const bookingId = target.dataset.bookingid;
             if (!bookingId) return;
 
+            // 報到按鈕邏輯 (不變)
             if (target.classList.contains('btn-check-in')) {
                 const booking = allBookings.find(b => b.booking_id == bookingId);
                 if (!booking) return;
@@ -854,6 +880,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
+            // 取消預約按鈕邏輯 (不變)
             if (target.classList.contains('btn-cancel-booking')) {
                 const booking = allBookings.find(b => b.booking_id == bookingId);
                 if (!booking) return;
@@ -866,7 +893,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const result = await response.json();
                         if (!response.ok) throw new Error(result.error || '取消預約失敗');
                         alert('預約已成功取消！');
-                        booking.status = 'cancelled'; // 直接更新本地狀態
+                        booking.status = 'cancelled';
                         renderBookingList(allBookings);
                     } catch (error) { alert(`錯誤：${error.message}`); }
                 }
