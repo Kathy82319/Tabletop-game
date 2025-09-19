@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     const myLiffId = "2008076323-GN1e7naW";
     let userProfile = null;
+    let gameData = {}; // 用於快取使用者遊戲資料
     const appContent = document.getElementById('app-content');
     const pageTemplates = document.getElementById('page-templates');
     const tabBar = document.getElementById('tab-bar');
@@ -21,8 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeFilters = { keyword: '', tag: null };
     let bookingData = {};
     let bookingHistoryStack = [];
-    let dailyAvailability = { limit: 4, booked: 0, available: 4 };
-    let disabledDatesByAdmin = []; // 新增：用於存放後台設定的禁用日期
+    let dailyAvailability = { limit: TOTAL_TABLES, booked: 0, available: TOTAL_TABLES };
+    let disabledDatesByAdmin = [];
 
     // =================================================================
     // 頁面切換邏輯
@@ -45,7 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            // 根據 pageId 執行對應的初始化函式
             const pageInitializers = {
                 'page-home': initializeHomePage,
                 'page-games': initializeGamesPage,
@@ -58,7 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 'page-edit-profile': initializeEditProfilePage,
             };
 
-            // 確保非同步函式被正確呼叫
             if (pageInitializers[pageId]) {
                 pageInitializers[pageId]();
             }
@@ -115,6 +114,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // =================================================================
+    // 首頁 (最新情報)
+    // =================================================================
     function renderNews(filterCategory = 'ALL') {
         const container = document.getElementById('news-list-container');
         if (!container) return;
@@ -197,23 +199,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // LIFF 初始化
     // =================================================================
-    liff.init({ liffId: myLiffId })
-        .then(() => {
-            if (!liff.isLoggedIn()) {
-                liff.login();
-            } else {
-                liff.getProfile().then(profile => {
-                    userProfile = profile;
-                    showPage('page-home');
-                }).catch(err => console.error("獲取 LINE Profile 失敗", err));
-            }
-        })
-        .catch((err) => {
-            console.error("LIFF 初始化失敗", err);
-            // 即使 LIFF 失敗，也嘗試顯示首頁內容
-            showPage('page-home'); 
-        });
-
+    function initializeLiff() {
+        liff.init({ liffId: myLiffId })
+            .then(() => {
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                } else {
+                    liff.getProfile().then(profile => {
+                        userProfile = profile;
+                        showPage('page-home');
+                    }).catch(err => console.error("獲取 LINE Profile 失敗", err));
+                }
+            })
+            .catch((err) => {
+                console.error("LIFF 初始化失敗", err);
+                showPage('page-home'); 
+            });
+    }
+    
     // =================================================================
     // 個人資料頁
     // =================================================================
@@ -247,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchGameData() { 
-        if (gameData.user_id) return gameData;
+        if (gameData && gameData.user_id) return gameData;
         try {
             const response = await fetch('/api/user', {
                 method: 'POST',
@@ -267,6 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateProfileDisplay(data) {
+        if (!data) return;
         document.getElementById('display-name').textContent = data.nickname || userProfile.displayName;
         document.getElementById('user-class').textContent = data.class || "無";
         document.getElementById('user-level').textContent = data.level;
@@ -395,6 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
             container.innerHTML = `<p style="color: red;">無法載入租借紀錄: ${error.message}</p>`;
         }
     }
+
     // =================================================================
     // 編輯個人資料頁
     // =================================================================
@@ -471,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || '儲存失敗');
                 
-                gameData = {}; // 清空快取，下次進入 Profile 頁時會重新抓取
+                gameData = {};
                 statusMsg.textContent = '儲存成功！';
                 statusMsg.style.color = 'green';
                 setTimeout(() => goBackPage(), 1500);
@@ -512,7 +517,6 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = filteredGames.map(game => `<div class="game-card" data-game-id="${game.game_id}"><img src="${game.image_url}" alt="${game.name}" class="game-image"><div class="game-info"><h3 class="game-title">${game.name}</h3><p class="game-description">${game.description}</p><div class="game-tags">${(game.tags || '').split(',').map(t => t.trim()).filter(Boolean).map(tag => `<span class="game-tag">${tag}</span>`).join('')}</div><div class="game-details"><span>👥 ${game.min_players}-${game.max_players} 人</span><span>⭐ 難度: ${game.difficulty}</span></div></div></div>`).join('');
     }
 
-    // ** START: 關鍵修正 - 標籤篩選優化 **
     function populateFilters() {
         const primaryContainer = document.getElementById('primary-tags');
         const secondaryContainer = document.getElementById('secondary-tags');
@@ -560,7 +564,6 @@ document.addEventListener('DOMContentLoaded', () => {
             moreBtn.style.display = 'none';
         }
     }
-    // ** END: 關鍵修正 **
 
     async function initializeGamesPage() {
         if (allGames.length === 0) {
@@ -813,5 +816,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showPage(targetPageId);
         }
     });
-    
+
+    // 啟動 LIFF
+    initializeLiff();
 });
