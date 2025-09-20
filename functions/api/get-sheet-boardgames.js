@@ -45,7 +45,7 @@ export async function onRequest(context) {
   if (request.method !== 'GET') {
     return new Response('Invalid request method.', { status: 405 });
   }
-
+ 
   try {
     const accessToken = await getAccessToken(env);
     const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
