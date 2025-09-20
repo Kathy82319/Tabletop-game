@@ -196,27 +196,53 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // =================================================================
-    // LIFF 初始化
-    // =================================================================
-    function initializeLiff() {
-        liff.init({ liffId: myLiffId })
-            .then(() => {
-                if (!liff.isLoggedIn()) {
-                    liff.login();
-                } else {
-                    liff.getProfile().then(profile => {
-                        userProfile = profile;
-                        showPage('page-home');
-                    }).catch(err => console.error("獲取 LINE Profile 失敗", err));
-                }
-            })
-            .catch((err) => {
-                console.error("LIFF 初始化失敗", err);
-                showPage('page-home'); 
-            });
+// =================================================================
+// LIFF 初始化 (更新版)
+// =================================================================
+
+// 【步驟 1: 新增這個函式】
+// 這個函式專門用來決定 LIFF 載入後要顯示哪個頁面
+function handleInitialRouting() {
+    const hash = window.location.hash; // 獲取網址中 # 後面的部分
+
+    // 如果 hash 存在且對應到某個頁面 (例如 #page-profile)
+    // 我們就把 # 拿掉，得到 page-profile
+    const pageId = hash ? hash.substring(1) : 'page-home';
+
+    // 檢查這個 pageId 是否真的存在於我們的 HTML 樣板中
+    const templateExists = document.getElementById(pageId);
+
+    if (templateExists) {
+        showPage(pageId); // 如果存在，就顯示對應頁面
+    } else {
+        showPage('page-home'); // 如果不存在或沒有 hash，就顯示首頁
     }
-    
+}
+
+// 【步驟 2: 修改這個函式】
+// 使用 async/await 讓程式碼更清晰
+async function initializeLiff() {
+    try {
+        await liff.init({ liffId: myLiffId });
+
+        if (!liff.isLoggedIn()) {
+            liff.login();
+            return; // 登入後會重新導向，後面的程式碼不會執行
+        }
+
+        // 成功登入後，先取得使用者資料
+        userProfile = await liff.getProfile();
+
+        // 【最關鍵的修改！】
+        // 初始化和登入都完成後，才呼叫路由函式去判斷要顯示哪個頁面
+        handleInitialRouting();
+
+    } catch (err) {
+        console.error("LIFF 初始化或 Profile 獲取失敗", err);
+        // 即使失敗，也顯示首頁，避免畫面空白
+        showPage('page-home');
+    }
+}
     // =================================================================
     // 個人資料頁
     // =================================================================
