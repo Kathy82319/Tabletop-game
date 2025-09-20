@@ -342,24 +342,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if(userListTbody) {
         userListTbody.addEventListener('click', async (event) => {
+            console.log("檢查點 1：偵測到顧客列表的點擊事件！");
+
             const target = event.target;
-            // 關鍵修改：從點擊的目標往上找到 tr 元素
+            console.log("檢查點 2：實際點擊的元素是:", target);
+
             const row = target.closest('tr');
-            if (!row || !row.dataset.userId) return; // 如果沒點到 tr 或 tr 上沒有 userId，就直接忽略
+            console.log("檢查點 3：找到的父層 <tr> 元素是:", row);
+
+            if (!row || !row.dataset.userId) {
+                console.log("執行中斷：找不到有效的 <tr> 或 <tr> 上沒有綁定 userId。");
+                return;
+            }
 
             const userId = row.dataset.userId;
-            
-            // 判斷點擊的是否為編輯按鈕
+            console.log("檢查點 4：成功從 <tr> 獲取到 userId:", userId);
+
             if (target.classList.contains('btn-edit')) {
-                // 按鈕本身不需要 dataset，因為我們從父層 tr 獲取
+                console.log("流程判斷：點擊的是「編輯」按鈕，準備打開編輯視窗...");
                 openEditUserModal(userId);
             } else {
-                // 如果點擊的不是編輯按鈕，就是點擊該行的其他位置
+                console.log("流程判斷：點擊的是整行，準備打開 CRM 詳細資料視窗...");
                 openUserDetailsModal(userId);
             }
         });
     }
-    
     async function openUserDetailsModal(userId) {
         if (!userId || !userDetailsModal) return;
         const contentContainer = userDetailsModal.querySelector('#user-details-content');
