@@ -90,7 +90,7 @@ export async function onRequest(context) {
     };
 
     context.waitUntil(
-        updateRowInSheet(context.env, 'Rentals','預約紀錄', 'rental_id', rentalId, dataToSync)
+        updateRowInSheet(context.env, 'Rentals','桌遊租借者', 'rental_id', rentalId, dataToSync)
         .catch(err => console.error("背景同步租借狀態失敗:", err))
     );
 

@@ -116,9 +116,9 @@ export async function onRequest(context) {
         }).catch(err => console.error("背景任務 - 發送租借通知失敗:", err))
     );
 
-    // 同步到"預約紀錄"工作表
+    // 同步到"桌遊租借者"工作表
     context.waitUntil(
-        addRowToSheet(context.env, '預約紀錄', newRental)
+        addRowToSheet(context.env, '桌遊租借者', newRental)
         .catch(err => console.error("背景任務 - 同步新增租借紀錄失敗:", err))
     );
 
