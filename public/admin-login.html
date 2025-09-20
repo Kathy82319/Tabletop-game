@@ -8,6 +8,7 @@
     <style>
         :root {
             --primary-color: #007bff; --secondary-color: #6c757d; --danger-color: #dc3545;
+            --success-color: #28a745; --warning-color: #ffc107; --info-color: #17a2b8;
             --light-gray: #f8f9fa; --border-color: #dee2e6;
             --text-dark: #343a40; --text-light: #6c757d;
         }
@@ -30,59 +31,97 @@
         .compound-cell .main-info { font-weight: bold; }
         .compound-cell .sub-info { font-size: 0.8rem; color: var(--text-light); }
         .action-btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; border: none; border-radius: 5px; cursor: pointer; color: white; }
-        .btn-edit { background-color: #ffc107; color: #212529; }
-        .btn-sync { background-color: #17a2b8; }
+        .btn-edit { background-color: var(--warning-color); color: #212529; }
+        .btn-sync { background-color: var(--info-color); }
 
         .filter-bar { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; align-items: center; }
         .filter-group { display: flex; gap: 0.5rem; }
         .filter-group button { padding: 0.4rem 0.8rem; font-size: 0.8rem; border: 1px solid var(--border-color); background-color: white; border-radius: 5px; cursor: pointer; }
         .filter-group button.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
         
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: flex-start; z-index: 1000; overflow-y: auto; padding-top: 5vh; padding-bottom: 5vh; }
+        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 600px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px; }
         .modal-header h3 { margin: 0; }
         .modal-close { font-size: 1.5rem; font-weight: bold; border: none; background: none; cursor: pointer; }
         
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
-        .form-group input, .form-group select, .form-group textarea { 
-            width: 100%; padding: 8px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; 
-        }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         .form-actions { margin-top: 20px; text-align: right; }
         .btn-save { background-color: var(--primary-color); }
         .btn-cancel { background-color: var(--secondary-color); }
-        
-        .modal-overlay {
-            overflow-y: auto;
-            align-items: flex-start;
-            padding-top: 5vh;
-        }
+
+        /* Dashboard Styles */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .stat-card { background-color: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .stat-card h3 { margin-top: 0; color: var(--text-light); font-size: 1rem; }
+        .stat-card .stat-value { font-size: 2.5rem; font-weight: bold; color: var(--primary-color); }
+        .stat-card .stat-subtext { color: var(--text-light); font-size: 0.9rem; margin-top: 5px;}
+
+        /* CRM Modal Styles */
+        #user-details-modal .modal-content { max-width: 800px; }
+        .details-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; }
+        .profile-summary { text-align: center; }
+        .profile-summary img { width: 100px; height: 100px; border-radius: 50%; margin-bottom: 1rem; }
+        .profile-summary h4 { margin: 0.5rem 0; }
+        .profile-summary p { margin: 0.2rem 0; color: var(--text-light); }
+        .details-tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; }
+        .details-tab { padding: 0.8rem 1rem; cursor: pointer; }
+        .details-tab.active { border-bottom: 3px solid var(--primary-color); font-weight: bold; }
+        .details-tab-content { display: none; }
+        .details-tab-content.active { display: block; max-height: 300px; overflow-y: auto; }
+        #user-details-modal table { font-size: 0.85rem; }
+        #user-details-modal th, #user-details-modal td { padding: 0.6rem; }
+        .message-sender { margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem; }
     </style>
 </head>
 <body>
     <header class="header"><h1>店務管理系統</h1></header>
     <nav class="nav-tabs">
-        <a href="#users" class="active">顧客管理</a>
+        <a href="#dashboard" class="active">儀表板</a>
+        <a href="#users">顧客管理</a>
         <a href="#inventory">庫存管理</a>
         <a href="#rentals">桌遊租借</a>
         <a href="#bookings">訂位管理</a>
         <a href="#exp-history">經驗紀錄</a>
         <a href="#news">情報管理</a>
+        <a href="#drafts">訊息草稿</a>
         <a href="#store-info">店家資訊</a>
         <a href="#scan">掃碼加點</a>
     </nav>
     
 <main class="main-content">
-        <div id="page-users" class="page active">
+        <div id="page-dashboard" class="page active">
+            <div class="page-header">
+                <h2>今日狀態總覽</h2>
+            </div>
+            <div id="dashboard-grid" class="dashboard-grid">
+                <div class="stat-card">
+                    <h3>今日預約總人數</h3>
+                    <p id="stat-today-guests" class="stat-value">讀取中...</p>
+                </div>
+                <div class="stat-card">
+                    <h3>未歸還遊戲總數</h3>
+                    <p id="stat-outstanding-rentals" class="stat-value">讀取中...</p>
+                </div>
+                <div class="stat-card">
+                    <h3>今日到期遊戲</h3>
+                    <p id="stat-due-today" class="stat-value">讀取中...</p>
+                    <p class="stat-subtext">筆租借紀錄</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-users" class="page">
             <div class="page-header">
                 <h2>顧客總表</h2>
-                <button id="sync-d1-to-sheet-btn" class="action-btn" style="background-color: #28a745;">同步至 Google Sheet</button>
+                <button id="sync-d1-to-sheet-btn" class="action-btn" style="background-color: var(--success-color);">同步至 Google Sheet</button>
             </div>
-            <input type="text" id="user-search-input" placeholder="依 LINE 名稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
+            <input type="text" id="user-search-input" placeholder="依 LINE 名稱或暱稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
             <table>
                 <thead>
-                    <tr><th>LINE 名稱</th><th>等級</th><th>經驗值</th><th>職業</th><th>標籤</th><th>操作</th></tr>
+                    <tr><th>LINE 名稱 / 暱稱</th><th>等級</th><th>經驗值</th><th>職業</th><th>標籤</th><th>操作</th></tr>
                 </thead>
                 <tbody id="user-list-tbody"></tbody>
             </table>
@@ -192,6 +231,19 @@
                 <tbody id="news-list-tbody"></tbody>
             </table>
         </div>
+        <div id="page-drafts" class="page">
+            <div class="page-header">
+                <h2>訊息草稿管理</h2>
+                <button id="add-draft-btn" class="action-btn btn-save">新增草稿</button>
+            </div>
+            <table>
+                <thead>
+                    <tr><th>標題</th><th>內容預覽</th><th>操作</th></tr>
+                </thead>
+                <tbody id="draft-list-tbody"></tbody>
+            </table>
+        </div>
+
 
         <div id="page-store-info" class="page">
             <div class="page-header"><h2>店家資訊管理</h2></div>
@@ -235,6 +287,7 @@
             </div>
         </div>
     </div>
+
     <div id="edit-user-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -378,6 +431,30 @@
         </div>
     </div>
     
+    <div id="edit-draft-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-draft-title">編輯訊息草稿</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="edit-draft-form">
+                <input type="hidden" id="edit-draft-id">
+                <div class="form-group">
+                    <label for="edit-draft-title">草稿標題</label>
+                    <input type="text" id="edit-draft-title" required placeholder="方便您辨識的標題，不會傳送給顧客">
+                </div>
+                <div class="form-group">
+                    <label for="edit-draft-content">訊息內容</label>
+                    <textarea id="edit-draft-content" rows="6" required placeholder="這是將會傳送給顧客的實際內容"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="action-btn btn-cancel">取消</button>
+                    <button type="submit" class="action-btn btn-save">儲存草稿</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="/admin-login.js"></script>
