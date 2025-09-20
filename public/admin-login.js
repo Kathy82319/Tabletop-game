@@ -340,31 +340,32 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if(userListTbody) {
+        if(userListTbody) {
         userListTbody.addEventListener('click', async (event) => {
             const target = event.target;
             const row = target.closest('tr');
             if (!row) return;
+
             const userId = row.dataset.userId;
-            if (!userId) return;
             
+            // 如果點擊的是編輯按鈕
             if (target.classList.contains('btn-edit')) {
-                event.stopPropagation();
+                event.stopPropagation(); // 防止觸發整行的點擊事件
                 openEditUserModal(userId);
                 return;
             }
             
+            // 點擊整行其他地方，則打開 CRM 詳情視窗
             openUserDetailsModal(userId);
         });
     }
     
+    // CRM Modal 相關函式
     async function openUserDetailsModal(userId) {
-        if (!userId || !userDetailsModal) return;
-        const contentContainer = userDetailsModal.querySelector('#user-details-content');
-        if (!contentContainer) return;
-
-        contentContainer.innerHTML = '<p>讀取中...</p>';
-        userDetailsModal.style.display = 'flex';
+        if (!userId) return;
+        const modalContent = document.querySelector('#user-details-modal .modal-content');
+        modalContent.innerHTML = '<p>讀取中...</p>';
+        if (userDetailsModal) userDetailsModal.style.display = 'flex';
 
         try {
             const response = await fetch(`/api/admin/user-details?userId=${userId}`);
@@ -372,23 +373,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             renderUserDetails(data);
         } catch (error) {
-            contentContainer.innerHTML = `<p style="color:red;">${error.message}</p>`;
+            modalContent.innerHTML = `<p style="color:red;">${error.message}</p>`;
         }
     }
 
     function renderUserDetails(data) {
         const { profile, bookings, rentals, exp_history } = data;
-        const contentContainer = userDetailsModal.querySelector('#user-details-content');
+        const modalContent = document.querySelector('#user-details-modal #user-details-content');
         
         const displayName = profile.nickname || profile.line_display_name;
         document.getElementById('user-details-title').textContent = `顧客資料：${displayName}`;
 
-        contentContainer.innerHTML = `
+        modalContent.innerHTML = `
             <div class="details-grid">
                 <div class="profile-summary">
                     <img src="${profile.line_picture_url || 'placeholder.jpg'}" alt="Profile Picture">
                     <h4>${displayName}</h4>
-                    <p>姓名: ${profile.real_name || '未設定'}</p>
                     <p>等級: ${profile.level} (${profile.current_exp}/10 EXP)</p>
                     <p>職業: ${profile.class}</p>
                     <p>標籤: ${profile.tag || '無'}</p>
@@ -426,8 +426,9 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        const tabsContainer = contentContainer.querySelector('.details-tabs');
-        const contentsContainer = contentContainer.querySelector('.profile-details');
+        // 綁定 Tab 切換事件
+        const tabsContainer = modalContent.querySelector('.details-tabs');
+        const contentsContainer = modalContent.querySelector('.profile-details');
         tabsContainer.addEventListener('click', e => {
             if (e.target.tagName === 'BUTTON') {
                 tabsContainer.querySelector('.active').classList.remove('active');
@@ -437,6 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
+        // 載入訊息草稿並綁定事件
         loadAndBindMessageDrafts(profile.user_id);
     }
     
@@ -456,7 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (userDetailsModal) {
         userDetailsModal.querySelector('.modal-close').addEventListener('click', () => userDetailsModal.style.display = 'none');
     }
-
+    
     // =================================================================
     // 訊息草稿模組
     // =================================================================
