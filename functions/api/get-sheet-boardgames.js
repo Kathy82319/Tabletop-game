@@ -9,7 +9,7 @@ async function getAccessToken(env) {
     
     const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
     
-    const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets' })
+    const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets.readonly' }) // 使用 .readonly 權限即可
       .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
       .setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
       .setAudience('https://oauth2.googleapis.com/token')
@@ -20,9 +20,9 @@ async function getAccessToken(env) {
 
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-form-urlencoded' },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
-        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        grant_type: 'urn:ietf:params:oauth:grant-type-jwt-bearer',
         assertion: jwt
       }),
     });
@@ -50,14 +50,14 @@ export async function onRequest(context) {
     
     await doc.loadInfo();
     
-    // ** 關鍵修改：從讀取環境變數來決定工作表名稱 **
+    // ** 這裡是關鍵修正 **
     const sheetName = env.BOARDGAMES_SHEET_NAME;
     if (!sheetName) {
-        throw new Error('缺少 BOARDGAMES_SHEET_NAME 環境變數。');
+        throw new Error('專案缺少 BOARDGAMES_SHEET_NAME 環境變數設定。');
     }
     const sheet = doc.sheetsByTitle[sheetName];
     if (!sheet) {
-      throw new Error(`在 Google Sheets 中找不到名為 "${sheetName}" 的工作表。`);
+      throw new Error(`在 Google Sheets 中找不到名為 "${sheetName}" 的工作表。請確認環境變數與工作表名稱完全一致。`);
     }
     
     const rows = await sheet.getRows();
