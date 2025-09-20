@@ -4,6 +4,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainNav = document.querySelector('.nav-tabs');
     const pages = document.querySelectorAll('.page');
 
+    // 儀表板
+    const dashboardGrid = document.getElementById('dashboard-grid');
+
+    // 訊息草稿
+    const draftListTbody = document.getElementById('draft-list-tbody');
+    const addDraftBtn = document.getElementById('add-draft-btn');
+    const editDraftModal = document.getElementById('edit-draft-modal');
+    const editDraftForm = document.getElementById('edit-draft-form');
+    const modalDraftTitle = document.getElementById('modal-draft-title');
+
     // 顧客管理
     const userListTbody = document.getElementById('user-list-tbody');
     const userSearchInput = document.getElementById('user-search-input');
@@ -66,9 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let rentalFilters = { status: 'all', keyword: '' };
     let html5QrCode = null;
     let currentEditingNewsId = null;
+    let currentEditingDraftId = null;
     let selectedRentalUser = null;
-
-    // ---- 頁面切換邏輯 ----
+// ---- 頁面切換邏輯 ----
     function showPage(pageId) {
         if (html5QrCode && html5QrCode.isScanning) {
             html5QrCode.stop().catch(err => console.error("停止掃描器失敗", err));
@@ -82,14 +92,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (link.getAttribute('href') === `#${pageId}`) link.classList.add('active');
         });
 
-        if (pageId === 'users' && allUsers.length === 0) fetchAllUsers();
-        if (pageId === 'inventory') fetchAllGames();
-        if (pageId === 'bookings' && allBookings.length === 0) fetchAllBookings();
-        if (pageId === 'exp-history' && allExpHistory.length === 0) fetchAllExpHistory();
-        if (pageId === 'scan') startScanner();
-        if (pageId === 'news' && allNews.length === 0) fetchAllNews();
-        if (pageId === 'store-info') fetchStoreInfo();
-        if (pageId === 'rentals' && allRentals.length === 0) fetchAllRentals();
+        // 根據頁面 ID 決定載入哪個資料
+        const pageLoader = {
+            'dashboard': fetchDashboardStats,
+            'users': fetchAllUsers,
+            'inventory': fetchAllGames,
+            'bookings': () => fetchAllBookings('today'), // 預設載入今日預約
+            'exp-history': fetchAllExpHistory,
+            'scan': startScanner,
+            'news': fetchAllNews,
+            'store-info': fetchStoreInfo,
+            'rentals': fetchAllRentals,
+            'drafts': fetchAllDrafts
+        };
+        
+        if (pageLoader[pageId]) {
+            pageLoader[pageId]();
+        }
     }
 
     mainNav.addEventListener('click', (event) => {
@@ -101,6 +120,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // =================================================================
+    // 儀表板模組
+    // =================================================================
+    async function fetchDashboardStats() {
+        try {
+            const response = await fetch('/api/admin/dashboard-stats');
+            if (!response.ok) throw new Error('無法獲取儀表板數據');
+            const stats = await response.json();
+            
+            document.getElementById('stat-today-guests').textContent = stats.today_total_guests || 0;
+            document.getElementById('stat-outstanding-rentals').textContent = stats.outstanding_rentals_count || 0;
+            document.getElementById('stat-due-today').textContent = stats.due_today_rentals_count || 0;
+
+        } catch (error) {
+            console.error('獲取儀表板數據失敗:', error);
+            if(dashboardGrid) dashboardGrid.innerHTML = `<p style="color:red;">讀取數據失敗</p>`;
+        }
+    }    
+    
+    // =================================================================
     // 顧客管理模組
     // =================================================================
     function renderUserList(users) {
@@ -108,16 +146,22 @@ document.addEventListener('DOMContentLoaded', () => {
         userListTbody.innerHTML = '';
         users.forEach(user => {
             const row = document.createElement('tr');
-            row.dataset.userId = user.user_id;
+            row.dataset.userId = user.user_id; // 將 user ID 綁定到整行 tr
+            row.style.cursor = 'pointer'; // 讓滑鼠變成可點擊樣式
+            
+            const displayName = user.nickname ? `${user.line_display_name} (${user.nickname})` : user.line_display_name;
+            
             row.innerHTML = `
-                <td style="text-align: left; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${user.line_display_name || 'N/A'}</td>
+                <td class="compound-cell" style="text-align: left;">
+                    <div class="main-info">${displayName || 'N/A'}</div>
+                    <div class="sub-info">${user.user_id}</div>
+                </td>
                 <td>${user.level}</td>
                 <td>${user.current_exp} / 10</td>
                 <td>${user.class || '無'}</td>
                 <td><span class="tag-display">${user.tag || '無'}</span></td>
                 <td class="actions-cell">
                     <button class="action-btn btn-edit" data-userid="${user.user_id}">編輯</button>
-                    <button class="action-btn btn-sync" data-userid="${user.user_id}">同步</button>
                 </td>
             `;
             userListTbody.appendChild(row);
@@ -125,6 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchAllUsers() {
+        if (allUsers.length > 0) return; // 避免重複載入
         try {
             const response = await fetch('/api/get-users');
             if (!response.ok) throw new Error('無法獲取使用者列表');
@@ -162,7 +207,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if(userSearchInput){
         userSearchInput.addEventListener('input', () => {
             const searchTerm = userSearchInput.value.toLowerCase().trim();
-            const filteredUsers = searchTerm ? allUsers.filter(user => (user.line_display_name || '').toLowerCase().includes(searchTerm)) : allUsers;
+            const filteredUsers = searchTerm 
+                ? allUsers.filter(user => 
+                    (user.line_display_name || '').toLowerCase().includes(searchTerm) ||
+                    (user.nickname || '').toLowerCase().includes(searchTerm)
+                  ) 
+                : allUsers;
             renderUserList(filteredUsers);
         });
     }
@@ -319,35 +369,291 @@ document.addEventListener('DOMContentLoaded', () => {
     if(userListTbody) {
         userListTbody.addEventListener('click', async (event) => {
             const target = event.target;
-            const userId = target.dataset.userid;
-            if (!userId) return;
+            const row = target.closest('tr');
+            if (!row) return;
+
+            const userId = row.dataset.userId;
             
+            // 如果點擊的是編輯按鈕
             if (target.classList.contains('btn-edit')) {
+                event.stopPropagation(); // 防止觸發整行的點擊事件
                 openEditUserModal(userId);
+                return;
             }
             
-            if (target.classList.contains('btn-sync')) {
-                if (!confirm(`警告：此操作將使用 Google Sheet 的資料覆蓋此使用者 (${userId}) 在資料庫中的資料。\n\n僅在確認資料庫資料異常時使用。\n\n確定要繼續嗎？`)) return;
-                
-                try {
-                    target.textContent = '還原中...';
-                    target.disabled = true;
-                    const response = await fetch('/api/sync-user-from-sheet', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userId })
-                    });
-                    const result = await response.json();
-                    if (!response.ok) throw new Error(result.details || result.error || '還原失敗');
-                    alert('還原成功！將重新整理列表資料。');
-                    await fetchAllUsers();
-                } catch (error) {
-                    alert(`錯誤：${error.message}`);
-                } finally {
-                    target.textContent = '同步';
-                    target.disabled = false;
+            // 點擊整行其他地方，則打開 CRM 詳情視窗
+            openUserDetailsModal(userId);
+        });
+    }
+    
+    // CRM Modal 相關函式
+    async function openUserDetailsModal(userId) {
+        if (!userId) return;
+        const modalContent = document.querySelector('#user-details-modal .modal-content');
+        modalContent.innerHTML = '<p>讀取中...</p>';
+        if (userDetailsModal) userDetailsModal.style.display = 'flex';
+
+        try {
+            const response = await fetch(`/api/admin/user-details?userId=${userId}`);
+            if (!response.ok) throw new Error('無法獲取顧客詳細資料');
+            const data = await response.json();
+            renderUserDetails(data);
+        } catch (error) {
+            modalContent.innerHTML = `<p style="color:red;">${error.message}</p>`;
+        }
+    }
+
+    function renderUserDetails(data) {
+        const { profile, bookings, rentals, exp_history } = data;
+        const modalContent = document.querySelector('#user-details-modal #user-details-content');
+        
+        const displayName = profile.nickname || profile.line_display_name;
+        document.getElementById('user-details-title').textContent = `顧客資料：${displayName}`;
+
+        modalContent.innerHTML = `
+            <div class="details-grid">
+                <div class="profile-summary">
+                    <img src="${profile.line_picture_url || 'placeholder.jpg'}" alt="Profile Picture">
+                    <h4>${displayName}</h4>
+                    <p>等級: ${profile.level} (${profile.current_exp}/10 EXP)</p>
+                    <p>職業: ${profile.class}</p>
+                    <p>標籤: ${profile.tag || '無'}</p>
+                </div>
+                <div class="profile-details">
+                    <div class="details-tabs">
+                        <button class="details-tab active" data-target="tab-rentals">租借紀錄</button>
+                        <button class="details-tab" data-target="tab-bookings">預約紀錄</button>
+                        <button class="details-tab" data-target="tab-exp">經驗值紀錄</button>
+                    </div>
+                    <div id="tab-rentals" class="details-tab-content active">
+                        ${renderHistoryTable(rentals, ['rental_date', 'game_name', 'status'], { rental_date: '租借日', game_name: '遊戲', status: '狀態' })}
+                    </div>
+                    <div id="tab-bookings" class="details-tab-content">
+                        ${renderHistoryTable(bookings, ['booking_date', 'num_of_people', 'status'], { booking_date: '預約日', num_of_people: '人數', status: '狀態' })}
+                    </div>
+                    <div id="tab-exp" class="details-tab-content">
+                        ${renderHistoryTable(exp_history, ['created_at', 'reason', 'exp_added'], { created_at: '日期', reason: '原因', exp_added: '經驗' })}
+                    </div>
+                </div>
+            </div>
+            <div class="message-sender">
+                <h4>發送 LINE 訊息</h4>
+                <div class="form-group">
+                    <label for="message-draft-select">選擇訊息草稿</label>
+                    <select id="message-draft-select"><option value="">-- 手動輸入或選擇草稿 --</option></select>
+                </div>
+                <div class="form-group">
+                    <label for="direct-message-content">訊息內容</label>
+                    <textarea id="direct-message-content" rows="4"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button id="send-direct-message-btn" class="action-btn btn-save" data-userid="${profile.user_id}">確認發送</button>
+                </div>
+            </div>
+        `;
+
+        // 綁定 Tab 切換事件
+        const tabsContainer = modalContent.querySelector('.details-tabs');
+        const contentsContainer = modalContent.querySelector('.profile-details');
+        tabsContainer.addEventListener('click', e => {
+            if (e.target.tagName === 'BUTTON') {
+                tabsContainer.querySelector('.active').classList.remove('active');
+                e.target.classList.add('active');
+                contentsContainer.querySelector('.details-tab-content.active').classList.remove('active');
+                contentsContainer.querySelector(`#${e.target.dataset.target}`).classList.add('active');
+            }
+        });
+        
+        // 載入訊息草稿並綁定事件
+        loadAndBindMessageDrafts(profile.user_id);
+    }
+    
+    function renderHistoryTable(items, columns, headers) {
+        if (!items || items.length === 0) return '<p>無相關紀錄</p>';
+        let head = '<tr>' + Object.values(headers).map(h => `<th>${h}</th>`).join('') + '</tr>';
+        let body = items.map(item => '<tr>' + columns.map(col => {
+            let value = item[col];
+            if (col === 'created_at' || col === 'rental_date' || col === 'booking_date') {
+                value = new Date(value).toLocaleDateString();
+            }
+            return `<td>${value}</td>`;
+        }).join('') + '</tr>').join('');
+        return `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+    }
+
+    if (userDetailsModal) {
+        userDetailsModal.querySelector('.modal-close').addEventListener('click', () => userDetailsModal.style.display = 'none');
+    }
+
+    // =================================================================
+    // 訊息草稿模組
+    // =================================================================
+    async function fetchAllDrafts() {
+        if (allDrafts.length > 0) return; // 避免重複載入
+        try {
+            const response = await fetch('/api/admin/message-drafts');
+            if (!response.ok) throw new Error('無法獲取訊息草稿');
+            allDrafts = await response.json();
+            renderDraftList(allDrafts);
+        } catch (error) {
+            console.error('獲取訊息草稿失敗:', error);
+            if(draftListTbody) draftListTbody.innerHTML = '<tr><td colspan="3">讀取失敗</td></tr>';
+        }
+    }
+
+    function renderDraftList(drafts) {
+        if (!draftListTbody) return;
+        draftListTbody.innerHTML = '';
+        drafts.forEach(draft => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${draft.title}</td>
+                <td>${draft.content.substring(0, 50)}...</td>
+                <td class="actions-cell">
+                    <button class="action-btn btn-edit" data-draftid="${draft.draft_id}">編輯</button>
+                    <button class="action-btn" data-draftid="${draft.draft_id}" style="background-color: var(--danger-color);">刪除</button>
+                </td>
+            `;
+            draftListTbody.appendChild(row);
+        });
+    }
+
+    function openEditDraftModal(draft = null) {
+        if (!editDraftForm) return;
+        editDraftForm.reset();
+        currentEditingDraftId = draft ? draft.draft_id : null;
+        if (modalDraftTitle) modalDraftTitle.textContent = draft ? '編輯訊息草稿' : '新增訊息草稿';
+
+        if (draft) {
+            document.getElementById('edit-draft-id').value = draft.draft_id;
+            document.getElementById('edit-draft-title').value = draft.title;
+            document.getElementById('edit-draft-content').value = draft.content;
+        }
+        
+        if (editDraftModal) editDraftModal.style.display = 'flex';
+    }
+
+    if (addDraftBtn) {
+        addDraftBtn.addEventListener('click', () => openEditDraftModal());
+    }
+    if (editDraftModal) {
+        editDraftModal.querySelector('.modal-close').addEventListener('click', () => editDraftModal.style.display = 'none');
+        editDraftModal.querySelector('.btn-cancel').addEventListener('click', () => editDraftModal.style.display = 'none');
+    }
+
+    if (editDraftForm) {
+        editDraftForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const draftData = {
+                draft_id: currentEditingDraftId,
+                title: document.getElementById('edit-draft-title').value,
+                content: document.getElementById('edit-draft-content').value,
+            };
+
+            const isUpdating = !!currentEditingDraftId;
+            const url = isUpdating ? '/api/admin/message-drafts' : '/api/admin/message-drafts';
+            const method = isUpdating ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(draftData)
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || '儲存失敗');
+                }
+                alert('草稿儲存成功！');
+                editDraftModal.style.display = 'none';
+                allDrafts = []; // 清空快取以便重新抓取
+                await fetchAllDrafts();
+            } catch (error) {
+                alert(`錯誤： ${error.message}`);
+            }
+        });
+    }
+
+    if (draftListTbody) {
+        draftListTbody.addEventListener('click', async (e) => {
+            const target = e.target;
+            const draftId = target.dataset.draftid;
+            if (!draftId) return;
+
+            if (target.classList.contains('btn-edit')) {
+                const draft = allDrafts.find(d => d.draft_id == draftId);
+                openEditDraftModal(draft);
+            } else if (target.style.backgroundColor.includes('220, 53, 69')) { // 簡易判斷是否為刪除鈕
+                if (confirm('確定要刪除這則草稿嗎？')) {
+                    try {
+                        const response = await fetch('/api/admin/message-drafts', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ draft_id: Number(draftId) })
+                        });
+                        if (!response.ok) throw new Error('刪除失敗');
+                        alert('刪除成功！');
+                        allDrafts = allDrafts.filter(d => d.draft_id != draftId);
+                        renderDraftList(allDrafts);
+                    } catch (error) {
+                        alert(`錯誤：${error.message}`);
+                    }
                 }
             }
         });
+    }
+
+    async function loadAndBindMessageDrafts(userId) {
+        const select = document.getElementById('message-draft-select');
+        const content = document.getElementById('direct-message-content');
+        const sendBtn = document.getElementById('send-direct-message-btn');
+        if (!select || !content || !sendBtn) return;
+
+        // 載入草稿到下拉選單
+        await fetchAllDrafts();
+        select.innerHTML = '<option value="">-- 手動輸入或選擇草稿 --</option>';
+        allDrafts.forEach(draft => {
+            const option = document.createElement('option');
+            option.value = draft.content;
+            option.textContent = draft.title;
+            select.appendChild(option);
+        });
+
+        // 選擇草稿時自動填入內容
+        select.onchange = () => {
+            content.value = select.value;
+        };
+
+        // 發送訊息按鈕
+        sendBtn.onclick = async () => {
+            const message = content.value.trim();
+            if (!message) {
+                alert('訊息內容不可為空！');
+                return;
+            }
+            if (!confirm(`確定要發送以下訊息給該顧客嗎？\n\n${message}`)) return;
+            
+            sendBtn.textContent = '傳送中...';
+            sendBtn.disabled = true;
+            try {
+                const response = await fetch('/api/send-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, message })
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || '傳送失敗');
+                }
+                alert('訊息傳送成功！');
+                content.value = '';
+            } catch (error) {
+                alert(`傳送失敗：${error.message}`);
+            } finally {
+                sendBtn.textContent = '確認發送';
+                sendBtn.disabled = false;
+            }
+        };
     }
 
     // =================================================================
@@ -1271,8 +1577,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('初始化職業設定失敗:', error);
             alert(`警告：無法從 Google Sheet 獲取職業設定。`);
         }
-        await fetchAllUsers(); // 先載入使用者資料，租借功能會用到
-        showPage('users');
+        showPage('dashboard'); // 預設顯示儀表板
     }
     
     initialize();
