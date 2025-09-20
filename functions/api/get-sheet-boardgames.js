@@ -7,11 +7,9 @@ async function getAccessToken(env) {
     const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY } = env;
     if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) throw new Error('缺少 Google 服務帳號的環境變數。');
     
-    // ** 關鍵點 1：確保這裡是 'RS256' **
     const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
     
     const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets' })
-      // ** 關鍵點 2：確保 alg 也是 'RS256' **
       .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
       .setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
       .setAudience('https://oauth2.googleapis.com/token')
@@ -22,7 +20,7 @@ async function getAccessToken(env) {
 
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: { 'Content-Type': 'application/x-form-urlencoded' },
       body: new URLSearchParams({
         grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
         assertion: jwt
@@ -32,7 +30,6 @@ async function getAccessToken(env) {
     const tokenData = await tokenResponse.json();
     if (!tokenResponse.ok) {
         console.error("Google Auth Error:", tokenData);
-        // 這個錯誤訊息就是您在瀏覽器中看到的
         throw new Error(`從 Google 取得 access token 失敗: ${tokenData.error_description || tokenData.error}`);
     }
     return tokenData.access_token;
@@ -45,16 +42,22 @@ export async function onRequest(context) {
   if (request.method !== 'GET') {
     return new Response('Invalid request method.', { status: 405 });
   }
- 
+
   try {
     const accessToken = await getAccessToken(env);
     const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
     const doc = new GoogleSpreadsheet(env.GOOGLE_SHEET_ID, simpleAuth);
     
     await doc.loadInfo();
-    const sheet = doc.sheetsByTitle['BoardGames'];
+    
+    // ** 關鍵修改：從讀取環境變數來決定工作表名稱 **
+    const sheetName = env.BOARDGAMES_SHEET_NAME;
+    if (!sheetName) {
+        throw new Error('缺少 BOARDGAMES_SHEET_NAME 環境變數。');
+    }
+    const sheet = doc.sheetsByTitle[sheetName];
     if (!sheet) {
-      throw new Error('在 Google Sheets 中找不到名為 "BoardGames" 的工作表。');
+      throw new Error(`在 Google Sheets 中找不到名為 "${sheetName}" 的工作表。`);
     }
     
     const rows = await sheet.getRows();

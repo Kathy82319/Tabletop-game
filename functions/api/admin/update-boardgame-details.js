@@ -71,11 +71,17 @@ export async function onRequest(context) {
         rent_price,
         is_visible: is_visible ? 'TRUE' : 'FALSE'
     };
-    context.waitUntil(
-        updateRowInSheet(context.env, 'BoardGames', 'game_id', gameId, dataToSync)
-        .catch(err => console.error("背景同步桌遊資訊失敗:", err))
-    );
-
+    
+    // ** 關鍵修改：使用變數讀取工作表名稱 **
+    const sheetName = context.env.BOARDGAMES_SHEET_NAME;
+    if (!sheetName) {
+        console.error(`背景同步桌遊資訊失敗: 缺少 BOARDGAMES_SHEET_NAME 環境變數`);
+    } else {
+        context.waitUntil(
+            updateRowInSheet(context.env, sheetName, 'game_id', gameId, dataToSync)
+            .catch(err => console.error("背景同步桌遊資訊失敗:", err))
+        );
+    }
     return new Response(JSON.stringify({ success: true, message: '成功更新桌遊資訊！' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },

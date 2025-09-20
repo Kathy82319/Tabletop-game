@@ -4,6 +4,7 @@ import * as jose from 'jose';
 
 // --- Google Sheets 工具函式 ---
 async function getAccessToken(env) {
+    // ... (此函式內容不變，為求完整性一併附上)
     const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY } = env;
     if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) throw new Error('缺少 Google 服務帳號的環境變數。');
     
@@ -14,7 +15,7 @@ async function getAccessToken(env) {
       .setIssuedAt().setExpirationTime('1h').sign(privateKey);
 
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      method: 'POST', headers: { 'Content-Type': 'application/x-form-urlencoded' },
       body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt }),
     });
 
@@ -24,8 +25,10 @@ async function getAccessToken(env) {
 }
 
 async function getBoardGamesFromSheet(env) {
-    const { GOOGLE_SHEET_ID } = env;
+    const { GOOGLE_SHEET_ID, BOARDGAMES_SHEET_NAME } = env;
     if (!GOOGLE_SHEET_ID) throw new Error('缺少 GOOGLE_SHEET_ID 環境變數。');
+    // ** 關鍵修改：檢查新的環境變數 **
+    if (!BOARDGAMES_SHEET_NAME) throw new Error('缺少 BOARDGAMES_SHEET_NAME 環境變數。');
 
     const accessToken = await getAccessToken(env);
     const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
@@ -33,8 +36,9 @@ async function getBoardGamesFromSheet(env) {
     const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
     await doc.loadInfo();
     
-    const sheet = doc.sheetsByTitle['BoardGames'];
-    if (!sheet) throw new Error('在 Google Sheets 中找不到名為 "BoardGames" 的工作表。');
+    // ** 關鍵修改：使用變數讀取工作表 **
+    const sheet = doc.sheetsByTitle[BOARDGAMES_SHEET_NAME];
+    if (!sheet) throw new Error(`在 Google Sheets 中找不到名為 "${BOARDGAMES_SHEET_NAME}" 的工作表。`);
 
     return await sheet.getRows();
 }

@@ -118,13 +118,15 @@ export async function onRequest(context) {
     );
 
     // START: 新增背景任務，同步更新 BoardGames 工作表的庫存
-    const updatedStock = {
-        for_rent_stock: game.for_rent_stock - 1
-    };
-    context.waitUntil(
-        updateRowInSheet(context.env, 'BoardGames', 'game_id', gameId, updatedStock)
-        .catch(err => console.error(`背景同步桌遊庫存失敗 (GameID: ${gameId}):`, err))
-    );
+    const sheetName = context.env.BOARDGAMES_SHEET_NAME;
+    if (!sheetName) {
+        console.error(`背景同步桌遊庫存失敗: 缺少 BOARDGAMES_SHEET_NAME 環境變數`);
+    } else {
+        context.waitUntil(
+            updateRowInSheet(context.env, sheetName, 'game_id', gameId, updatedStock)
+            .catch(err => console.error(`背景同步桌遊庫存失敗 (GameID: ${gameId}):`, err))
+        );
+    }
     // END: 新增背景任務
 
     return new Response(JSON.stringify({ success: true, message: '租借紀錄已建立，庫存已更新！' }), {
