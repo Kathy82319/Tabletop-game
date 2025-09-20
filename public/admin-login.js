@@ -355,24 +355,44 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    async function openUserDetailsModal(userId) {
-        if (!userId || !userDetailsModal) return;
-        const contentContainer = userDetailsModal.querySelector('#user-details-content');
-        if (!contentContainer) {
-            console.error("CRM Modal 中缺少 #user-details-content 元素！");
+async function openUserDetailsModal(userId) {
+        console.log("CRM 檢查點 A: 已進入 openUserDetailsModal 函式，收到的 userId 是:", userId);
+
+        if (!userId) {
+            console.error("CRM 流程中斷：傳入的 userId 是空的！");
             return;
         }
+        if (!userDetailsModal) {
+            console.error("CRM 流程中斷：在 JS 檔案頂部找不到 userDetailsModal 變數！請檢查 HTML 的 id 是否為 'user-details-modal'。");
+            return;
+        }
+        console.log("CRM 檢查點 B: userId 和 userDetailsModal 變數都存在。");
+
+        const contentContainer = userDetailsModal.querySelector('#user-details-content');
+        if (!contentContainer) {
+            console.error("CRM 流程中斷：在彈出視窗中找不到 id 為 'user-details-content' 的元素！");
+            return;
+        }
+        console.log("CRM 檢查點 C: 成功找到 contentContainer，準備顯示 Modal。");
 
         contentContainer.innerHTML = '<p>讀取中...</p>';
         userDetailsModal.style.display = 'flex';
+        console.log("CRM 檢查點 D: 已將 Modal 的 display 設為 'flex'，準備呼叫後端 API...");
 
         try {
             const response = await fetch(`/api/admin/user-details?userId=${userId}`);
-            if (!response.ok) throw new Error('無法獲取顧客詳細資料');
+            console.log("CRM 檢查點 E: 後端 API 回應狀態碼:", response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`API 請求失敗: ${errorText}`);
+            }
             const data = await response.json();
+            console.log("CRM 檢查點 F: 成功獲取並解析 API 資料:", data);
             renderUserDetails(data);
         } catch (error) {
-            contentContainer.innerHTML = `<p style="color:red;">${error.message}</p>`;
+            console.error("CRM 執行錯誤:", error);
+            contentContainer.innerHTML = `<p style="color:red;">載入資料時發生錯誤：${error.message}</p>`;
         }
     }
 
