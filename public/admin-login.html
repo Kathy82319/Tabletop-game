@@ -189,20 +189,16 @@
         <form id="edit-rental-form">
             <input type="hidden" id="edit-rental-id">
             <div class="form-group">
-                <label>遊戲名稱</label>
-                <input type="text" id="edit-rental-game-name" readonly style="background: #e9ecef;">
-            </div>
-            <div class="form-group">
-                <label>租借人</label>
-                <input type="text" id="edit-rental-user-name" readonly style="background: #e9ecef;">
+                <label>應付逾期總額 (系統自動計算)</label>
+                <input type="text" id="calculated-late-fee-display" readonly style="background: #e9ecef; font-weight: bold; color: var(--danger-color);">
             </div>
             <div class="form-group">
                 <label for="edit-rental-due-date">修改應還日期 (延期)</label>
                 <input type="text" id="edit-rental-due-date">
             </div>
             <div class="form-group">
-                <label for="edit-rental-late-fee">記錄已付逾期費用</label>
-                <input type="number" id="edit-rental-late-fee" min="0" placeholder="輸入顧客支付的金額">
+                <label for="edit-rental-late-fee">記錄顧客本次支付的逾期費用</label>
+                <input type="number" id="edit-rental-late-fee" min="0" placeholder="輸入顧客實際支付的金額">
             </div>
             <div class="form-actions">
                 <button type="button" class="action-btn btn-cancel">取消</button>

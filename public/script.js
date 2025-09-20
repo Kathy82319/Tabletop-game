@@ -368,63 +368,57 @@ async function initializeLiff() {
         }
     }
 
-    async function initializeRentalHistoryPage() {
-        if (!userProfile) return;
-        const container = document.getElementById('rental-history-container');
-        if (!container) return;
-        container.innerHTML = '<p>正在查詢您的租借紀錄...</p>';
+// public/script.js 中找到並替換 initializeRentalHistoryPage
 
-        try {
-            const response = await fetch(`/api/my-rental-history?userId=${userProfile.userId}`);
-            if (!response.ok) throw new Error('查詢租借紀錄失敗');
-            myRentals = await response.json();
+async function initializeRentalHistoryPage() {
+    if (!userProfile) return;
+    const container = document.getElementById('rental-history-container');
+    if (!container) return;
+    container.innerHTML = '<p>正在查詢您的租借紀錄...</p>';
 
-            if (myRentals.length === 0) {
-                container.innerHTML = '<p>您目前沒有任何租借紀錄。</p>';
-                return;
+    try {
+        const response = await fetch(`/api/my-rental-history?userId=${userProfile.userId}`);
+        if (!response.ok) throw new Error('查詢租借紀錄失敗');
+        myRentals = await response.json();
+
+        if (myRentals.length === 0) {
+            container.innerHTML = '<p>您目前沒有任何租借紀錄。</p>';
+            return;
+        }
+
+        container.innerHTML = myRentals.map(rental => {
+            let statusHTML = '';
+            // ** 關鍵修改：使用 API 回傳的計算結果 **
+            if (rental.status === 'returned') {
+                statusHTML = `<div class="rental-status returned">已於 ${rental.return_date || ''} 歸還</div>`;
+            } else if (rental.overdue_days > 0) {
+                // 如果逾期，同時顯示天數和金額
+                statusHTML = `
+                    <div class="rental-status overdue">
+                        已逾期 ${rental.overdue_days} 天<br>
+                        累積逾期金額 ${rental.calculated_late_fee} 元
+                    </div>`;
+            } else {
+                statusHTML = `<div class="rental-status rented">租借中</div>`;
             }
 
-            const calculateOverdueDays = (dueDateStr) => {
-                if (!dueDateStr) return 0;
-                const today = new Date();
-                const dueDate = new Date(dueDateStr);
-                today.setHours(0, 0, 0, 0);
-                dueDate.setHours(0, 0, 0, 0);
-                if (today <= dueDate) return 0;
-                const diffTime = Math.abs(today - dueDate);
-                return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            };
-
-            container.innerHTML = myRentals.map(rental => {
-                const isReturned = rental.status === 'returned';
-                const overdueDays = isReturned ? 0 : calculateOverdueDays(rental.due_date);
-
-                let statusHTML = '';
-                if (isReturned) {
-                    statusHTML = `<div class="rental-status returned">已於 ${rental.return_date || ''} 歸還</div>`;
-                } else if (overdueDays > 0) {
-                    statusHTML = `<div class="rental-status overdue">已逾期 ${overdueDays} 天</div>`;
-                } else {
-                    statusHTML = `<div class="rental-status rented">租借中</div>`;
-                }
-
-                return `
-                    <div class="rental-card">
-                        <img src="${rental.game_image_url || 'placeholder.jpg'}" class="rental-game-image">
-                        <div class="rental-info">
-                            <h3 class="rental-game-title">${rental.game_name}</h3>
-                            <p>租借日期：${rental.rental_date}</p>
-                            <p>應還日期：${rental.due_date}</p>
-                            ${statusHTML}
-                        </div>
+            return `
+                <div class="rental-card">
+                    <img src="${rental.game_image_url || 'placeholder.jpg'}" class="rental-game-image">
+                    <div class="rental-info">
+                        <h3 class="rental-game-title">${rental.game_name}</h3>
+                        <p>租借日期：${rental.rental_date}</p>
+                        <p>應還日期：${rental.due_date}</p>
+                        ${statusHTML}
                     </div>
-                `;
-            }).join('');
+                </div>
+            `;
+        }).join('');
 
-        } catch (error) {
-            container.innerHTML = `<p style="color: red;">無法載入租借紀錄: ${error.message}</p>`;
-        }
+    } catch (error) {
+        container.innerHTML = `<p style="color: red;">無法載入租借紀錄: ${error.message}</p>`;
     }
+}
 
     // =================================================================
     // 編輯個人資料頁

@@ -966,9 +966,17 @@ function openEditRentalModal(rentalId) {
 
     document.getElementById('edit-rental-id').value = rental.rental_id;
     document.getElementById('modal-rental-title').textContent = `管理租借：${rental.game_name}`;
-    document.getElementById('edit-rental-game-name').value = rental.game_name;
-    document.getElementById('edit-rental-user-name').value = rental.nickname || rental.line_display_name;
+
+    // ** 關鍵修改：顯示自動計算的金額 **
+    const feeDisplay = document.getElementById('calculated-late-fee-display');
+    if (rental.calculated_late_fee > 0) {
+        feeDisplay.value = `$ ${rental.calculated_late_fee} (逾期 ${rental.overdue_days} 天)`;
+    } else {
+        feeDisplay.value = '$ 0 (未逾期)';
+    }
+
     document.getElementById('edit-rental-due-date').value = rental.due_date;
+    // 這裡顯示的是資料庫中已記錄的支付金額
     document.getElementById('edit-rental-late-fee').value = rental.late_fee_paid || '';
 
     flatpickr("#edit-rental-due-date", { dateFormat: "Y-m-d", minDate: "today" });
