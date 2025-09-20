@@ -343,25 +343,30 @@ document.addEventListener('DOMContentLoaded', () => {
     if(userListTbody) {
         userListTbody.addEventListener('click', async (event) => {
             const target = event.target;
+            // 關鍵修改：從點擊的目標往上找到 tr 元素
             const row = target.closest('tr');
-            if (!row) return;
+            if (!row || !row.dataset.userId) return; // 如果沒點到 tr 或 tr 上沒有 userId，就直接忽略
+
             const userId = row.dataset.userId;
-            if (!userId) return;
             
+            // 判斷點擊的是否為編輯按鈕
             if (target.classList.contains('btn-edit')) {
-                event.stopPropagation();
+                // 按鈕本身不需要 dataset，因為我們從父層 tr 獲取
                 openEditUserModal(userId);
-                return;
+            } else {
+                // 如果點擊的不是編輯按鈕，就是點擊該行的其他位置
+                openUserDetailsModal(userId);
             }
-            
-            openUserDetailsModal(userId);
         });
     }
     
     async function openUserDetailsModal(userId) {
         if (!userId || !userDetailsModal) return;
         const contentContainer = userDetailsModal.querySelector('#user-details-content');
-        if (!contentContainer) return;
+        if (!contentContainer) {
+            console.error("CRM Modal 中缺少 #user-details-content 元素！");
+            return;
+        }
 
         contentContainer.innerHTML = '<p>讀取中...</p>';
         userDetailsModal.style.display = 'flex';
@@ -376,9 +381,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+
     function renderUserDetails(data) {
         const { profile, bookings, rentals, exp_history } = data;
         const contentContainer = userDetailsModal.querySelector('#user-details-content');
+        if (!contentContainer) return;
         
         const displayName = profile.nickname || profile.line_display_name;
         document.getElementById('user-details-title').textContent = `顧客資料：${displayName}`;
@@ -426,9 +433,8 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        // 綁定 Tab 切換事件
-        const tabsContainer = modalContent.querySelector('.details-tabs');
-        const contentsContainer = modalContent.querySelector('.profile-details');
+        const tabsContainer = contentContainer.querySelector('.details-tabs');
+        const contentsContainer = contentContainer.querySelector('.profile-details');
         tabsContainer.addEventListener('click', e => {
             if (e.target.tagName === 'BUTTON') {
                 tabsContainer.querySelector('.active').classList.remove('active');
@@ -438,7 +444,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        // 載入訊息草稿並綁定事件
         loadAndBindMessageDrafts(profile.user_id);
     }
     
