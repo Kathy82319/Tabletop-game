@@ -9,7 +9,7 @@ async function getAccessToken(env) {
     
     const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
     
-    const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets.readonly' }) // 使用 .readonly 權限即可
+    const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets.readonly' })
       .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
       .setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
       .setAudience('https://oauth2.googleapis.com/token')
@@ -18,11 +18,12 @@ async function getAccessToken(env) {
       .setExpirationTime('1h')
       .sign(privateKey);
 
+    // ** 關鍵修正：使用 new URLSearchParams 來建立請求 body **
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
-        grant_type: 'urn:ietf:params:oauth:grant-type-jwt-bearer',
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
         assertion: jwt
       }),
     });
@@ -50,7 +51,6 @@ export async function onRequest(context) {
     
     await doc.loadInfo();
     
-    // ** 這裡是關鍵修正 **
     const sheetName = env.BOARDGAMES_SHEET_NAME;
     if (!sheetName) {
         throw new Error('專案缺少 BOARDGAMES_SHEET_NAME 環境變數設定。');
