@@ -61,7 +61,7 @@ export async function onRequest(context) {
     // 【新增】觸發背景同步任務，更新 Google Sheet
     const dataToSync = { due_date: dueDate };
     context.waitUntil(
-        updateRowInSheet(context.env, 'Rentals', 'rental_id', rentalId, dataToSync)
+        updateRowInSheet(context.env, '預約紀錄', 'Rentals', 'rental_id', rentalId, dataToSync)
         .catch(err => console.error("背景同步應還日期失敗:", err))
     );
 

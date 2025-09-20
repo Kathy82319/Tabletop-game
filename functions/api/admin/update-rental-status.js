@@ -90,7 +90,7 @@ export async function onRequest(context) {
     };
 
     context.waitUntil(
-        updateRowInSheet(context.env, 'Rentals', 'rental_id', rentalId, dataToSync)
+        updateRowInSheet(context.env, 'Rentals','預約紀錄', 'rental_id', rentalId, dataToSync)
         .catch(err => console.error("背景同步租借狀態失敗:", err))
     );
 
@@ -98,7 +98,7 @@ export async function onRequest(context) {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
-    
+
     return new Response(JSON.stringify({ success: true, message: '成功更新租借狀態與庫存！' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },

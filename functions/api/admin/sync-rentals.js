@@ -23,7 +23,7 @@ async function getAccessToken(env) {
 
 async function runRentalSync(env) {
     const { GOOGLE_SHEET_ID, DB } = env;
-    const RENTALS_SHEET_NAME = 'Rentals'; // 直接定義或從 env 讀取
+    const RENTALS_SHEET_NAME = '預約紀錄'; // 直接定義或從 env 讀取
 
     const { results } = await DB.prepare('SELECT * FROM Rentals ORDER BY created_at DESC').all();
     if (!results || results.length === 0) {

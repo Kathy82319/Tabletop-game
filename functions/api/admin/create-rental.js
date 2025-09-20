@@ -3,6 +3,24 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import * as jose from 'jose';
 
+    // 【關鍵修改】修正背景任務的錯誤處理和網址寫法
+    const sendMessageUrl = new URL('/api/send-message', context.request.url);
+
+    context.waitUntil(
+        // 執行發送 LINE 通知
+        fetch(sendMessageUrl.toString(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, message })
+        }).catch(err => console.error("背景任務 - 發送租借通知失敗:", err))
+    );
+
+    context.waitUntil(
+        // 執行同步到 Google Sheet
+        addRowToSheet(context.env, '預約紀錄', newRental) // 【修改】同時修正工作表名稱
+        .catch(err => console.error("背景任務 - 同步新增租借紀錄失敗:", err))
+    );
+
 // ** Google Sheets 工具函式 **
 async function getAccessToken(env) {
     const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY } = env;
@@ -94,7 +112,7 @@ export async function onRequest(context) {
     const rentalDateStr = rentalDate.toISOString().split('T')[0];
     const rentalDuration = Math.round((new Date(dueDate) - rentalDate) / (1000 * 60 * 60 * 24));
     const newRentalRecord = await db.prepare('SELECT * FROM Rentals ORDER BY rental_id DESC LIMIT 1').first();
-    
+
     // 【確認】背景同步的資料是完整的 newRentalRecord
     context.waitUntil(
         addRowToSheet(context.env, 'Rentals', newRentalRecord)

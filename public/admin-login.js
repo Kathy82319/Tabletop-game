@@ -1019,7 +1019,7 @@ function openEditRentalModal(rentalId) {
     // 這裡顯示的是資料庫中已記錄的支付金額
     document.getElementById('edit-rental-late-fee').value = rental.late_fee_paid || '';
 
-    flatpickr("#edit-rental-due-date", { dateFormat: "Y-m-d", minDate: "today" });
+    flatpickr("#edit-rental-due-date", { dateFormat: "Y-m-d" });
 
     editRentalModal.style.display = 'flex';
 }
