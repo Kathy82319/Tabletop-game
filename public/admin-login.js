@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
             gameListTbody.appendChild(row);
         });
     }
-
+ 
     async function fetchAllGames() {
         try {
             const response = await fetch('/api/get-sheet-boardgames');
