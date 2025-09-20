@@ -7,19 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 儀表板
     const dashboardGrid = document.getElementById('dashboard-grid');
 
-    // 訊息草稿
-    const draftListTbody = document.getElementById('draft-list-tbody');
-    const addDraftBtn = document.getElementById('add-draft-btn');
-    const editDraftModal = document.getElementById('edit-draft-modal');
-    const editDraftForm = document.getElementById('edit-draft-form');
-    const modalDraftTitle = document.getElementById('modal-draft-title');
-
     // 顧客管理
     const userListTbody = document.getElementById('user-list-tbody');
     const userSearchInput = document.getElementById('user-search-input');
     const editUserModal = document.getElementById('edit-user-modal');
     const editUserForm = document.getElementById('edit-user-form');
     const syncD1ToSheetBtn = document.getElementById('sync-d1-to-sheet-btn');
+    const userDetailsModal = document.getElementById('user-details-modal');
     
     // 庫存管理
     const gameListTbody = document.getElementById('game-list-tbody');
@@ -54,6 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalNewsTitle = document.getElementById('modal-news-title');
     const deleteNewsBtn = document.getElementById('delete-news-btn');
     
+    // 訊息草稿
+    const draftListTbody = document.getElementById('draft-list-tbody');
+    const addDraftBtn = document.getElementById('add-draft-btn');
+    const editDraftModal = document.getElementById('edit-draft-modal');
+    const editDraftForm = document.getElementById('edit-draft-form');
+    const modalDraftTitle = document.getElementById('modal-draft-title');
+
     // 店家資訊
     const storeInfoForm = document.getElementById('store-info-form');
 
@@ -70,15 +71,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- 全域狀態變數 ---
-    let allUsers = [], allGames = [], allBookings = [], allNews = [], allExpHistory = [], allRentals = [];
+    let allUsers = [], allGames = [], allBookings = [], allNews = [], allExpHistory = [], allRentals = [], allDrafts = [];
     let classPerks = {};
-    let gameFilters = { visibility: 'all' };
-    let rentalFilters = { status: 'all', keyword: '' };
     let html5QrCode = null;
     let currentEditingNewsId = null;
     let currentEditingDraftId = null;
     let selectedRentalUser = null;
-// ---- 頁面切換邏輯 ----
+
+    // ---- 頁面切換邏輯 ----
     function showPage(pageId) {
         if (html5QrCode && html5QrCode.isScanning) {
             html5QrCode.stop().catch(err => console.error("停止掃描器失敗", err));
@@ -136,8 +136,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('獲取儀表板數據失敗:', error);
             if(dashboardGrid) dashboardGrid.innerHTML = `<p style="color:red;">讀取數據失敗</p>`;
         }
-    }    
-    
+    }
+
     // =================================================================
     // 顧客管理模組
     // =================================================================
@@ -146,8 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
         userListTbody.innerHTML = '';
         users.forEach(user => {
             const row = document.createElement('tr');
-            row.dataset.userId = user.user_id; // 將 user ID 綁定到整行 tr
-            row.style.cursor = 'pointer'; // 讓滑鼠變成可點擊樣式
+            row.dataset.userId = user.user_id;
+            row.style.cursor = 'pointer';
             
             const displayName = user.nickname ? `${user.line_display_name} (${user.nickname})` : user.line_display_name;
             
@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchAllUsers() {
-        if (allUsers.length > 0) return; // 避免重複載入
+        if (allUsers.length > 0) return;
         try {
             const response = await fetch('/api/get-users');
             if (!response.ok) throw new Error('無法獲取使用者列表');
@@ -181,20 +181,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (syncD1ToSheetBtn) {
         syncD1ToSheetBtn.addEventListener('click', async () => {
             if (!confirm('確定要用目前資料庫 (D1) 的所有使用者資料，完整覆蓋 Google Sheet 上的「使用者列表」嗎？\n\n這個操作通常用於手動備份。')) return;
-            
             try {
                 syncD1ToSheetBtn.textContent = '同步中...';
                 syncD1ToSheetBtn.disabled = true;
-                
                 const response = await fetch('/api/sync-d1-to-sheet', { method: 'POST' });
                 const result = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(result.details || '同步失敗');
-                }
-                
+                if (!response.ok) { throw new Error(result.details || '同步失敗'); }
                 alert(result.message || '同步成功！');
-
             } catch (error) {
                 alert(`錯誤：${error.message}`);
             } finally {
@@ -220,37 +213,30 @@ document.addEventListener('DOMContentLoaded', () => {
     function openEditUserModal(userId) {
         const user = allUsers.find(u => u.user_id === userId);
         if (!user) return;
-
         document.getElementById('modal-user-title').textContent = `編輯：${user.line_display_name}`;
         document.getElementById('edit-user-id').value = user.user_id;
         document.getElementById('edit-level-input').value = user.level;
         document.getElementById('edit-exp-input').value = user.current_exp;
-
         const classSelect = document.getElementById('edit-class-select');
         const otherClassInput = document.getElementById('edit-class-other-input');
         const perkSelect = document.getElementById('edit-perk-select');
         const otherPerkInput = document.getElementById('edit-perk-other-input');
         const tagSelect = document.getElementById('edit-tag-select');
         const otherTagInput = document.getElementById('edit-tag-other-input');
-
         classSelect.innerHTML = '';
         perkSelect.innerHTML = '';
-        
         for (const className in classPerks) {
             const classOption = document.createElement('option');
             classOption.value = className;
             classOption.textContent = className;
             classSelect.appendChild(classOption);
-
             const perkOption = document.createElement('option');
             perkOption.value = classPerks[className];
             perkOption.textContent = classPerks[className];
             perkSelect.appendChild(perkOption);
         }
-
         classSelect.appendChild(new Option('其他 (自訂)', 'other'));
         perkSelect.appendChild(new Option('其他 (自訂)', 'other'));
-
         if (classPerks[user.class]) {
             classSelect.value = user.class;
             otherClassInput.style.display = 'none';
@@ -259,7 +245,6 @@ document.addEventListener('DOMContentLoaded', () => {
             otherClassInput.style.display = 'block';
             otherClassInput.value = user.class || '';
         }
-
         const standardPerks = Object.values(classPerks);
         if (standardPerks.includes(user.perk)) {
             perkSelect.value = user.perk;
@@ -269,7 +254,6 @@ document.addEventListener('DOMContentLoaded', () => {
             otherPerkInput.style.display = 'block';
             otherPerkInput.value = user.perk || '';
         }
-
         const standardTags = ["", "會員", "員工", "特殊"];
         if (user.tag && !standardTags.includes(user.tag)) {
             tagSelect.value = 'other';
@@ -280,7 +264,6 @@ document.addEventListener('DOMContentLoaded', () => {
             otherTagInput.style.display = 'none';
             otherTagInput.value = '';
         }
-
         editUserModal.style.display = 'flex';
     }
 
@@ -289,7 +272,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const otherClassInput = document.getElementById('edit-class-other-input');
             const perkSelect = document.getElementById('edit-perk-select');
             const otherPerkInput = document.getElementById('edit-perk-other-input');
-            
             if (e.target.value === 'other') {
                 otherClassInput.style.display = 'block';
                 perkSelect.value = 'other';
@@ -323,16 +305,12 @@ document.addEventListener('DOMContentLoaded', () => {
         editUserForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const userId = document.getElementById('edit-user-id').value;
-            
             let newClass = document.getElementById('edit-class-select').value;
             if (newClass === 'other') newClass = document.getElementById('edit-class-other-input').value.trim();
-
             let newPerk = document.getElementById('edit-perk-select').value;
             if (newPerk === 'other') newPerk = document.getElementById('edit-perk-other-input').value.trim();
-            
             let newTag = document.getElementById('edit-tag-select').value;
             if (newTag === 'other') newTag = document.getElementById('edit-tag-other-input').value.trim();
-
             const updatedData = {
                 userId: userId,
                 level: document.getElementById('edit-level-input').value,
@@ -341,7 +319,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 user_class: newClass,
                 perk: newPerk
             };
-
             try {
                 const response = await fetch('/api/update-user-details', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -349,7 +326,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || '更新失敗');
-                
                 const user = allUsers.find(u => u.user_id === userId);
                 if (user) {
                     user.level = updatedData.level;
@@ -358,10 +334,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     user.class = updatedData.user_class;
                     user.perk = updatedData.perk;
                 }
-                
                 renderUserList(allUsers);
                 editUserModal.style.display = 'none';
-
             } catch (error) { alert(`錯誤：${error.message}`); }
         });
     }
@@ -371,27 +345,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const target = event.target;
             const row = target.closest('tr');
             if (!row) return;
-
             const userId = row.dataset.userId;
+            if (!userId) return;
             
-            // 如果點擊的是編輯按鈕
             if (target.classList.contains('btn-edit')) {
-                event.stopPropagation(); // 防止觸發整行的點擊事件
+                event.stopPropagation();
                 openEditUserModal(userId);
                 return;
             }
             
-            // 點擊整行其他地方，則打開 CRM 詳情視窗
             openUserDetailsModal(userId);
         });
     }
     
-    // CRM Modal 相關函式
     async function openUserDetailsModal(userId) {
-        if (!userId) return;
-        const modalContent = document.querySelector('#user-details-modal .modal-content');
-        modalContent.innerHTML = '<p>讀取中...</p>';
-        if (userDetailsModal) userDetailsModal.style.display = 'flex';
+        if (!userId || !userDetailsModal) return;
+        const contentContainer = userDetailsModal.querySelector('#user-details-content');
+        if (!contentContainer) return;
+
+        contentContainer.innerHTML = '<p>讀取中...</p>';
+        userDetailsModal.style.display = 'flex';
 
         try {
             const response = await fetch(`/api/admin/user-details?userId=${userId}`);
@@ -399,22 +372,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             renderUserDetails(data);
         } catch (error) {
-            modalContent.innerHTML = `<p style="color:red;">${error.message}</p>`;
+            contentContainer.innerHTML = `<p style="color:red;">${error.message}</p>`;
         }
     }
 
     function renderUserDetails(data) {
         const { profile, bookings, rentals, exp_history } = data;
-        const modalContent = document.querySelector('#user-details-modal #user-details-content');
+        const contentContainer = userDetailsModal.querySelector('#user-details-content');
         
         const displayName = profile.nickname || profile.line_display_name;
         document.getElementById('user-details-title').textContent = `顧客資料：${displayName}`;
 
-        modalContent.innerHTML = `
+        contentContainer.innerHTML = `
             <div class="details-grid">
                 <div class="profile-summary">
                     <img src="${profile.line_picture_url || 'placeholder.jpg'}" alt="Profile Picture">
                     <h4>${displayName}</h4>
+                    <p>姓名: ${profile.real_name || '未設定'}</p>
                     <p>等級: ${profile.level} (${profile.current_exp}/10 EXP)</p>
                     <p>職業: ${profile.class}</p>
                     <p>標籤: ${profile.tag || '無'}</p>
@@ -452,9 +426,8 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        // 綁定 Tab 切換事件
-        const tabsContainer = modalContent.querySelector('.details-tabs');
-        const contentsContainer = modalContent.querySelector('.profile-details');
+        const tabsContainer = contentContainer.querySelector('.details-tabs');
+        const contentsContainer = contentContainer.querySelector('.profile-details');
         tabsContainer.addEventListener('click', e => {
             if (e.target.tagName === 'BUTTON') {
                 tabsContainer.querySelector('.active').classList.remove('active');
@@ -464,7 +437,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        // 載入訊息草稿並綁定事件
         loadAndBindMessageDrafts(profile.user_id);
     }
     
@@ -489,7 +461,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // 訊息草稿模組
     // =================================================================
     async function fetchAllDrafts() {
-        if (allDrafts.length > 0) return; // 避免重複載入
+        if (allDrafts.length > 0) { // 如果已經載入過，就不再重複載入
+            renderDraftList(allDrafts);
+            return;
+        }
         try {
             const response = await fetch('/api/admin/message-drafts');
             if (!response.ok) throw new Error('無法獲取訊息草稿');
@@ -511,7 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${draft.content.substring(0, 50)}...</td>
                 <td class="actions-cell">
                     <button class="action-btn btn-edit" data-draftid="${draft.draft_id}">編輯</button>
-                    <button class="action-btn" data-draftid="${draft.draft_id}" style="background-color: var(--danger-color);">刪除</button>
+                    <button class="action-btn btn-delete-draft" data-draftid="${draft.draft_id}" style="background-color: var(--danger-color);">刪除</button>
                 </td>
             `;
             draftListTbody.appendChild(row);
@@ -551,7 +526,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             const isUpdating = !!currentEditingDraftId;
-            const url = isUpdating ? '/api/admin/message-drafts' : '/api/admin/message-drafts';
+            const url = '/api/admin/message-drafts';
             const method = isUpdating ? 'PUT' : 'POST';
 
             try {
@@ -583,7 +558,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target.classList.contains('btn-edit')) {
                 const draft = allDrafts.find(d => d.draft_id == draftId);
                 openEditDraftModal(draft);
-            } else if (target.style.backgroundColor.includes('220, 53, 69')) { // 簡易判斷是否為刪除鈕
+            } else if (target.classList.contains('btn-delete-draft')) {
                 if (confirm('確定要刪除這則草稿嗎？')) {
                     try {
                         const response = await fetch('/api/admin/message-drafts', {
@@ -609,7 +584,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const sendBtn = document.getElementById('send-direct-message-btn');
         if (!select || !content || !sendBtn) return;
 
-        // 載入草稿到下拉選單
         await fetchAllDrafts();
         select.innerHTML = '<option value="">-- 手動輸入或選擇草稿 --</option>';
         allDrafts.forEach(draft => {
@@ -619,18 +593,11 @@ document.addEventListener('DOMContentLoaded', () => {
             select.appendChild(option);
         });
 
-        // 選擇草稿時自動填入內容
-        select.onchange = () => {
-            content.value = select.value;
-        };
+        select.onchange = () => { content.value = select.value; };
 
-        // 發送訊息按鈕
         sendBtn.onclick = async () => {
             const message = content.value.trim();
-            if (!message) {
-                alert('訊息內容不可為空！');
-                return;
-            }
+            if (!message) { alert('訊息內容不可為空！'); return; }
             if (!confirm(`確定要發送以下訊息給該顧客嗎？\n\n${message}`)) return;
             
             sendBtn.textContent = '傳送中...';
