@@ -93,7 +93,13 @@ export async function onRequest(context) {
     const rentalDate = new Date(newRental.rental_date);
     const rentalDateStr = rentalDate.toISOString().split('T')[0];
     const rentalDuration = Math.round((new Date(dueDate) - rentalDate) / (1000 * 60 * 60 * 24));
-
+    const newRentalRecord = await db.prepare('SELECT * FROM Rentals ORDER BY rental_id DESC LIMIT 1').first();
+    
+    // 【確認】背景同步的資料是完整的 newRentalRecord
+    context.waitUntil(
+        addRowToSheet(context.env, 'Rentals', newRentalRecord)
+        .catch(err => console.error("背景同步新增租借紀錄失敗:", err))
+    );
     const message = `姓名：${name}\n` +
                     `電話：${phone}\n` +
                     `日期：${rentalDateStr}\n` +

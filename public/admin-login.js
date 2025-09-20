@@ -919,45 +919,62 @@ function renderRentalList(rentals) {
         rentalSearchInput.addEventListener('input', applyRentalFiltersAndRender);
     }
 
-    if (rentalListTbody) {
-        rentalListTbody.addEventListener('click', async (e) => {
-                    // 【新增】處理編輯按鈕的點擊事件
-        if (e.target.classList.contains('btn-edit-rental')) {
-            const rentalId = e.target.dataset.rentalid;
-            openEditRentalModal(rentalId);
-            return; // 結束執行避免觸發歸還邏輯
-        }
-            if (e.target.classList.contains('btn-return')) {
-                const rentalId = e.target.dataset.rentalid;
-                const rental = allRentals.find(r => r.rental_id == rentalId);
-                if (!rental) return;
-                
-                if (confirm(`確定要將《${rental.game_name}》標記為已歸還嗎？`)) {
-                    try {
-                        const response = await fetch('/api/admin/update-rental-status', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ rentalId: Number(rentalId), status: 'returned' })
-                        });
-                        const result = await response.json();
-                        if (!response.ok) throw new Error(result.error || '歸還失敗');
-                        alert('歸還成功！');
-                        
-                        // 刷新列表以顯示最新狀態
-                        await applyRentalFiltersAndRender();
-                        // 同時也刷新庫存頁面的資料，如果它已經被載入
-                        if (allGames.length > 0) {
-                            await fetchAllGames();
-                        }
+if (rentalListTbody) {
+    rentalListTbody.addEventListener('click', async (e) => {
+        const target = e.target;
+        const rentalId = target.dataset.rentalid;
+        if (!rentalId) return;
 
-                    } catch (error) {
-                        alert(`錯誤：${error.message}`);
-                    }
+        if (target.classList.contains('btn-edit-rental')) {
+            openEditRentalModal(rentalId);
+            return;
+        }
+
+        if (target.classList.contains('btn-return')) {
+            const rental = allRentals.find(r => r.rental_id == rentalId);
+            if (!rental) return;
+
+            // 【關鍵修改】歸還前的費用確認流程
+            let feePaid = 0;
+            if (rental.calculated_late_fee > 0) {
+                const userInput = prompt(
+                    `此筆紀錄已逾期 ${rental.overdue_days} 天，應付總額為 ${rental.calculated_late_fee} 元。\n\n請輸入顧客實際支付的逾期費用：`,
+                    rental.calculated_late_fee // 將應付總額作為預設值
+                );
+
+                if (userInput === null) return; // 如果按了取消，則不執行任何操作
+                feePaid = Number(userInput);
+                if (isNaN(feePaid) || feePaid < 0) {
+                    alert('請輸入有效的金額！');
+                    return;
                 }
             }
-        });
-    }
 
+            if (confirm(`確定要將《${rental.game_name}》標記為已歸還嗎？`)) {
+                try {
+                    const response = await fetch('/api/admin/update-rental-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            rentalId: Number(rentalId),
+                            status: 'returned',
+                            lateFeePaid: feePaid // 將輸入的金額傳給 API
+                        })
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error || '歸還失敗');
+                    alert('歸還成功！');
+
+                    await applyRentalFiltersAndRender();
+                    if (allGames.length > 0) await fetchAllGames();
+
+                } catch (error) {
+                    alert(`錯誤：${error.message}`);
+                }
+            }
+        }
+    });
+}
 // public/admin-login.js 中任意空白處，貼上以下完整函式
 
 function openEditRentalModal(rentalId) {

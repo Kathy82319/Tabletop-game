@@ -41,54 +41,64 @@ async function updateRowInSheet(env, sheetName, matchColumn, matchValue, updateD
 
 export async function onRequest(context) {
   try {
-    if (context.request.method !== 'POST') { /* ... */ }
+    if (context.request.method !== 'POST') {
+      return new Response('Invalid request method.', { status: 405 });
+    }
 
-    const { rentalId, status } = await context.request.json();
-    if (!rentalId || !status) { /* ... */ }
+    // 【修改】接收 lateFeePaid 參數
+    const { rentalId, status, lateFeePaid } = await context.request.json();
+    if (!rentalId || !status) {
+      return new Response(JSON.stringify({ error: '缺少租借 ID 或狀態。' }), { status: 400 });
+    }
 
     const db = context.env.DB;
-    
-    // 【新增 #2】 先找出這筆租借紀錄是哪個遊戲
     const rental = await db.prepare('SELECT game_id, status FROM Rentals WHERE rental_id = ?').bind(rentalId).first();
     if (!rental) {
         return new Response(JSON.stringify({ error: `找不到租借 ID: ${rentalId}` }), { status: 404 });
     }
-    // 如果狀態已經是 'returned'，就不要再重複增加庫存
     if (rental.status === 'returned' && status === 'returned') {
         return new Response(JSON.stringify({ success: true, message: '此筆紀錄已歸還，無需重複操作。' }), { status: 200 });
     }
 
     const batchOperations = [];
-
-    // 準備更新 Rentals 資料表的狀態
     const updateValues = {
         status: status,
-        return_date: status === 'returned' ? new Date().toISOString().split('T')[0] : null
+        return_date: status === 'returned' ? new Date().toISOString().split('T')[0] : null,
+        late_fee_paid: lateFeePaid // 將支付金額也一併更新
     };
+
     batchOperations.push(
-        db.prepare('UPDATE Rentals SET status = ?, return_date = ? WHERE rental_id = ?')
-          .bind(updateValues.status, updateValues.return_date, rentalId)
+        db.prepare('UPDATE Rentals SET status = ?, return_date = ?, late_fee_paid = ? WHERE rental_id = ?')
+          .bind(updateValues.status, updateValues.return_date, updateValues.late_fee_paid, rentalId)
     );
 
-    // 【新增 #2】 如果是歸還，則將對應遊戲的庫存 +1
     if (status === 'returned') {
         batchOperations.push(
             db.prepare('UPDATE BoardGames SET for_rent_stock = for_rent_stock + 1 WHERE game_id = ?')
               .bind(rental.game_id)
         );
     }
-    
-    // 執行所有資料庫操作
+
     await db.batch(batchOperations);
 
-    // 觸發背景同步 (保持不變)
+    // ... (背景同步 Google Sheet 的邏輯 context.waitUntil 保持不變) ...
+    // 【新增】觸發背景同步任務，更新 Google Sheet
+    const dataToSync = {
+        status: updateValues.status,
+        return_date: updateValues.return_date,
+        late_fee_paid: updateValues.late_fee_paid
+    };
+
     context.waitUntil(
-        updateRowInSheet(
-            context.env, 'Rentals', 'rental_id', rentalId, 
-            { status: updateValues.status, return_date: updateValues.return_date }
-        ).catch(err => console.error("背景同步租借狀態失敗:", err))
+        updateRowInSheet(context.env, 'Rentals', 'rental_id', rentalId, dataToSync)
+        .catch(err => console.error("背景同步租借狀態失敗:", err))
     );
 
+    return new Response(JSON.stringify({ success: true, message: '成功更新租借狀態與庫存！' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+    
     return new Response(JSON.stringify({ success: true, message: '成功更新租借狀態與庫存！' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
