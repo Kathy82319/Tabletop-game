@@ -48,7 +48,37 @@ async function getSheet(env, sheetName) {
     return sheet;
 }
 // ** END: 關鍵修正 **
+async function runBookingSync(env) {
+    const { GOOGLE_SHEET_ID, DB } = env;
+    const BOOKINGS_SHEET_NAME = '預約紀錄';
 
+    // 從 D1 讀取所有預約資料
+    const { results } = await DB.prepare('SELECT * FROM Bookings ORDER BY created_at DESC').all();
+
+    if (!results || results.length === 0) {
+        return { success: true, message: '資料庫中沒有預約紀錄可同步。' };
+    }
+
+    const accessToken = await getAccessToken(env);
+    const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
+    const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
+
+    await doc.loadInfo();
+    const sheet = doc.sheetsByTitle[BOOKINGS_SHEET_NAME];
+    if (!sheet) {
+        throw new Error(`在 Google Sheets 中找不到名為 "${BOOKINGS_SHEET_NAME}" 的工作表。`);
+    }
+
+    await sheet.clear();
+    // 確保 D1 有資料時才設定標頭，避免 D1 為空時出錯
+    if (results.length > 0) {
+        // **關鍵**：這裡的欄位名稱必須和您 D1 Bookings 資料表的欄位完全一致
+        await sheet.setHeaderRow(Object.keys(results[0]));
+        await sheet.addRows(results);
+    }
+
+    return { success: true, message: `成功將 ${results.length} 筆預約紀錄從 D1 同步至 Google Sheet。` };
+}
 export async function onRequest(context) {
     try {
         if (context.request.method !== 'POST') {

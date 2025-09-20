@@ -103,6 +103,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    //--- 【模組名稱：手動同步訂位紀錄】 ---
+    const fullSyncBookingsBtn = document.getElementById('full-sync-bookings-btn');
+    if (fullSyncBookingsBtn) {
+        fullSyncBookingsBtn.addEventListener('click', async () => {
+            if (!confirm('確定要用目前資料庫 (D1) 的「所有」訂位紀錄，去完整覆蓋 Google Sheet 上的「預約紀錄」工作表嗎？')) return;
+
+            try {
+                fullSyncBookingsBtn.textContent = '同步中...';
+                fullSyncBookingsBtn.disabled = true;
+                const response = await fetch('/api/admin/sync-bookings-to-sheet', { method: 'POST' });
+                const result = await response.json();
+                if (!response.ok) { throw new Error(result.details || '同步失敗'); }
+                alert(result.message || '同步成功！');
+            } catch (error) {
+                alert(`錯誤：${error.message}`);
+            } finally {
+                fullSyncBookingsBtn.textContent = '手動同步至 Sheet';
+                fullSyncBookingsBtn.disabled = false;
+            }
+        });
+    }
     // ---- 頁面切換邏輯 ----
     function showPage(pageId) {
         if (html5QrCode && html5QrCode.isScanning) {
@@ -486,22 +507,29 @@ async function openUserDetailsModal(userId) {
         loadAndBindMessageDrafts(profile.user_id);
     }
     
-    function renderHistoryTable(items, columns, headers) {
-        if (!items || items.length === 0) return '<p>無相關紀錄</p>';
-        let head = '<tr>' + Object.values(headers).map(h => `<th>${h}</th>`).join('') + '</tr>';
-        let body = items.map(item => '<tr>' + columns.map(col => {
-            let value = item[col];
-            if (col === 'created_at' || col === 'rental_date' || col === 'booking_date') {
-                value = new Date(value).toLocaleDateString();
+function renderHistoryTable(items, columns, headers) {
+    if (!items || items.length === 0) return '<p>無相關紀錄</p>';
+    let head = '<tr>' + Object.values(headers).map(h => `<th>${h}</th>`).join('') + '</tr>';
+    let body = items.map(item => '<tr>' + columns.map(col => {
+        let value = item[col];
+        if (col === 'created_at' || col === 'rental_date' || col === 'booking_date') {
+            value = new Date(value).toLocaleDateString();
+        }
+        // 【新增】狀態中文化邏輯
+        if (col === 'status') {
+            switch(value) {
+                case 'confirmed': value = '預約成功'; break;
+                case 'checked-in': value = '已報到'; break;
+                case 'cancelled': value = '已取消'; break;
+                case 'rented': value = '租借中'; break;
+                case 'returned': value = '已歸還'; break;
+                // 您可以根據需要新增更多狀態
             }
-            return `<td>${value}</td>`;
-        }).join('') + '</tr>').join('');
-        return `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
-    }
-
-    if (userDetailsModal) {
-        userDetailsModal.querySelector('.modal-close').addEventListener('click', () => userDetailsModal.style.display = 'none');
-    }
+        }
+        return `<td>${value}</td>`;
+    }).join('') + '</tr>').join('');
+    return `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+}
 
     // =================================================================
     // 訊息草稿模組

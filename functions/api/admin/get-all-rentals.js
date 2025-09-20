@@ -43,12 +43,14 @@ export async function onRequest(context) {
         let overdue_days = 0;
         let calculated_late_fee = 0;
 
-        if (rental.status === 'rented' && dueDate < today) {
-            derived_status = 'overdue';
-            const diffTime = Math.abs(today - dueDate);
-            overdue_days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            calculated_late_fee = overdue_days * (rental.late_fee_per_day || 50); // 如果遊戲沒有設定，預設50
-        }
+    // 【關鍵修改】
+    if (rental.late_fee_override !== null && rental.late_fee_override !== undefined) {
+        // 如果有手動覆寫的值，就直接使用它
+        calculated_late_fee = rental.late_fee_override;
+    } else if (overdue_days > 0) {
+        // 否則，才進行自動計算
+        calculated_late_fee = overdue_days * (rental.late_fee_per_day || 50);
+    }
 
         return { ...rental, derived_status, overdue_days, calculated_late_fee };
     });
