@@ -28,6 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const rentalSearchInput = document.getElementById('rental-search-input');
     const createRentalModal = document.getElementById('create-rental-modal');
     const createRentalForm = document.getElementById('create-rental-form');
+    const editRentalModal = document.getElementById('edit-rental-modal');
+    const editRentalForm = document.getElementById('edit-rental-form');
     
     // 訂位管理
     const bookingListTbody = document.getElementById('booking-list-tbody');
@@ -863,30 +865,40 @@ async function openUserDetailsModal(userId) {
         }
     }
     
-    function renderRentalList(rentals) {
-        if (!rentalListTbody) return;
-        rentalListTbody.innerHTML = '';
-        rentals.forEach(rental => {
-            const row = document.createElement('tr');
-            const userName = rental.nickname || rental.line_display_name || '未知用戶';
-            let statusBadge = '';
-            switch(rental.status) {
-                case 'rented': statusBadge = '<span style="background-color: #ffc107; color: #000; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">租借中</span>'; break;
-                case 'returned': statusBadge = '<span style="background-color: #28a745; color: #fff; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">已歸還</span>'; break;
-                default: statusBadge = `<span>${rental.status}</span>`;
-            }
-            row.innerHTML = `
-                <td>${statusBadge}</td>
-                <td>${rental.game_name}</td>
-                <td>${userName}</td>
-                <td>${rental.due_date}</td>
-                <td class="actions-cell">
-                    <button class="action-btn btn-return" data-rentalid="${rental.rental_id}" style="background-color:#17a2b8;" ${rental.status === 'returned' ? 'disabled' : ''}>歸還</button>
-                </td>
-            `;
-            rentalListTbody.appendChild(row);
-        });
-    }
+function renderRentalList(rentals) {
+    if (!rentalListTbody) return;
+    rentalListTbody.innerHTML = '';
+    rentals.forEach(rental => {
+        const row = document.createElement('tr');
+        const userName = rental.nickname || rental.line_display_name || '未知用戶';
+        let statusBadge = '';
+        // ** 使用新的 derived_status 來判斷 **
+        switch(rental.derived_status) {
+            case 'overdue':
+                statusBadge = '<span style="background-color: var(--danger-color); color: #fff; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">逾期未歸還</span>';
+                break;
+            case 'rented':
+                statusBadge = '<span style="background-color: #ffc107; color: #000; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">租借中</span>';
+                break;
+            case 'returned':
+                statusBadge = '<span style="background-color: #28a745; color: #fff; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">已歸還</span>';
+                break;
+            default:
+                statusBadge = `<span>${rental.status}</span>`;
+        }
+        row.innerHTML = `
+            <td>${statusBadge}</td>
+            <td>${rental.game_name}</td>
+            <td>${userName}</td>
+            <td>${rental.due_date}</td>
+            <td class="actions-cell" style="display: flex; gap: 5px; justify-content: center;">
+                <button class="action-btn btn-edit-rental" data-rentalid="${rental.rental_id}" style="background-color:#007bff;">管理</button>
+                <button class="action-btn btn-return" data-rentalid="${rental.rental_id}" style="background-color:#17a2b8;" ${rental.status === 'returned' ? 'disabled' : ''}>歸還</button>
+            </td>
+        `;
+        rentalListTbody.appendChild(row);
+    });
+}
 
     // 簡化 fetchAllRentals，因為篩選函式會自己去 fetch
     function fetchAllRentals() {
@@ -909,6 +921,12 @@ async function openUserDetailsModal(userId) {
 
     if (rentalListTbody) {
         rentalListTbody.addEventListener('click', async (e) => {
+                    // 【新增】處理編輯按鈕的點擊事件
+        if (e.target.classList.contains('btn-edit-rental')) {
+            const rentalId = e.target.dataset.rentalid;
+            openEditRentalModal(rentalId);
+            return; // 結束執行避免觸發歸還邏輯
+        }
             if (e.target.classList.contains('btn-return')) {
                 const rentalId = e.target.dataset.rentalid;
                 const rental = allRentals.find(r => r.rental_id == rentalId);
@@ -939,6 +957,58 @@ async function openUserDetailsModal(userId) {
             }
         });
     }
+
+// public/admin-login.js 中任意空白處，貼上以下完整函式
+
+function openEditRentalModal(rentalId) {
+    const rental = allRentals.find(r => r.rental_id == rentalId);
+    if (!rental) return alert('找不到該筆租借紀錄');
+
+    document.getElementById('edit-rental-id').value = rental.rental_id;
+    document.getElementById('modal-rental-title').textContent = `管理租借：${rental.game_name}`;
+    document.getElementById('edit-rental-game-name').value = rental.game_name;
+    document.getElementById('edit-rental-user-name').value = rental.nickname || rental.line_display_name;
+    document.getElementById('edit-rental-due-date').value = rental.due_date;
+    document.getElementById('edit-rental-late-fee').value = rental.late_fee_paid || '';
+
+    flatpickr("#edit-rental-due-date", { dateFormat: "Y-m-d", minDate: "today" });
+
+    editRentalModal.style.display = 'flex';
+}
+
+if (editRentalModal) {
+    editRentalModal.querySelector('.modal-close').addEventListener('click', () => editRentalModal.style.display = 'none');
+    editRentalModal.querySelector('.btn-cancel').addEventListener('click', () => editRentalModal.style.display = 'none');
+}
+
+if (editRentalForm) {
+    editRentalForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const rentalId = document.getElementById('edit-rental-id').value;
+        const updatedData = {
+            rentalId: Number(rentalId),
+            dueDate: document.getElementById('edit-rental-due-date').value,
+            lateFeePaid: document.getElementById('edit-rental-late-fee').value
+        };
+
+        try {
+            const response = await fetch('/api/admin/update-rental-details', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedData)
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || '更新失敗');
+
+            alert('更新成功！');
+            editRentalModal.style.display = 'none';
+            await applyRentalFiltersAndRender(); // 重新整理列表
+
+        } catch (error) {
+            alert(`錯誤： ${error.message}`);
+        }
+    });
+}
 
 
     function openCreateRentalModal(gameId) {
