@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editUserModal = document.getElementById('edit-user-modal');
     const editUserForm = document.getElementById('edit-user-form');
     const syncD1ToSheetBtn = document.getElementById('sync-d1-to-sheet-btn');
-    const userDetailsModal = document.getElementById('user-details-modal');
+    const userDetailsModal = document.getElementById('user-details-modal'); // 補上這一行
     
     // 庫存管理
     const gameListTbody = document.getElementById('game-list-tbody');
@@ -92,12 +92,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (link.getAttribute('href') === `#${pageId}`) link.classList.add('active');
         });
 
-        // 根據頁面 ID 決定載入哪個資料
         const pageLoader = {
             'dashboard': fetchDashboardStats,
             'users': fetchAllUsers,
             'inventory': fetchAllGames,
-            'bookings': () => fetchAllBookings('today'), // 預設載入今日預約
+            'bookings': () => fetchAllBookings('today'),
             'exp-history': fetchAllExpHistory,
             'scan': startScanner,
             'news': fetchAllNews,
@@ -161,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${user.class || '無'}</td>
                 <td><span class="tag-display">${user.tag || '無'}</span></td>
                 <td class="actions-cell">
-                    <button class="action-btn btn-edit" data-userid="${user.user_id}">編輯</button>
+                    <button class="action-btn btn-edit">編輯</button>
                 </td>
             `;
             userListTbody.appendChild(row);
@@ -177,10 +176,10 @@ document.addEventListener('DOMContentLoaded', () => {
             renderUserList(allUsers);
         } catch (error) { console.error('獲取使用者列表失敗:', error); }
     }
-
+    
     if (syncD1ToSheetBtn) {
         syncD1ToSheetBtn.addEventListener('click', async () => {
-            if (!confirm('確定要用目前資料庫 (D1) 的所有使用者資料，完整覆蓋 Google Sheet 上的「使用者列表」嗎？\n\n這個操作通常用於手動備份。')) return;
+             if (!confirm('確定要用目前資料庫 (D1) 的所有使用者資料，完整覆蓋 Google Sheet 上的「使用者列表」嗎？\n\n這個操作通常用於手動備份。')) return;
             try {
                 syncD1ToSheetBtn.textContent = '同步中...';
                 syncD1ToSheetBtn.disabled = true;
@@ -342,72 +341,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if(userListTbody) {
         userListTbody.addEventListener('click', async (event) => {
-            console.log("檢查點 1：偵測到顧客列表的點擊事件！");
-
             const target = event.target;
-            console.log("檢查點 2：實際點擊的元素是:", target);
-
             const row = target.closest('tr');
-            console.log("檢查點 3：找到的父層 <tr> 元素是:", row);
-
-            if (!row || !row.dataset.userId) {
-                console.log("執行中斷：找不到有效的 <tr> 或 <tr> 上沒有綁定 userId。");
-                return;
-            }
+            if (!row || !row.dataset.userId) return;
 
             const userId = row.dataset.userId;
-            console.log("檢查點 4：成功從 <tr> 獲取到 userId:", userId);
-
+            
             if (target.classList.contains('btn-edit')) {
-                console.log("流程判斷：點擊的是「編輯」按鈕，準備打開編輯視窗...");
                 openEditUserModal(userId);
             } else {
-                console.log("流程判斷：點擊的是整行，準備打開 CRM 詳細資料視窗...");
                 openUserDetailsModal(userId);
             }
         });
     }
-async function openUserDetailsModal(userId) {
-        console.log("CRM 檢查點 A: 已進入 openUserDetailsModal 函式，收到的 userId 是:", userId);
-
-        if (!userId) {
-            console.error("CRM 流程中斷：傳入的 userId 是空的！");
-            return;
-        }
-        if (!userDetailsModal) {
-            console.error("CRM 流程中斷：在 JS 檔案頂部找不到 userDetailsModal 變數！請檢查 HTML 的 id 是否為 'user-details-modal'。");
-            return;
-        }
-        console.log("CRM 檢查點 B: userId 和 userDetailsModal 變數都存在。");
-
+    
+    async function openUserDetailsModal(userId) {
+        if (!userId || !userDetailsModal) return;
         const contentContainer = userDetailsModal.querySelector('#user-details-content');
         if (!contentContainer) {
-            console.error("CRM 流程中斷：在彈出視窗中找不到 id 為 'user-details-content' 的元素！");
+            console.error("CRM Modal 中缺少 #user-details-content 元素！");
             return;
         }
-        console.log("CRM 檢查點 C: 成功找到 contentContainer，準備顯示 Modal。");
 
         contentContainer.innerHTML = '<p>讀取中...</p>';
         userDetailsModal.style.display = 'flex';
-        console.log("CRM 檢查點 D: 已將 Modal 的 display 設為 'flex'，準備呼叫後端 API...");
 
         try {
             const response = await fetch(`/api/admin/user-details?userId=${userId}`);
-            console.log("CRM 檢查點 E: 後端 API 回應狀態碼:", response.status);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`API 請求失敗: ${errorText}`);
-            }
+            if (!response.ok) throw new Error('無法獲取顧客詳細資料');
             const data = await response.json();
-            console.log("CRM 檢查點 F: 成功獲取並解析 API 資料:", data);
             renderUserDetails(data);
         } catch (error) {
-            console.error("CRM 執行錯誤:", error);
-            contentContainer.innerHTML = `<p style="color:red;">載入資料時發生錯誤：${error.message}</p>`;
+            contentContainer.innerHTML = `<p style="color:red;">${error.message}</p>`;
         }
     }
-
 
     function renderUserDetails(data) {
         const { profile, bookings, rentals, exp_history } = data;
@@ -491,12 +458,11 @@ async function openUserDetailsModal(userId) {
         userDetailsModal.querySelector('.modal-close').addEventListener('click', () => userDetailsModal.style.display = 'none');
     }
 
-
     // =================================================================
     // 訊息草稿模組
     // =================================================================
     async function fetchAllDrafts() {
-        if (allDrafts.length > 0) { // 如果已經載入過，就不再重複載入
+        if (allDrafts.length > 0) {
             renderDraftList(allDrafts);
             return;
         }
@@ -576,7 +542,7 @@ async function openUserDetailsModal(userId) {
                 }
                 alert('草稿儲存成功！');
                 editDraftModal.style.display = 'none';
-                allDrafts = []; // 清空快取以便重新抓取
+                allDrafts = [];
                 await fetchAllDrafts();
             } catch (error) {
                 alert(`錯誤： ${error.message}`);
@@ -657,6 +623,7 @@ async function openUserDetailsModal(userId) {
             }
         };
     }
+
 
     // =================================================================
     // 庫存管理模組
