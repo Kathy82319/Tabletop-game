@@ -80,6 +80,29 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentEditingDraftId = null;
     let selectedRentalUser = null;
 
+    // --- 【模組名稱：手動全量同步】 ---
+    const fullSyncRentalsBtn = document.getElementById('full-sync-rentals-btn');
+    if (fullSyncRentalsBtn) {
+        fullSyncRentalsBtn.addEventListener('click', async () => {
+            if (!confirm('確定要用目前資料庫 (D1) 的「所有」租借紀錄，去完整覆蓋 Google Sheet 上的資料嗎？\n\n這個操作應用於修正歷史資料差異，執行需要一點時間。')) return;
+
+            try {
+                fullSyncRentalsBtn.textContent = '同步中...';
+                fullSyncRentalsBtn.disabled = true;
+                // 我們呼叫您之前就有的 sync-rentals API
+                const response = await fetch('/api/admin/sync-rentals', { method: 'POST' });
+                const result = await response.json();
+                if (!response.ok) { throw new Error(result.details || '同步失敗'); }
+                alert(result.message || '同步成功！');
+            } catch (error) {
+                alert(`錯誤：${error.message}`);
+            } finally {
+                fullSyncRentalsBtn.textContent = '手動完整同步至 Sheet';
+                fullSyncRentalsBtn.disabled = false;
+            }
+        });
+    }
+
     // ---- 頁面切換邏輯 ----
     function showPage(pageId) {
         if (html5QrCode && html5QrCode.isScanning) {
@@ -1036,26 +1059,38 @@ if (editRentalForm) {
 }
 
 
-    function openCreateRentalModal(gameId) {
-        const game = allGames.find(g => g.game_id == gameId);
-        if (!game) { alert('找不到遊戲資料！'); return; }
-        if (createRentalForm) createRentalForm.reset();
-        selectedRentalUser = null;
-        
-        const userSelect = document.getElementById('rental-user-select');
-        if(userSelect) userSelect.style.display = 'none';
+async function openCreateRentalModal(gameId) { // 【修改】在函式前加上 async
+    const game = allGames.find(g => g.game_id == gameId);
+    if (!game) { alert('找不到遊戲資料！'); return; }
 
-        document.getElementById('rental-game-id').value = game.game_id;
-        document.getElementById('rental-game-name').value = game.name;
-        document.getElementById('rental-deposit').value = game.deposit || 0;
-        document.getElementById('rental-late-fee').value = game.late_fee_per_day || 50;
-        
-        const today = new Date();
-        today.setDate(today.getDate() + 3);
-        document.getElementById('rental-due-date').value = today.toISOString().split('T')[0];
-
-        if(createRentalModal) createRentalModal.style.display = 'flex';
+    // 【新增】檢查會員資料是否已載入
+    if (allUsers.length === 0) {
+        alert('正在載入會員列表，請稍候...');
+        try {
+            await fetchAllUsers(); // 等待會員資料載入完成
+        } catch (error) {
+            alert('會員列表載入失敗，無法建立租借紀錄。');
+            return;
+        }
     }
+
+    if (createRentalForm) createRentalForm.reset();
+    selectedRentalUser = null;
+
+    const userSelect = document.getElementById('rental-user-select');
+    if(userSelect) userSelect.style.display = 'none';
+
+    document.getElementById('rental-game-id').value = game.game_id;
+    document.getElementById('rental-game-name').value = game.name;
+    document.getElementById('rental-deposit').value = game.deposit || 0;
+    document.getElementById('rental-late-fee').value = game.late_fee_per_day || 50;
+
+    const today = new Date();
+    today.setDate(today.getDate() + 3);
+    document.getElementById('rental-due-date').value = today.toISOString().split('T')[0];
+
+    if(createRentalModal) createRentalModal.style.display = 'flex';
+}
     
     if(createRentalModal) {
         const rentalUserSearch = document.getElementById('rental-user-search');
@@ -1671,3 +1706,4 @@ async function fetchAllExpHistory() {
     initialize();
 
 });
+
