@@ -1430,17 +1430,21 @@ if (editRentalForm) {
     // =================================================================
     // 經驗紀錄模組
     // =================================================================
-    async function fetchAllExpHistory() {
-        try {
-            const response = await fetch('/api/admin/get-exp-history');
-            if (!response.ok) throw new Error('無法獲取經驗紀錄');
-            allExpHistory = await response.json();
-            renderExpHistoryList(allExpHistory);
-        } catch (error) {
-            console.error('獲取經驗紀錄失敗:', error);
-            if (expHistoryTbody) expHistoryTbody.innerHTML = `<tr><td colspan="4" style="color:red;">讀取紀錄失敗</td></tr>`;
-        }
+// public/admin-login.js
+
+async function fetchAllExpHistory() {
+    try {
+        // 【修改這裡】將網址對應到新的檔案名稱
+        const response = await fetch('/api/admin/exp-history-list');
+
+        if (!response.ok) throw new Error('無法獲取經驗紀錄');
+        allExpHistory = await response.json();
+        renderExpHistoryList(allExpHistory);
+    } catch (error) {
+        console.error('獲取經驗紀錄失敗:', error);
+        if (expHistoryTbody) expHistoryTbody.innerHTML = `<tr><td colspan="4" style="color:red;">讀取紀錄失敗</td></tr>`;
     }
+}
 
     function renderExpHistoryList(records) {
         if (!expHistoryTbody) return;
