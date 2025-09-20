@@ -354,14 +354,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // 庫存管理模組
     // =================================================================
     function applyGameFiltersAndRender() {
-        if (!allGames || !gameSearchInput) return;
+        if (!allGames) return;
+
+        // 1. 關鍵字搜尋
         const searchTerm = gameSearchInput.value.toLowerCase().trim();
-        const filteredGames = searchTerm
+        let filteredGames = searchTerm
             ? allGames.filter(game => (game.name || '').toLowerCase().includes(searchTerm))
-            : allGames;
+            : [...allGames];
+
+        // 2. 庫存量篩選
+        const stockFilter = document.querySelector('#inventory-stock-filter .active').dataset.filter;
+        if (stockFilter === 'in_stock') {
+            filteredGames = filteredGames.filter(game => Number(game.for_rent_stock) > 0);
+        } else if (stockFilter === 'out_of_stock') {
+            filteredGames = filteredGames.filter(game => Number(game.for_rent_stock) <= 0);
+        }
+
+        // 3. 上架狀態篩選
+        const visibilityFilter = document.querySelector('#inventory-visibility-filter .active').dataset.filter;
+        if (visibilityFilter === 'visible') {
+            filteredGames = filteredGames.filter(game => game.is_visible === 1 || String(game.is_visible).toUpperCase() === 'TRUE');
+        } else if (visibilityFilter === 'hidden') {
+            filteredGames = filteredGames.filter(game => !(game.is_visible === 1 || String(game.is_visible).toUpperCase() === 'TRUE'));
+        }
+        
         renderGameList(filteredGames);
     }
-
 
     function renderGameList(games) {
         if (!gameListTbody) return;
@@ -401,6 +419,29 @@ document.addEventListener('DOMContentLoaded', () => {
         gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
     }
     
+    // 為新的篩選按鈕群組加上事件監聽
+    const inventoryStockFilter = document.getElementById('inventory-stock-filter');
+    if (inventoryStockFilter) {
+        inventoryStockFilter.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                inventoryStockFilter.querySelector('.active')?.classList.remove('active');
+                e.target.classList.add('active');
+                applyGameFiltersAndRender();
+            }
+        });
+    }
+
+    const inventoryVisibilityFilter = document.getElementById('inventory-visibility-filter');
+    if (inventoryVisibilityFilter) {
+        inventoryVisibilityFilter.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                inventoryVisibilityFilter.querySelector('.active')?.classList.remove('active');
+                e.target.classList.add('active');
+                applyGameFiltersAndRender();
+            }
+        });
+    }
+
     if (syncGamesBtn) {
         syncGamesBtn.addEventListener('click', async () => {
             if (!confirm('確定要從 Google Sheet 同步所有桌遊資料到資料庫嗎？\n\n這將會用 Sheet 上的資料覆蓋現有資料。')) return;
@@ -496,23 +537,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 桌遊租借模組
     // =================================================================
-    function applyRentalFiltersAndRender() {
-        if (!allRentals || !rentalSearchInput) return;
+    async function applyRentalFiltersAndRender() {
+        if (!rentalSearchInput) return;
         const keyword = rentalSearchInput.value.toLowerCase().trim();
-        let rentalStatus = 'all';
-        if(rentalStatusFilter) {
+        let status = 'all';
+        if (rentalStatusFilter) {
             const activeFilter = rentalStatusFilter.querySelector('.active');
-            if(activeFilter) rentalStatus = activeFilter.dataset.filter;
+            if(activeFilter) status = activeFilter.dataset.filter;
         }
 
-        let filteredRentals = allRentals.filter(rental => {
-            const statusMatch = rentalStatus === 'all' || rental.status === rentalStatus;
-            const keywordMatch = !keyword || 
-                                 (rental.game_name || '').toLowerCase().includes(keyword) ||
-                                 (rental.nickname || rental.line_display_name || '').toLowerCase().includes(keyword);
-            return statusMatch && keywordMatch;
-        });
-        renderRentalList(filteredRentals);
+        // 呼叫更新後的 API
+        let url = '/api/admin/get-all-rentals';
+        if (status !== 'all') {
+            url += `?status=${status}`;
+        }
+        
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('無法獲取租借列表');
+            allRentals = await response.json();
+
+            // 在前端進行關鍵字篩選
+            const filteredRentals = !keyword ? allRentals : allRentals.filter(rental => 
+                                     (rental.game_name || '').toLowerCase().includes(keyword) ||
+                                     (rental.nickname || rental.line_display_name || '').toLowerCase().includes(keyword)
+                                 );
+            renderRentalList(filteredRentals);
+        } catch (error) { 
+            console.error('獲取租借列表失敗:', error); 
+        }
     }
     
     function renderRentalList(rentals) {
@@ -540,20 +593,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function fetchAllRentals() {
-        try {
-            const response = await fetch('/api/admin/get-all-rentals');
-            if (!response.ok) throw new Error('無法獲取租借列表');
-            allRentals = await response.json();
-            applyRentalFiltersAndRender();
-        } catch (error) { console.error('獲取租借列表失敗:', error); }
+    // 簡化 fetchAllRentals，因為篩選函式會自己去 fetch
+    function fetchAllRentals() {
+        applyRentalFiltersAndRender();
     }
 
     if (rentalStatusFilter) {
         rentalStatusFilter.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
-                const currentActive = rentalStatusFilter.querySelector('.active');
-                if(currentActive) currentActive.classList.remove('active');
+                rentalStatusFilter.querySelector('.active')?.classList.remove('active');
                 e.target.classList.add('active');
                 applyRentalFiltersAndRender();
             }
@@ -582,11 +630,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (!response.ok) throw new Error(result.error || '歸還失敗');
                         alert('歸還成功！');
                         
-                        const returnedGame = allGames.find(g => g.game_id === rental.game_id);
-                        if(returnedGame) returnedGame.for_rent_stock = Number(returnedGame.for_rent_stock) + 1;
-                        
-                        rental.status = 'returned';
-                        applyRentalFiltersAndRender();
+                        // 刷新列表以顯示最新狀態
+                        await applyRentalFiltersAndRender();
+                        // 同時也刷新庫存頁面的資料，如果它已經被載入
+                        if (allGames.length > 0) {
+                            await fetchAllGames();
+                        }
 
                     } catch (error) {
                         alert(`錯誤：${error.message}`);
@@ -595,6 +644,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
 
     function openCreateRentalModal(gameId) {
         const game = allGames.find(g => g.game_id == gameId);
@@ -732,12 +782,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!bookingListTbody) return;
         bookingListTbody.innerHTML = '';
         if (bookings.length === 0) {
-            bookingListTbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">目前沒有即將到來的預約。</td></tr>';
+            bookingListTbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">找不到符合條件的預約。</td></tr>';
             return;
         }
         bookings.forEach(booking => {
             const row = document.createElement('tr');
-            let statusText = '預約成功';
+            let statusText = '未知';
+            if (booking.status === 'confirmed') statusText = '預約成功';
             if (booking.status === 'checked-in') statusText = '已報到';
             if (booking.status === 'cancelled') statusText = '已取消';
 
@@ -754,20 +805,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${statusText}</td>
                 <td class="actions-cell">
                     <button class="action-btn btn-check-in" data-bookingid="${booking.booking_id}" style="background-color: #28a745;" ${booking.status !== 'confirmed' ? 'disabled' : ''}>報到</button>
-                    <button class="action-btn btn-cancel-booking" data-bookingid="${booking.booking_id}" style="background-color: var(--danger-color);" ${booking.status === 'cancelled' ? 'disabled' : ''}>取消預約</button>
+                    <button class="action-btn btn-cancel-booking" data-bookingid="${booking.booking_id}" style="background-color: var(--danger-color);" ${booking.status === 'cancelled' ? 'disabled' : ''}>取消</button>
                 </td>
             `;
             bookingListTbody.appendChild(row);
         });
     }
 
-    async function fetchAllBookings() {
+    async function fetchAllBookings(status = 'today') {
         try {
-            const response = await fetch('/api/get-bookings');
+            const response = await fetch(`/api/get-bookings?status=${status}`);
             if (!response.ok) throw new Error('無法獲取預約列表');
             allBookings = await response.json();
             renderBookingList(allBookings);
-        } catch (error) { console.error('獲取預約列表失敗:', error); }
+        } catch (error) { 
+            console.error('獲取預約列表失敗:', error); 
+            if(bookingListTbody) bookingListTbody.innerHTML = '<tr><td colspan="5" style="color: red; text-align: center;">讀取預約失敗</td></tr>';
+        }
+    }
+    
+    const bookingStatusFilter = document.getElementById('booking-status-filter');
+    if (bookingStatusFilter) {
+        bookingStatusFilter.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                bookingStatusFilter.querySelector('.active')?.classList.remove('active');
+                e.target.classList.add('active');
+                const status = e.target.dataset.filter;
+                fetchAllBookings(status);
+            }
+        });
     }
     
     async function initializeBookingSettings() {
@@ -861,42 +927,37 @@ document.addEventListener('DOMContentLoaded', () => {
             const bookingId = target.dataset.bookingid;
             if (!bookingId) return;
 
-            // 報到按鈕邏輯 (不變)
-            if (target.classList.contains('btn-check-in')) {
-                const booking = allBookings.find(b => b.booking_id == bookingId);
+            const handleStatusUpdate = async (id, newStatus, confirmMsg, successMsg, errorMsg) => {
+                const booking = allBookings.find(b => b.booking_id == id);
                 if (!booking) return;
-                if (confirm(`確定要將 ${booking.booking_date} ${booking.contact_name} 的預約標示為「已報到」嗎？`)) {
+                if (confirm(confirmMsg)) {
                      try {
                         const response = await fetch('/api/update-booking-status', {
                             method: 'POST', headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ bookingId: Number(bookingId), status: 'checked-in' })
+                            body: JSON.stringify({ bookingId: Number(id), status: newStatus })
                         });
                         const result = await response.json();
-                        if (!response.ok) throw new Error(result.error || '報到失敗');
-                        alert('報到成功！');
-                        booking.status = 'checked-in';
+                        if (!response.ok) throw new Error(result.error || errorMsg);
+                        alert(successMsg);
+                        // 直接從前端更新列表，避免重新 API 請求
+                        booking.status = newStatus;
                         renderBookingList(allBookings);
                     } catch (error) { alert(`錯誤：${error.message}`); }
                 }
+            };
+
+            if (target.classList.contains('btn-check-in')) {
+                const booking = allBookings.find(b => b.booking_id == bookingId);
+                await handleStatusUpdate(bookingId, 'checked-in', 
+                    `確定要將 ${booking.booking_date} ${booking.contact_name} 的預約標示為「已報到」嗎？`,
+                    '報到成功！', '報到失敗');
             }
             
-            // 取消預約按鈕邏輯 (不變)
             if (target.classList.contains('btn-cancel-booking')) {
                 const booking = allBookings.find(b => b.booking_id == bookingId);
-                if (!booking) return;
-                if (confirm(`確定要取消 ${booking.booking_date} ${booking.contact_name} 的預約嗎？`)) {
-                    try {
-                        const response = await fetch('/api/update-booking-status', {
-                            method: 'POST', headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ bookingId: Number(bookingId), status: 'cancelled' })
-                        });
-                        const result = await response.json();
-                        if (!response.ok) throw new Error(result.error || '取消預約失敗');
-                        alert('預約已成功取消！');
-                        booking.status = 'cancelled';
-                        renderBookingList(allBookings);
-                    } catch (error) { alert(`錯誤：${error.message}`); }
-                }
+                await handleStatusUpdate(bookingId, 'cancelled', 
+                    `確定要取消 ${booking.booking_date} ${booking.contact_name} 的預約嗎？`,
+                    '預約已成功取消！', '取消預約失敗');
             }
         });
     }

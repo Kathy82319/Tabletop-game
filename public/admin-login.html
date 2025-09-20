@@ -88,12 +88,24 @@
             </table>
         </div>
 
-        <div id="page-inventory" class="page">
+<div id="page-inventory" class="page">
             <div class="page-header">
                 <h2>庫存管理</h2>
                 <button id="sync-games-btn" class="action-btn" style="background-color: #28a745;">同步至資料庫</button>
             </div>
-            <input type="text" id="game-search-input" placeholder="依桌遊名稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
+            <div class="filter-bar">
+                <input type="text" id="game-search-input" placeholder="依桌遊名稱搜尋..." style="flex-grow: 1; padding: 8px;">
+                <div id="inventory-stock-filter" class="filter-group">
+                    <button class="active" data-filter="all">全部庫存</button>
+                    <button data-filter="in_stock">有庫存</button>
+                    <button data-filter="out_of_stock">無庫存</button>
+                </div>
+                <div id="inventory-visibility-filter" class="filter-group">
+                    <button class="active" data-filter="all">全部狀態</button>
+                    <button data-filter="visible">已上架</button>
+                    <button data-filter="hidden">未上架</button>
+                </div>
+            </div>
             <table>
                 <thead>
                     <tr>
@@ -107,12 +119,19 @@
             </table>
         </div>
 
-        <div id="page-rentals" class="page">
+<div id="page-rentals" class="page">
             <div class="page-header">
                 <h2>桌遊租借總表</h2>
                 <button id="sync-rentals-btn" class="action-btn" style="background-color: #28a745;">同步至 Google Sheet</button>
             </div>
-            <input type="text" id="rental-search-input" placeholder="依遊戲或會員名稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
+             <div class="filter-bar">
+                <input type="text" id="rental-search-input" placeholder="依遊戲或會員名稱搜尋..." style="flex-grow: 1; padding: 8px;">
+                <div id="rental-status-filter" class="filter-group">
+                    <button class="active" data-filter="all">全部顯示</button>
+                    <button data-filter="rented">租借中</button>
+                    <button data-filter="returned">已歸還</button>
+                </div>
+            </div>
             <table>
                 <thead>
                     <tr><th>狀態</th><th>遊戲名稱</th><th>租借人</th><th>預計歸還日</th><th>操作</th></tr>
@@ -121,12 +140,22 @@
             </table>
         </div>
 
-        <div id="page-bookings" class="page">
-            <div class="page-header"><h2>訂位管理</h2></div>
-            <button id="manage-booking-dates-btn" class="action-btn" style="background-color: #ffc107; color: #000;">管理公休日</button>
+<div id="page-bookings" class="page">
+            <div class="page-header">
+                <h2>訂位管理</h2>
+                <button id="manage-booking-dates-btn" class="action-btn" style="background-color: #ffc107; color: #000;">管理公休日</button>
+            </div>
+            <div class="filter-bar">
+                <div id="booking-status-filter" class="filter-group">
+                    <button class="active" data-filter="today">今日預約</button>
+                    <button data-filter="confirmed">未來預約</button>
+                    <button data-filter="checked-in">已報到</button>
+                    <button data-filter="cancelled">已取消</button>
+                </div>
+            </div>
             <table>
                 <thead>
-                    <tr><th>時間</th><th>客戶</th><th>人數</th><th>操作</th></tr>
+                    <tr><th>時間</th><th>客戶</th><th>人數</th><th>狀態</th><th>操作</th></tr>
                 </thead>
                 <tbody id="booking-list-tbody"></tbody>
             </table>
