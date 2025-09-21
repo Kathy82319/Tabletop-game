@@ -339,6 +339,7 @@ function updateProfileDisplay(data) {
     }
 }
 
+// REPLACE THIS FUNCTION
 async function initializeMyBookingsPage() {
     if (!userProfile) return;
 
@@ -432,6 +433,7 @@ async function initializeMyBookingsPage() {
 
 // public/script.js
 
+// REPLACE THIS FUNCTION
 async function initializeRentalHistoryPage() {
     if (!userProfile) return;
 
@@ -455,7 +457,6 @@ async function initializeRentalHistoryPage() {
             if (rental.status === 'returned') {
                 statusHTML = `<div class="rental-status returned">已於 ${rental.return_date || ''} 歸還</div>`;
             } else if (typeof rental.overdue_days === 'number' && rental.overdue_days > 0) {
-                // 需求：已逾期項目使用紅字粗體
                 statusHTML = `
                     <div class="rental-status overdue-text">
                         <strong>已逾期 ${rental.overdue_days} 天</strong><br>
@@ -512,7 +513,6 @@ async function initializeRentalHistoryPage() {
         currentContainer.innerHTML = `<p style="color: red;">${error.message}</p>`;
     }
 }
-
     // =================================================================
     // 編輯個人資料頁
     // =================================================================

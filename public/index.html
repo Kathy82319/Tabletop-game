@@ -75,93 +75,93 @@
         </div>
     </div>            
 
-    <div id="page-profile">
-        <h1 class="page-main-title">冒險者資料</h1>
-        <div id="qrcode-container">
-            <div id="qrcode"></div>
+<div id="page-profile">
+    <h1 class="page-main-title">冒險者資料</h1>
+    <div id="qrcode-container">
+        <div id="qrcode"></div>
+    </div>
+    <div class="profile-details-grid">
+        <div class="profile-avatar">
+            <img id="profile-picture" src="placeholder.jpg" alt="Profile Picture">
         </div>
-        <div class="profile-details-grid">
-            <div class="profile-avatar">
-                <img id="profile-picture" src="placeholder.jpg" alt="Profile Picture">
-            </div>
-            <div class="profile-stats">
-                <h2 id="display-name">讀取中...</h2>
-                <p><strong>職業：</strong><span id="user-class">--</span></p>
-                <p><strong>等級：</strong><span id="user-level">--</span></p>
-                <p><strong>經驗值：</strong><span id="user-exp">-- / --</span></p>
-                <p id="user-perk-line" style="display: none;"><strong>職業福利：</strong><span id="user-perk"></span></p>
-            </div>
-        </div>
-        <div class="profile-actions">
-           <button class="cta-button" id="edit-profile-btn">冒險者<br>檔案</button>
-           <button class="cta-button" id="my-bookings-btn">預約的<br>冒險旅程</button>
-           <button class="cta-button" id="my-exp-history-btn">經驗<br>成長紀錄</button>
-           <button class="cta-button" id="rental-history-btn">桌遊<br>租借紀錄</button>
+        <div class="profile-stats">
+            <h2 id="display-name">讀取中...</h2>
+            <p><strong>職業：</strong><span id="user-class">--</span></p>
+            <p><strong>等級：</strong><span id="user-level">--</span></p>
+            <p><strong>經驗值：</strong><span id="user-exp">-- / --</span></p>
+            <p id="user-perk-line" style="display: none;"><strong>職業福利：</strong><span id="user-perk"></span></p>
         </div>
     </div>
+    <div class="profile-actions">
+       <button class="cta-button" id="edit-profile-btn">冒險者<br>檔案</button>
+       <button class="cta-button" id="my-bookings-btn">預約的<br>冒險旅程</button>
+       <button class="cta-button" id="my-exp-history-btn">經驗<br>成長紀錄</button>
+       <button class="cta-button" id="rental-history-btn">桌遊<br>租借紀錄</button>
+    </div>
+</div>
 
-    <div id="page-my-bookings">
-        <button class="details-back-button">← 返回個人資料</button>
-        <h1 style="text-align: center;">我預約的冒險旅程</h1>
-        <div id="my-bookings-container"><p>正在查詢您的預約紀錄...</p></div>
-        <button class="cta-button" id="toggle-past-bookings-btn" style="margin-top: 20px; background: var(--color-text-secondary);">查看過往紀錄</button>
-        <div id="past-bookings-container" style="display: none; margin-top: 20px;">
-            <h2 style="text-align: center; font-size: 1.5rem;">過往的旅程</h2>
-        </div>
+<div id="page-my-bookings">
+    <button class="details-back-button">← 返回個人資料</button>
+    <h1 style="text-align: center;">我預約的冒險旅程</h1>
+    <div id="my-bookings-container"><p>正在查詢您的預約紀錄...</p></div>
+    <button class="cta-button" id="toggle-past-bookings-btn" style="margin-top: 20px; background: var(--color-text-secondary);">查看過往紀錄</button>
+    <div id="past-bookings-container" style="display: none; margin-top: 20px;">
+        <h2 style="text-align: center; font-size: 1.5rem;">過往的旅程</h2>
     </div>
-    
-    <div id="page-my-exp-history">
-        <button class="details-back-button">← 返回個人資料</button>
-        <h1 style="text-align: center;">經驗成長紀錄</h1>
-        <div id="my-exp-history-container"><p>正在查詢您的經驗紀錄...</p></div>
-    </div>
+</div>
 
-    <div id="page-rental-history">
-        <button class="details-back-button">← 返回個人資料</button>
-        <h1 style="text-align: center;">桌遊租借紀錄</h1>
-        <div id="rental-history-container"><p>正在查詢您的租借紀錄...</p></div>
-        <button class="cta-button" id="toggle-past-rentals-btn" style="margin-top: 20px; background: var(--color-text-secondary);">查看過往紀錄</button>
-        <div id="past-rentals-container" style="display: none; margin-top: 20px;">
-            <h2 style="text-align: center; font-size: 1.5rem;">過往的租借</h2>
-        </div>
-    </div>
+<div id="page-my-exp-history">
+    <button class="details-back-button">← 返回個人資料</button>
+    <h1 style="text-align: center;">經驗成長紀錄</h1>
+    <div id="my-exp-history-container"><p>正在查詢您的經驗紀錄...</p></div>
+</div>
 
-    <div id="page-edit-profile">
-        <button class="details-back-button" style="margin-bottom: 20px;">← 返回</button>
-        <div style="text-align: center;">
-            <h1>冒險者檔案</h1>
-            <p style="color: #666; margin-top: -10px; margin-bottom: 30px;">冒險者履歷，讓我們更了解你！</p>
-        </div>
-         <form id="edit-profile-form">
-            <div class="input-group">
-                <label for="edit-profile-name">(LINE)</label>
-                <input type="text" id="edit-profile-name" readonly style="background-color: #e9ecef; cursor: not-allowed;">
-            </div>
-            <div class="input-group">
-                <label for="edit-profile-real-name">姓名</label>
-                <input type="text" id="edit-profile-real-name" placeholder="用於訂位，請填寫真實姓名">
-            </div>
-            <div class="input-group">
-                <label for="edit-profile-nickname">綽號</label>
-                <input type="text" id="edit-profile-nickname" placeholder="您希望我們怎麼稱呼您？">
-            </div>
-            <div class="input-group">
-                <label for="edit-profile-phone">聯絡電話</label>
-                <input type="tel" id="edit-profile-phone" maxlength="10" placeholder="用於訂位等聯絡事宜">
-            </div>
-            <div class="input-group">
-                <label for="edit-profile-email">電子信箱</label>
-                <input type="email" id="edit-profile-email" placeholder="用於接收活動通知 (選填)">
-            </div>
-            <div class="input-group">
-                <label>偏好的遊戲類型 (可多選)</label>
-                <div id="preferred-games-container" class="tag-selection-container">
-                </div>
-            </div>
-            <button type="submit" class="cta-button" style="margin-top: 20px;">儲存資料</button>
-        </form>
-        <p id="edit-profile-form-status" class="form-status"></p>
+<div id="page-rental-history">
+    <button class="details-back-button">← 返回個人資料</button>
+    <h1 style="text-align: center;">桌遊租借紀錄</h1>
+    <div id="rental-history-container"><p>正在查詢您的租借紀錄...</p></div>
+    <button class="cta-button" id="toggle-past-rentals-btn" style="margin-top: 20px; background: var(--color-text-secondary);">查看過往紀錄</button>
+    <div id="past-rentals-container" style="display: none; margin-top: 20px;">
+        <h2 style="text-align: center; font-size: 1.5rem;">過往的租借</h2>
     </div>
+</div>
+
+<div id="page-edit-profile">
+    <button class="details-back-button" style="margin-bottom: 20px;">← 返回</button>
+    <div style="text-align: center;">
+        <h1>冒險者檔案</h1>
+        <p style="color: #666; margin-top: -10px; margin-bottom: 30px;">冒險者履歷，讓我們更了解你！</p>
+    </div>
+     <form id="edit-profile-form">
+        <div class="input-group">
+            <label for="edit-profile-name">(LINE)</label>
+            <input type="text" id="edit-profile-name" readonly style="background-color: #e9ecef; cursor: not-allowed;">
+        </div>
+        <div class="input-group">
+            <label for="edit-profile-real-name">姓名</label>
+            <input type="text" id="edit-profile-real-name" placeholder="用於訂位，請填寫真實姓名">
+        </div>
+        <div class="input-group">
+            <label for="edit-profile-nickname">綽號</label>
+            <input type="text" id="edit-profile-nickname" placeholder="您希望我們怎麼稱呼您？">
+        </div>
+        <div class="input-group">
+            <label for="edit-profile-phone">聯絡電話</label>
+            <input type="tel" id="edit-profile-phone" maxlength="10" placeholder="用於訂位等聯絡事宜">
+        </div>
+        <div class="input-group">
+            <label for="edit-profile-email">電子信箱</label>
+            <input type="email" id="edit-profile-email" placeholder="用於接收活動通知 (選填)">
+        </div>
+        <div class="input-group">
+            <label>偏好的遊戲類型 (可多選)</label>
+            <div id="preferred-games-container" class="tag-selection-container">
+            </div>
+        </div>
+        <button type="submit" class="cta-button" style="margin-top: 20px;">儲存資料</button>
+    </form>
+    <p id="edit-profile-form-status" class="form-status"></p>
+</div>
 
     <div id="page-booking">
         <div id="booking-wizard-container">
