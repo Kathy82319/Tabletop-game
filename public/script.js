@@ -117,32 +117,45 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 首頁 (最新情報)
     // =================================================================
-    function renderNews(filterCategory = 'ALL') {
-        const container = document.getElementById('news-list-container');
-        if (!container) return;
-        
-        const filteredNews = (filterCategory === 'ALL')
-            ? allNews
-            : allNews.filter(news => news.category === filterCategory);
+// public/script.js
+function renderNews(filterCategory = 'ALL') {
+    const container = document.getElementById('news-list-container');
+    if (!container) return;
 
-        if (filteredNews.length === 0) {
-            container.innerHTML = '<p>這個分類目前沒有消息。</p>';
-            return;
-        }
+    const filteredNews = (filterCategory === 'ALL')
+        ? allNews
+        : allNews.filter(news => news.category === filterCategory);
 
-        container.innerHTML = filteredNews.map(news => `
-            <div class="news-card" data-news-id="${news.id}">
-                <div class="news-card-header">
-                    <span class="news-card-category">${news.category}</span>
-                    <span class="news-card-date">${news.published_date}</span>
-                </div>
-                <div class="news-card-content">
-                    <h3 class="news-card-title">${news.title}</h3>
-                    ${news.image_url ? `<img src="${news.image_url}" alt="${news.title}" class="news-card-image">` : ''}
-                </div>
-            </div>
-        `).join('');
+    if (filteredNews.length === 0) {
+        container.innerHTML = '<p>這個分類目前沒有消息。</p>';
+        return;
     }
+
+    container.innerHTML = filteredNews.map(news => {
+        // 產生內文摘要，最多截取 50 個字
+        const snippet = news.content ? news.content.substring(0, 50) + '...' : '';
+        // 決定是否要顯示圖片
+        const imageHTML = news.image_url
+            ? `<div class="news-card-image-container">
+                   <img src="${news.image_url}" alt="${news.title}" class="news-card-image">
+               </div>`
+            : '';
+
+        return `
+        <div class="news-card" data-news-id="${news.id}">
+            <div class="news-card-header">
+                <span class="news-card-category">${news.category}</span>
+                <span class="news-card-date">${news.published_date}</span>
+            </div>
+            <div class="news-card-content">
+                <h3 class="news-card-title">${news.title}</h3>
+                ${imageHTML}
+                <p class="news-card-snippet">${snippet}</p>
+            </div>
+        </div>
+        `;
+    }).join('');
+}
 
     function setupNewsFilters() {
         const container = document.getElementById('news-filter-container');
@@ -251,8 +264,7 @@ async function initializeLiff() {
 
         const profilePicture = document.getElementById('profile-picture');
         if (userProfile.pictureUrl) profilePicture.src = userProfile.pictureUrl;
-        document.getElementById('status-message').textContent = userProfile.statusMessage || '';
-        
+
         const qrcodeElement = document.getElementById('qrcode');
         if(qrcodeElement) {
             qrcodeElement.innerHTML = '';
@@ -633,26 +645,29 @@ async function initializeRentalHistoryPage() {
         return false;
     }
 
-    async function initializeBookingPage() {
-        bookingHistoryStack = [];
-        showBookingStep('step-preference');
+// public/script.js
+async function initializeBookingPage() {
+    bookingHistoryStack = [];
+    showBookingStep('step-preference');
 
-        document.getElementById('view-my-bookings-btn').addEventListener('click', () => {
-            showPage('page-my-bookings');
-        });
+    document.getElementById('view-my-bookings-btn').addEventListener('click', () => {
+        showPage('page-my-bookings');
+    });
 
-        try {
-            const response = await fetch('/api/bookings-check?month-init=true');
-            const data = await response.json();
-            disabledDatesByAdmin = data.disabledDates || [];
-        } catch (error) {
-            console.error("獲取禁用日期失敗:", error);
-            disabledDatesByAdmin = [];
-        }
+    try {
+        const response = await fetch('/api/bookings-check?month-init=true');
+        const data = await response.json();
+        disabledDatesByAdmin = data.disabledDates || [];
+    } catch (error) {
+        console.error("獲取禁用日期失敗:", error);
+        disabledDatesByAdmin = [];
+    }
 
-        const wizardContainer = document.getElementById('booking-wizard-container');
+    const wizardContainer = document.getElementById('booking-wizard-container');
+    if (wizardContainer) { // 【新增】保護措施
         wizardContainer.addEventListener('click', async (e) => {
-            if (e.target.matches('.back-button')) {
+            // ... (原本的 click 事件邏輯不變) ...
+             if (e.target.matches('.back-button')) {
                 goBackBookingStep();
             } else if (e.target.closest('.preference-btn')) {
                 showBookingStep('step-date-and-slots');
@@ -680,24 +695,32 @@ async function initializeRentalHistoryPage() {
                 await handleBookingConfirmation(e.target);
             }
         });
+    }
 
-        flatpickr("#booking-datepicker-container", {
-            inline: true, minDate: "today", dateFormat: "Y-m-d", locale: "zh_tw",
+    // 【關鍵修改】選取當前頁面上的日曆容器來初始化
+    const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
+    if (datepickerContainer) {
+        flatpickr(datepickerContainer, {
+            inline: true,
+            minDate: "today",
+            dateFormat: "Y-m-d",
+            locale: "zh_tw",
             disable: disabledDatesByAdmin,
             onChange: (selectedDates, dateStr) => {
                 bookingData.date = dateStr;
                 fetchAndRenderSlots(dateStr);
             },
         });
-
-        const userData = await fetchGameData();
-        if (userData) {
-            const nameInput = document.getElementById('contact-name');
-            const phoneInput = document.getElementById('contact-phone');
-            if(nameInput) nameInput.value = userData.real_name || '';
-            if(phoneInput) phoneInput.value = userData.phone || '';
-        }
     }
+
+    const userData = await fetchGameData();
+    if (userData) {
+        const nameInput = document.getElementById('contact-name');
+        const phoneInput = document.getElementById('contact-phone');
+        if(nameInput) nameInput.value = userData.real_name || '';
+        if(phoneInput) phoneInput.value = userData.phone || '';
+    }
+}
 
     async function fetchAndRenderSlots(date) {
         const slotsPlaceholder = document.getElementById('slots-placeholder');

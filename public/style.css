@@ -487,6 +487,125 @@ body {
 /* =================================================================
    ** 修正 ** 場地預約頁按鈕間距
    ================================================================= */
-#page-booking #step-preference .cta-button {
-    margin-bottom: 15px; /* 為按鈕下方增加一些間距 */
+/* public/style.css */
+
+/* =================================================================
+   ** 全新 ** 場地預約頁面美化
+   ================================================================= */
+
+/* 步驟一：基礎設定 */
+#page-booking .booking-header .booking-subtitle {
+    color: #B2A59B; /* 副標題使用柔和的棕褐色 */
+}
+
+/* 步驟二：選項按鈕美化 */
+#page-booking .preference-btn {
+    background-color: rgba(255, 255, 255, 0.6); /* 半透明背景 */
+    border: 1px solid #EAE0D5;
+    box-shadow: 0 2px 8px rgba(93, 64, 55, 0.05);
+}
+#page-booking .preference-btn:hover {
+    border-color: var(--primary-accent);
+    background-color: #FFFFFF;
+}
+
+/* 步驟三：日曆美化 */
+.flatpickr-calendar {
+    background: #FCF8F3; /* 日曆背景色 */
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(93, 64, 55, 0.1);
+    width: 100% !important; /* 強制寬度100% */
+}
+.flatpickr-day.selected, .flatpickr-day.today {
+    background: var(--primary-accent);
+    border-color: var(--primary-accent);
+}
+.flatpickr-day:hover {
+    background: var(--secondary-accent);
+}
+.flatpickr-months .flatpickr-month {
+    color: var(--text-color);
+}
+span.flatpickr-weekday {
+    color: var(--text-color);
+    font-weight: bold;
+}
+
+/* 步驟四：時段按鈕美化 */
+#page-booking .slot-button {
+    background-color: #FFFFFF;
+    color: var(--text-color);
+    font-weight: 500;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+#page-booking .slot-button:hover {
+    background-color: #FFF9F0;
+    border-color: var(--secondary-accent);
+}
+#page-booking .slot-button:disabled {
+    background-color: #F5F5F5;
+    color: #BDBDBD;
+}
+
+/* 步驟五：輸入框與摘要區塊美化 */
+#page-booking .input-group input {
+    background-color: #FAFAFA;
+    border: 1px solid #EAE0D5;
+}
+#page-booking .summary-card {
+    background: #FFF9F0;
+    border: 1px solid #EAE0D5;
+}
+
+/* public/style.css */
+
+/* =================================================================
+   ** 全新 ** 冒險者資料頁面排版
+   ================================================================= */
+/* 讓 #page-profile 容器本身成為一個 flex 容器 */
+#page-templates > #page-profile {
+    display: flex;
+    flex-direction: column; /* 內容垂直排列 */
+    height: calc(100vh - 95px); /* 高度為可視高度減去上下 padding */
+    padding: 15px;
+}
+
+/* 讓中間的區塊自動填滿剩餘空間 */
+#page-profile > #qrcode-container {
+    flex-grow: 1; /* 佔滿所有剩餘的垂直空間 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 15px auto; /* 上下留白，左右自動置中 */
+}
+
+/* 確保按鈕區塊總是貼在最底部 */
+#page-profile .profile-actions {
+    margin-top: auto; /* 將自己推到 flex 容器的底部 */
+}
+
+/* public/style.css */
+
+/* =================================================================
+   ** 全新 ** 最新情報卡片樣式修正
+   ================================================================= */
+.news-card-image-container {
+    width: 100%;
+    height: 180px; /* 給定一個固定的高度 */
+    overflow: hidden; /* 超出範圍的圖片會被隱藏 */
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.news-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 關鍵屬性：自動裁切圖片以填滿容器，同時保持比例 */
+}
+
+.news-card-snippet {
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.5;
+    margin-top: 10px;
 }
