@@ -2,9 +2,9 @@
 
 export async function onRequest(context) {
   try {
-    // 從請求的 URL 中獲取 userId 參數，例如 /api/my-bookings?userId=U123...
     const url = new URL(context.request.url);
     const userId = url.searchParams.get('userId');
+    const filter = url.searchParams.get('filter') || 'current'; // 預設為 'current'
 
     if (!userId) {
       return new Response(JSON.stringify({ error: '缺少使用者 ID 參數。' }), {
@@ -15,8 +15,11 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
-    // 查詢該使用者所有「預約日期」大於或等於「今天」的預約
-    // 並按照預約日期排序
+    // 根據 filter 參數動態改變查詢條件
+    const condition = filter === 'current' 
+      ? "booking_date >= date('now', 'localtime')" 
+      : "booking_date < date('now', 'localtime')";
+    
     const stmt = db.prepare(
       `SELECT *, 
         CASE 
@@ -27,8 +30,8 @@ export async function onRequest(context) {
         END as status_text
        FROM Bookings 
        WHERE user_id = ? 
-       AND booking_date >= date('now', 'localtime')
-       ORDER BY booking_date ASC, time_slot ASC`
+       AND ${condition}
+       ORDER BY booking_date DESC, time_slot DESC` // 過往紀錄改為降序
     );
     const { results } = await stmt.bind(userId).all();
 
@@ -37,8 +40,7 @@ export async function onRequest(context) {
       headers: { 'Content-Type': 'application/json' },
     });
 
-  } catch (error)
-  {
+  } catch (error) {
     console.error('Error in my-bookings API:', error);
     return new Response(JSON.stringify({ error: '查詢個人預約紀錄失敗。' }), {
       status: 500,

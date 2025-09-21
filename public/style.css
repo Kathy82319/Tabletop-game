@@ -755,3 +755,9 @@ th.sortable.desc::after {
 .game-tag-chip .remove-game-tag:hover {
     background-color: rgba(255, 255, 255, 0.2); /* 滑鼠懸停時增加微亮效果 */
 }
+
+/* --- 需求：租借紀錄逾期樣式 --- */
+.rental-status.overdue-text {
+    color: var(--color-danger);
+    font-weight: bold;
+}

@@ -339,31 +339,66 @@ function updateProfileDisplay(data) {
     }
 }
 
-    async function initializeMyBookingsPage() {
-        if (!userProfile) return;
-        const container = document.getElementById('my-bookings-container');
-        if (!container) return;
-        container.innerHTML = '<p>正在查詢您的預約紀錄...</p>';
-        try {
-            const response = await fetch(`/api/my-bookings?userId=${userProfile.userId}`);
-            if (!response.ok) throw new Error('查詢預約失敗');
-            const bookings = await response.json();
-            if (bookings.length === 0) {
-                container.innerHTML = '<p>您目前沒有即將到來的預約。</p>';
-                return;
-            }
-            container.innerHTML = bookings.map(booking => `
-                <div class="booking-info-card">
-                    <p class="booking-date-time">${booking.booking_date} - ${booking.time_slot}</p>
-                    <p><strong>預約姓名：</strong> ${booking.contact_name}</p>
-                    <p><strong>預約人數：</strong> ${booking.num_of_people} 人</p>
-                    <p><strong>狀態：</strong> <span class="booking-status-${booking.status}">${booking.status_text}</span></p>
-                </div>
-            `).join('');
-        } catch (error) {
-            container.innerHTML = '<p style="color: red;">無法載入預約紀錄。</p>';
+async function initializeMyBookingsPage() {
+    if (!userProfile) return;
+
+    const currentContainer = document.getElementById('my-bookings-container');
+    const pastContainer = document.getElementById('past-bookings-container');
+    const toggleBtn = document.getElementById('toggle-past-bookings-btn');
+
+    if (!currentContainer || !pastContainer || !toggleBtn) return;
+
+    currentContainer.innerHTML = '<p>正在查詢您的預約紀錄...</p>';
+
+    // 渲染函式，用於顯示預約列表
+    const renderBookings = (bookings, container, isPast = false) => {
+        if (bookings.length === 0) {
+            container.innerHTML = `<p>${isPast ? '沒有過往的預約紀錄。' : '您目前沒有即將到來的預約。'}</p>`;
+            return;
         }
+        container.innerHTML = bookings.map(booking => `
+            <div class="booking-info-card">
+                <p class="booking-date-time">${booking.booking_date} - ${booking.time_slot}</p>
+                <p><strong>預約姓名：</strong> ${booking.contact_name}</p>
+                <p><strong>預約人數：</strong> ${booking.num_of_people} 人</p>
+                <p><strong>狀態：</strong> <span class="booking-status-${booking.status}">${booking.status_text}</span></p>
+            </div>
+        `).join('');
+    };
+
+    try {
+        // 預設載入目前的預約
+        const currentResponse = await fetch(`/api/my-bookings?userId=${userProfile.userId}&filter=current`);
+        if (!currentResponse.ok) throw new Error('查詢預約失敗');
+        const currentBookings = await currentResponse.json();
+        renderBookings(currentBookings, currentContainer);
+
+        // 綁定按鈕事件
+        toggleBtn.addEventListener('click', async () => {
+            const isHidden = pastContainer.style.display === 'none';
+            if (isHidden) {
+                pastContainer.innerHTML = '<p>正在查詢過往紀錄...</p>';
+                pastContainer.style.display = 'block';
+                toggleBtn.textContent = '隱藏過往紀錄';
+
+                try {
+                    const pastResponse = await fetch(`/api/my-bookings?userId=${userProfile.userId}&filter=past`);
+                    if (!pastResponse.ok) throw new Error('查詢過往預約失敗');
+                    const pastBookings = await pastResponse.json();
+                    renderBookings(pastBookings, pastContainer, true);
+                } catch (error) {
+                    pastContainer.innerHTML = `<p style="color: red;">${error.message}</p>`;
+                }
+            } else {
+                pastContainer.style.display = 'none';
+                toggleBtn.textContent = '查看過往紀錄';
+            }
+        });
+
+    } catch (error) {
+        currentContainer.innerHTML = `<p style="color: red;">${error.message}</p>`;
     }
+}
 
     async function initializeMyExpHistoryPage() {
         if (!userProfile) return;
@@ -399,37 +434,37 @@ function updateProfileDisplay(data) {
 
 async function initializeRentalHistoryPage() {
     if (!userProfile) return;
-    const container = document.getElementById('rental-history-container');
-    if (!container) return;
-    container.innerHTML = '<p>正在查詢您的租借紀錄...</p>';
 
-    try {
-        const response = await fetch(`/api/my-rental-history?userId=${userProfile.userId}`);
-        if (!response.ok) throw new Error('查詢租借紀錄失敗');
-        myRentals = await response.json();
+    const currentContainer = document.getElementById('rental-history-container');
+    const pastContainer = document.getElementById('past-rentals-container');
+    const toggleBtn = document.getElementById('toggle-past-rentals-btn');
 
-        if (myRentals.length === 0) {
-            container.innerHTML = '<p>您目前沒有任何租借紀錄。</p>';
+    if (!currentContainer || !pastContainer || !toggleBtn) return;
+
+    currentContainer.innerHTML = '<p>正在查詢您目前的租借...</p>';
+
+    // 渲染函式，用於顯示租借列表
+    const renderRentals = (rentals, container, isPast = false) => {
+        if (rentals.length === 0) {
+            container.innerHTML = `<p>${isPast ? '沒有過往的租借紀錄。' : '您目前沒有租借中的遊戲。'}</p>`;
             return;
         }
 
-        container.innerHTML = myRentals.map(rental => {
+        container.innerHTML = rentals.map(rental => {
             let statusHTML = '';
-            
             if (rental.status === 'returned') {
                 statusHTML = `<div class="rental-status returned">已於 ${rental.return_date || ''} 歸還</div>`;
             } else if (typeof rental.overdue_days === 'number' && rental.overdue_days > 0) {
+                // 需求：已逾期項目使用紅字粗體
                 statusHTML = `
-                    <div class="rental-status overdue">
+                    <div class="rental-status overdue-text">
                         <strong>已逾期 ${rental.overdue_days} 天</strong><br>
                         累積逾期金額 ${rental.calculated_late_fee} 元
                     </div>`;
             } else {
-                statusHTML = `<div class.rental-status rented">租借中</div>`;
+                statusHTML = `<div class="rental-status rented">租借中</div>`;
             }
 
-            // --- 【需求 2.1 修正】 ---
-            // 確保 rental-info 這個 div 包住所有文字內容，使其能與圖片正確並排
             return `
                 <div class="rental-card">
                     <img src="${rental.game_image_url || 'placeholder.jpg'}" class="rental-game-image">
@@ -442,9 +477,39 @@ async function initializeRentalHistoryPage() {
                 </div>
             `;
         }).join('');
+    };
+
+    try {
+        // 預設載入目前的租借
+        const currentResponse = await fetch(`/api/my-rental-history?userId=${userProfile.userId}&filter=current`);
+        if (!currentResponse.ok) throw new Error('查詢租借紀錄失敗');
+        const currentRentals = await currentResponse.json();
+        renderRentals(currentRentals, currentContainer);
+
+        // 綁定按鈕事件
+        toggleBtn.addEventListener('click', async () => {
+            const isHidden = pastContainer.style.display === 'none';
+            if (isHidden) {
+                pastContainer.innerHTML = '<p>正在查詢過往紀錄...</p>';
+                pastContainer.style.display = 'block';
+                toggleBtn.textContent = '隱藏過往紀錄';
+
+                try {
+                    const pastResponse = await fetch(`/api/my-rental-history?userId=${userProfile.userId}&filter=past`);
+                    if (!pastResponse.ok) throw new Error('查詢過往租借失敗');
+                    const pastRentals = await pastResponse.json();
+                    renderRentals(pastRentals, pastContainer, true);
+                } catch (error) {
+                    pastContainer.innerHTML = `<p style="color: red;">${error.message}</p>`;
+                }
+            } else {
+                pastContainer.style.display = 'none';
+                toggleBtn.textContent = '查看過往紀錄';
+            }
+        });
 
     } catch (error) {
-        container.innerHTML = `<p style="color: red;">無法載入租借紀錄: ${error.message}</p>`;
+        currentContainer.innerHTML = `<p style="color: red;">${error.message}</p>`;
     }
 }
 
