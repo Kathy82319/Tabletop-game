@@ -259,33 +259,43 @@ async function initializeLiff() {
     // =================================================================
     // 個人資料頁
     // =================================================================
-    async function initializeProfilePage() {
-        if (!userProfile) return;
+async function initializeProfilePage() {
+    if (!userProfile) return;
 
-        const profilePicture = document.getElementById('profile-picture');
-        if (userProfile.pictureUrl) profilePicture.src = userProfile.pictureUrl;
+    // --- 【修正開始】 ---
 
-        const qrcodeElement = document.getElementById('qrcode');
-        if(qrcodeElement) {
-            qrcodeElement.innerHTML = '';
-            new QRCode(qrcodeElement, { text: userProfile.userId, width: 200, height: 200 });
-        }
-        
-        document.getElementById('edit-profile-btn').addEventListener('click', () => {
-            showPage('page-edit-profile');
-        });
-        document.getElementById('my-bookings-btn').addEventListener('click', () => {
-            showPage('page-my-bookings');
-        });
-        document.getElementById('my-exp-history-btn').addEventListener('click', () => {
-            showPage('page-my-exp-history');
-        });
-        document.getElementById('rental-history-btn').addEventListener('click', () => {
-            showPage('page-rental-history');
-        });
-        
-        await fetchGameData();
+    // 1. 將畫面元素先設定為讀取中狀態，確保每次進入頁面都會重置
+    const displayNameElement = document.getElementById('display-name');
+    if (displayNameElement) displayNameElement.textContent = '讀取中...';
+    
+    const profilePicture = document.getElementById('profile-picture');
+    if (userProfile.pictureUrl) profilePicture.src = userProfile.pictureUrl;
+
+    const qrcodeElement = document.getElementById('qrcode');
+    if(qrcodeElement) {
+        qrcodeElement.innerHTML = ''; // 清空舊的 QR Code
+        // 2. 將 QR Code 尺寸從 200x200 縮小為 150x150
+        new QRCode(qrcodeElement, { text: userProfile.userId, width: 150, height: 150 });
     }
+    
+    // 綁定按鈕事件
+    document.getElementById('edit-profile-btn').addEventListener('click', () => showPage('page-edit-profile'));
+    document.getElementById('my-bookings-btn').addEventListener('click', () => showPage('page-my-bookings'));
+    document.getElementById('my-exp-history-btn').addEventListener('click', () => showPage('page-my-exp-history'));
+    document.getElementById('rental-history-btn').addEventListener('click', () => showPage('page-rental-history'));
+    
+    // 3. 【核心修正】: 將 fetchGameData 和 updateProfileDisplay 的呼叫流程分開
+    //    確保不論資料是否快取，畫面都會被正確更新。
+    try {
+        const userData = await fetchGameData();
+        updateProfileDisplay(userData); // 使用獲取到的資料來更新畫面
+    } catch (error) {
+        console.error("無法更新個人資料畫面:", error);
+        if (displayNameElement) displayNameElement.textContent = '資料載入失敗';
+    }
+    // --- 【修正結束】 ---
+}
+
 
     async function fetchGameData() { 
         if (gameData && gameData.user_id) return gameData;

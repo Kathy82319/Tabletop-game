@@ -540,80 +540,81 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 /* =================================================================
-   追加樣式：針對介面優化
+   追加樣式 v2：修正標題與個人資料頁版面
    ================================================================= */
 
-/* --- 1. 導覽列文字排版優化 --- */
-#tab-bar {
-    height: 70px; /* 增加導覽列高度以容納兩行文字 */
-}
-
-.tab-button {
-    line-height: 1.4; /* 調整行高讓兩行文字更緊湊 */
-    font-size: 0.9rem; /* 微調字體大小 */
-    padding: 5px;      /* 調整內邊距 */
-}
-
-
-/* --- 2. 冒險者資料頁面全版面顯示 --- */
-/* 我們使用 Flexbox 佈局來達成此效果 */
-#page-templates > #page-profile {
-    display: flex;
-    flex-direction: column;
-    /* 計算高度：100% 視窗高度減去導覽列高度和上下 padding */
-    height: calc(100vh - 70px - 40px); 
-    padding: 20px 15px;
-    box-sizing: border-box;
-}
-
-#page-profile > h1 {
-    flex-shrink: 0; /* 標題不壓縮 */
-}
-
-#page-profile #qrcode-container {
-    flex-grow: 1; /* 讓 QR Code 區塊佔滿所有剩餘空間，將下方內容推到底部 */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    min-height: 100px; /* 確保有個最小高度 */
-    margin: 10px 0;
-}
-
-.profile-details-grid {
-    flex-shrink: 0; /* 個人資料區塊不壓縮 */
-    margin-top: 10px;
-}
-
-#page-profile #user-perk-display {
-    flex-shrink: 0; /* 福利區塊不壓縮 */
-}
-
-#page-profile .profile-actions {
-    flex-shrink: 0; /* 按鈕區塊不壓縮 */
-    margin-top: 15px;
-}
-
-
-/* --- 3. 統一特定頁面的主標題樣式 --- */
-/*
-  使用更精確的選擇器來指定這幾個頁面的 H1 標題，
-  並覆蓋掉原本通用的 H1 樣式。
+/* --- 1. 統一主標題樣式 (更精確的版本) --- */
+/* 我們為每個頁面的 H1 標題提供一個共同的樣式基礎，
+  並確保它們都置中且帶有您想要的分隔線。
 */
-#page-home h1,
+#page-home .news-header h1,
 #page-profile > h1,
-#page-booking h1,
+#page-booking .booking-header h1,
 #page-info > h1 {
-    text-align: center;      /* 置中 */
-    font-size: 2.2rem;       /* 統一字體大小 */
-    font-weight: bold;       /* 統一文字粗細 */
-    border-bottom: none;     /* 【重要】移除底線 */
-    padding-bottom: 0;       /* 移除底線的空間 */
-    margin-top: 0;           /* 【重要】讓標題更靠上 */
-    margin-bottom: 25px;     /* 統一與下方內容的間距 */
+    /* 統一設定 */
+    text-align: center;
+    font-size: 2.1rem; /* 稍微縮小以適應不同手機 */
+    font-weight: 600; /* 使用 600 而非 bold，字體更優雅 */
+    color: var(--color-text-primary);
+    
+    /* 統一分隔線 */
+    border-bottom: 2px solid var(--color-frame-gold);
+    
+    /* 統一間距 */
+    margin-top: 0; /* 盡量靠上 */
+    margin-bottom: 20px;
+    padding-bottom: 10px; /* 分隔線與文字的距離 */
 }
 
-/* 針對預約頁的副標題微調 */
-#page-booking .booking-subtitle {
-    margin-top: -20px; /* 副標題也往上一些 */
+/* 針對首頁的特殊結構微調，移除外層容器的邊距 */
+#page-home .news-header {
+    margin-bottom: 20px;
+}
+/* 移除首頁標題的重複設定，因為上面已經統一定義 */
+#page-home .news-header h1 {
+    font-size: 2.5rem; /* 首頁標題可以稍微大一點，更有氣勢 */
+    border: none; /* 首頁標題設計上不需要底線 */
+}
+
+
+/* --- 2. 冒險者資料頁面全版面優化 (更緊湊的版本) --- */
+#page-templates > #page-profile {
+    /* 重新計算高度，並減少上下 padding 讓內容空間更大 */
+    height: calc(100vh - 70px - 20px); 
+    padding: 10px 15px;
+}
+
+/* 縮小個人資訊卡片的垂直邊距 */
+.profile-details-grid {
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+/* 縮小 QR Code 區塊的垂直邊距 */
+#page-profile #qrcode-container {
+    margin: 5px 0;
+}
+
+/* 縮小 QR Code 本身的 padding */
+#page-profile #qrcode {
+    padding: 10px;
+}
+
+/* 縮小福利區塊的間距和 padding */
+#page-profile #user-perk-display {
+    margin-top: 10px;
+    padding: 8px;
+}
+
+/* 縮小按鈕區塊的間距 */
+#page-profile .profile-actions {
+    margin-top: 10px;
+    gap: 10px; /* 縮小按鈕間的縫隙 */
+}
+
+/* 【關鍵】縮小按鈕本身的大小 */
+.profile-actions .cta-button {
+    font-size: 0.9rem;      /* 縮小字體 */
+    padding: 10px 5px;      /* 縮小內部空間 */
+    line-height: 1.3;       /* 確保換行文字不會太擠 */
 }
