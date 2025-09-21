@@ -107,15 +107,15 @@
                 <h2>今日狀態總覽</h2>
             </div>
             <div id="dashboard-grid" class="dashboard-grid">
-                <div class="stat-card">
+                <div class="stat-card" data-target="bookings">
                     <h3>今日預約總人數</h3>
                     <p id="stat-today-guests" class="stat-value">讀取中...</p>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" data-target="rentals-rented">
                     <h3>未歸還遊戲總數</h3>
                     <p id="stat-outstanding-rentals" class="stat-value">讀取中...</p>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" data-target="rentals-due-today">
                     <h3>今日到期遊戲</h3>
                     <p id="stat-due-today" class="stat-value">讀取中...</p>
                     <p class="stat-subtext">筆租借紀錄</p>
@@ -168,27 +168,34 @@
             </table>
         </div>
 
-<div id="page-rentals" class="page">
-    <div class="page-header">
-        <h2>桌遊租借總表</h2>
-        <button id="full-sync-rentals-btn" class="action-btn" style="background-color: #17a2b8;">手動完整同步至 Sheet</button>
-    </div>
-    <div class="filter-bar">
-        <input type="text" id="rental-search-input" placeholder="依遊戲或會員名稱搜尋..." style="flex-grow: 1; padding: 8px;">
-        <div id="rental-status-filter" class="filter-group">
-            <button class="active" data-filter="all">全部顯示</button>
-            <button data-filter="rented">租借中</button>
-            <button data-filter="overdue" style="color: var(--danger-color); font-weight: bold;">逾期未歸還</button>
-            <button data-filter="returned">已歸還</button>
+        <div id="page-rentals" class="page">
+            <div class="page-header">
+                <h2>桌遊租借總表</h2>
+                <button id="full-sync-rentals-btn" class="action-btn" style="background-color: #17a2b8;">手動完整同步至 Sheet</button>
+            </div>
+            <div class="filter-bar">
+                <input type="text" id="rental-search-input" placeholder="依遊戲或會員名稱搜尋..." style="flex-grow: 1; padding: 8px;">
+                <div id="rental-status-filter" class="filter-group">
+                    <button class="active" data-filter="all">全部顯示</button>
+                    <button data-filter="rented">租借中</button>
+                    <button data-filter="overdue" style="color: var(--danger-color); font-weight: bold;">逾期未歸還</button>
+                    <button data-filter="due_today">今日到期</button>
+                    <button data-filter="returned">已歸還</button>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>狀態</th>
+                        <th>遊戲名稱</th>
+                        <th>租借人</th>
+                        <th id="sort-due-date" class="sortable">應還日期</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="rental-list-tbody"></tbody>
+            </table>
         </div>
-    </div>
-    <table>
-        <thead>
-            <tr><th>狀態</th><th>遊戲名稱</th><th>租借人</th><th>應還日期</th><th>操作</th></tr>
-        </thead>
-        <tbody id="rental-list-tbody"></tbody>
-    </table>
-</div>
 
     <div id="edit-rental-modal" class="modal-overlay">
         <div class="modal-content">
@@ -197,24 +204,21 @@
                 <button class="modal-close">&times;</button>
             </div>
             <form id="edit-rental-form">
-                <input type="hidden" id="edit-rental-id">
+                </form>
+            <div class="message-sender" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                <h4>發送 LINE 訊息</h4>
                 <div class="form-group">
-                    <label>系統計算逾期總額</label>
-                    <input type="text" id="calculated-late-fee-display" readonly style="background: #e9ecef; color: var(--danger-color); font-weight: bold;">
+                    <label for="rental-message-draft-select">選擇訊息草稿</label>
+                    <select id="rental-message-draft-select"><option value="">-- 手動輸入或選擇草稿 --</option></select>
                 </div>
                 <div class="form-group">
-                    <label for="edit-rental-due-date">修改應還日期 (延期)</label>
-                    <input type="text" id="edit-rental-due-date">
-                </div>
-                <div class="form-group">
-                    <label for="edit-rental-override-fee">手動覆寫逾期金額 (選填)</label>
-                    <input type="number" id="edit-rental-override-fee" min="0" placeholder="留空則由系統自動計算">
+                    <label for="rental-direct-message-content">訊息內容</label>
+                    <textarea id="rental-direct-message-content" rows="4"></textarea>
                 </div>
                 <div class="form-actions">
-                    <button type="button" class="action-btn btn-cancel">取消</button>
-                    <button type="submit" class="action-btn btn-save">儲存變更</button>
+                    <button id="rental-send-direct-message-btn" class="action-btn btn-save">確認發送</button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
@@ -413,8 +417,11 @@
             <form id="create-rental-form">
                 <input type="hidden" id="rental-game-id">
                 <div class="form-group">
-                    <label>租借品項</label>
-                    <input type="text" id="rental-game-name" readonly>
+                    <label>租借品項 (可多選)</label>
+                    <div id="rental-games-container">
+                        <input type="text" id="rental-game-search" placeholder="輸入遊戲名稱搜尋...">
+                    </div>
+                    <ul id="game-search-results" style="display: none;"></ul>
                 </div>
                 <div class="form-group">
                     <label for="rental-user-search">搜尋租借會員 (LINE 名稱或 ID)</label>
@@ -448,6 +455,30 @@
             </form>
         </div>
     </div>
+ 
+       <div id="cancel-booking-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>取消預約並發送通知</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <p>您正準備取消 <strong id="cancel-booking-info"></strong> 的預約。</p>
+            <div class="message-sender">
+                <div class="form-group">
+                    <label for="cancel-message-draft-select">選擇通知訊息草稿 (選填)</label>
+                    <select id="cancel-message-draft-select"><option value="">-- 不發送通知或手動輸入 --</option></select>
+                </div>
+                <div class="form-group">
+                    <label for="cancel-direct-message-content">訊息內容</label>
+                    <textarea id="cancel-direct-message-content" rows="4" placeholder="若留空，則只取消預約，不發送通知。"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button id="confirm-cancel-booking-btn" class="action-btn btn-save">確認取消</button>
+                </div>
+            </div>
+        </div>
+    </div> 
+
     <div id="edit-game-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">

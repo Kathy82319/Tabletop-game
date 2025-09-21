@@ -30,11 +30,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const createRentalForm = document.getElementById('create-rental-form');
     const editRentalModal = document.getElementById('edit-rental-modal');
     const editRentalForm = document.getElementById('edit-rental-form');
+    const sortDueDateBtn = document.getElementById('sort-due-date');
     
     // 訂位管理
     const bookingListTbody = document.getElementById('booking-list-tbody');
     const manageBookingDatesBtn = document.getElementById('manage-booking-dates-btn');
     const bookingSettingsModal = document.getElementById('booking-settings-modal'); 
+    const cancelBookingModal = document.getElementById('cancel-booking-modal');
     let bookingDatepicker = null; 
     let disabledDates = [];
     
@@ -79,6 +81,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentEditingNewsId = null;
     let currentEditingDraftId = null;
     let selectedRentalUser = null;
+    let selectedRentalGames = []; 
+    let dueDateSortOrder = 'asc'; 
 
     // --- 【模組名稱：手動全量同步】 ---
     const fullSyncRentalsBtn = document.getElementById('full-sync-rentals-btn');
@@ -187,12 +191,34 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('stat-outstanding-rentals').textContent = stats.outstanding_rentals_count || 0;
             document.getElementById('stat-due-today').textContent = stats.due_today_rentals_count || 0;
 
+            // ** 需求 4 修改：綁定點擊事件 **
+            if(dashboardGrid) {
+                dashboardGrid.addEventListener('click', (e) => {
+                    const card = e.target.closest('.stat-card');
+                    if (!card) return;
+
+                    const target = card.dataset.target;
+                    if (target === 'bookings') {
+                        showPage('bookings');
+                        // 自動點擊 '今日預約' 篩選器
+                        document.querySelector('#booking-status-filter button[data-filter="today"]').click();
+                    } else if (target === 'rentals-rented') {
+                        showPage('rentals');
+                        // 自動點擊 '租借中' 篩選器
+                        document.querySelector('#rental-status-filter button[data-filter="rented"]').click();
+                    } else if (target === 'rentals-due-today') {
+                        showPage('rentals');
+                        // 自動點擊 '今日到期' 篩選器
+                        document.querySelector('#rental-status-filter button[data-filter="due_today"]').click();
+                    }
+                });
+            }
+
         } catch (error) {
             console.error('獲取儀表板數據失敗:', error);
             if(dashboardGrid) dashboardGrid.innerHTML = `<p style="color:red;">讀取數據失敗</p>`;
         }
     }
-
     // =================================================================
     // 顧客管理模組
     // =================================================================
@@ -895,37 +921,64 @@ function renderHistoryTable(items, columns, headers) {
     // =================================================================
     // 桌遊租借模組
     // =================================================================
-    async function applyRentalFiltersAndRender() {
-        if (!rentalSearchInput) return;
-        const keyword = rentalSearchInput.value.toLowerCase().trim();
-        let status = 'all';
-        if (rentalStatusFilter) {
-            const activeFilter = rentalStatusFilter.querySelector('.active');
-            if(activeFilter) status = activeFilter.dataset.filter;
-        }
+    // REPLACE THIS FUNCTION
+async function applyRentalFiltersAndRender() {
+    if (!rentalSearchInput) return;
+    const keyword = rentalSearchInput.value.toLowerCase().trim();
+    let status = 'all';
+    if (rentalStatusFilter) {
+        const activeFilter = rentalStatusFilter.querySelector('.active');
+        if(activeFilter) status = activeFilter.dataset.filter;
+    }
 
-        // 呼叫更新後的 API
-        let url = '/api/admin/get-all-rentals';
-        if (status !== 'all') {
-            url += `?status=${status}`;
-        }
-        
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('無法獲取租借列表');
-            allRentals = await response.json();
-
-            // 在前端進行關鍵字篩選
-            const filteredRentals = !keyword ? allRentals : allRentals.filter(rental => 
-                                     (rental.game_name || '').toLowerCase().includes(keyword) ||
-                                     (rental.nickname || rental.line_display_name || '').toLowerCase().includes(keyword)
-                                 );
-            renderRentalList(filteredRentals);
-        } catch (error) { 
-            console.error('獲取租借列表失敗:', error); 
-        }
+    let url = '/api/admin/get-all-rentals';
+    // **需求 4 (補充) 修改：讓後端知道要篩選今日到期的項目**
+    if (status !== 'all') {
+        url += `?status=${status}`;
     }
     
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('無法獲取租借列表');
+        allRentals = await response.json();
+
+        // 在前端進行關鍵字篩選
+        const filteredRentals = !keyword ? allRentals : allRentals.filter(rental => 
+                                 (rental.game_name || '').toLowerCase().includes(keyword) ||
+                                 (rental.nickname || rental.line_display_name || '').toLowerCase().includes(keyword)
+                             );
+        
+        // **需求 5 修改：在渲染前先進行排序**
+        sortRentals();
+        renderRentalList(filteredRentals);
+
+    } catch (error) { 
+        console.error('獲取租借列表失敗:', error); 
+    }
+}
+// ADD THESE TWO FUNCTIONS
+
+// ** 需求 5 新增：排序函式 **
+function sortRentals() {
+    allRentals.sort((a, b) => {
+        const dateA = new Date(a.due_date);
+        const dateB = new Date(b.due_date);
+        if (dueDateSortOrder === 'asc') {
+            return dateA - dateB;
+        } else {
+            return dateB - dateA;
+        }
+    });
+// ** 需求 5 新增：為排序按鈕綁定事件 **
+if (sortDueDateBtn) {
+    sortDueDateBtn.addEventListener('click', () => {
+        dueDateSortOrder = dueDateSortOrder === 'asc' ? 'desc' : 'asc';
+        // 直接重新渲染即可，因為 allRentals 已經存在
+        sortRentals();
+        renderRentalList(allRentals); 
+    });
+}
+
 function renderRentalList(rentals) {
     if (!rentalListTbody) return;
     rentalListTbody.innerHTML = '';
@@ -966,19 +1019,19 @@ function renderRentalList(rentals) {
         applyRentalFiltersAndRender();
     }
 
-    if (rentalStatusFilter) {
-        rentalStatusFilter.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                rentalStatusFilter.querySelector('.active')?.classList.remove('active');
-                e.target.classList.add('active');
-                applyRentalFiltersAndRender();
-            }
-        });
-    }
+if (rentalStatusFilter) {
+    rentalStatusFilter.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            rentalStatusFilter.querySelector('.active')?.classList.remove('active');
+            e.target.classList.add('active');
+            applyRentalFiltersAndRender();
+        }
+    });
+}
 
-    if(rentalSearchInput) {
-        rentalSearchInput.addEventListener('input', applyRentalFiltersAndRender);
-    }
+if(rentalSearchInput) {
+    rentalSearchInput.addEventListener('input', applyRentalFiltersAndRender);
+}
 
 if (rentalListTbody) {
     rentalListTbody.addEventListener('click', async (e) => {
@@ -986,10 +1039,10 @@ if (rentalListTbody) {
         const rentalId = target.dataset.rentalid;
         if (!rentalId) return;
 
-        if (target.classList.contains('btn-edit-rental')) {
-            openEditRentalModal(rentalId);
-            return;
-        }
+            if (target.classList.contains('btn-edit-rental')) {
+                openEditRentalModal(rentalId);
+                return;
+            }
 
         if (target.classList.contains('btn-return')) {
             const rental = allRentals.find(r => r.rental_id == rentalId);
@@ -1022,27 +1075,30 @@ if (rentalListTbody) {
 }
 
 
-    function openEditRentalModal(rentalId) {
-        const rental = allRentals.find(r => r.rental_id == rentalId);
-        if (!rental) return alert('找不到該筆租借紀錄');
+// REPLACE THIS FUNCTION
+function openEditRentalModal(rentalId) {
+    const rental = allRentals.find(r => r.rental_id == rentalId);
+    if (!rental) return alert('找不到該筆租借紀錄');
 
-        document.getElementById('edit-rental-id').value = rental.rental_id;
-        document.getElementById('modal-rental-title').textContent = `管理租借：${rental.game_name}`;
-        
-        // 系統自動計算的金額 (僅供參考)
-        const autoCalculatedFee = rental.overdue_days > 0 ? rental.overdue_days * (rental.late_fee_per_day || 50) : 0;
-        document.getElementById('calculated-late-fee-display').value = `$ ${autoCalculatedFee}`;
+    document.getElementById('edit-rental-id').value = rental.rental_id;
+    document.getElementById('modal-rental-title').textContent = `管理租借：${rental.game_name}`;
+    
+    const autoCalculatedFee = rental.overdue_days > 0 ? rental.overdue_days * (rental.late_fee_per_day || 50) : 0;
+    document.getElementById('calculated-late-fee-display').value = `$ ${autoCalculatedFee}`;
 
-        document.getElementById('edit-rental-due-date').value = rental.due_date;
-        
-        // 顯示資料庫中已儲存的覆寫金額
-        // 使用 ?? 確保 null 或 undefined 的情況下，輸入框顯示為空字串
-        document.getElementById('edit-rental-override-fee').value = rental.late_fee_override ?? '';
+    document.getElementById('edit-rental-due-date').value = rental.due_date;
+    
+    document.getElementById('edit-rental-override-fee').value = rental.late_fee_override ?? '';
 
-        flatpickr("#edit-rental-due-date", { dateFormat: "Y-m-d" });
+    flatpickr("#edit-rental-due-date", { dateFormat: "Y-m-d" });
 
-        editRentalModal.style.display = 'flex';
+    // ** 新增需求 6：載入並綁定訊息發送功能 **
+    if(rental && rental.user_id) {
+        loadAndBindRentalMessageDrafts(rental.user_id);
     }
+
+    editRentalModal.style.display = 'flex';
+}
 
     // 【找到並替換 editRentalForm 的 submit 事件監聽器】
     if (editRentalForm) {
@@ -1074,11 +1130,64 @@ if (rentalListTbody) {
         });
     }
 
+// ADD THIS NEW FUNCTION
 
+// ** 新增需求 6：專門給租借管理視窗的訊息載入函式 **
+async function loadAndBindRentalMessageDrafts(userId) {
+    const select = document.getElementById('rental-message-draft-select');
+    const content = document.getElementById('rental-direct-message-content');
+    const sendBtn = document.getElementById('rental-send-direct-message-btn');
+    if (!select || !content || !sendBtn) return;
+
+    await fetchAllDrafts(); // 確保草稿已載入
+    select.innerHTML = '<option value="">-- 手動輸入或選擇草稿 --</option>';
+    allDrafts.forEach(draft => {
+        const option = document.createElement('option');
+        option.value = draft.content;
+        option.textContent = draft.title;
+        select.appendChild(option);
+    });
+
+    select.onchange = () => { 
+        content.value = select.value;
+    };
+    
+    // 移除舊的監聽器，避免重複綁定
+    const newSendBtn = sendBtn.cloneNode(true);
+    sendBtn.parentNode.replaceChild(newSendBtn, sendBtn);
+    
+    newSendBtn.onclick = async () => {
+        const message = content.value.trim();
+        if (!message) { alert('訊息內容不可為空！'); return; }
+        if (!confirm(`確定要發送以下訊息給該顧客嗎？\n\n${message}`)) return;
+        
+        newSendBtn.textContent = '傳送中...';
+        newSendBtn.disabled = true;
+        try {
+            const response = await fetch('/api/send-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, message })
+            });
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || '傳送失敗');
+            }
+            alert('訊息傳送成功！');
+            content.value = '';
+            select.value = '';
+        } catch (error) {
+            alert(`傳送失敗：${error.message}`);
+        } finally {
+            newSendBtn.textContent = '確認發送';
+            newSendBtn.disabled = false;
+        }
+    };
+}
+
+
+// REPLACE THIS FUNCTION
 async function openCreateRentalModal(gameId) {
-    const game = allGames.find(g => g.game_id == gameId);
-    if (!game) { alert('找不到遊戲資料！'); return; }
-
     const statusDiv = document.getElementById('rental-modal-status');
     if(statusDiv) statusDiv.textContent = ''; // 先清空狀態
 
@@ -1087,7 +1196,6 @@ async function openCreateRentalModal(gameId) {
         try {
             await fetchAllUsers();
             if(statusDiv) statusDiv.textContent = '會員列表載入完成！';
-            // 延遲一段時間後自動清除提示
             setTimeout(() => { if(statusDiv) statusDiv.textContent = ''; }, 2000);
         } catch (error) {
             alert('會員列表載入失敗，無法建立租借紀錄。');
@@ -1098,14 +1206,20 @@ async function openCreateRentalModal(gameId) {
 
     if (createRentalForm) createRentalForm.reset();
     selectedRentalUser = null;
+    selectedRentalGames = []; // ** 需求 1 修改：清空已選遊戲 **
+
+    const game = allGames.find(g => g.game_id == gameId);
+    if (game) {
+        selectedRentalGames.push(game); // ** 需求 1 修改：將初始遊戲加入陣列 **
+    }
+    
+    updateSelectedGamesDisplay(); // ** 需求 1 修改：更新畫面 **
 
     const userSelect = document.getElementById('rental-user-select');
     if(userSelect) userSelect.style.display = 'none';
 
-    document.getElementById('rental-game-id').value = game.game_id;
-    document.getElementById('rental-game-name').value = game.name;
-    document.getElementById('rental-deposit').value = game.deposit || 0;
-    document.getElementById('rental-late-fee').value = game.late_fee_per_day || 50;
+    document.getElementById('rental-deposit').value = game ? (game.deposit || 0) : 0;
+    document.getElementById('rental-late-fee').value = game ? (game.late_fee_per_day || 50) : 50;
 
     const today = new Date();
     today.setDate(today.getDate() + 3);
@@ -1114,112 +1228,193 @@ async function openCreateRentalModal(gameId) {
     if(createRentalModal) createRentalModal.style.display = 'flex';
 }
     
-    if(createRentalModal) {
-        const rentalUserSearch = document.getElementById('rental-user-search');
-        const rentalUserSelect = document.getElementById('rental-user-select');
+// REPLACE THIS WHOLE if(createRentalModal) BLOCK
+if(createRentalModal) {
+    const rentalUserSearch = document.getElementById('rental-user-search');
+    const rentalUserSelect = document.getElementById('rental-user-select');
 
-        createRentalModal.querySelector('.modal-close').addEventListener('click', () => createRentalModal.style.display = 'none');
-        createRentalModal.querySelector('.btn-cancel').addEventListener('click', () => createRentalModal.style.display = 'none');
-        
-        if (rentalUserSearch) {
-            rentalUserSearch.addEventListener('input', () => {
-                const searchTerm = rentalUserSearch.value.toLowerCase().trim();
-                if (searchTerm.length < 2) {
-                    if(rentalUserSelect) rentalUserSelect.style.display = 'none';
-                    return;
-                }
-                const filteredUsers = allUsers.filter(user => 
-                    (user.line_display_name || '').toLowerCase().includes(searchTerm) ||
-                    (user.nickname || '').toLowerCase().includes(searchTerm) ||
-                    (user.user_id || '').toLowerCase().includes(searchTerm)
-                );
+    // ** 需求 1 新增：遊戲搜尋的 DOM **
+    const gameSearchInput = document.getElementById('rental-game-search');
+    const gameSearchResults = document.getElementById('game-search-results');
+
+    createRentalModal.querySelector('.modal-close').addEventListener('click', () => createRentalModal.style.display = 'none');
+    createRentalModal.querySelector('.btn-cancel').addEventListener('click', () => createRentalModal.style.display = 'none');
+    
+    if (rentalUserSearch) {
+        // ... (這段會員搜尋的邏輯不變) ...
+        rentalUserSearch.addEventListener('input', () => {
+            const searchTerm = rentalUserSearch.value.toLowerCase().trim();
+            if (searchTerm.length < 2) {
+                if(rentalUserSelect) rentalUserSelect.style.display = 'none';
+                return;
+            }
+            const filteredUsers = allUsers.filter(user => 
+                (user.line_display_name || '').toLowerCase().includes(searchTerm) ||
+                (user.nickname || '').toLowerCase().includes(searchTerm) ||
+                (user.user_id || '').toLowerCase().includes(searchTerm)
+            );
+            
+            if(rentalUserSelect) {
+                rentalUserSelect.innerHTML = '<option value="">-- 請選擇會員 --</option>';
+                filteredUsers.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.user_id;
+                    const displayName = user.nickname || user.line_display_name;
+                    option.textContent = `${displayName} (${user.user_id.substring(0, 10)}...)`;
+                    rentalUserSelect.appendChild(option);
+                });
+                rentalUserSelect.style.display = 'block';
+            }
+        });
+    }
+
+    if (rentalUserSelect) {
+        // ... (這段選擇會員的邏輯不變) ...
+        rentalUserSelect.addEventListener('change', () => {
+            selectedRentalUser = allUsers.find(u => u.user_id === rentalUserSelect.value);
+            if (selectedRentalUser) {
+                const nameInput = document.getElementById('rental-contact-name');
+                const phoneInput = document.getElementById('rental-contact-phone');
+                if(nameInput) nameInput.value = selectedRentalUser.nickname || selectedRentalUser.line_display_name || '';
+                if(phoneInput) phoneInput.value = selectedRentalUser.phone || '';
+            }
+        });
+    }
+
+    // ** 需求 1 新增：遊戲搜尋與選擇的邏輯 **
+    if(gameSearchInput && gameSearchResults) {
+        gameSearchInput.addEventListener('input', () => {
+            const searchTerm = gameSearchInput.value.toLowerCase().trim();
+            if (searchTerm.length < 1) {
+                gameSearchResults.style.display = 'none';
+                return;
+            }
+            
+            const filteredGames = allGames.filter(game => 
+                game.name.toLowerCase().includes(searchTerm) &&
+                !selectedRentalGames.some(sg => sg.game_id === game.game_id)
+            );
+
+            gameSearchResults.innerHTML = '';
+            if (filteredGames.length > 0) {
+                filteredGames.slice(0, 5).forEach(game => {
+                    const li = document.createElement('li');
+                    li.textContent = `${game.name} (庫存: ${game.for_rent_stock})`;
+                    li.onclick = () => {
+                        selectedRentalGames.push(game);
+                        updateSelectedGamesDisplay();
+                        gameSearchInput.value = '';
+                        gameSearchResults.style.display = 'none';
+                    };
+                    gameSearchResults.appendChild(li);
+                });
+                gameSearchResults.style.display = 'block';
+            } else {
+                gameSearchResults.style.display = 'none';
+            }
+        });
+    }
+
+    if (createRentalForm) {
+        createRentalForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!selectedRentalUser) {
+                alert('請務必搜尋並選擇一位租借會員！');
+                return;
+            }
+            // ** 需求 1 修改：檢查已選遊戲 **
+            if (selectedRentalGames.length === 0) {
+                alert('請至少選擇一個租借品項！');
+                return;
+            }
+
+            const rentalData = {
+                userId: selectedRentalUser.user_id,
+                // ** 需求 1 修改：傳送 gameIds 陣列 **
+                gameIds: selectedRentalGames.map(g => g.game_id),
+                dueDate: document.getElementById('rental-due-date').value,
+                deposit: Number(document.getElementById('rental-deposit').value),
+                lateFeePerDay: Number(document.getElementById('rental-late-fee').value),
+                name: document.getElementById('rental-contact-name').value,
+                phone: document.getElementById('rental-contact-phone').value
+            };
+
+            if (!rentalData.name || !rentalData.phone) {
+                alert('租借人姓名與電話為必填欄位！');
+                return;
+            }
+
+            const gameNames = selectedRentalGames.map(g => g.name).join('\n- ');
+            const confirmationMessage = `請確認租借資訊：\n\n` +
+                `會員：${selectedRentalUser.nickname || selectedRentalUser.line_display_name}\n` +
+                `遊戲：\n- ${gameNames}\n` +
+                `租借人：${rentalData.name}\n` +
+                `電話：${rentalData.phone}\n` +
+                `歸還日：${rentalData.dueDate}`;
+
+            if (!confirm(confirmationMessage)) return;
+            
+            try {
+                const response = await fetch('/api/admin/create-rental', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(rentalData)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || '建立失敗');
+                alert('租借成功！');
+                createRentalModal.style.display = 'none';
                 
-                if(rentalUserSelect) {
-                    rentalUserSelect.innerHTML = '<option value="">-- 請選擇會員 --</option>';
-                    filteredUsers.forEach(user => {
-                        const option = document.createElement('option');
-                        option.value = user.user_id;
-                        const displayName = user.nickname || user.line_display_name;
-                        option.textContent = `${displayName} (${user.user_id.substring(0, 10)}...)`;
-                        rentalUserSelect.appendChild(option);
-                    });
-                    rentalUserSelect.style.display = 'block';
-                }
-            });
-        }
-
-        if (rentalUserSelect) {
-            rentalUserSelect.addEventListener('change', () => {
-                selectedRentalUser = allUsers.find(u => u.user_id === rentalUserSelect.value);
-                if (selectedRentalUser) {
-                    const nameInput = document.getElementById('rental-contact-name');
-                    const phoneInput = document.getElementById('rental-contact-phone');
-                    if(nameInput) nameInput.value = selectedRentalUser.nickname || selectedRentalUser.line_display_name || '';
-                    if(phoneInput) phoneInput.value = selectedRentalUser.phone || '';
-                }
-            });
-        }
-
-        if (createRentalForm) {
-            createRentalForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                if (!selectedRentalUser) {
-                    alert('請務必搜尋並選擇一位租借會員！');
-                    return;
-                }
-
-                const rentalData = {
-                    userId: selectedRentalUser.user_id,
-                    gameId: document.getElementById('rental-game-id').value,
-                    dueDate: document.getElementById('rental-due-date').value,
-                    deposit: Number(document.getElementById('rental-deposit').value),
-                    lateFeePerDay: Number(document.getElementById('rental-late-fee').value),
-                    name: document.getElementById('rental-contact-name').value,
-                    phone: document.getElementById('rental-contact-phone').value
-                };
-
-                if (!rentalData.name || !rentalData.phone) {
-                    alert('租借人姓名與電話為必填欄位！');
-                    return;
-                }
-
-                const confirmationMessage = `請確認租借資訊：\n\n` +
-                    `會員：${selectedRentalUser.nickname || selectedRentalUser.line_display_name}\n` +
-                    `遊戲：${document.getElementById('rental-game-name').value}\n` +
-                    `租借人：${rentalData.name}\n` +
-                    `電話：${rentalData.phone}\n` +
-                    `歸還日：${rentalData.dueDate}`;
-
-                if (!confirm(confirmationMessage)) return;
-                
-                try {
-                    const response = await fetch('/api/admin/create-rental', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(rentalData)
-                    });
-                    const result = await response.json();
-                    if (!response.ok) throw new Error(result.error || '建立失敗');
-                    alert('租借成功！');
-                    createRentalModal.style.display = 'none';
-                    
-                    // START: 修正前端畫面同步
-                    const rentedGame = allGames.find(g => g.game_id === rentalData.gameId);
+                // 即時更新前端庫存
+                rentalData.gameIds.forEach(gameId => {
+                    const rentedGame = allGames.find(g => g.game_id === gameId);
                     if(rentedGame) {
                         rentedGame.for_rent_stock = Number(rentedGame.for_rent_stock) - 1;
                     }
-                    applyGameFiltersAndRender();
-                    // END: 修正前端畫面同步
-                    
-                    await fetchAllRentals();
-                    showPage('rentals');
-                } catch (error) {
-                    alert(`錯誤：${error.message}`);
-                }
-            });
-        }
+                });
+                applyGameFiltersAndRender();
+                
+                await fetchAllRentals();
+                showPage('rentals');
+            } catch (error) {
+                alert(`錯誤：${error.message}`);
+            }
+        });
     }
-    
+}
+// ADD THIS NEW FUNCTION
+
+// ** 需求 1 新增：更新已選遊戲畫面的函式 **
+function updateSelectedGamesDisplay() {
+    const container = document.getElementById('rental-games-container');
+    const searchInput = document.getElementById('rental-game-search');
+    if(!container || !searchInput) return;
+
+    // 清空除了 input 以外的所有內容
+    [...container.children].forEach(child => {
+        if (child.id !== 'rental-game-search') {
+            container.removeChild(child);
+        }
+    });
+
+    selectedRentalGames.forEach(game => {
+        const chip = document.createElement('span');
+        chip.className = 'game-tag-chip';
+        chip.textContent = game.name;
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button'; // 防止觸發表單提交
+        removeBtn.className = 'remove-game-tag';
+        removeBtn.textContent = '×'; // 使用 '×' 符號更美觀
+        removeBtn.onclick = () => {
+            selectedRentalGames = selectedRentalGames.filter(g => g.game_id !== game.game_id);
+            updateSelectedGamesDisplay();
+        };
+        
+        chip.appendChild(removeBtn);
+        container.insertBefore(chip, searchInput); // 將標籤加到輸入框前面
+    });
+}    
     flatpickr("#rental-due-date", { dateFormat: "Y-m-d", minDate: "today" });
 
     // =================================================================
@@ -1368,46 +1563,121 @@ async function openCreateRentalModal(gameId) {
         if(saveBtn) saveBtn.addEventListener('click', saveBookingSettings);
     }
 
-    if(bookingListTbody){
-        bookingListTbody.addEventListener('click', async (event) => {
-            const target = event.target;
-            const bookingId = target.dataset.bookingid;
-            if (!bookingId) return;
+// REPLACE THIS EVENT LISTENER
+if(bookingListTbody){
+    bookingListTbody.addEventListener('click', async (event) => {
+        const target = event.target;
+        const bookingId = target.dataset.bookingid;
+        if (!bookingId) return;
 
-            const handleStatusUpdate = async (id, newStatus, confirmMsg, successMsg, errorMsg) => {
-                const booking = allBookings.find(b => b.booking_id == id);
-                if (!booking) return;
-                if (confirm(confirmMsg)) {
-                     try {
-                        const response = await fetch('/api/update-booking-status', {
-                            method: 'POST', headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ bookingId: Number(id), status: newStatus })
-                        });
-                        const result = await response.json();
-                        if (!response.ok) throw new Error(result.error || errorMsg);
-                        alert(successMsg);
-                        // 直接從前端更新列表，避免重新 API 請求
-                        booking.status = newStatus;
-                        renderBookingList(allBookings);
-                    } catch (error) { alert(`錯誤：${error.message}`); }
-                }
-            };
+        const handleStatusUpdate = async (id, newStatus, confirmMsg, successMsg, errorMsg) => {
+            const booking = allBookings.find(b => b.booking_id == id);
+            if (!booking) return;
+            if (confirm(confirmMsg)) {
+                 try {
+                    const response = await fetch('/api/update-booking-status', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ bookingId: Number(id), status: newStatus })
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error || errorMsg);
+                    alert(successMsg);
+                    booking.status = newStatus;
+                    renderBookingList(allBookings);
+                } catch (error) { alert(`錯誤：${error.message}`); }
+            }
+        };
 
-            if (target.classList.contains('btn-check-in')) {
-                const booking = allBookings.find(b => b.booking_id == bookingId);
-                await handleStatusUpdate(bookingId, 'checked-in', 
-                    `確定要將 ${booking.booking_date} ${booking.contact_name} 的預約標示為「已報到」嗎？`,
-                    '報到成功！', '報到失敗');
+        if (target.classList.contains('btn-check-in')) {
+            const booking = allBookings.find(b => b.booking_id == bookingId);
+            await handleStatusUpdate(bookingId, 'checked-in', 
+                `確定要將 ${booking.booking_date} ${booking.contact_name} 的預約標示為「已報到」嗎？`,
+                '報到成功！', '報到失敗');
+        }
+        
+        // ** 需求 3 修改：取消按鈕的邏輯 **
+        if (target.classList.contains('btn-cancel-booking')) {
+            const booking = allBookings.find(b => b.booking_id == bookingId);
+            openCancelBookingModal(booking);
+        }
+    });
+}
+
+// ADD THESE TWO ITEMS
+
+// ** 需求 3 新增：打開取消預約視窗的函式 **
+async function openCancelBookingModal(booking) {
+    if (!booking || !cancelBookingModal) return;
+
+    document.getElementById('cancel-booking-info').textContent = `${booking.booking_date} ${booking.contact_name}`;
+    
+    const select = document.getElementById('cancel-message-draft-select');
+    const content = document.getElementById('cancel-direct-message-content');
+    const confirmBtn = document.getElementById('confirm-cancel-booking-btn');
+
+    content.value = ''; // 清空
+    await fetchAllDrafts(); // 確保草稿已載入
+    select.innerHTML = '<option value="">-- 不發送通知或手動輸入 --</option>';
+    allDrafts.forEach(draft => {
+        const option = document.createElement('option');
+        option.value = draft.content;
+        option.textContent = draft.title;
+        select.appendChild(option);
+    });
+
+    select.onchange = () => { content.value = select.value; };
+
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+    newConfirmBtn.onclick = async () => {
+        const message = content.value.trim();
+        const shouldSendMessage = message.length > 0;
+
+        if (!confirm(`確定要取消此預約嗎？${shouldSendMessage ? '\n\n並發送通知訊息。' : ''}`)) return;
+
+        try {
+            newConfirmBtn.textContent = '處理中...';
+            newConfirmBtn.disabled = true;
+
+            if (shouldSendMessage) {
+                const msgResponse = await fetch('/api/send-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: booking.user_id, message: message })
+                });
+                 if (!msgResponse.ok) console.error("發送 LINE 通知失敗");
             }
-            
-            if (target.classList.contains('btn-cancel-booking')) {
-                const booking = allBookings.find(b => b.booking_id == bookingId);
-                await handleStatusUpdate(bookingId, 'cancelled', 
-                    `確定要取消 ${booking.booking_date} ${booking.contact_name} 的預約嗎？`,
-                    '預約已成功取消！', '取消預約失敗');
-            }
-        });
-    }
+
+            const statusResponse = await fetch('/api/update-booking-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookingId: Number(booking.booking_id), status: 'cancelled' })
+            });
+
+            if (!statusResponse.ok) throw new Error('更新預約狀態失敗');
+
+            alert('預約已成功取消！');
+            booking.status = 'cancelled';
+            renderBookingList(allBookings);
+            cancelBookingModal.style.display = 'none';
+
+        } catch (error) {
+            alert(`操作失敗：${error.message}`);
+        } finally {
+            newConfirmBtn.textContent = '確認取消';
+            newConfirmBtn.disabled = false;
+        }
+    };
+
+    cancelBookingModal.style.display = 'flex';
+}
+
+// ** 需求 3 新增：為取消視窗加上關閉按鈕事件 **
+if(cancelBookingModal) {
+    cancelBookingModal.querySelector('.modal-close').addEventListener('click', () => cancelBookingModal.style.display = 'none');
+}
+
     // =================================================================
     // 掃碼加點模組
     // =================================================================

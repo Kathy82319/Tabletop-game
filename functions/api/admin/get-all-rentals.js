@@ -9,11 +9,12 @@ export async function onRequest(context) {
     const db = env.DB;
     const url = new URL(request.url);
     const statusFilter = url.searchParams.get('status');
+    const today = new Date().toISOString().split('T')[0];
 
     let query = `
       SELECT
-        r.rental_id, r.rental_date, r.due_date, r.return_date, r.status,
-        r.late_fee_override, -- 讀取新的覆寫欄位
+        r.rental_id, r.user_id, r.rental_date, r.due_date, r.return_date, r.status,
+        r.late_fee_override,
         u.line_display_name, u.nickname,
         b.name as game_name,
         b.late_fee_per_day
@@ -23,17 +24,22 @@ export async function onRequest(context) {
     `;
 
     const queryParams = [];
-    if (statusFilter && statusFilter !== 'overdue') {
+    // ** 需求 4 (補充) 修改：增加 due_today 篩選邏輯 **
+    if (statusFilter && statusFilter !== 'overdue' && statusFilter !== 'due_today') {
         query += " WHERE r.status = ?";
         queryParams.push(statusFilter);
+    } else if (statusFilter === 'due_today') {
+        query += " WHERE r.status = 'rented' AND r.due_date = ?";
+        queryParams.push(today);
     }
+    
     query += ` ORDER BY r.due_date ASC`;
 
     const stmt = db.prepare(query).bind(...queryParams);
     let { results } = await stmt.all();
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
 
     results = results.map(rental => {
         const dueDate = new Date(rental.due_date);
@@ -41,18 +47,15 @@ export async function onRequest(context) {
         let overdue_days = 0;
         let calculated_late_fee = 0;
 
-        if (rental.status === 'rented' && dueDate < today) {
+        if (rental.status === 'rented' && dueDate < todayDate) {
             derived_status = 'overdue';
-            const diffTime = Math.abs(today - dueDate);
+            const diffTime = Math.abs(todayDate - dueDate);
             overdue_days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         }
         
-        // 逾期金額計算邏輯
         if (rental.late_fee_override !== null && rental.late_fee_override !== undefined) {
-            // 如果有手動覆寫的值，就直接使用它
             calculated_late_fee = rental.late_fee_override;
         } else if (overdue_days > 0) {
-            // 否則，才進行自動計算
             calculated_late_fee = overdue_days * (rental.late_fee_per_day || 50);
         }
 

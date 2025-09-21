@@ -262,7 +262,7 @@ async function initializeLiff() {
 async function initializeProfilePage() {
     if (!userProfile) return;
 
-    // --- 【修正開始】 ---
+    // --- 【需求 2.2 修正開始】 ---
 
     // 1. 將畫面元素先設定為讀取中狀態，確保每次進入頁面都會重置
     const displayNameElement = document.getElementById('display-name');
@@ -274,7 +274,6 @@ async function initializeProfilePage() {
     const qrcodeElement = document.getElementById('qrcode');
     if(qrcodeElement) {
         qrcodeElement.innerHTML = ''; // 清空舊的 QR Code
-        // 2. 將 QR Code 尺寸從 200x200 縮小為 150x150
         new QRCode(qrcodeElement, { text: userProfile.userId, width: 150, height: 150 });
     }
     
@@ -284,21 +283,21 @@ async function initializeProfilePage() {
     document.getElementById('my-exp-history-btn').addEventListener('click', () => showPage('page-my-exp-history'));
     document.getElementById('rental-history-btn').addEventListener('click', () => showPage('page-rental-history'));
     
-    // 3. 【核心修正】: 將 fetchGameData 和 updateProfileDisplay 的呼叫流程分開
-    //    確保不論資料是否快取，畫面都會被正確更新。
+    // 2. 【核心修正】: 強制每次都重新 fetchGameData
+    //    不再使用快取，確保資料永遠是最新
     try {
-        const userData = await fetchGameData();
-        updateProfileDisplay(userData); // 使用獲取到的資料來更新畫面
+        const userData = await fetchGameData(true); // 傳入 true 表示強制刷新
+        updateProfileDisplay(userData);
     } catch (error) {
         console.error("無法更新個人資料畫面:", error);
         if (displayNameElement) displayNameElement.textContent = '資料載入失敗';
     }
-    // --- 【修正結束】 ---
+    // --- 【需求 2.2 修正結束】 ---
 }
 
-
-    async function fetchGameData() { 
-        if (gameData && gameData.user_id) return gameData;
+    // 【需求 2.2 修正】增加 forceRefresh 參數
+    async function fetchGameData(forceRefresh = false) { 
+        if (!forceRefresh && gameData && gameData.user_id) return gameData;
         try {
             const response = await fetch('/api/user', {
                 method: 'POST',
@@ -308,7 +307,7 @@ async function initializeProfilePage() {
             if (!response.ok) throw new Error('無法取得會員遊戲資料');
             gameData = await response.json();
             
-            updateProfileDisplay(gameData);
+            // updateProfileDisplay(gameData); // 這行可以移除，因為 initializeProfilePage 會呼叫
             return gameData;
         } catch (error) {
             console.error('呼叫會員 API 失敗:', error);
@@ -324,13 +323,14 @@ async function initializeProfilePage() {
         document.getElementById('user-level').textContent = data.level;
         document.getElementById('user-exp').textContent = `${data.current_exp} / 10`;
 
-        const perkDisplay = document.getElementById('user-perk-display');
+        const perkLine = document.getElementById('user-perk-line');
         const perkSpan = document.getElementById('user-perk');
-        if (data.perk && data.class !== '無') {
+        
+        if (perkLine && perkSpan && data.perk && data.class !== '無') {
             perkSpan.textContent = data.perk;
-            perkDisplay.style.display = 'block';
-        } else {
-            perkDisplay.style.display = 'none';
+            perkLine.style.display = 'block';
+        } else if (perkLine) {
+            perkLine.style.display = 'none';
         }
     }
 
@@ -403,9 +403,6 @@ async function initializeRentalHistoryPage() {
         if (!response.ok) throw new Error('查詢租借紀錄失敗');
         myRentals = await response.json();
 
-        // 【偵錯碼】在 F12 Console 中印出從 API 收到的完整資料
-        console.log("收到的租借資料:", myRentals);
-
         if (myRentals.length === 0) {
             container.innerHTML = '<p>您目前沒有任何租借紀錄。</p>';
             return;
@@ -413,20 +410,21 @@ async function initializeRentalHistoryPage() {
 
         container.innerHTML = myRentals.map(rental => {
             let statusHTML = '';
-            // 【關鍵修正】明確檢查 overdue_days 是否為一個大於 0 的數字
+            
             if (rental.status === 'returned') {
                 statusHTML = `<div class="rental-status returned">已於 ${rental.return_date || ''} 歸還</div>`;
             } else if (typeof rental.overdue_days === 'number' && rental.overdue_days > 0) {
-                // 如果逾期，同時顯示天數和金額
                 statusHTML = `
                     <div class="rental-status overdue">
                         <strong>已逾期 ${rental.overdue_days} 天</strong><br>
                         累積逾期金額 ${rental.calculated_late_fee} 元
                     </div>`;
             } else {
-                statusHTML = `<div class="rental-status rented">租借中</div>`;
+                statusHTML = `<div class.rental-status rented">租借中</div>`;
             }
 
+            // --- 【需求 2.1 修正】 ---
+            // 確保 rental-info 這個 div 包住所有文字內容，使其能與圖片正確並排
             return `
                 <div class="rental-card">
                     <img src="${rental.game_image_url || 'placeholder.jpg'}" class="rental-game-image">
