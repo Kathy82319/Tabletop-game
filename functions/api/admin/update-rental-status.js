@@ -45,8 +45,7 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    // 【修改】接收 lateFeePaid 參數
-    const { rentalId, status, lateFeePaid } = await context.request.json();
+    const { rentalId, status } = await context.request.json();
     if (!rentalId || !status) {
       return new Response(JSON.stringify({ error: '缺少租借 ID 或狀態。' }), { status: 400 });
     }
@@ -61,15 +60,12 @@ export async function onRequest(context) {
     }
 
     const batchOperations = [];
-    const updateValues = {
-        status: status,
-        return_date: status === 'returned' ? new Date().toISOString().split('T')[0] : null,
-        late_fee_paid: lateFeePaid // 將支付金額也一併更新
-    };
+    const returnDate = status === 'returned' ? new Date().toISOString().split('T')[0] : null;
 
+    // 【修改】只更新需要的欄位
     batchOperations.push(
-        db.prepare('UPDATE Rentals SET status = ?, return_date = ?, late_fee_paid = ? WHERE rental_id = ?')
-          .bind(updateValues.status, updateValues.return_date, updateValues.late_fee_paid, rentalId)
+        db.prepare('UPDATE Rentals SET status = ?, return_date = ? WHERE rental_id = ?')
+          .bind(status, returnDate, rentalId)
     );
 
     if (status === 'returned') {
@@ -81,27 +77,14 @@ export async function onRequest(context) {
 
     await db.batch(batchOperations);
 
-    // ... (背景同步 Google Sheet 的邏輯 context.waitUntil 保持不變) ...
-    // 【新增】觸發背景同步任務，更新 Google Sheet
-    const dataToSync = {
-        status: updateValues.status,
-        return_date: updateValues.return_date,
-        late_fee_paid: updateValues.late_fee_paid
-    };
-
+    const dataToSync = { status, return_date: returnDate };
     context.waitUntil(
-        updateRowInSheet(context.env, 'Rentals','桌遊租借者', 'rental_id', rentalId, dataToSync)
+        updateRowInSheet(context.env, '桌遊租借者', 'rental_id', rentalId, dataToSync)
         .catch(err => console.error("背景同步租借狀態失敗:", err))
     );
 
     return new Response(JSON.stringify({ success: true, message: '成功更新租借狀態與庫存！' }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    return new Response(JSON.stringify({ success: true, message: '成功更新租借狀態與庫存！' }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      status: 200, headers: { 'Content-Type': 'application/json' },
     });
 
   } catch (error) {

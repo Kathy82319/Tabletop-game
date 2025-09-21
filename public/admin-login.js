@@ -124,6 +124,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+        // 關閉事件監聽(放在任意位置)
+        if (editRentalModal) {
+        editRentalModal.querySelector('.modal-close').addEventListener('click', () => editRentalModal.style.display = 'none');
+        editRentalModal.querySelector('.btn-cancel').addEventListener('click', () => editRentalModal.style.display = 'none');
+        }
+        if (userDetailsModal) {
+        userDetailsModal.querySelector('.modal-close').addEventListener('click', () => userDetailsModal.style.display = 'none');
+        }    
+
     // ---- 頁面切換邏輯 ----
     function showPage(pageId) {
         if (html5QrCode && html5QrCode.isScanning) {
@@ -523,7 +533,7 @@ function renderHistoryTable(items, columns, headers) {
                 case 'cancelled': value = '已取消'; break;
                 case 'rented': value = '租借中'; break;
                 case 'returned': value = '已歸還'; break;
-                // 您可以根據需要新增更多狀態
+                case 'overdue': value = '<span style="color:var(--danger-color); font-weight:bold;">逾期</span>'; break; // 【新增這一行】
             }
         }
         return `<td>${value}</td>`;
@@ -985,22 +995,6 @@ if (rentalListTbody) {
             const rental = allRentals.find(r => r.rental_id == rentalId);
             if (!rental) return;
 
-            // 【關鍵修改】歸還前的費用確認流程
-            let feePaid = 0;
-            if (rental.calculated_late_fee > 0) {
-                const userInput = prompt(
-                    `此筆紀錄已逾期 ${rental.overdue_days} 天，應付總額為 ${rental.calculated_late_fee} 元。\n\n請輸入顧客實際支付的逾期費用：`,
-                    rental.calculated_late_fee // 將應付總額作為預設值
-                );
-
-                if (userInput === null) return; // 如果按了取消，則不執行任何操作
-                feePaid = Number(userInput);
-                if (isNaN(feePaid) || feePaid < 0) {
-                    alert('請輸入有效的金額！');
-                    return;
-                }
-            }
-
             if (confirm(`確定要將《${rental.game_name}》標記為已歸還嗎？`)) {
                 try {
                     const response = await fetch('/api/admin/update-rental-status', {
@@ -1008,8 +1002,8 @@ if (rentalListTbody) {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             rentalId: Number(rentalId),
-                            status: 'returned',
-                            lateFeePaid: feePaid // 將輸入的金額傳給 API
+                            status: 'returned'
+                            // 不再傳送費用相關欄位
                         })
                     });
                     const result = await response.json();
@@ -1027,15 +1021,11 @@ if (rentalListTbody) {
     });
 }
 
+
     function openEditRentalModal(rentalId) {
         const rental = allRentals.find(r => r.rental_id == rentalId);
         if (!rental) return alert('找不到該筆租借紀錄');
 
-        // 補上「管理租借」視窗的關閉事件監聽
-        if (editRentalModal) {
-        editRentalModal.querySelector('.modal-close').addEventListener('click', () => editRentalModal.style.display = 'none');
-        editRentalModal.querySelector('.btn-cancel').addEventListener('click', () => editRentalModal.style.display = 'none');
-        }
         document.getElementById('edit-rental-id').value = rental.rental_id;
         document.getElementById('modal-rental-title').textContent = `管理租借：${rental.game_name}`;
         
@@ -1085,7 +1075,7 @@ if (rentalListTbody) {
     }
 
 
-async function openCreateRentalModal(gameId) { // 【修改】在函式前加上 async
+async function openCreateRentalModal(gameId) {
     const game = allGames.find(g => g.game_id == gameId);
     if (!game) { alert('找不到遊戲資料！'); return; }
 
@@ -1097,6 +1087,8 @@ async function openCreateRentalModal(gameId) { // 【修改】在函式前加上
         try {
             await fetchAllUsers();
             if(statusDiv) statusDiv.textContent = '會員列表載入完成！';
+            // 延遲一段時間後自動清除提示
+            setTimeout(() => { if(statusDiv) statusDiv.textContent = ''; }, 2000);
         } catch (error) {
             alert('會員列表載入失敗，無法建立租借紀錄。');
             if(statusDiv) statusDiv.textContent = '';

@@ -6,6 +6,16 @@
     <title>店務管理系統</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
+            /* 【新增這一段】響應式 CRM 樣式 */
+    @media (max-width: 768px) {
+        .details-grid {
+            grid-template-columns: 1fr; /* 在手機上，從左右兩欄變成垂直單欄 */
+        }
+        .profile-summary {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+    }
         :root {
             --primary-color: #007bff; --secondary-color: #6c757d; --danger-color: #dc3545;
             --success-color: #28a745; --warning-color: #ffc107; --info-color: #17a2b8;
@@ -399,7 +409,7 @@
                 <h3>建立租借紀錄</h3>
                 <button class="modal-close">&times;</button>
             </div>
-            <div id="rental-modal-status" style="text-align: center; color: var(--primary-color); min-height: 20px;"></div>
+            <div id="rental-modal-status" style="text-align: center; color: var(--primary-color); min-height: 20px; margin-bottom: 15px;"></div>
             <form id="create-rental-form">
                 <input type="hidden" id="rental-game-id">
                 <div class="form-group">
