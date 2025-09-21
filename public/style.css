@@ -532,83 +532,28 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     font-family: var(--font-primary);
 }
 
-/* --- 3. 冒險者資料頁面全版面優化 --- */
-#page-templates > #page-profile {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 70px - 20px); 
-    padding: 8px 15px;
-    box-sizing: border-box;
-}
-
-#page-profile > h1 {
-    flex-shrink: 0;
-}
-
-#page-profile #qrcode-container {
-    flex-grow: 1; 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    min-height: 100px;
-    margin: 5px 0;
-}
-
-#page-profile #qrcode {
-    padding: 8px;
-}
-
-.profile-details-grid {
-    flex-shrink: 0;
-    margin-top: 5px;
-    margin-bottom: 8px;
-}
-
-#page-profile #user-perk-display {
-    flex-shrink: 0;
-    margin-top: 8px;
-    padding: 8px;
-}
-
-#page-profile .profile-actions {
-    flex-shrink: 0;
-    margin-top: 8px;
-    gap: 10px;
-}
-
-.profile-actions .cta-button {
-    font-size: 0.9rem;
-    padding: 8px 5px;
-    line-height: 1.3;
-}
-
 /* =================================================================
-   追加樣式 v4 (最終整合版)
+   追加樣式 v5 (最終修正版)
    ================================================================= */
 
 /* --- 1. 統一頁面主標題樣式 --- */
 /*
-  這個規則現在是唯一控制這四個頁面主標題樣式的源頭，
-  確保它們外觀完全一致。
+  現在我們只認 class="page-main-title"，
+  不管它在哪個頁面或被什麼包住，樣式都會完全一樣。
 */
-#page-home .news-header h1,
-#page-profile > h1,
-#page-booking .booking-header h1,
-#page-info > h1 {
+.page-main-title {
     text-align: center;
     font-size: 2.2rem; 
     font-weight: 600;
     color: var(--color-text-primary);
     
     /* 統一加上您想要的分隔線 */
-    border-bottom: 2px solid var(--color-frame-gold); /* <--- 問題根源 */
-    padding-bottom: 8px;
+    border-bottom: 2px solid var(--color-frame-gold);
     
     /* 統一間距 */
-    margin-top: 8px;    /* 標題與頁面頂部的距離 */
+    margin-top: 10px;    /* 標題與頁面頂部的距離 */
     margin-bottom: 25px; /* 標題與下方內容的距離 */
-    padding-bottom: 8px;  /* 文字與分隔線的距離 */
+    padding-bottom: 10px;  /* 文字與分隔線的距離 */
 }
 
 
@@ -622,4 +567,46 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     padding: 5px;
 }
 
-
+/* --- 3. 冒險者資料頁面全版面優化 --- */
+#page-templates > #page-profile {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 70px - 20px); 
+    padding: 10px 15px;
+    box-sizing: border-box;
+}
+#page-profile > h1 {
+    flex-shrink: 0;
+}
+#page-profile #qrcode-container {
+    flex-grow: 1; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 100px;
+    margin: 5px 0;
+}
+#page-profile #qrcode {
+    padding: 10px;
+}
+.profile-details-grid {
+    flex-shrink: 0;
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+#page-profile #user-perk-display {
+    flex-shrink: 0;
+    margin-top: 10px;
+    padding: 8px;
+}
+#page-profile .profile-actions {
+    flex-shrink: 0;
+    margin-top: 10px;
+    gap: 10px;
+}
+.profile-actions .cta-button {
+    font-size: 0.9rem;
+    padding: 10px 5px;
+    line-height: 1.3;
+}
