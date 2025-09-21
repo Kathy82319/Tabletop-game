@@ -1268,10 +1268,12 @@ if(createRentalModal) {
                 if(rentalUserSelect) rentalUserSelect.style.display = 'none';
                 return;
             }
+            // ** 需求 2 修改：增加 real_name 到搜尋條件 **
             const filteredUsers = allUsers.filter(user => 
                 (user.line_display_name || '').toLowerCase().includes(searchTerm) ||
                 (user.nickname || '').toLowerCase().includes(searchTerm) ||
-                (user.user_id || '').toLowerCase().includes(searchTerm)
+                (user.user_id || '').toLowerCase().includes(searchTerm) ||
+                (user.real_name || '').toLowerCase().includes(searchTerm) // 新增此行
             );
             
             if(rentalUserSelect) {
@@ -1280,14 +1282,16 @@ if(createRentalModal) {
                     const option = document.createElement('option');
                     option.value = user.user_id;
                     const displayName = user.nickname || user.line_display_name;
-                    option.textContent = `${displayName} (${user.user_id.substring(0, 10)}...)`;
+                    // 在選項中也顯示真實姓名，方便辨識
+                    const realNameDisplay = user.real_name ? ` [${user.real_name}]` : '';
+                    option.textContent = `${displayName}${realNameDisplay} (${user.user_id.substring(0, 10)}...)`;
                     rentalUserSelect.appendChild(option);
                 });
                 rentalUserSelect.style.display = 'block';
             }
         });
     }
-
+    
     if (rentalUserSelect) {
         rentalUserSelect.addEventListener('change', () => {
             selectedRentalUser = allUsers.find(u => u.user_id === rentalUserSelect.value);

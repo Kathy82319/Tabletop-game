@@ -197,45 +197,51 @@
             </table>
         </div>
 
-<div id="edit-rental-modal" class="modal-overlay">
+<div id="create-rental-modal" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 id="modal-rental-title">管理租借紀錄</h3>
+            <h3>建立租借紀錄</h3>
             <button class="modal-close">&times;</button>
         </div>
-        <form id="edit-rental-form">
-            <input type="hidden" id="edit-rental-id">
+        <div id="rental-modal-status" style="text-align: center; color: var(--primary-color); min-height: 20px; margin-bottom: 15px;"></div>
+        <form id="create-rental-form">
             <div class="form-group">
-                <label>系統計算逾期總額</label>
-                <input type="text" id="calculated-late-fee-display" readonly style="background: #e9ecef; color: var(--danger-color); font-weight: bold;">
+                <label for="rental-user-search">搜尋租借會員 (姓名/暱稱/ID)</label>
+                <input type="text" id="rental-user-search" placeholder="請至少輸入 2 個字元...">
+                <select id="rental-user-select" style="margin-top: 10px; display: none;"></select>
             </div>
             <div class="form-group">
-                <label for="edit-rental-due-date">修改應還日期 (延期)</label>
-                <input type="text" id="edit-rental-due-date">
+                <label>租借品項 (可多選)</label>
+                <div id="rental-games-container">
+                    <input type="text" id="rental-game-search" placeholder="輸入遊戲名稱搜尋...">
+                </div>
+                <ul id="game-search-results" style="display: none;"></ul>
             </div>
             <div class="form-group">
-                <label for="edit-rental-override-fee">手動覆寫逾期金額 (選填)</label>
-                <input type="number" id="edit-rental-override-fee" min="0" placeholder="留空則由系統自動計算">
+                <label for="rental-contact-name">租借人姓名</label>
+                <input type="text" id="rental-contact-name" required>
+            </div>
+            <div class="form-group">
+                <label for="rental-contact-phone">聯絡電話</label>
+                <input type="tel" id="rental-contact-phone" required maxlength="10">
+            </div>
+            <div class="form-group">
+                <label for="rental-due-date">歸還日期</label>
+                <input type="text" id="rental-due-date" required>
+            </div>
+            <div class="form-group" style="display:none;">
+                <label for="rental-deposit">押金</label>
+                <input type="number" id="rental-deposit" value="0">
+            </div>
+            <div class="form-group" style="display:none;">
+                <label for="rental-late-fee">每日逾期費用</label>
+                <input type="number" id="rental-late-fee" value="50">
             </div>
             <div class="form-actions">
                 <button type="button" class="action-btn btn-cancel">取消</button>
-                <button type="submit" class="action-btn btn-save">儲存變更</button>
+                <button type="submit" class="action-btn btn-save">確認租借</button>
             </div>
         </form>
-        <div class="message-sender" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-            <h4>發送 LINE 訊息</h4>
-            <div class="form-group">
-                <label for="rental-message-draft-select">選擇訊息草稿</label>
-                <select id="rental-message-draft-select"><option value="">-- 手動輸入或選擇草稿 --</option></select>
-            </div>
-            <div class="form-group">
-                <label for="rental-direct-message-content">訊息內容</label>
-                <textarea id="rental-direct-message-content" rows="4"></textarea>
-            </div>
-            <div class="form-actions">
-                <button id="rental-send-direct-message-btn" class="action-btn btn-save">確認發送</button>
-            </div>
-        </div>
     </div>
 </div>
 
