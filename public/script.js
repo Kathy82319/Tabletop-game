@@ -324,14 +324,17 @@ async function initializeProfilePage() {
         document.getElementById('user-level').textContent = data.level;
         document.getElementById('user-exp').textContent = `${data.current_exp} / 10`;
 
-        const perkDisplay = document.getElementById('user-perk-display');
-        const perkSpan = document.getElementById('user-perk');
-        if (data.perk && data.class !== '無') {
-            perkSpan.textContent = data.perk;
-            perkDisplay.style.display = 'block';
-        } else {
-            perkDisplay.style.display = 'none';
-        }
+    // 改為選取新的 <p> 元素
+    const perkLine = document.getElementById('user-perk-line');
+    const perkSpan = document.getElementById('user-perk');
+    
+    // 確保元素都存在，再根據資料決定是否顯示
+    if (perkLine && perkSpan && data.perk && data.class !== '無') {
+        perkSpan.textContent = data.perk;
+        perkLine.style.display = 'block'; // 顯示整行 <p>
+    } else if (perkLine) {
+        perkLine.style.display = 'none'; // 隱藏整行 <p>
+    }
     }
 
     async function initializeMyBookingsPage() {

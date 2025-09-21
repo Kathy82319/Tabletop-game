@@ -595,11 +595,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     margin-top: 5px;
     margin-bottom: 8px;
 }
-#page-profile #user-perk-display {
-    flex-shrink: 0;
-    margin-top: 8px;
-    padding: 8px;
-}
+
 #page-profile .profile-actions {
     flex-shrink: 0;
     margin-top: 8px;
