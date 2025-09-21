@@ -1,217 +1,540 @@
 /* =================================================================
-   Theme: Antique Parchment
-   Inspired by: Adventurer's Guild Concept
+   主題：冒險者公會 (Adventurer's Guild)
+   風格：溫暖、黃昏、復古、暗金
    ================================================================= */
 
-/* --- 1. Core Variables: Colors, Fonts, Textures --- */
+/* --- 1. 字體導入與全域變數定義 --- */
 @import url('https://fonts.googleapis.com/css2?family=Cwtex+Fangsong&display=swap');
 
 :root {
-    /* Color Palette */
-    --bg-parchment: #F4F0E8; /* Main background color */
-    --bg-card: rgba(255, 255, 255, 0.7); /* Card background with slight transparency */
-    --primary-accent: #6D4C41; /* Main accent (dark wood brown) */
-    --secondary-accent: #A1887F; /* Secondary accent (lighter brown) */
-    --text-primary: #3E2723; /* Primary text (darkest brown) */
-    --text-secondary: #5D4037; /* Secondary text (medium brown) */
-    --border-color: #D7CCC8; /* Border color */
-    --danger-color: #D32F2F; /* Danger/Alert color */
-    --success-color: #388E3C; /* Success color */
+    /* 色彩配置 */
+    --color-background-start: #f4ead8; /* 背景漸層 - 亮部 (溫暖羊皮紙色) */
+    --color-background-end: #d7c8a8;   /* 背景漸層 - 暗部 (陳舊羊皮紙色) */
+    --color-text-primary: #4a3728;      /* 主要文字 (深烘焙咖啡色) */
+    --color-text-secondary: #6b4f3a;    /* 次要文字 (拿鐵色) */
+    --color-frame-gold: #b8860b;       /* 邊框與重點 (暗金色) */
+    --color-frame-gold-light: #daa520; /* 亮金色 (用於漸層或滑鼠懸停) */
+    --color-card-background: rgba(249, 245, 235, 0.8); /* 卡片背景 (半透明米色) */
+    --color-shadow: rgba(74, 55, 40, 0.2); /* 陰影 (暖棕色調) */
+    --color-cta-background: #8c6a4d;   /* 主要按鈕背景 (舊木頭色) */
+    --color-cta-hover: #6b4f3a;         /* 主要按鈕滑鼠懸停 */
+    --color-danger: #a94442;           /* 警告色 */
 
-    /* Typography */
-    --font-main: 'cwTeXFangSong', serif; /* Your chosen font */
-    --font-fallback: 'Helvetica Neue', Arial, sans-serif; /* Fallback for UI elements */
-
-    /* Box Shadow for depth */
-    --shadow-soft: 0 4px 12px rgba(62, 39, 35, 0.1);
-    --shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.06);
-}
-
-/* --- 2. Global Styles & Background --- */
-body {
-    background-color: var(--bg-parchment);
-    /* Using your provided image, converted to a seamless texture */
-    background-image: url('data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAgACADASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAAAAUHCP/EACgQAAIBAwICCwEAAAAAAAAAAAECAwQFEQAhBhITIjEHFDEyQVFhcP/EABcBAQEBAQAAAAAAAAAAAAAAAAADAgT/xAAhEQACAgEEAgMAAAAAAAAAAAABAgARAxIhMQRREyJRcf/aAAwDAQACEQMRAD8Aq+1PEXfY6NJKSkhp5n3oJKhjK0agk4EYIXJGM5B48s8+f3jtrfK6aV1rZqZGYsIoMRqo8goXJHxJJPEnNYX6Y336uX2k/hF/TB9/Vy+0n8JvYv5+n5FqFh346j+5b7X3lJWR1MNwqllQ5B3kj4gjgj0I4NYf0wff1c/tJ/CD+mD7+rl9pP4TXZtN6gQsdQ/uX6U8Q7b3ikp1iaaGqZFCrLVR75MD1ZSoY/EkknxJNYf0xff1c/tJ/CL+mD7+rl9pP4TZf5+s/IVQsO/HU/wB2B2t2tuFvnhhrJ/rVNI6ozsoEqAnG4MASQOpGD44xxVl2Z4l27ulbFS0dLBJK58FJCqPEsxJIA+JJ4GSeKwv6Yvv6uf2k/hF/TB9/Vy+0n8IQv58/QVCw78dR/dhdq9vrvaaiKCCKlqQ6bxI7OhXkjGAVz065rC/pi+/q5/aT+EH9MH39XP7SfwgOzab1ACx1D+5cW3W212uVXFSwrCtRK4RPMBOM+pIAAHqSAB1IrK/pi+/q5/aT+EX9MH39XP7SfwgN/Pj6CoWHfjqf7sjtJtndttrVjnjhp0BMn08TFg2MYJLA45PTFYX9MX39XP7Sfwg/pg+/q5/aT+EB2bTeoELHU/3b3arxBttuulRFBDDS75GC75mZguTjJCkE/DJrC/pi+/q5/aT+EX9MH31cvtp/CAN/P1+gqFh346j+704g2tuttaenpqeCn3zOqB5yzBcnGSFK5x44I+dYX9MX39XP7Sfwg/pg+/q5/aT+EEb+fP0FQsO/H6n+27Q7c3a41sVLBHTGSQnBcsoAAJJOFJ4AJ4BrK/pi+/q5/aT+EX9MH39XP7SfwgG/nx9BUbDv1H92r2x4lu9vrY6aaKmqXdVYywhiibmCjdlhkZIzgE4z4ZNYX9MH39XP7Sfwg/pg+/q5/aT+EA7NpvUDFjqf7tjtB22ulorZKSOKkqfLClpQxVWDKGBAVwRw3nx+FYX9MH39XP7SfwjSgG/nw9BUbTvx1D+5//Z');
+    /* 字體設定 */
+    --font-primary: 'cwTeXFangSong', serif;
+    --font-ui: 'Helvetica Neue', 'Arial', sans-serif; /* 用於UI元素，確保清晰 */
     
-    color: var(--text-primary);
-    font-family: var(--font-main);
-    margin: 0;
-    padding: 0;
-    padding-bottom: 70px;
+    /* 圓角與陰影 */
+    --border-radius: 8px;
+    --box-shadow: 0 4px 15px var(--color-shadow);
 }
 
-/* --- 3. Typography --- */
-h1, h2, h3 {
-    font-family: var(--font-main);
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-p {
-    line-height: 1.6;
-    color: var(--text-secondary);
-}
-
-/* --- 4. Layout & Core Components --- */
-#tab-bar {
-    background-color: #F1EBE0;
-    border-top: 1px solid var(--border-color);
-}
-.tab-button {
-    color: var(--text-secondary);
-}
-.tab-button.active {
-    color: var(--primary-accent);
-    font-weight: 600;
-}
-
-/* --- 5. All Button Styles --- */
-
-/* Main Call-to-Action Button */
-.cta-button {
-    width: 100%;
-    padding: 15px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    font-family: var(--font-main);
-    color: var(--bg-parchment);
-    background: var(--primary-accent);
-    border: 1px solid #5D4037;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    transition: all 0.2s ease-in-out;
-}
-.cta-button:hover {
-    background: var(--text-primary);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-}
-
-/* Back Button & Details Buttons */
-.details-back-button, #more-tags-btn {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    border-radius: 20px;
-    padding: 8px 15px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    font-family: var(--font-main);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-.details-back-button:hover, #more-tags-btn:hover {
-    background-color: var(--secondary-accent);
-    color: white;
-    border-color: var(--secondary-accent);
-}
-
-/* Filter Buttons */
-#news-filter-container, #tag-filter-container {
-    padding: 5px;
-    background-color: rgba(0,0,0,0.02);
-    border-radius: 20px;
-}
-.news-filter-btn, .filter-group button {
-    font-family: var(--font-fallback);
-    color: var(--text-secondary);
-    background-color: transparent;
-    border: none;
-    transition: all 0.2s;
-}
-.news-filter-btn.active, .filter-group button.active {
-    background-color: var(--primary-accent);
-    color: white;
-    font-weight: bold;
-    box-shadow: var(--shadow-soft);
-}
-
-/* Clear Filter Button */
-#clear-filters {
-    background-color: #757575;
-    color: white;
-}
-#clear-filters:hover {
-    background-color: #616161;
-}
-
-/* --- 6. Card & Content Styles --- */
-.news-card, .game-card, .details-section, .booking-info-card, .exp-record-card, .rental-card {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    box-shadow: var(--shadow-soft);
-}
-
-/* ... (Remaining specific card styles can be added here if needed) ... */
-
-/* --- 7. Adventurer's Profile Page (V2 Layout) --- */
-#page-templates > #page-profile {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 95px);
-    padding: 15px;
+/* --- 2. 基礎與通用樣式 --- */
+html {
     box-sizing: border-box;
 }
-#page-profile > h1 { flex-shrink: 0; }
-#page-profile #qrcode-container {
-    flex-grow: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    min-height: 100px;
-    margin: 10px 0;
+
+*, *:before, *:after {
+    box-sizing: inherit;
 }
-#page-profile #qrcode {
+
+body {
+    margin: 0;
+    padding: 0;
+    padding-bottom: 80px; /* 避免內容被下方導航列遮擋 */
+    font-family: var(--font-primary);
+    color: var(--color-text-primary);
+    
+    /* 核心：使用放射漸層營造黃昏的層次感 */
+    background-color: var(--color-background-start);
+    background-image: radial-gradient(circle at top, var(--color-background-start), var(--color-background-end));
+    
+    /* 如果您堅持要用圖片背景，請刪除上面兩行，並使用下面這行 */
+    /* background-image: url('您的Base64字串...'); */
+    background-size: cover;
+    background-attachment: fixed;
+}
+
+#app-content {
+    padding: 20px 15px;
+}
+
+/* 標題樣式 */
+h1, h2, h3 {
+    color: var(--color-text-primary);
+    border-bottom: 2px solid var(--color-frame-gold);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+}
+
+h1 { font-size: 2rem; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.2rem; border-bottom-width: 1px; }
+
+p {
+    line-height: 1.8;
+    color: var(--color-text-secondary);
+}
+
+/* --- 3. 主要導覽列 (Tab Bar) --- */
+#tab-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    height: 65px;
+    background-color: rgba(243, 234, 203, 0.85); /* 半透明的亞麻色 */
+    backdrop-filter: blur(10px); /* 毛玻璃效果 */
+    border-top: 2px solid var(--color-frame-gold);
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+}
+
+.tab-button {
+    font-family: var(--font-primary);
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+    background: none;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex-grow: 1;
+    text-align: center;
+}
+
+.tab-button.active {
+    color: var(--color-frame-gold);
+    font-weight: bold;
+    transform: scale(1.1);
+}
+
+/* --- 4. 通用元件：按鈕 (Buttons) --- */
+
+/* 主要操作按鈕 (Call to Action) */
+.cta-button {
+    display: block;
+    width: 100%;
+    padding: 12px 20px;
+    font-family: var(--font-primary);
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: white;
+    background-color: var(--color-cta-background);
+    border: 2px solid var(--color-frame-gold);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.cta-button:hover {
+    background-color: var(--color-cta-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px var(--color-shadow);
+}
+
+/* 返回按鈕 */
+.details-back-button, .back-button {
+    font-family: var(--font-primary);
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+    background-color: transparent;
+    border: 1px solid var(--color-frame-gold);
+    border-radius: 20px;
+    padding: 8px 16px;
+    margin-bottom: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.details-back-button:hover, .back-button:hover {
+    background-color: var(--color-frame-gold);
+    color: white;
+}
+
+/* --- 5. 通用元件：卡片 (Cards) --- */
+.news-card, .game-card, .details-section, .booking-info-card, .exp-record-card, .rental-card, .summary-card {
+    background-color: var(--color-card-background);
+    border: 1px solid var(--color-frame-gold);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: var(--box-shadow);
+    backdrop-filter: blur(5px);
+}
+
+/* --- 6. 通用元件：表單 (Forms) --- */
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+    color: var(--color-text-primary);
+}
+
+input[type="text"], input[type="search"], input[type="tel"], input[type="email"], input[type="number"], select, textarea {
+    width: 100%;
+    padding: 12px;
+    font-family: var(--font-primary);
+    font-size: 1rem;
+    color: var(--color-text-primary);
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--color-frame-gold);
+    border-radius: var(--border-radius);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--color-frame-gold-light);
+    box-shadow: 0 0 8px var(--color-frame-gold-light);
+}
+
+input[readonly] {
+    background-color: rgba(200, 200, 200, 0.3);
+    cursor: not-allowed;
+}
+
+.form-status {
+    text-align: center;
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+/* --- 7. 各頁面專屬樣式 --- */
+
+/* A. 首頁 (page-home) */
+.news-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+.news-header h1 {
+    border: none;
+    font-size: 2.5rem;
+}
+
+#news-filter-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.news-filter-btn { /* 動態生成 */
+    font-family: var(--font-primary);
+    padding: 8px 16px;
+    border: 1px solid var(--color-frame-gold);
+    background: transparent;
+    color: var(--color-text-secondary);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.news-filter-btn.active {
+    background-color: var(--color-frame-gold);
+    color: white;
+}
+
+/* 最新情報卡片 (由 script.js 生成) */
+.news-card {
+    padding: 0;
+    overflow: hidden; /* 確保圖片圓角生效 */
+}
+.news-card-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background-color: rgba(184, 134, 11, 0.1); /* 暗金色透明背景 */
+}
+.news-card-category {
+    font-weight: bold;
+    color: var(--color-frame-gold);
+}
+.news-card-date {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+}
+.news-card-content {
+    padding: 15px;
+}
+.news-card-title {
+    margin: 0 0 10px 0;
+    border: none;
+    padding: 0;
+}
+.news-card-image-container {
+    width: 100%;
+    max-height: 200px;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+.news-card-image {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+/* B. 桌遊圖鑑 (page-games & page-game-details) */
+#filter-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+#tag-filter-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+#tag-filter-container button, #more-tags-btn, #clear-filters {
+    font-family: var(--font-primary);
+    padding: 6px 14px;
+    border: 1px solid var(--color-frame-gold);
+    background: transparent;
+    color: var(--color-text-secondary);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+#tag-filter-container button.active {
+    background: var(--color-frame-gold);
+    color: white;
+}
+#clear-filters {
+    background-color: var(--color-danger);
+    color: white;
+    border-color: var(--color-danger);
+}
+
+/* 遊戲卡片 (由 script.js 生成) */
+.game-card {
+    display: flex;
+    gap: 15px;
+}
+.game-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--color-frame-gold);
+}
+.game-info { flex: 1; }
+.game-title { margin: 0; padding: 0; border: none; font-size: 1.3rem; }
+.game-description {
+    font-size: 0.9rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.game-tags { margin: 8px 0; }
+.game-tag {
+    display: inline-block;
+    background-color: rgba(184, 134, 11, 0.2);
+    color: var(--color-frame-gold);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    margin-right: 5px;
+}
+.game-details { display: flex; gap: 15px; font-size: 0.9rem; }
+
+/* 遊戲/情報詳情頁 */
+.details-header { text-align: center; }
+.details-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+    border: 2px solid var(--color-frame-gold);
+}
+.details-title { border: none; }
+.news-details-meta { color: var(--color-text-secondary); }
+.price-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    text-align: center;
+}
+.price-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--color-text-primary);
+}
+.stock-info {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+}
+
+/* C. 冒險者資料 (page-profile) */
+#qrcode-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+}
+#qrcode {
     padding: 15px;
     background: white;
-    border-radius: 12px;
+    border: 2px solid var(--color-frame-gold);
+    border-radius: var(--border-radius);
 }
 .profile-details-grid {
     display: flex;
     align-items: center;
-    gap: 20px;
-    flex-shrink: 0;
-    margin-top: 10px;
-    background-color: var(--bg-card);
+    gap: 15px;
     padding: 15px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
+    background: var(--color-card-background);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--color-frame-gold);
 }
 .profile-avatar img {
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    border: 3px solid var(--bg-parchment);
+    border: 3px solid var(--color-frame-gold);
 }
-.profile-stats h2 { margin: 0 0 8px 0; font-size: 1.5rem; }
-.profile-stats p { margin: 4px 0; font-size: 1rem; color: var(--text-secondary); }
-.profile-stats p strong { color: var(--text-primary); }
-#page-profile #user-perk-display {
-    flex-shrink: 0;
-    margin-top: 15px;
+.profile-stats h2 { margin: 0 0 8px 0; border: none; padding: 0; font-size: 1.8rem; }
+.profile-stats p { margin: 4px 0; }
+.perk-display {
     text-align: center;
-    background-color: rgba(141, 110, 99, 0.1);
-    padding: 10px;
-    border-radius: 8px;
+    padding: 12px;
+    margin-top: 20px;
+    background-color: rgba(218, 165, 32, 0.15); /* 金色透明背景 */
+    border: 1px dashed var(--color-frame-gold);
+    border-radius: var(--border-radius);
 }
-#page-profile .profile-actions {
-    flex-shrink: 0;
-    margin-top: 15px;
+.profile-actions {
+    margin-top: 20px;
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
 }
 .profile-actions .cta-button {
-    font-size: 0.9rem;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    box-shadow: none;
+    font-size: 1rem;
+    padding: 15px 5px; /* 增加垂直 padding */
 }
-.profile-actions .cta-button:hover {
-    background: var(--primary-accent);
+
+/* D. 預約/經驗/租借歷史頁 */
+/* 樣式已由通用 .card, h1, .details-back-button 覆蓋 */
+
+/* E. 場地預約 (page-booking) */
+#booking-wizard-container .booking-step { display: none; }
+#booking-wizard-container .booking-step.active { display: block; }
+.booking-header { text-align: center; }
+.booking-header h1 { border: none; }
+.booking-subtitle { margin-top: -20px; }
+.preference-btn {
+    width: 100%;
+    padding: 20px;
+    margin-bottom: 15px;
+    background: var(--color-card-background);
+    border: 1px solid var(--color-frame-gold);
+    border-radius: var(--border-radius);
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.preference-btn:hover {
+    transform: scale(1.02);
+    border-color: var(--color-frame-gold-light);
+}
+.preference-btn h3 { border: none; padding: 0; margin: 0 0 10px 0; }
+.discount-highlight, .booking-notice {
+    text-align: center;
+    padding: 10px;
+    margin-top: 20px;
+    border-radius: var(--border-radius);
+}
+.discount-highlight {
+    background-color: rgba(218, 165, 32, 0.15);
+    border: 1px dashed var(--color-frame-gold);
+}
+.booking-notice {
+    background-color: rgba(74, 55, 40, 0.05);
+}
+
+/* 日期選擇器 Flatpickr 樣式覆蓋 */
+.flatpickr-calendar {
+    background: var(--color-card-background) !important;
+    border-radius: var(--border-radius) !important;
+    border: 1px solid var(--color-frame-gold) !important;
+    box-shadow: var(--box-shadow) !important;
+    width: 100% !important;
+}
+.flatpickr-day.selected {
+    background: var(--color-frame-gold) !important;
+    border-color: var(--color-frame-gold) !important;
+}
+.flatpickr-day:hover {
+    background: rgba(184, 134, 11, 0.2) !important;
+}
+.flatpickr-weekday, .flatpickr-monthDropdown-months .flatpickr-monthDropdown-month {
+    color: var(--color-text-primary) !important;
+    font-family: var(--font-primary) !important;
+}
+span.arrowUp:after { border-bottom-color: var(--color-text-primary) !important; }
+span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
+
+#booking-slots-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.slot-button { /* 動態生成 */
+    padding: 12px 5px;
+    font-family: var(--font-primary);
+    border: 1px solid var(--color-frame-gold);
+    background: transparent;
+    color: var(--color-text-secondary);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.slot-button:hover:not(:disabled) {
+    background: var(--color-frame-gold);
     color: white;
+}
+.slot-button:disabled {
+    background: rgba(0,0,0,0.1);
+    border-color: rgba(0,0,0,0.1);
+    cursor: not-allowed;
+}
+#contact-summary {
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+.summary-card p {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--color-frame-gold);
+}
+.summary-card p span:last-child {
+    font-weight: bold;
+}
+
+/* F. 店家資訊 (page-info) */
+.info-section {
+    margin-bottom: 25px;
+}
+.info-section h2 {
+    border: none;
+    padding: 0;
+    margin-bottom: 10px;
+}
+#store-hours {
+    white-space: pre-wrap;
+    font-family: var(--font-primary);
 }
