@@ -15,10 +15,12 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
-    // 根據 filter 參數動態改變查詢條件
+    // ** 核心修正：調整篩選邏輯 **
+    // 'current'：僅顯示未來或今天，且狀態為 'confirmed' 的預約
+    // 'past'：顯示過去日期的所有預約，以及未來或今天但狀態已是 'checked-in' 或 'cancelled' 的預約
     const condition = filter === 'current' 
-      ? "booking_date >= date('now', 'localtime')" 
-      : "booking_date < date('now', 'localtime')";
+      ? "booking_date >= date('now', 'localtime') AND status = 'confirmed'" 
+      : "booking_date < date('now', 'localtime') OR status IN ('checked-in', 'cancelled')";
     
     const stmt = db.prepare(
       `SELECT *, 
@@ -30,8 +32,8 @@ export async function onRequest(context) {
         END as status_text
        FROM Bookings 
        WHERE user_id = ? 
-       AND ${condition}
-       ORDER BY booking_date DESC, time_slot DESC` // 過往紀錄改為降序
+       AND (${condition})
+       ORDER BY booking_date DESC, time_slot DESC`
     );
     const { results } = await stmt.bind(userId).all();
 
