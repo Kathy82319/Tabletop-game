@@ -124,49 +124,42 @@
     <div id="rental-history-container"><p>正在查詢您的租借紀錄...</p></div>
 </div>
 
-        <div id="page-edit-profile">
-            <button class="details-back-button" style="margin-bottom: 20px;">← 返回</button>
-            <div style="text-align: center;">
-                <h1>冒險者檔案</h1>
-                <p style="color: #666; margin-top: -10px; margin-bottom: 30px;">冒險者履歷，讓我們更了解你！</p>
-            </div>
-             <form id="edit-profile-form">
-                <div class="input-group">
-                    <label for="edit-profile-name">(LINE)</label>
-                    <input type="text" id="edit-profile-name" readonly style="background-color: #e9ecef; cursor: not-allowed;">
-                </div>
-                <div class="input-group">
-                    <label for="edit-profile-real-name">姓名</label>
-                    <input type="text" id="edit-profile-real-name" placeholder="用於訂位，請填寫真實姓名">
-                </div>
-                <div class="input-group">
-                    <label for="edit-profile-nickname">綽號</label>
-                    <input type="text" id="edit-profile-nickname" placeholder="您希望我們怎麼稱呼您？">
-                </div>
-                <div class="input-group">
-                    <label for="edit-profile-phone">聯絡電話</label>
-                    <input type="tel" id="edit-profile-phone" maxlength="10" placeholder="用於訂位等聯絡事宜">
-                </div>
-                <div class="input-group">
-                    <label for="edit-profile-email">電子信箱</label>
-                    <input type="email" id="edit-profile-email" placeholder="用於接收活動通知 (選填)">
-                </div>
-                <div class="input-group">
-                        <label for="edit-profile-games">偏好的遊戲類型 (可多選)</label>
-                        <div id="preferred-games-container" class="tag-selection-container">
-                        <option value="未提供">-- 請選擇 --</option>
-                        <option value="策略">策略</option>
-                        <option value="派對">派對</option>
-                        <option value="家庭">家庭</option>
-                        <option value="陣營">陣營</option>
-                        <option value="其他">其他 (請手動輸入)</option>
-                    </select>
-                    <input type="text" id="edit-profile-games-other" placeholder="請輸入其他偏好類型" style="display: none; margin-top: 10px;">
-                </div>
-                <button type="submit" class="cta-button" style="margin-top: 20px;">儲存資料</button>
-            </form>
-            <p id="edit-profile-form-status" class="form-status"></p>
+<div id="page-edit-profile">
+    <button class="details-back-button" style="margin-bottom: 20px;">← 返回</button>
+    <div style="text-align: center;">
+        <h1>冒險者檔案</h1>
+        <p style="color: #666; margin-top: -10px; margin-bottom: 30px;">冒險者履歷，讓我們更了解你！</p>
+    </div>
+     <form id="edit-profile-form">
+        <div class="input-group">
+            <label for="edit-profile-name">(LINE)</label>
+            <input type="text" id="edit-profile-name" readonly style="background-color: #e9ecef; cursor: not-allowed;">
         </div>
+        <div class="input-group">
+            <label for="edit-profile-real-name">姓名</label>
+            <input type="text" id="edit-profile-real-name" placeholder="用於訂位，請填寫真實姓名">
+        </div>
+        <div class="input-group">
+            <label for="edit-profile-nickname">綽號</label>
+            <input type="text" id="edit-profile-nickname" placeholder="您希望我們怎麼稱呼您？">
+        </div>
+        <div class="input-group">
+            <label for="edit-profile-phone">聯絡電話</label>
+            <input type="tel" id="edit-profile-phone" maxlength="10" placeholder="用於訂位等聯絡事宜">
+        </div>
+        <div class="input-group">
+            <label for="edit-profile-email">電子信箱</label>
+            <input type="email" id="edit-profile-email" placeholder="用於接收活動通知 (選填)">
+        </div>
+        <div class="input-group">
+            <label>偏好的遊戲類型 (可多選)</label>
+            <div id="preferred-games-container" class="tag-selection-container">
+            </div>
+        </div>
+        <button type="submit" class="cta-button" style="margin-top: 20px;">儲存資料</button>
+    </form>
+    <p id="edit-profile-form-status" class="form-status"></p>
+</div>
 
         <div id="page-booking">
             <div id="booking-wizard-container">

@@ -1,5 +1,4 @@
-// functions/api/get-users.js
-
+// REPLACE THIS FUNCTION
 export async function onRequest(context) {
   try {
     if (context.request.method !== 'GET') {
@@ -8,11 +7,10 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
-    // ** START: 關鍵修正 - 在查詢中加入 class 欄位 **
+    // ** 需求 1 修正：在查詢中加入 real_name 欄位 **
     const stmt = db.prepare(
-      'SELECT user_id, line_display_name, nickname, level, current_exp, tag, class FROM Users ORDER BY created_at DESC'
+      'SELECT user_id, line_display_name, nickname, real_name, level, current_exp, tag, class FROM Users ORDER BY created_at DESC'
     );
-    // ** END: 關鍵修正 **
     const { results } = await stmt.all();
 
     return new Response(JSON.stringify(results || []), {

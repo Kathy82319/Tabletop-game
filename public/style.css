@@ -737,3 +737,21 @@ th.sortable.desc::after {
     color: white;
     font-weight: bold;
 }
+
+/* --- 需求 2：美化租借品項標籤 --- */
+.game-tag-chip {
+    padding: 5px 8px 5px 12px; /* 調整內距讓文字和按鈕更協調 */
+}
+
+.game-tag-chip .remove-game-tag {
+    font-size: 16px; /* 加大 X 按鈕 */
+    line-height: 1;
+    padding: 0 4px;
+    margin-left: 6px;
+    border-radius: 50%; /* 圓形按鈕 */
+    transition: background-color 0.2s;
+}
+
+.game-tag-chip .remove-game-tag:hover {
+    background-color: rgba(255, 255, 255, 0.2); /* 滑鼠懸停時增加微亮效果 */
+}
