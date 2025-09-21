@@ -51,13 +51,13 @@ async function updateRowInSheet(env, sheetName, matchColumn, matchValue, updateD
     }
 }
 
-// REPLACE THIS FUNCTION
 export async function onRequest(context) {
   try {
     if (context.request.method !== 'POST') {
       return new Response('Invalid request method.', { status: 405 });
     }
 
+    // ** 需求 1 修改：接收 gameIds 陣列 **
     const { userId, gameIds, dueDate, deposit, lateFeePerDay, name, phone } = await context.request.json();
 
     if (!userId || !gameIds || !Array.isArray(gameIds) || gameIds.length === 0 || !dueDate || !name || !phone) {
@@ -98,10 +98,19 @@ export async function onRequest(context) {
         }
     });
 
-    // ** 步驟 3: 組合 LINE 訊息 (不變) **
+    // ** 需求 1 (補充) 修改：組合包含所有遊戲的訊息 **
     const rentalDateStr = new Date().toISOString().split('T')[0];
     const rentalDuration = Math.round((new Date(dueDate) - new Date(rentalDateStr)) / (1000 * 60 * 60 * 24));
-    const message = `姓名：${name}\n電話：${phone}\n日期：${rentalDateStr}\n租借時間：${rentalDuration}天\n歸還日期：${dueDate}\n租借遊戲：\n- ${allGameNames.join('\n- ')}\n\n租借規則：...`;
+
+    const message = `姓名：${name}\n` +
+                    `電話：${phone}\n` +
+                    `日期：${rentalDateStr}\n` +
+                    `租借時間：${rentalDuration}天\n` +
+                    `歸還日期：${dueDate}\n` +
+                    `租借遊戲：\n- ${allGameNames.join('\n- ')}\n\n` + // 條列所有遊戲
+                    `租借規則：桌遊租借注意事項：\n1.收取遊戲定價之押金，於歸還桌遊時退還押金。\n2.內容物需現場自行依照說明書或配件表清點，並確認能正常使用，若歸還時有缺少或損毀，將不退還押金。\n3.最短租期為3天，租借當日即算第一天。\n4.逾期歸還，每逾期一天從押金扣50元。\n` +
+                    `如上面資訊沒有問題，請回覆「ok」並視為同意租借規則\n`+
+                    `感謝您的預約！`;
 
     // ** 步驟 4: 觸發所有背景任務 **
     context.waitUntil((async () => {
