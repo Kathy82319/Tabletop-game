@@ -560,6 +560,48 @@
         </div>
     </div>
 
+<div id="edit-rental-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-rental-title">管理租借紀錄</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <form id="edit-rental-form">
+            <input type="hidden" id="edit-rental-id">
+            <div class="form-group">
+                <label>系統計算逾期總額</label>
+                <input type="text" id="calculated-late-fee-display" readonly style="background: #e9ecef; color: var(--danger-color); font-weight: bold;">
+            </div>
+            <div class="form-group">
+                <label for="edit-rental-due-date">修改應還日期 (延期)</label>
+                <input type="text" id="edit-rental-due-date">
+            </div>
+            <div class="form-group">
+                <label for="edit-rental-override-fee">手動覆寫逾期金額 (選填)</label>
+                <input type="number" id="edit-rental-override-fee" min="0" placeholder="留空則由系統自動計算">
+            </div>
+            <div class="form-actions">
+                <button type="button" class="action-btn btn-cancel">取消</button>
+                <button type="submit" class="action-btn btn-save">儲存變更</button>
+            </div>
+        </form>
+        <div class="message-sender" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+            <h4>發送 LINE 訊息</h4>
+            <div class="form-group">
+                <label for="rental-message-draft-select">選擇訊息草稿</label>
+                <select id="rental-message-draft-select"><option value="">-- 手動輸入或選擇草稿 --</option></select>
+            </div>
+            <div class="form-group">
+                <label for="rental-direct-message-content">訊息內容</label>
+                <textarea id="rental-direct-message-content" rows="4"></textarea>
+            </div>
+            <div class="form-actions">
+                <button id="rental-send-direct-message-btn" class="action-btn btn-save">確認發送</button>
+            </div>
+        </div>
+    </div>
+</div>
+
     <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="/admin-login.js"></script>
