@@ -10,14 +10,13 @@ export async function onRequest(context) {
     const url = new URL(request.url);
     const statusFilter = url.searchParams.get('status');
 
-    // ** 關鍵修改：JOIN BoardGames 表格以獲取 late_fee_per_day **
     let query = `
       SELECT
         r.rental_id, r.rental_date, r.due_date, r.return_date, r.status,
-        r.late_fee_paid,
+        r.late_fee_override, -- 讀取新的覆寫欄位
         u.line_display_name, u.nickname,
         b.name as game_name,
-        b.late_fee_per_day -- 取得每日逾期費用
+        b.late_fee_per_day
       FROM Rentals AS r
       LEFT JOIN Users AS u ON r.user_id = u.user_id
       LEFT JOIN BoardGames AS b ON r.game_id = b.game_id
@@ -36,21 +35,26 @@ export async function onRequest(context) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // ** 關鍵修改：動態計算逾期天數和費用 **
     results = results.map(rental => {
         const dueDate = new Date(rental.due_date);
         let derived_status = rental.status;
         let overdue_days = 0;
         let calculated_late_fee = 0;
 
-    // 【關鍵修改】
-    if (rental.late_fee_override !== null && rental.late_fee_override !== undefined) {
-        // 如果有手動覆寫的值，就直接使用它
-        calculated_late_fee = rental.late_fee_override;
-    } else if (overdue_days > 0) {
-        // 否則，才進行自動計算
-        calculated_late_fee = overdue_days * (rental.late_fee_per_day || 50);
-    }
+        if (rental.status === 'rented' && dueDate < today) {
+            derived_status = 'overdue';
+            const diffTime = Math.abs(today - dueDate);
+            overdue_days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+        
+        // 逾期金額計算邏輯
+        if (rental.late_fee_override !== null && rental.late_fee_override !== undefined) {
+            // 如果有手動覆寫的值，就直接使用它
+            calculated_late_fee = rental.late_fee_override;
+        } else if (overdue_days > 0) {
+            // 否則，才進行自動計算
+            calculated_late_fee = overdue_days * (rental.late_fee_per_day || 50);
+        }
 
         return { ...rental, derived_status, overdue_days, calculated_late_fee };
     });

@@ -43,34 +43,50 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    // 【修改】只接收 rentalId 和 dueDate
-    const { rentalId, dueDate } = await context.request.json();
+    const { rentalId, dueDate, lateFeeOverride } = await context.request.json();
 
-    if (!rentalId || !dueDate) {
-      return new Response(JSON.stringify({ error: '缺少租借 ID 或應還日期。' }), { status: 400 });
+    if (!rentalId) {
+      return new Response(JSON.stringify({ error: '缺少租借 ID。' }), { status: 400 });
     }
 
     const db = context.env.DB;
+    const updates = [];
+    const params = [];
 
-    const stmt = db.prepare(`UPDATE Rentals SET due_date = ? WHERE rental_id = ?`);
-    const result = await stmt.bind(dueDate, rentalId).run();
+    if (dueDate) {
+        updates.push("due_date = ?");
+        params.push(dueDate);
+    }
+
+    if (lateFeeOverride !== undefined) {
+        updates.push("late_fee_override = ?");
+        const valueToSet = (lateFeeOverride === '' || lateFeeOverride === null) ? null : Number(lateFeeOverride);
+        params.push(valueToSet);
+    }
+
+    if (updates.length === 0) {
+        return new Response(JSON.stringify({ success: true, message: '沒有提供任何要更新的資料。' }), { status: 200 });
+    }
+
+    params.push(rentalId);
+
+    const stmt = db.prepare(`UPDATE Rentals SET ${updates.join(', ')} WHERE rental_id = ?`);
+    const result = await stmt.bind(...params).run();
 
     if (result.meta.changes === 0) {
       return new Response(JSON.stringify({ error: `找不到租借 ID: ${rentalId}，無法更新。` }), { status: 404 });
     }
-    // 【新增】觸發背景同步任務，更新 Google Sheet
-    const dataToSync = { due_date: dueDate };
+
+    const dataToSync = {};
+    if (dueDate) dataToSync.due_date = dueDate;
+    if (lateFeeOverride !== undefined) dataToSync.late_fee_override = (lateFeeOverride === '' || lateFeeOverride === null) ? '' : Number(lateFeeOverride);
+
     context.waitUntil(
-        updateRowInSheet(context.env, '桌遊租借者', 'Rentals', 'rental_id', rentalId, dataToSync)
-        .catch(err => console.error("背景同步應還日期失敗:", err))
+        updateRowInSheet(context.env, '預約紀錄', 'rental_id', rentalId, dataToSync)
+        .catch(err => console.error("背景同步更新租借詳情失敗:", err))
     );
 
-    return new Response(JSON.stringify({ success: true, message: '成功更新應還日期！' }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    return new Response(JSON.stringify({ success: true, message: '成功更新應還日期！' }), {
+    return new Response(JSON.stringify({ success: true, message: '成功更新租借資訊！' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

@@ -1028,63 +1028,57 @@ if (rentalListTbody) {
 }
 // public/admin-login.js 中任意空白處，貼上以下完整函式
 
-function openEditRentalModal(rentalId) {
-    const rental = allRentals.find(r => r.rental_id == rentalId);
-    if (!rental) return alert('找不到該筆租借紀錄');
+    function openEditRentalModal(rentalId) {
+        const rental = allRentals.find(r => r.rental_id == rentalId);
+        if (!rental) return alert('找不到該筆租借紀錄');
 
-    document.getElementById('edit-rental-id').value = rental.rental_id;
-    document.getElementById('modal-rental-title').textContent = `管理租借：${rental.game_name}`;
+        document.getElementById('edit-rental-id').value = rental.rental_id;
+        document.getElementById('modal-rental-title').textContent = `管理租借：${rental.game_name}`;
+        
+        // 系統自動計算的金額 (僅供參考)
+        const autoCalculatedFee = rental.overdue_days > 0 ? rental.overdue_days * (rental.late_fee_per_day || 50) : 0;
+        document.getElementById('calculated-late-fee-display').value = `$ ${autoCalculatedFee}`;
 
-    // ** 關鍵修改：顯示自動計算的金額 **
-    const feeDisplay = document.getElementById('calculated-late-fee-display');
-    if (rental.calculated_late_fee > 0) {
-        feeDisplay.value = `$ ${rental.calculated_late_fee} (逾期 ${rental.overdue_days} 天)`;
-    } else {
-        feeDisplay.value = '$ 0 (未逾期)';
+        document.getElementById('edit-rental-due-date').value = rental.due_date;
+        
+        // 顯示資料庫中已儲存的覆寫金額
+        // 使用 ?? 確保 null 或 undefined 的情況下，輸入框顯示為空字串
+        document.getElementById('edit-rental-override-fee').value = rental.late_fee_override ?? '';
+
+        flatpickr("#edit-rental-due-date", { dateFormat: "Y-m-d" });
+
+        editRentalModal.style.display = 'flex';
     }
 
-    document.getElementById('edit-rental-due-date').value = rental.due_date;
-    // 這裡顯示的是資料庫中已記錄的支付金額
-    document.getElementById('edit-rental-late-fee').value = rental.late_fee_paid || '';
+    // 【找到並替換 editRentalForm 的 submit 事件監聽器】
+    if (editRentalForm) {
+        editRentalForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const rentalId = document.getElementById('edit-rental-id').value;
+            const updatedData = {
+                rentalId: Number(rentalId),
+                dueDate: document.getElementById('edit-rental-due-date').value,
+                lateFeeOverride: document.getElementById('edit-rental-override-fee').value
+            };
 
-    flatpickr("#edit-rental-due-date", { dateFormat: "Y-m-d" });
+            try {
+                const response = await fetch('/api/admin/update-rental-details', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || '更新失敗');
 
-    editRentalModal.style.display = 'flex';
-}
+                alert('更新成功！');
+                editRentalModal.style.display = 'none';
+                await applyRentalFiltersAndRender();
 
-if (editRentalModal) {
-    editRentalModal.querySelector('.modal-close').addEventListener('click', () => editRentalModal.style.display = 'none');
-    editRentalModal.querySelector('.btn-cancel').addEventListener('click', () => editRentalModal.style.display = 'none');
-}
-
-if (editRentalForm) {
-    editRentalForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const rentalId = document.getElementById('edit-rental-id').value;
-        const updatedData = {
-            rentalId: Number(rentalId),
-            dueDate: document.getElementById('edit-rental-due-date').value,
-            lateFeePaid: document.getElementById('edit-rental-late-fee').value
-        };
-
-        try {
-            const response = await fetch('/api/admin/update-rental-details', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedData)
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || '更新失敗');
-
-            alert('更新成功！');
-            editRentalModal.style.display = 'none';
-            await applyRentalFiltersAndRender(); // 重新整理列表
-
-        } catch (error) {
-            alert(`錯誤： ${error.message}`);
-        }
-    });
-}
+            } catch (error) {
+                alert(`錯誤： ${error.message}`);
+            }
+        });
+    }
 
 
 async function openCreateRentalModal(gameId) { // 【修改】在函式前加上 async
