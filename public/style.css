@@ -602,7 +602,8 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     color: var(--color-text-primary);
     
     /* 統一加上您想要的分隔線 */
-    border-bottom: 2px solid var(--color-frame-gold);
+    border-bottom: 2px solid var(--color-frame-gold); /* <--- 問題根源 */
+    padding-bottom: 8px;
     
     /* 統一間距 */
     margin-top: 8px;    /* 標題與頁面頂部的距離 */
