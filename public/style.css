@@ -62,8 +62,6 @@ body {
 /* 標題樣式 */
 h1, h2, h3 {
     color: var(--color-text-primary);
-    border-bottom: 2px solid var(--color-frame-gold);
-    padding-bottom: 8px;
     margin-bottom: 20px;
 }
 
@@ -214,10 +212,6 @@ input[readonly] {
 .news-header {
     text-align: center;
     margin-bottom: 20px;
-}
-.news-header h1 {
-    border: none;
-    font-size: 2.5rem;
 }
 
 #news-filter-container {
@@ -431,7 +425,6 @@ input[readonly] {
 #booking-wizard-container .booking-step { display: none; }
 #booking-wizard-container .booking-step.active { display: block; }
 .booking-header { text-align: center; }
-.booking-header h1 { border: none; }
 .booking-subtitle { margin-top: -20px; }
 .preference-btn {
     width: 100%;
@@ -540,10 +533,34 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 /* =================================================================
-   追加樣式 v3 (最終修正版)
+   追加樣式 v4 (最終整合版)
    ================================================================= */
 
-/* --- 1. 導覽列文字排版優化 (維持不變) --- */
+/* --- 1. 統一頁面主標題樣式 --- */
+/*
+  這個規則現在是唯一控制這四個頁面主標題樣式的源頭，
+  確保它們外觀完全一致。
+*/
+#page-home .news-header h1,
+#page-profile > h1,
+#page-booking .booking-header h1,
+#page-info > h1 {
+    text-align: center;
+    font-size: 2.2rem; 
+    font-weight: 600;
+    color: var(--color-text-primary);
+    
+    /* 統一加上您想要的分隔線 */
+    border-bottom: 2px solid var(--color-frame-gold);
+    
+    /* 統一間距 */
+    margin-top: 8px;    /* 標題與頁面頂部的距離 */
+    margin-bottom: 25px; /* 標題與下方內容的距離 */
+    padding-bottom: 8px;  /* 文字與分隔線的距離 */
+}
+
+
+/* --- 2. 導覽列文字排版優化 --- */
 #tab-bar {
     height: 70px;
 }
@@ -553,38 +570,13 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     padding: 5px;
 }
 
-/* --- 2. 統一頁面主標題樣式 (全新修正邏輯) --- */
 
-/* 步驟 A: 先移除所有頁面 H1 的預設樣式，回歸基本 */
-#page-templates h1 {
-    border-bottom: none;
-    padding-bottom: 0;
-    margin-top: 0;
-}
-
-/* 步驟 B: 為我們指定的四個頁面，建立一個統一、高權重的標題樣式 */
-.page-main-title {
-    text-align: center;
-    font-size: 2.1rem;
-    font-weight: 600;
-    color: var(--color-text-primary);
-    
-    /* 統一加上您想要的分隔線 */
-    border-bottom: 2px solid var(--color-frame-gold);
-    
-    /* 調整頂部距離與分隔線距離 */
-    margin-top: 10px;  /* 與頁面頂部的距離，您可以調整這個數字 */
-    margin-bottom: 25px;
-    padding-bottom: 10px;
-}
-
-
-/* --- 3. 冒險者資料頁面全版面優化 (更緊湊的版本) --- */
+/* --- 3. 冒險者資料頁面全版面優化 --- */
 #page-templates > #page-profile {
     display: flex;
     flex-direction: column;
     height: calc(100vh - 70px - 20px); 
-    padding: 10px 15px;
+    padding: 8px 15px;
     box-sizing: border-box;
 }
 
@@ -603,29 +595,29 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 #page-profile #qrcode {
-    padding: 10px;
+    padding: 8px;
 }
 
 .profile-details-grid {
     flex-shrink: 0;
     margin-top: 5px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 #page-profile #user-perk-display {
     flex-shrink: 0;
-    margin-top: 10px;
+    margin-top: 8px;
     padding: 8px;
 }
 
 #page-profile .profile-actions {
     flex-shrink: 0;
-    margin-top: 10px;
+    margin-top: 8px;
     gap: 10px;
 }
 
 .profile-actions .cta-button {
     font-size: 0.9rem;
-    padding: 10px 5px;
+    padding: 8px 5px;
     line-height: 1.3;
 }
