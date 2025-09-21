@@ -209,27 +209,28 @@
     </div>
 
 <div id="page-bookings" class="page">
-            <div class="page-header">
-                <h2>訂位管理</h2>
-                <div> <button id="full-sync-bookings-btn" class="action-btn" style="background-color: #17a2b8; margin-right: 10px;">手動同步至 Sheet</button>
-                <button id="manage-booking-dates-btn" class="action-btn" style="background-color: #ffc107; color: #000;">管理公休日</button>
-            </div>
-            <div class="filter-bar">
-                <div id="booking-status-filter" class="filter-group">
-                    <button class="active" data-filter="today">今日預約</button>
-                    <button data-filter="confirmed">未來預約</button>
-                    <button data-filter="checked-in">已報到</button>
-                    <button data-filter="cancelled">已取消</button>
-                </div>
-            </div>
-            <table>
-                <thead>
-                    <tr><th>時間</th><th>客戶</th><th>人數</th><th>狀態</th><th>操作</th></tr>
-                </thead>
-                <tbody id="booking-list-tbody"></tbody>
-            </table>
+    <div class="page-header">
+        <h2>訂位管理</h2>
+        <div>
+            <button id="full-sync-bookings-btn" class="action-btn" style="background-color: #17a2b8; margin-right: 10px;">手動同步至 Sheet</button>
+            <button id="manage-booking-dates-btn" class="action-btn" style="background-color: #ffc107; color: #000;">管理公休日</button>
         </div>
-
+    </div>
+    <div class="filter-bar">
+        <div id="booking-status-filter" class="filter-group">
+            <button class="active" data-filter="today">今日預約</button>
+            <button data-filter="confirmed">未來預約</button>
+            <button data-filter="checked-in">已報到</button>
+            <button data-filter="cancelled">已取消</button>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr><th>時間</th><th>客戶</th><th>人數</th><th>狀態</th><th>操作</th></tr>
+        </thead>
+        <tbody id="booking-list-tbody"></tbody>
+    </table>
+</div>
         <div id="page-exp-history" class="page">
             <div class="page-header">
                 <h2>經驗紀錄查詢</h2>
@@ -398,6 +399,7 @@
                 <h3>建立租借紀錄</h3>
                 <button class="modal-close">&times;</button>
             </div>
+            <div id="rental-modal-status" style="text-align: center; color: var(--primary-color); min-height: 20px;"></div>
             <form id="create-rental-form">
                 <input type="hidden" id="rental-game-id">
                 <div class="form-group">

@@ -1026,12 +1026,16 @@ if (rentalListTbody) {
         }
     });
 }
-// public/admin-login.js 中任意空白處，貼上以下完整函式
 
     function openEditRentalModal(rentalId) {
         const rental = allRentals.find(r => r.rental_id == rentalId);
         if (!rental) return alert('找不到該筆租借紀錄');
 
+        // 補上「管理租借」視窗的關閉事件監聽
+        if (editRentalModal) {
+        editRentalModal.querySelector('.modal-close').addEventListener('click', () => editRentalModal.style.display = 'none');
+        editRentalModal.querySelector('.btn-cancel').addEventListener('click', () => editRentalModal.style.display = 'none');
+        }
         document.getElementById('edit-rental-id').value = rental.rental_id;
         document.getElementById('modal-rental-title').textContent = `管理租借：${rental.game_name}`;
         
@@ -1085,13 +1089,17 @@ async function openCreateRentalModal(gameId) { // 【修改】在函式前加上
     const game = allGames.find(g => g.game_id == gameId);
     if (!game) { alert('找不到遊戲資料！'); return; }
 
-    // 【新增】檢查會員資料是否已載入
+    const statusDiv = document.getElementById('rental-modal-status');
+    if(statusDiv) statusDiv.textContent = ''; // 先清空狀態
+
     if (allUsers.length === 0) {
-        alert('正在載入會員列表，請稍候...');
+        if(statusDiv) statusDiv.textContent = '正在載入會員列表，請稍候...';
         try {
-            await fetchAllUsers(); // 等待會員資料載入完成
+            await fetchAllUsers();
+            if(statusDiv) statusDiv.textContent = '會員列表載入完成！';
         } catch (error) {
             alert('會員列表載入失敗，無法建立租借紀錄。');
+            if(statusDiv) statusDiv.textContent = '';
             return;
         }
     }
