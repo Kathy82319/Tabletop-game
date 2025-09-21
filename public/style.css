@@ -177,47 +177,89 @@ body {
 }
 
 /* =================================================================
-   冒險者資料頁
+   ** 全新 ** 冒險者資料頁面排版 V2
    ================================================================= */
 #page-templates > #page-profile {
     display: flex;
-    flex-direction: column;
-    height: calc(100vh - 95px);
+    flex-direction: column; /* 內容垂直排列 */
+    height: calc(100vh - 95px); /* 高度為可視高度減去上下 padding */
     padding: 15px;
+    box-sizing: border-box; /* 確保 padding 不會增加總高度 */
 }
-#profile-info #display-name {
-    color: var(--primary-accent);
+
+#page-profile > h1 {
+    flex-shrink: 0; /* 不讓標題被壓縮 */
 }
-#qrcode-container {
-    flex-grow: 1;
+
+#page-profile #qrcode-container {
+    flex-grow: 1; /* 主要的 flex 成長空間，讓 QR Code 佔據大部分區域 */
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 15px auto;
+    width: 100%;
+    min-height: 100px; /* 給一個最小高度，避免內容過多時被壓縮得太小 */
+    margin: 10px 0;
 }
-#qrcode {
-    border-radius: 8px;
-    padding: 10px;
-    background-color: white;
+
+#page-profile #qrcode {
+    padding: 15px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
-#page-profile .profile-actions {
-    margin-top: auto;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 手機上改為兩欄 */
-    gap: 15px;
+
+.profile-details-grid {
+    display: flex;
+    align-items: center; /* 垂直置中對齊 */
+    gap: 20px; /* 頭像和資料的間距 */
+    flex-shrink: 0;
+    margin-top: 10px;
 }
-.profile-actions .cta-button {
-    background: var(--bg-content);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    box-shadow: none;
+
+.profile-avatar img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid var(--card-bg);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.profile-stats {
+    flex-grow: 1;
+}
+
+.profile-stats h2 {
+    margin: 0 0 8px 0;
+    font-size: 1.5rem;
+    color: var(--text-color);
+}
+
+.profile-stats p {
+    margin: 4px 0;
     font-size: 0.9rem;
-    padding: 15px 5px;
+    color: #666;
 }
-.profile-actions .cta-button:hover {
-    background: var(--primary-accent);
-    color: var(--bg-main);
-    border-color: var(--primary-accent);
+.profile-stats p strong {
+    color: var(--text-color);
+}
+
+#page-profile #user-perk-display {
+    flex-shrink: 0;
+    margin-top: 15px;
+    text-align: center;
+}
+
+#page-profile .profile-actions {
+    flex-shrink: 0;
+    margin-top: 15px; /* 與上方福利的間距 */
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.profile-actions .cta-button {
+    padding: 12px 5px;
+    font-size: 0.9rem;
 }
 
 /* =================================================================

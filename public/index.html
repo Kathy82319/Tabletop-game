@@ -73,32 +73,36 @@
             </div>
         </div>            
 
-        <div id="page-profile">
-             <h1>冒險者資料</h1>
-             <div id="profile-info" style="text-align: center; margin-top: 20px;">
-                 <img id="profile-picture" src="" alt="Profile Picture" style="width: 100px; height: 100px; border-radius: 50%;">
-                 <h2 id="display-name" style="margin-top: 10px;"></h2>
-                 <p id="status-message" style="color: #aaa;"></p>
-             </div>
-             <div id="qrcode-container" style="background-color: white; padding: 20px; margin: 25px auto; width: 200px; height: 200px;">
-                 <div id="qrcode" style="width:200px; height:200px;"></div>
-             </div>
-             <div style="margin-top: 10px;">
-                 <p>職業：<span id="user-class">--</span></p> 
-                 <p>等級：<span id="user-level">--</span></p>
-                 <p>經驗值：<span id="user-exp">-- / -- </span></p>
-                 <div id="user-perk-display" class="perk-display" style="display: none;">
-                     <strong>✨ 職業福利：</strong><span id="user-perk"></span>
-                 </div>
-             </div>
-             
-             <div class="profile-actions">
-                <button class="cta-button" id="edit-profile-btn">冒險者<br>檔案</button>
-                <button class="cta-button" id="my-bookings-btn">預約的<br>冒險旅程</button>
-                <button class="cta-button" id="my-exp-history-btn">經驗<br>成長紀錄</button>
-                <button class="cta-button" id="rental-history-btn">桌遊<br>租借紀錄</button>
-             </div>
-             </div>
+<div id="page-profile">
+    <h1>冒險者資料</h1>
+    
+    <div id="qrcode-container">
+        <div id="qrcode"></div>
+    </div>
+    
+    <div class="profile-details-grid">
+        <div class="profile-avatar">
+            <img id="profile-picture" src="placeholder.jpg" alt="Profile Picture">
+        </div>
+        <div class="profile-stats">
+            <h2 id="display-name">讀取中...</h2>
+            <p><strong>職業：</strong><span id="user-class">--</span></p> 
+            <p><strong>等級：</strong><span id="user-level">--</span></p>
+            <p><strong>經驗值：</strong><span id="user-exp">-- / --</span></p>
+        </div>
+    </div>
+
+    <div id="user-perk-display" class="perk-display" style="display: none;">
+        <strong>✨ 職業福利：</strong><span id="user-perk"></span>
+    </div>
+
+    <div class="profile-actions">
+       <button class="cta-button" id="edit-profile-btn">冒險者<br>檔案</button>
+       <button class="cta-button" id="my-bookings-btn">預約的<br>冒險旅程</button>
+       <button class="cta-button" id="my-exp-history-btn">經驗<br>成長紀錄</button>
+       <button class="cta-button" id="rental-history-btn">桌遊<br>租借紀錄</button>
+    </div>
+</div>
 
         <div id="page-my-bookings">
             <button class="details-back-button">← 返回個人資料</button>
