@@ -86,15 +86,18 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
+    // ** 需求 3 修改：將陣列轉換為逗號分隔的字串 **
+    const preferredGamesString = Array.isArray(preferredGames) ? preferredGames.join(',') : preferredGames || '未提供';
+
     const stmt = db.prepare(
       'UPDATE Users SET real_name = ?, nickname = ?, phone = ?, email = ?, preferred_games = ?, line_display_name = ?, line_picture_url = ? WHERE user_id = ?'
     );
     const result = await stmt.bind(
-        realName || '', // 綁定 realName
+        realName || '',
         nickname, 
         phone, 
         email || '',
-        preferredGames || '未提供', 
+        preferredGamesString, // 使用處理過的字串
         displayName,
         pictureUrl,
         userId
@@ -106,7 +109,7 @@ export async function onRequest(context) {
       });
     }
 
-    const userDataToSync = { userId, realName: realName || '', nickname, phone, email: email || '', preferredGames: preferredGames || '未提供', displayName, pictureUrl };
+    const userDataToSync = { userId, realName: realName || '', nickname, phone, email: email || '', preferredGames: preferredGamesString, displayName, pictureUrl };
     context.waitUntil(syncProfileUpdateToSheet(context.env, userDataToSync));
 
     return new Response(JSON.stringify({ 

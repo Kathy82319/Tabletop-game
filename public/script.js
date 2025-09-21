@@ -316,23 +316,28 @@ async function initializeProfilePage() {
         }
     }
 
-    function updateProfileDisplay(data) {
-        if (!data) return;
-        document.getElementById('display-name').textContent = data.nickname || userProfile.displayName;
-        document.getElementById('user-class').textContent = data.class || "無";
-        document.getElementById('user-level').textContent = data.level;
-        document.getElementById('user-exp').textContent = `${data.current_exp} / 10`;
+// public/script.js
 
-        const perkLine = document.getElementById('user-perk-line');
-        const perkSpan = document.getElementById('user-perk');
-        
-        if (perkLine && perkSpan && data.perk && data.class !== '無') {
-            perkSpan.textContent = data.perk;
-            perkLine.style.display = 'block';
-        } else if (perkLine) {
-            perkLine.style.display = 'none';
-        }
+// (替換掉舊的 updateProfileDisplay 函式)
+function updateProfileDisplay(data) {
+    if (!data) return;
+    document.getElementById('display-name').textContent = data.nickname || userProfile.displayName;
+    document.getElementById('user-class').textContent = data.class || "無";
+    document.getElementById('user-level').textContent = data.level;
+    document.getElementById('user-exp').textContent = `${data.current_exp} / 10`;
+
+    // 改為選取新的 <p> 元素
+    const perkLine = document.getElementById('user-perk-line');
+    const perkSpan = document.getElementById('user-perk');
+    
+    // 確保元素都存在，再根據資料決定是否顯示
+    if (perkLine && perkSpan && data.perk && data.class !== '無') {
+        perkSpan.textContent = data.perk;
+        perkLine.style.display = 'block'; // 顯示整行 <p>
+    } else if (perkLine) {
+        perkLine.style.display = 'none'; // 隱藏整行 <p>
     }
+}
 
     async function initializeMyBookingsPage() {
         if (!userProfile) return;
@@ -476,10 +481,32 @@ async function initializeRentalHistoryPage() {
             otherGamesInput.style.display = (gamesSelect.value === '其他') ? 'block' : 'none';
         });
 
-        const form = document.getElementById('edit-profile-form');
-        form.onsubmit = async (event) => {
-            event.preventDefault();
-            const statusMsg = document.getElementById('edit-profile-form-status');
+    // ** 需求 3 修改：處理偏好遊戲多選 **
+    const gamesContainer = document.getElementById('preferred-games-container');
+    if (gamesContainer) {
+        // 從 allGames 變數中提取所有不重複的標籤
+        const allTags = [...new Set(allGames.flatMap(g => (g.tags || '').split(',')).map(t => t.trim()).filter(Boolean))];
+        
+        // 使用者已選的標籤 (從字串轉為陣列)
+        const userTags = (userData.preferred_games || '').split(',').filter(Boolean);
+
+        gamesContainer.innerHTML = allTags.map(tag => {
+            const isActive = userTags.includes(tag) ? 'active' : '';
+            return `<button type="button" class="game-preference-tag ${isActive}" data-tag="${tag}">${tag}</button>`;
+        }).join('');
+
+        // 綁定點擊事件
+        gamesContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('game-preference-tag')) {
+                e.target.classList.toggle('active');
+            }
+        });
+    }
+
+    const form = document.getElementById('edit-profile-form');
+    form.onsubmit = async (event) => {
+        event.preventDefault();
+        const statusMsg = document.getElementById('edit-profile-form-status');
 
             const realNameInput = document.getElementById('edit-profile-real-name');
             const realName = realNameInput.value.trim();
@@ -498,35 +525,38 @@ async function initializeRentalHistoryPage() {
             }
 
             statusMsg.textContent = '儲存中...';
+        // ** 需求 3 修改：從按鈕狀態收集偏好遊戲 **
+        let selectedGames = [];
+        if (gamesContainer) {
+            selectedGames = Array.from(gamesContainer.querySelectorAll('.game-preference-tag.active')).map(btn => btn.dataset.tag);
+        }
+
+        const formData = {
+            userId: userProfile.userId,
+            realName: realName,
+            nickname: document.getElementById('edit-profile-nickname').value,
+            phone: document.getElementById('edit-profile-phone').value,
+            email: document.getElementById('edit-profile-email').value,
+            preferredGames: selectedGames, // 傳送陣列
+            displayName: userProfile.displayName,
+            pictureUrl: userProfile.pictureUrl || ''
+        };
+
+        try {
+            const response = await fetch('/api/update-user-profile', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData)
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || '儲存失敗');
             
-            let preferredGames = gamesSelect.value === '其他' ? otherGamesInput.value.trim() : gamesSelect.value;
+            gameData = {}; // 清空快取以便下次刷新
+            statusMsg.textContent = '儲存成功！';
+            statusMsg.style.color = 'green';
+            setTimeout(() => goBackPage(), 1500);
 
-            const formData = {
-                userId: userProfile.userId,
-                realName: realName,
-                nickname: document.getElementById('edit-profile-nickname').value,
-                phone: document.getElementById('edit-profile-phone').value,
-                email: document.getElementById('edit-profile-email').value,
-                preferredGames: preferredGames,
-                displayName: userProfile.displayName,
-                pictureUrl: userProfile.pictureUrl || ''
-            };
-
-            try {
-                const response = await fetch('/api/update-user-profile', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData)
-                });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error || '儲存失敗');
-                
-                gameData = {};
-                statusMsg.textContent = '儲存成功！';
-                statusMsg.style.color = 'green';
-                setTimeout(() => goBackPage(), 1500);
-
-            } catch (error) {
-                statusMsg.textContent = `儲存失敗: ${error.message}`;
-                statusMsg.style.color = 'red';
+        } catch (error) {
+            statusMsg.textContent = `儲存失敗: ${error.message}`;
+            statusMsg.style.color = 'red';
             }
         };
     }

@@ -689,3 +689,51 @@ th.sortable.desc::after {
     content: ' \\2193'; /* 向下箭頭 */
     color: var(--primary-color);
 }
+
+/* --- 修正：租借紀錄頁面排版 --- */
+.rental-card {
+    display: flex;
+    align-items: center; /* 讓圖片和文字垂直置中對齊 */
+    gap: 15px;
+}
+
+.rental-game-image {
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0; /* 防止圖片被壓縮 */
+    object-fit: cover;
+    border-radius: var(--border-radius);
+}
+
+.rental-info {
+    flex-grow: 1; /* 讓文字區域佔滿剩餘空間 */
+}
+
+.rental-info h3, .rental-info p {
+    margin: 5px 0; /* 調整文字間的垂直距離 */
+}
+
+/* --- 需求 3：偏好遊戲多選樣式 --- */
+.tag-selection-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 5px;
+}
+
+.game-preference-tag {
+    font-family: var(--font-primary);
+    padding: 6px 14px;
+    border: 1px solid var(--color-frame-gold);
+    background: transparent;
+    color: var(--color-text-secondary);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.game-preference-tag.active {
+    background: var(--color-frame-gold);
+    color: white;
+    font-weight: bold;
+}

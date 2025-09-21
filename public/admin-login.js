@@ -478,70 +478,71 @@ async function openUserDetailsModal(userId) {
         }
     }
 
-    function renderUserDetails(data) {
-        const { profile, bookings, rentals, exp_history } = data;
-        const contentContainer = userDetailsModal.querySelector('#user-details-content');
-        if (!contentContainer) return;
-        
-        const displayName = profile.nickname || profile.line_display_name;
-        document.getElementById('user-details-title').textContent = `顧客資料：${displayName}`;
+function renderUserDetails(data) {
+    const { profile, bookings, rentals, exp_history } = data;
+    const contentContainer = userDetailsModal.querySelector('#user-details-content');
+    if (!contentContainer) return;
+    
+    const displayName = profile.nickname || profile.line_display_name;
+    document.getElementById('user-details-title').textContent = `顧客資料：${displayName}`;
 
-        contentContainer.innerHTML = `
-            <div class="details-grid">
-                <div class="profile-summary">
-                    <img src="${profile.line_picture_url || 'placeholder.jpg'}" alt="Profile Picture">
-                    <h4>${displayName}</h4>
-                    <p>姓名: ${profile.real_name || '未設定'}</p>
-                    <p>等級: ${profile.level} (${profile.current_exp}/10 EXP)</p>
-                    <p>職業: ${profile.class}</p>
-                    <p>標籤: ${profile.tag || '無'}</p>
+    // ** 需求 2 修改：在 profile-summary 中增加手機和職業福利 **
+    contentContainer.innerHTML = `
+        <div class="details-grid">
+            <div class="profile-summary">
+                <img src="${profile.line_picture_url || 'placeholder.jpg'}" alt="Profile Picture">
+                <h4>${displayName}</h4>
+                <p>姓名: ${profile.real_name || '未設定'}</p>
+                <p>電話: ${profile.phone || '未設定'}</p> <p>等級: ${profile.level} (${profile.current_exp}/10 EXP)</p>
+                <p>職業: ${profile.class}</p>
+                <p>福利: ${profile.perk || '無'}</p> <p>標籤: ${profile.tag || '無'}</p>
+            </div>
+            <div class="profile-details">
+                <div class="details-tabs">
+                    <button class="details-tab active" data-target="tab-rentals">租借紀錄</button>
+                    <button class="details-tab" data-target="tab-bookings">預約紀錄</button>
+                    <button class="details-tab" data-target="tab-exp">經驗值紀錄</button>
                 </div>
-                <div class="profile-details">
-                    <div class="details-tabs">
-                        <button class="details-tab active" data-target="tab-rentals">租借紀錄</button>
-                        <button class="details-tab" data-target="tab-bookings">預約紀錄</button>
-                        <button class="details-tab" data-target="tab-exp">經驗值紀錄</button>
-                    </div>
-                    <div id="tab-rentals" class="details-tab-content active">
-                        ${renderHistoryTable(rentals, ['rental_date', 'game_name', 'status'], { rental_date: '租借日', game_name: '遊戲', status: '狀態' })}
-                    </div>
-                    <div id="tab-bookings" class="details-tab-content">
-                        ${renderHistoryTable(bookings, ['booking_date', 'num_of_people', 'status'], { booking_date: '預約日', num_of_people: '人數', status: '狀態' })}
-                    </div>
-                    <div id="tab-exp" class="details-tab-content">
-                        ${renderHistoryTable(exp_history, ['created_at', 'reason', 'exp_added'], { created_at: '日期', reason: '原因', exp_added: '經驗' })}
-                    </div>
+                <div id="tab-rentals" class="details-tab-content active">
+                    ${renderHistoryTable(rentals, ['rental_date', 'game_name', 'status'], { rental_date: '租借日', game_name: '遊戲', status: '狀態' })}
+                </div>
+                <div id="tab-bookings" class="details-tab-content">
+                    ${renderHistoryTable(bookings, ['booking_date', 'num_of_people', 'status'], { booking_date: '預約日', num_of_people: '人數', status: '狀態' })}
+                </div>
+                <div id="tab-exp" class="details-tab-content">
+                    ${renderHistoryTable(exp_history, ['created_at', 'reason', 'exp_added'], { created_at: '日期', reason: '原因', exp_added: '經驗' })}
                 </div>
             </div>
-            <div class="message-sender">
-                <h4>發送 LINE 訊息</h4>
-                <div class="form-group">
-                    <label for="message-draft-select">選擇訊息草稿</label>
-                    <select id="message-draft-select"><option value="">-- 手動輸入或選擇草稿 --</option></select>
-                </div>
-                <div class="form-group">
-                    <label for="direct-message-content">訊息內容</label>
-                    <textarea id="direct-message-content" rows="4"></textarea>
-                </div>
-                <div class="form-actions">
-                    <button id="send-direct-message-btn" class="action-btn btn-save" data-userid="${profile.user_id}">確認發送</button>
-                </div>
+        </div>
+        <div class="message-sender">
+            <h4>發送 LINE 訊息</h4>
+            <div class="form-group">
+                <label for="message-draft-select">選擇訊息草稿</label>
+                <select id="message-draft-select"><option value="">-- 手動輸入或選擇草稿 --</option></select>
             </div>
-        `;
+            <div class="form-group">
+                <label for="direct-message-content">訊息內容</label>
+                <textarea id="direct-message-content" rows="4"></textarea>
+            </div>
+            <div class="form-actions">
+                <button id="send-direct-message-btn" class="action-btn btn-save" data-userid="${profile.user_id}">確認發送</button>
+            </div>
+        </div>
+    `;
 
-        const tabsContainer = contentContainer.querySelector('.details-tabs');
-        const contentsContainer = contentContainer.querySelector('.profile-details');
-        tabsContainer.addEventListener('click', e => {
-            if (e.target.tagName === 'BUTTON') {
-                tabsContainer.querySelector('.active').classList.remove('active');
-                e.target.classList.add('active');
-                contentsContainer.querySelector('.details-tab-content.active').classList.remove('active');
-                contentsContainer.querySelector(`#${e.target.dataset.target}`).classList.add('active');
-            }
-        });
-        
-        loadAndBindMessageDrafts(profile.user_id);
-    }
+    const tabsContainer = contentContainer.querySelector('.details-tabs');
+    const contentsContainer = contentContainer.querySelector('.profile-details');
+    tabsContainer.addEventListener('click', e => {
+        if (e.target.tagName === 'BUTTON') {
+            tabsContainer.querySelector('.active').classList.remove('active');
+            e.target.classList.add('active');
+            contentsContainer.querySelector('.details-tab-content.active').classList.remove('active');
+            contentsContainer.querySelector(`#${e.target.dataset.target}`).classList.add('active');
+        }
+    });
+    
+    loadAndBindMessageDrafts(profile.user_id);
+}
     
 function renderHistoryTable(items, columns, headers) {
     if (!items || items.length === 0) return '<p>無相關紀錄</p>';

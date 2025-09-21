@@ -90,11 +90,11 @@
             <img id="profile-picture" src="placeholder.jpg" alt="Profile Picture">
         </div>
         <div class="profile-stats">
-            <h2 id="display-name">讀取中...</h2>
-            <p><strong>職業：</strong><span id="user-class">--</span></p> 
-            <p><strong>職業福利：</strong><span id="user-perk"></span></p>
-            <p><strong>等級：</strong><span id="user-level">--</span></p>
-            <p><strong>經驗值：</strong><span id="user-exp">-- / --</span></p>
+                <h2 id="display-name">讀取中...</h2>
+                <p><strong>職業：</strong><span id="user-class">--</span></p>
+                <p><strong>等級：</strong><span id="user-level">--</span></p>
+                <p><strong>經驗值：</strong><span id="user-exp">-- / --</span></p>
+                <p id="user-perk-line" style="display: none;"><strong>職業福利：</strong><span id="user-perk"></span></p>
         </div>
     </div>
 
@@ -152,8 +152,8 @@
                     <input type="email" id="edit-profile-email" placeholder="用於接收活動通知 (選填)">
                 </div>
                 <div class="input-group">
-                    <label for="edit-profile-games">偏好的遊戲類型</label>
-                    <select id="edit-profile-games">
+                        <label for="edit-profile-games">偏好的遊戲類型 (可多選)</label>
+                        <div id="preferred-games-container" class="tag-selection-container">
                         <option value="未提供">-- 請選擇 --</option>
                         <option value="策略">策略</option>
                         <option value="派對">派對</option>
