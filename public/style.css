@@ -1,355 +1,201 @@
 /* =================================================================
-   主題：午夜公會 (Midnight Guild)
-   設計師：Gemini
+   主題：復古羊皮紙 (Antique Parchment)
    ================================================================= */
 
-/* 步驟一：定義全新的色彩變數 */
+/* --- 色彩與字體變數定義 --- */
 :root {
-    --bg-main: #1A202C; /* 主背景色 (深藍灰) */
-    --bg-content: #2D3748; /* 內容/卡片背景色 (次級深藍灰) */
-    --primary-accent: #F6E05E; /* 主要亮色 (金色) */
-    --secondary-accent: #ECC94B; /* 次要亮色 (深金色) */
-    --text-primary: #EDF2F7; /* 主要文字顏色 (米白) */
-    --text-secondary: #A0AEC0; /* 次要文字顏色 (淺灰) */
-    --border-color: #4A5568; /* 邊框顏色 */
-    --danger-color: #F56565; /* 危險/提醒色 (紅色) */
-    --success-color: #48BB78; /* 成功色 (綠色) */
-    --font-family: 'Helvetica Neue', Arial, 'Hirino Sans GB', 'Microsoft YaHei', sans-serif;
+    --bg-parchment: #F5F1E8; /* 羊皮紙背景色 */
+    --bg-content: #FFFFFF; /* 內容/卡片背景色 */
+    --primary-accent: #8D6E63; /* 主要強調色 (暖棕色) */
+    --secondary-accent: #BCAAA4; /* 次要強調色 (淺棕色) */
+    --text-primary: #4E342E; /* 主要文字顏色 (深棕) */
+    --text-secondary: #795548; /* 次要文字顏色 (中棕) */
+    --border-color: #D7CCC8; /* 邊框顏色 */
+    --font-serif: 'Noto Serif TC', serif; /* 引入的襯線字體 */
+    --font-sans: 'Helvetica Neue', Arial, sans-serif; /* 備用無襯線字體 */
 }
 
-/* =================================================================
-   全域基礎樣式
-   ================================================================= */
+/* --- 全域與背景設定 --- */
 body {
-    background-color: var(--bg-main);
+    background-color: var(--bg-parchment);
+    /* 【關鍵】使用 Base64 編碼的無接縫紙張材質作為背景 */
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIQSURBVGhD7ZlPqgFREIa/q8TEgklisVi9iawmsbL5AdoENj9BtvACbJQUmyR2KbESFovFYrE4/zO4d2fump07M/dM5p0vPfdN3Z05M/fO3DMzxqRJk0ZraS+u1/v1fn3V6/XyE+zW63W/x+bX6xXW2VqtVuu16o/FYgWjI0302t9otKqeVqsVvA5YCa/Xy0i8+p2ussFgeDweQ/aTzyfP9Hr9YLrZ6XSmv5lMJoPxeLzM5/NptVrdx+K53e0WfzwcDrPZbI2/2O12YfP5PNtOp7PZbAazWq2Kx+PZ7/eT6XTyE/QGgwFmNBp9Ohz2+/2E1+st1Gq1oNNxPZck/5+y4WAwgG0221arVSwW+08xVqvVbrfbdDqN3+/nq5gMBoNhNBpBpk6n0x/w1+s1rFYr+Hw+TqcTfr//s5hsNuv3+wk8j2bb7TZ+v18ikQhmMpnk83lkMpm02+2YTCaRz+eLxWLRarWazWbL5XKpVCoIg8GgVCqFzWZDoVAIhUI0Gg0Gg0Gor9cjGAxqt9vp9XrY7XaoVCqIRCI8Hk9EvN/v5/V60Wq1EjaPxyOU+v0+LpfL5/PRaDQYDAY0Gg18Pp/X68Xn87Hb7fR6PfR6PYFAoL/fH/ij0Sj8fr9YLPZ7vV7UarWor7/b7XZarZbNZsvlcnA4HPR6vVwu12q1YrvdDs/3+/1WqxUej4fVahWz2YxCoRBCoRBmNJlMJpPJYDCIxWJVKbVbE+n1en0+30e01WqVSqWCyWQej0d4PF59o9F4iN0zT+YvM5nMSCQyGAzQarXyN5nN5vN1/j+n/wATcZOK2ynT/AAAAABJRU5ErkJggg==');
     color: var(--text-primary);
-    font-family: var(--font-family);
+    font-family: var(--font-serif);
     margin: 0;
     padding: 0;
-    padding-bottom: 70px; /* 為 Tab Bar 預留空間 */
+    padding-bottom: 70px;
 }
 
-#app-content {
-    padding: 15px;
-}
-
+/* --- 頁面標題 --- */
 #app-content > h1 {
     font-size: 1.8rem;
     text-align: center;
     margin-top: 0;
     margin-bottom: 25px;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* --- 底部導覽列 (Tab Bar) --- */
+#tab-bar {
+    background-color: #fcfbf8;
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08);
+}
+.tab-button {
+    color: var(--text-secondary);
+}
+.tab-button.active {
     color: var(--primary-accent);
     font-weight: 600;
 }
 
-/* =================================================================
-   底部導覽列 (Tab Bar)
-   ================================================================= */
-#tab-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 60px;
-    background-color: var(--bg-content);
-    border-top: 1px solid var(--border-color);
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-}
-
-.tab-button {
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    cursor: pointer;
-    padding: 10px;
-    border-radius: 8px;
-    transition: color 0.2s, background-color 0.2s;
-    flex-grow: 1;
-    text-align: center;
-}
-
-.tab-button.active {
-    color: var(--primary-accent);
-    font-weight: bold;
-}
-
-.tab-button:hover {
-    background-color: rgba(246, 224, 94, 0.1);
-}
-
-/* =================================================================
-   通用卡片樣式 (最新情報、桌遊圖鑑等)
-   ================================================================= */
+/* --- 通用卡片 (最新情報、桌遊圖鑑等) --- */
 .news-card, .game-card {
     background-color: var(--bg-content);
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    overflow: hidden;
+    border-radius: 8px;
     border: 1px solid var(--border-color);
-    transition: transform 0.2s, box-shadow 0.2s;
-    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(78, 52, 46, 0.08);
 }
 .news-card:hover, .game-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 6px 15px rgba(78, 52, 46, 0.12);
 }
 
-/* =================================================================
-   最新情報頁
-   ================================================================= */
+/* --- 最新情報頁 --- */
 #news-filter-container {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 25px;
-    padding: 5px;
-    background-color: var(--bg-main);
-    border-radius: 20px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--border-color);
 }
 .news-filter-btn {
-    padding: 8px 16px;
-    font-size: 0.9rem;
-    border: none;
-    background-color: transparent;
-    border-radius: 16px;
-    cursor: pointer;
-    transition: all 0.2s;
     color: var(--text-secondary);
 }
 .news-filter-btn.active {
     background-color: var(--primary-accent);
-    color: var(--bg-main);
-    font-weight: bold;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-#news-list-container {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+    color: white;
 }
 .news-card-header {
-    padding: 10px 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     border-bottom: 1px solid var(--border-color);
 }
 .news-card-category {
-    font-size: 0.8rem;
-    font-weight: bold;
     color: var(--primary-accent);
-    padding: 4px 10px;
-    border: 1px solid var(--primary-accent);
-    border-radius: 14px;
+    border-color: var(--primary-accent);
 }
 .news-card-date {
-    font-size: 0.8rem;
     color: var(--text-secondary);
-}
-.news-card-content {
-    padding: 15px;
 }
 .news-card-title {
-    font-size: 1.2rem;
-    margin: 0 0 10px 0;
     color: var(--text-primary);
-}
-.news-card-image-container { /* 新增 */
-    width: 100%;
-    height: 180px;
-    overflow: hidden;
-    border-radius: 8px;
-    margin-bottom: 10px;
-}
-.news-card-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-.news-card-snippet {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    line-height: 1.5;
+    font-family: var(--font-serif);
+    font-weight: 600;
 }
 
-/* =================================================================
-   ** 全新 ** 冒險者資料頁面排版 V2
-   ================================================================= */
+/* --- 冒險者資料頁 V2 --- */
 #page-templates > #page-profile {
     display: flex;
-    flex-direction: column; /* 內容垂直排列 */
-    height: calc(100vh - 95px); /* 高度為可視高度減去上下 padding */
+    flex-direction: column;
+    height: calc(100vh - 95px);
     padding: 15px;
-    box-sizing: border-box; /* 確保 padding 不會增加總高度 */
+    box-sizing: border-box;
 }
-
 #page-profile > h1 {
-    flex-shrink: 0; /* 不讓標題被壓縮 */
+    flex-shrink: 0;
 }
-
 #page-profile #qrcode-container {
-    flex-grow: 1; /* 主要的 flex 成長空間，讓 QR Code 佔據大部分區域 */
+    flex-grow: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
-    min-height: 100px; /* 給一個最小高度，避免內容過多時被壓縮得太小 */
+    min-height: 100px;
     margin: 10px 0;
 }
-
 #page-profile #qrcode {
     padding: 15px;
     background: white;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
-
 .profile-details-grid {
     display: flex;
-    align-items: center; /* 垂直置中對齊 */
-    gap: 20px; /* 頭像和資料的間距 */
+    align-items: center;
+    gap: 20px;
     flex-shrink: 0;
     margin-top: 10px;
+    background-color: var(--bg-content);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
 }
-
 .profile-avatar img {
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    border: 3px solid var(--card-bg);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 3px solid var(--bg-parchment);
 }
-
 .profile-stats {
     flex-grow: 1;
 }
-
 .profile-stats h2 {
     margin: 0 0 8px 0;
     font-size: 1.5rem;
-    color: var(--text-color);
+    color: var(--text-primary);
+    font-weight: 600;
 }
-
 .profile-stats p {
     margin: 4px 0;
     font-size: 0.9rem;
-    color: #666;
+    color: var(--text-secondary);
 }
 .profile-stats p strong {
-    color: var(--text-color);
+    color: var(--text-primary);
 }
-
 #page-profile #user-perk-display {
     flex-shrink: 0;
     margin-top: 15px;
     text-align: center;
+    background-color: rgba(141, 110, 99, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+    color: var(--text-primary);
 }
-
 #page-profile .profile-actions {
     flex-shrink: 0;
-    margin-top: 15px; /* 與上方福利的間距 */
+    margin-top: 15px;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
 }
-
 .profile-actions .cta-button {
     padding: 12px 5px;
     font-size: 0.9rem;
+    background: var(--bg-content);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    box-shadow: none;
+    font-weight: 600;
+    font-family: var(--font-serif);
+}
+.profile-actions .cta-button:hover {
+    background: var(--primary-accent);
+    color: white;
+    border-color: var(--primary-accent);
 }
 
-/* =================================================================
-   場地預約頁
-   ================================================================= */
-#page-booking .booking-header .booking-subtitle {
-    color: var(--text-secondary);
-}
-#page-booking .preference-btn {
-    background-color: var(--bg-content);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 8px rgba(0,0,0, 0.1);
-}
-#page-booking .preference-btn:hover {
-    border-color: var(--primary-accent);
-    background-color: #3c4a60; /* 滑鼠懸浮時的背景色 */
-}
-#page-booking .preference-btn h3 {
-    color: var(--primary-accent);
-}
-.flatpickr-calendar {
-    background: var(--bg-content);
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0, 0.2);
-    width: 100% !important;
-    border: 1px solid var(--border-color);
-}
-.flatpickr-day, span.flatpickr-weekday {
-    color: var(--text-primary);
-}
-.flatpickr-day.selected, .flatpickr-day.today {
+/* --- 通用按鈕 & 表單 --- */
+.cta-button {
     background: var(--primary-accent);
-    border-color: var(--primary-accent);
-    color: var(--bg-main);
-}
-.flatpickr-day:hover {
-    background: var(--secondary-accent);
-    color: var(--bg-main);
-}
-.flatpickr-months .flatpickr-month {
-    color: var(--text-primary);
-}
-.flatpickr-months .arrowUp, .flatpickr-months .arrowDown {
-    fill: var(--text-primary);
-}
-#page-booking .slot-button {
-    background-color: var(--bg-content);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-}
-#page-booking .slot-button:hover {
-    background-color: #3c4a60;
-    border-color: var(--secondary-accent);
-}
-#page-booking .slot-button:disabled {
-    background-color: #252e3e;
-    color: var(--text-secondary);
-    text-decoration: line-through;
-}
-#page-booking .input-group input {
-    background-color: var(--bg-main);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-}
-#page-booking .summary-card {
-    background: var(--bg-main);
-    border: 1px solid var(--border-color);
-}
-.cta-button { /* 通用主要按鈕 */
-    background: var(--primary-accent);
-    color: var(--bg-main);
-    box-shadow: 0 4px 10px rgba(246, 224, 94, 0.2);
+    color: white;
+    box-shadow: 0 4px 10px rgba(141, 110, 99, 0.3);
+    font-weight: 600;
+    font-family: var(--font-serif);
 }
 .cta-button:hover {
-    background: var(--secondary-accent);
+    background: #6D4C41; /* 深一點的棕色 */
 }
-
-/* =================================================================
-   其他頁面微調 (保持一致性)
-   ================================================================= */
-.details-back-button {
-    background: var(--bg-content);
+.input-group input, .input-group select {
+    background-color: white;
     border: 1px solid var(--border-color);
+    font-family: var(--font-serif);
     color: var(--text-primary);
-}
-.details-section {
-    background-color: var(--bg-content);
-    border: 1px solid var(--border-color);
-}
-.exp-record-card, .rental-card, .booking-info-card {
-    background-color: var(--bg-content);
-    border-left-color: var(--primary-accent);
 }
