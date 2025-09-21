@@ -571,8 +571,8 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 #page-templates > #page-profile {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 70px - 20px); 
-    padding: 10px 15px;
+    height: calc(100vh - 50px - 10px); 
+    padding: 8px 15px;
     box-sizing: border-box;
 }
 #page-profile > h1 {
@@ -588,25 +588,25 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     margin: 5px 0;
 }
 #page-profile #qrcode {
-    padding: 10px;
+    padding: 8px;
 }
 .profile-details-grid {
     flex-shrink: 0;
     margin-top: 5px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 #page-profile #user-perk-display {
     flex-shrink: 0;
-    margin-top: 10px;
+    margin-top: 8px;
     padding: 8px;
 }
 #page-profile .profile-actions {
     flex-shrink: 0;
-    margin-top: 10px;
-    gap: 10px;
+    margin-top: 8px;
+    gap: 8px;
 }
 .profile-actions .cta-button {
     font-size: 0.9rem;
-    padding: 10px 5px;
+    padding: 8px 5px;
     line-height: 1.3;
 }
