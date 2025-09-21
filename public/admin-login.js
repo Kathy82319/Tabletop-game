@@ -958,6 +958,7 @@ async function applyRentalFiltersAndRender() {
 }
 // ADD THESE TWO FUNCTIONS
 
+// REPLACE THIS FUNCTION
 // ** 需求 5 新增：排序函式 **
 function sortRentals() {
     allRentals.sort((a, b) => {
@@ -969,14 +970,11 @@ function sortRentals() {
             return dateB - dateA;
         }
     });
-// ** 需求 5 新增：為排序按鈕綁定事件 **
-if (sortDueDateBtn) {
-    sortDueDateBtn.addEventListener('click', () => {
-        dueDateSortOrder = dueDateSortOrder === 'asc' ? 'desc' : 'asc';
-        // 直接重新渲染即可，因為 allRentals 已經存在
-        sortRentals();
-        renderRentalList(allRentals); 
-    });
+    // 更新排序按鈕的視覺狀態
+    if(sortDueDateBtn) {
+        sortDueDateBtn.classList.remove('asc', 'desc');
+        sortDueDateBtn.classList.add(dueDateSortOrder);
+    }
 }
 
 function renderRentalList(rentals) {
