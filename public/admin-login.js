@@ -786,25 +786,27 @@ function renderGameList(games) {
         const tagsHtml = (game.tags || '').split(',').map(t => t.trim()).filter(Boolean).map(tag => `<span style="background:#eee; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${tag}</span>`).join(' ');
 
         // **【修改處】** 在 actions-cell 中重新加入 "出借" 按鈕
-        row.innerHTML = `
-            <td>${game.display_order || 'N/A'}</td>
-            <td class="compound-cell" style="text-align: left;">
-                <div class="main-info">${game.name}</div>
-                <div class="sub-info">ID: ${game.game_id}</div>
-                <div class="sub-info" style="margin-top: 5px;">${tagsHtml}</div>
-            </td>
-            <td>${game.total_stock}</td>
-            <td>${game.for_rent_stock}</td>
-            <td class="compound-cell">
-                <div class="main-info">$${game.sale_price}</div>
-                <div class="sub-info">租金: $${game.rent_price}</div>
-            </td>
-            <td>${isVisible ? '是' : '否'}</td>
-            <td class="actions-cell" style="display: flex; gap: 5px; justify-content: center;">
-                <button class="action-btn btn-rent" data-gameid="${game.game_id}" style="background-color: #007bff;">出借</button>
-                <button class="action-btn btn-edit-game" data-gameid="${game.game_id}" style="background-color: #ffc107; color: #000;">編輯</button>
-            </td>
-        `;
+row.innerHTML = `
+    <td>${game.display_order || 'N/A'}</td>
+    <td class="compound-cell" style="text-align: left;">
+        <div class="main-info">${game.name}</div>
+        <div class="sub-info">ID: ${game.game_id}</div>
+        <div class="sub-info" style="margin-top: 5px;">${tagsHtml}</div>
+    </td>
+    <td>${game.total_stock}</td>
+    <td>${game.for_rent_stock}</td>
+    <td class="compound-cell">
+        <div class="main-info">$${game.sale_price}</div>
+        <div class="sub-info">租金: $${game.rent_price}</div>
+    </td>
+    <td>${isVisible ? '是' : '否'}</td>
+    <td class="actions-cell">
+        <div style="display: flex; gap: 5px; justify-content: center;">
+            <button class="action-btn btn-rent" data-gameid="${game.game_id}" style="background-color: #007bff;">出借</button>
+            <button class="action-btn btn-edit-game" data-gameid="${game.game_id}" style="background-color: #ffc107; color: #000;">編輯</button>
+        </div>
+    </td>
+`;
         gameListTbody.appendChild(row);
     });
 }
@@ -1297,6 +1299,8 @@ async function openCreateRentalModal(gameId) {
     const userSelect = document.getElementById('rental-user-select');
     if(userSelect) userSelect.style.display = 'none';
 
+    // 【修改處】自動帶入預設金額
+    document.getElementById('rental-rent-price').value = game ? (game.rent_price || 0) : 0;
     document.getElementById('rental-deposit').value = game ? (game.deposit || 0) : 0;
     document.getElementById('rental-late-fee').value = game ? (game.late_fee_per_day || 50) : 50;
 
@@ -1422,32 +1426,34 @@ if(createRentalModal) {
         });
     }
 
-    if (createRentalForm) {
-        createRentalForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!selectedRentalUser) {
-                alert('請務必搜尋並選擇一位租借會員！');
-                return;
-            }
-            if (selectedRentalGames.length === 0) {
-                alert('請至少選擇一個租借品項！');
-                return;
-            }
+if (createRentalForm) {
+    createRentalForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!selectedRentalUser) {
+            alert('請務必搜尋並選擇一位租借會員！');
+            return;
+        }
+        if (selectedRentalGames.length === 0) {
+            alert('請至少選擇一個租借品項！');
+            return;
+        }
 
-            const rentalData = {
-                userId: selectedRentalUser.user_id,
-                gameIds: selectedRentalGames.map(g => g.game_id),
-                dueDate: document.getElementById('rental-due-date').value,
-                deposit: Number(document.getElementById('rental-deposit').value),
-                lateFeePerDay: Number(document.getElementById('rental-late-fee').value),
-                name: document.getElementById('rental-contact-name').value,
-                phone: document.getElementById('rental-contact-phone').value
-            };
+        // 【修改處】讀取表單上的客製化金額
+        const rentalData = {
+            userId: selectedRentalUser.user_id,
+            gameIds: selectedRentalGames.map(g => g.game_id),
+            dueDate: document.getElementById('rental-due-date').value,
+            name: document.getElementById('rental-contact-name').value,
+            phone: document.getElementById('rental-contact-phone').value,
+            rentPrice: document.getElementById('rental-rent-price').value,
+            deposit: document.getElementById('rental-deposit').value,
+            lateFeePerDay: document.getElementById('rental-late-fee').value
+        };
 
-            if (!rentalData.name || !rentalData.phone) {
-                alert('租借人姓名與電話為必填欄位！');
-                return;
-            }
+        if (!rentalData.name || !rentalData.phone) {
+            alert('租借人姓名與電話為必填欄位！');
+            return;
+        }
 
             const gameNames = selectedRentalGames.map(g => g.name).join('\n- ');
             const confirmationMessage = `請確認租借資訊：\n\n` +

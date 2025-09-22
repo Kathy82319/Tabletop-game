@@ -57,8 +57,11 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    // ** 需求 1 修改：接收 gameIds 陣列 **
-    const { userId, gameIds, dueDate, deposit, lateFeePerDay, name, phone } = await context.request.json();
+    // 【修改處】接收客製化金額: rentPrice, deposit, lateFeePerDay
+    const { 
+        userId, gameIds, dueDate, name, phone,
+        rentPrice, deposit, lateFeePerDay 
+    } = await context.request.json();
 
     if (!userId || !gameIds || !Array.isArray(gameIds) || gameIds.length === 0 || !dueDate || !name || !phone) {
       return new Response(JSON.stringify({ error: '缺少必要的租借資訊 (會員/遊戲/日期/姓名/電話)。' }), { status: 400 });
@@ -67,9 +70,7 @@ export async function onRequest(context) {
     const db = context.env.DB;
     const allGameNames = [];
     const dbOperations = [];
-    const createdRentalIds = []; // 用來儲存新建立的 rental_id
-
-    // ** 步驟 1: 準備資料庫操作 **
+    
     for (const gameId of gameIds) {
         const game = await db.prepare('SELECT name, for_rent_stock FROM BoardGames WHERE game_id = ?').bind(gameId).first();
         if (!game) throw new Error(`找不到 ID 為 ${gameId} 的遊戲。`);
@@ -77,12 +78,21 @@ export async function onRequest(context) {
         
         allGameNames.push(game.name);
 
+        // 【修改處】INSERT 指令加入 rent_price 欄位
         const insertStmt = db.prepare(
-            'INSERT INTO Rentals (user_id, game_id, due_date, deposit, late_fee_per_day, name, phone) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING rental_id'
+            'INSERT INTO Rentals (user_id, game_id, due_date, name, phone, rent_price, deposit, late_fee_per_day) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
         const updateStmt = db.prepare(
             'UPDATE BoardGames SET for_rent_stock = for_rent_stock - 1 WHERE game_id = ?'
         );
+        
+        // 【修改處】綁定客製化金額，如果沒提供就用預設值 0
+        dbOperations.push(insertStmt.bind(
+            userId, gameId, dueDate, name, phone, 
+            Number(rentPrice) || 0, 
+            Number(deposit) || 0, 
+            Number(lateFeePerDay) || 50
+        ));
         
         dbOperations.push(insertStmt.bind(userId, gameId, dueDate, deposit, lateFeePerDay, name, phone));
         dbOperations.push(updateStmt.bind(gameId));
