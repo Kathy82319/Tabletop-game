@@ -84,44 +84,25 @@
         #user-details-modal table { font-size: 0.85rem; }
         #user-details-modal th, #user-details-modal td { padding: 0.6rem; }
         .message-sender { margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem; }
-        .draggable-row { cursor: default; } /* 將整行的游標改回預設 */
+        /* 【** 庫存管理頁樣式 **】 */
+        .draggable-row { cursor: default; }
         .drag-handle-cell { text-align: left !important; }
-        .drag-handle {
-            cursor: move; /* 只有圖示是拖曳游標 */
-            display: inline-block;
-            width: 20px;
-            font-size: 1.2rem;
-            color: #999;
-            margin-right: 5px;
-                    }
-                /* 【** 步驟 2: 新增/修改這些樣式 **】 */
-        .modal-content {
-            background: white;
-            padding: 25px;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 600px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            /* 新增下面三行 */
-            display: flex;
-            flex-direction: column;
-            max-height: 90vh; /* 限制 modal 最高為螢幕高度的 90% */
-        }
-        
-        /* 針對遊戲編輯 modal 的特殊寬度 */
-        #edit-game-modal .modal-content {
-            max-width: 800px;
-        }
+        .drag-handle { cursor: move; display: inline-block; width: 20px; font-size: 1.2rem; color: #999; margin-right: 5px; }
 
-        /* 新增這個 class */
-        .modal-body {
-            overflow-y: auto; /* 讓內容區塊可以垂直滾動 */
-            padding-right: 15px; /* 增加一點右邊距，避免滾動條太貼近內容 */
+        /* 【** 編輯遊戲視窗專用 RWD 樣式 **】 */
+        #edit-game-modal .modal-content { max-width: 800px; }
+        .edit-game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-span-2 { grid-column: span 2; }
+        .sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .sub-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+
+        @media (max-width: 768px) {
+            .details-grid, .edit-game-grid, .sub-grid, .sub-grid-3 {
+                grid-template-columns: 1fr;
+            }
+            .grid-span-2 { grid-column: span 1; }
+            .profile-summary { border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; }
         }
-        
-        .modal-header, .form-actions {
-            flex-shrink: 0; /* 確保頭部和腳部不會被壓縮 */
-        }            
     </style>
 </head>
 <body>
