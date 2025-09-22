@@ -78,23 +78,24 @@ export async function onRequest(context) {
         
         allGameNames.push(game.name);
 
-        // 【修改處】INSERT 指令加入 rent_price 欄位
+        // **【核心修正處】** 調整 INSERT 的欄位順序與數量，使其與 bind 的參數完全對應
         const insertStmt = db.prepare(
-            'INSERT INTO Rentals (user_id, game_id, due_date, name, phone, rent_price, deposit, late_fee_per_day) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-        );
-        const updateStmt = db.prepare(
-            'UPDATE BoardGames SET for_rent_stock = for_rent_stock - 1 WHERE game_id = ?'
+            `INSERT INTO Rentals (user_id, game_id, due_date, name, phone, rent_price, deposit, late_fee_per_day) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
         );
         
-        // 【修改處】綁定客製化金額，如果沒提供就用預設值 0
         dbOperations.push(insertStmt.bind(
-            userId, gameId, dueDate, name, phone, 
+            userId, 
+            gameId, 
+            dueDate, 
+            name, 
+            phone, 
             Number(rentPrice) || 0, 
             Number(deposit) || 0, 
             Number(lateFeePerDay) || 50
         ));
         
-        dbOperations.push(insertStmt.bind(userId, gameId, dueDate, deposit, lateFeePerDay, name, phone));
+        const updateStmt = db.prepare('UPDATE BoardGames SET for_rent_stock = for_rent_stock - 1 WHERE game_id = ?');
         dbOperations.push(updateStmt.bind(gameId));
     }
     
