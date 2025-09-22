@@ -907,12 +907,14 @@ if (syncGamesBtn) {
 
 if (gameListTbody) {
     gameListTbody.addEventListener('click', (e) => {
+        // 我們監聽整個表格的點擊事件
         const target = e.target;
-        const gameId = target.closest('tr')?.dataset.gameid;
-        if (!gameId) return;
-
-        if (target.classList.contains('btn-edit-game')) {
-            openEditGameModal(gameId);
+        // 檢查被點擊的是否是「編輯按鈕」
+        if (target && target.classList.contains('btn-edit-game')) {
+            const gameId = target.dataset.gameid; // 從按鈕本身獲取 gameId
+            if (gameId) {
+                openEditGameModal(gameId);
+            }
         }
     });
 }
