@@ -2,21 +2,36 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import * as jose from 'jose';
 
-// --- Google Sheets 工具函式 (保持不變) ---
+// --- Google Sheets 工具函式 ---
 async function getAccessToken(env) {
     const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY } = env;
     if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) throw new Error('缺少 Google 服務帳號的環境變數。');
+    
     const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
     const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets' })
       .setProtectedHeader({ alg: 'RS256', typ: 'JWT' }).setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
       .setAudience('https://oauth2.googleapis.com/token').setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
       .setIssuedAt().setExpirationTime('1h').sign(privateKey);
+      
+    // 【** 關鍵修正：更改 Body 的建立方式 **】
+    // 原本的 new URLSearchParams() 在 Cloudflare 環境中可能有問題
+    // 改為手動組合字串，與你專案中其他正常的 API 保持一致
+    const body = `grant_type=urn:ietf:params:oauth:grant-type-jwt-bearer&assertion=${jwt}`;
+
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST', headers: { 'Content-Type': 'application/x-form-urlencoded' },
-      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt }),
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body,
     });
+    
     const tokenData = await tokenResponse.json();
-    if (!tokenResponse.ok) throw new Error(`從 Google 取得 access token 失敗: ${tokenData.error_description || tokenData.error}`);
+    
+    // 【** 關鍵修正：提供更詳細的錯誤日誌 **】
+    if (!tokenResponse.ok) {
+        // 這樣如果再出錯，Log 會顯示完整的 Google 錯誤訊息，而不是 [object Object]
+        const errorDetails = JSON.stringify(tokenData);
+        throw new Error(`從 Google 取得 access token 失敗: ${errorDetails}`);
+    }
     return tokenData.access_token;
 }
 
@@ -50,7 +65,6 @@ export async function onRequest(context) {
     const requestBody = await context.request.json();
     const { gameId } = requestBody;
 
-
     if (!gameId || !requestBody.name) {
       return new Response(JSON.stringify({ error: '缺少遊戲 ID 或名稱。' }), { status: 400 });
     }
@@ -82,7 +96,8 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: `找不到遊戲 ID: ${gameId}，無法更新。` }), { status: 404 });
     }
 
-    const { gameId: id, ...dataToSync } = requestBody; // 移除 gameId，因為它不是 Sheet 欄位
+    // 準備要同步到 Sheet 的資料
+    const { gameId: id, ...dataToSync } = requestBody; 
     dataToSync.is_visible = dataToSync.is_visible ? 'TRUE' : 'FALSE';
     dataToSync.for_sale_stock = for_sale_stock;
 
