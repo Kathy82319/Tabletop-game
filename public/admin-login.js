@@ -785,6 +785,7 @@ function renderGameList(games) {
         const isVisible = game.is_visible === 1;
         const tagsHtml = (game.tags || '').split(',').map(t => t.trim()).filter(Boolean).map(tag => `<span style="background:#eee; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${tag}</span>`).join(' ');
 
+        // **【修改處】** 在 actions-cell 中重新加入 "出借" 按鈕
         row.innerHTML = `
             <td>${game.display_order || 'N/A'}</td>
             <td class="compound-cell" style="text-align: left;">
@@ -799,7 +800,8 @@ function renderGameList(games) {
                 <div class="sub-info">租金: $${game.rent_price}</div>
             </td>
             <td>${isVisible ? '是' : '否'}</td>
-            <td class="actions-cell">
+            <td class="actions-cell" style="display: flex; gap: 5px; justify-content: center;">
+                <button class="action-btn btn-rent" data-gameid="${game.game_id}" style="background-color: #007bff;">出借</button>
                 <button class="action-btn btn-edit-game" data-gameid="${game.game_id}" style="background-color: #ffc107; color: #000;">編輯</button>
             </td>
         `;
@@ -905,16 +907,19 @@ if (syncGamesBtn) {
     });
 }
 
+
 if (gameListTbody) {
     gameListTbody.addEventListener('click', (e) => {
-        // 我們監聽整個表格的點擊事件
         const target = e.target;
-        // 檢查被點擊的是否是「編輯按鈕」
-        if (target && target.classList.contains('btn-edit-game')) {
-            const gameId = target.dataset.gameid; // 從按鈕本身獲取 gameId
-            if (gameId) {
-                openEditGameModal(gameId);
-            }
+        // **【修改處】** 直接從被點擊的按鈕上獲取 gameid
+        const gameId = target.dataset.gameid; 
+        if (!gameId) return; // 如果點擊的不是帶有 data-gameid 的元素，就忽略
+
+        // 判斷點擊的是哪個按鈕並執行對應函式
+        if (target.classList.contains('btn-edit-game')) {
+            openEditGameModal(gameId);
+        } else if (target.classList.contains('btn-rent')) {
+            openCreateRentalModal(gameId);
         }
     });
 }
