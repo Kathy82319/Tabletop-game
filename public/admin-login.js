@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const bookingSettingsModal = document.getElementById('booking-settings-modal'); 
     const cancelBookingModal = document.getElementById('cancel-booking-modal');
     let bookingDatepicker = null; 
-    let disabledDates = [];
+    let enabledDates = []; // <--- 變數改名
     
     // 經驗紀錄
     const expHistoryTbody = document.getElementById('exp-history-tbody');
@@ -1564,25 +1564,46 @@ flatpickr("#rental-due-date", { dateFormat: "Y-m-d", minDate: "today" });
     }
     
     async function initializeBookingSettings() {
-        if (bookingDatepicker) return; // 如果已初始化，則不再執行
+        if (bookingDatepicker) {
+            // 如果已存在，只需更新日期
+            const response = await fetch('/api/admin/booking-settings');
+            enabledDates = await response.json();
+            bookingDatepicker.setDate(enabledDates, false); // 更新日曆上的選中日期
+            return;
+        }
 
         try {
             const response = await fetch('/api/admin/booking-settings');
             if (!response.ok) throw new Error('無法獲取公休日設定');
-            disabledDates = await response.json();
+            enabledDates = await response.json(); // <--- 變數改名
 
             bookingDatepicker = flatpickr("#booking-datepicker-admin-container", {
                 inline: true,
                 mode: "multiple",
                 dateFormat: "Y-m-d",
-                defaultDate: disabledDates
+                defaultDate: enabledDates, // <--- 變數改名
+                // 當日曆月份改變時，更新「開啟本月」按鈕的文字
+                onMonthChange: (selectedDates, dateStr, instance) => {
+                    const openMonthBtn = document.getElementById('open-month-btn');
+                    if (openMonthBtn) {
+                        openMonthBtn.textContent = `開啟 ${instance.currentYear} / ${instance.currentMonth + 1} 月所有日期`;
+                    }
+                },
+                // 日曆準備好時，也更新按鈕文字
+                onReady: (selectedDates, dateStr, instance) => {
+                    const openMonthBtn = document.getElementById('open-month-btn');
+                    if (openMonthBtn) {
+                        openMonthBtn.textContent = `開啟 ${instance.currentYear} / ${instance.currentMonth + 1} 月所有日期`;
+                    }
+                }
             });
         } catch (error) {
-            console.error("初始化公休日設定失敗:", error);
-            alert("初始化公休日設定失敗，請檢查 API。");
+            console.error("初始化可預約日設定失敗:", error);
+            alert("初始化可預約日設定失敗，請檢查 API。");
         }
     }
 
+    // 【** 修改這個函式 **】
     async function saveBookingSettings() {
         const saveBtn = document.getElementById('save-booking-settings-btn');
         if (!bookingDatepicker || !saveBtn) return;
@@ -1591,49 +1612,43 @@ flatpickr("#rental-due-date", { dateFormat: "Y-m-d", minDate: "today" });
         saveBtn.disabled = true;
 
         try {
-            const newDisabledDates = bookingDatepicker.selectedDates.map(d => bookingDatepicker.formatDate(d, "Y-m-d"));
+            const newEnabledDates = bookingDatepicker.selectedDates.map(d => bookingDatepicker.formatDate(d, "Y-m-d"));
             
-            // 找出需要新增和刪除的日期
-            const datesToAdd = newDisabledDates.filter(d => !disabledDates.includes(d));
-            const datesToRemove = disabledDates.filter(d => !newDisabledDates.includes(d));
+            const datesToAdd = newEnabledDates.filter(d => !enabledDates.includes(d));
+            const datesToRemove = enabledDates.filter(d => !newEnabledDates.includes(d));
 
-            // 建立所有需要執行的 API 請求
             const promises = [];
             datesToAdd.forEach(date => {
                 promises.push(fetch('/api/admin/booking-settings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ date, action: 'add' })
                 }));
             });
             datesToRemove.forEach(date => {
                 promises.push(fetch('/api/admin/booking-settings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ date, action: 'remove' })
                 }));
             });
 
-            // 等待所有請求完成
             await Promise.all(promises);
 
-            // 成功後，更新本地的日期列表
-            disabledDates = newDisabledDates;
-            alert('公休日設定已成功儲存！');
+            enabledDates = newEnabledDates;
+            alert('可預約日設定已成功儲存！');
             if (bookingSettingsModal) bookingSettingsModal.style.display = 'none';
 
         } catch (error) {
-            console.error("儲存公休日設定失敗:", error);
+            console.error("儲存可預約日設定失敗:", error);
             alert("儲存失敗，請再試一次。");
         } finally {
-            saveBtn.textContent = '儲存設定';
+            saveBtn.textContent = '儲存變更';
             saveBtn.disabled = false;
         }
     }
 
     if(manageBookingDatesBtn) {
         manageBookingDatesBtn.addEventListener('click', () => {
-            initializeBookingSettings(); // 確保日曆已初始化
+            initializeBookingSettings(); 
             if (bookingSettingsModal) {
                 bookingSettingsModal.style.display = 'flex';
             }
@@ -1643,10 +1658,45 @@ flatpickr("#rental-due-date", { dateFormat: "Y-m-d", minDate: "today" });
     if(bookingSettingsModal) {
         bookingSettingsModal.querySelector('.modal-close').addEventListener('click', () => bookingSettingsModal.style.display = 'none');
         bookingSettingsModal.querySelector('.btn-cancel').addEventListener('click', () => bookingSettingsModal.style.display = 'none');
-        // 綁定新的儲存按鈕事件
+        
         const saveBtn = bookingSettingsModal.querySelector('#save-booking-settings-btn');
         if(saveBtn) saveBtn.addEventListener('click', saveBookingSettings);
+
+        // 【** 新增「開啟本月」按鈕的事件 **】
+        const openMonthBtn = document.getElementById('open-month-btn');
+        if(openMonthBtn) {
+            openMonthBtn.addEventListener('click', async () => {
+                if (!bookingDatepicker) return;
+                const year = bookingDatepicker.currentYear;
+                const month = bookingDatepicker.currentMonth; // 0-11
+
+                if (!confirm(`確定要將 ${year} 年 ${month + 1} 月的所有日期都設定為可預約嗎？`)) return;
+
+                openMonthBtn.textContent = '處理中...';
+                openMonthBtn.disabled = true;
+                try {
+                    const response = await fetch('/api/admin/booking-settings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'open_month', year, month })
+                    });
+                    if (!response.ok) throw new Error('開啟月份失敗');
+
+                    alert(`${year} 年 ${month + 1} 月已全部開啟！`);
+                    // 重新初始化日曆以載入最新日期
+                    await initializeBookingSettings();
+
+                } catch (error) {
+                    alert(`錯誤：${error.message}`);
+                } finally {
+                    openMonthBtn.disabled = false;
+                    // onMonthChange/onReady 會自動更新按鈕文字
+                }
+            });
+        }
     }
+
+
 
 // REPLACE THIS EVENT LISTENER
 if(bookingListTbody){

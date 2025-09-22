@@ -404,19 +404,22 @@
             <div id="scan-status-container" style="margin-top: 15px; text-align: center;"></div>
         </div>
     </main>
+    
 <div id="booking-settings-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>管理公休日 (可複選)</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div id="booking-datepicker-admin-container"></div>
-            <div class="form-actions">
-                <button type="button" class="action-btn btn-cancel">取消</button>
-                <button type="button" id="save-booking-settings-btn" class="action-btn btn-save">儲存設定</button>
-            </div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>管理可預約日 (可複選)</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div id="booking-datepicker-admin-container"></div>
+        <div class="form-actions">
+            <button type="button" id="open-month-btn" class="action-btn" style="background-color: var(--info-color); float: left;">開啟本月所有日期</button>
+            <button type="button" class="action-btn btn-cancel">取消</button>
+            <button type="button" id="save-booking-settings-btn" class="action-btn btn-save">儲存變更</button>
         </div>
     </div>
+</div>
+
 <div id="user-details-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
