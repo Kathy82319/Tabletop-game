@@ -56,57 +56,9 @@
         .modal-close { font-size: 1.5rem; font-weight: bold; border: none; background: none; cursor: pointer; }
         
         .form-group { margin-bottom: 15px; }
-        .form-group label { display:    <style>
-        :root {
-            --primary-color: #007bff; --secondary-color: #6c757d; --danger-color: #dc3545;
-            --success-color: #28a745; --warning-color: #ffc107; --info-color: #17a2b8;
-            --light-gray: #f8f9fa; --border-color: #dee2e6;
-            --text-dark: #343a40; --text-light: #6c757d;
-        }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background-color: var(--light-gray); }
-        .header { background-color: var(--text-dark); color: white; padding: 0.8rem 1.5rem; }
-        .header h1 { margin: 0; font-size: 1.4rem; }
-        .nav-tabs { background-color: white; padding: 0 1rem; border-bottom: 1px solid var(--border-color); display: flex; flex-wrap: nowrap; overflow-x: auto; }
-        .nav-tabs a { padding: 0.8rem; color: var(--text-light); text-decoration: none; font-weight: 500; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; }
-        .nav-tabs a.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
-        .main-content { padding: 1.5rem; }
-        .page { display: none; } .page.active { display: block; }
-        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        .page-header h2 { margin: 0; font-size: 1.8rem; color: var(--text-dark); }
-        
-        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; }
-        th, td { padding: 0.8rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; text-align: center; }
-        th { background-color: var(--light-gray); font-weight: 600; font-size: 0.9rem; }
-        td { font-size: 0.9rem; }
-        
-        .compound-cell .main-info { font-weight: bold; }
-        .compound-cell .sub-info { font-size: 0.8rem; color: var(--text-light); }
-        .action-btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; border: none; border-radius: 5px; cursor: pointer; color: white; }
-        .btn-edit { background-color: var(--warning-color); color: #212529; }
-        .btn-sync { background-color: var(--info-color); }
-
-        .filter-bar { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; align-items: center; }
-        .filter-group { display: flex; gap: 0.5rem; }
-        .filter-group button { padding: 0.4rem 0.8rem; font-size: 0.8rem; border: 1px solid var(--border-color); background-color: white; border-radius: 5px; cursor: pointer; }
-        .filter-group button.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
-        
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: flex-start; z-index: 1000; overflow-y: auto; padding-top: 5vh; padding-bottom: 5vh; }
-        .modal-content {
-            background: white; padding: 25px; border-radius: 8px;
-            width: 90%; max-width: 600px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            display: flex; flex-direction: column;
-            max-height: 90vh;
-        }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px; flex-shrink: 0; }
-        .modal-header h3 { margin: 0; }
-        .modal-close { font-size: 1.5rem; font-weight: bold; border: none; background: none; cursor: pointer; }
-        .modal-body { overflow-y: auto; padding-right: 15px; }
-
-        .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .form-actions { margin-top: 20px; text-align: right; flex-shrink: 0; }
+        .form-actions { margin-top: 20px; text-align: right; }
         .btn-save { background-color: var(--primary-color); }
         .btn-cancel { background-color: var(--secondary-color); }
 
@@ -132,27 +84,44 @@
         #user-details-modal table { font-size: 0.85rem; }
         #user-details-modal th, #user-details-modal td { padding: 0.6rem; }
         .message-sender { margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem; }
-        
-        /* 【** 庫存管理頁樣式 **】 */
-        .draggable-row { cursor: default; }
+        .draggable-row { cursor: default; } /* 將整行的游標改回預設 */
         .drag-handle-cell { text-align: left !important; }
-        .drag-handle { cursor: move; display: inline-block; width: 20px; font-size: 1.2rem; color: #999; margin-right: 5px; }
-
-        /* 【** 編輯遊戲視窗專用 RWD 樣式 **】 */
-        #edit-game-modal .modal-content { max-width: 800px; }
-        .edit-game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .grid-span-2 { grid-column: span 2; }
-        .sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .sub-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
-
-        @media (max-width: 768px) {
-            .details-grid, .edit-game-grid, .sub-grid, .sub-grid-3 {
-                grid-template-columns: 1fr;
-            }
-            .grid-span-2 { grid-column: span 1; }
-            .profile-summary { border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; }
+        .drag-handle {
+            cursor: move; /* 只有圖示是拖曳游標 */
+            display: inline-block;
+            width: 20px;
+            font-size: 1.2rem;
+            color: #999;
+            margin-right: 5px;
+                    }
+                /* 【** 步驟 2: 新增/修改這些樣式 **】 */
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            /* 新增下面三行 */
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh; /* 限制 modal 最高為螢幕高度的 90% */
+        }
+        
+        /* 針對遊戲編輯 modal 的特殊寬度 */
+        #edit-game-modal .modal-content {
+            max-width: 800px;
         }
 
+        /* 新增這個 class */
+        .modal-body {
+            overflow-y: auto; /* 讓內容區塊可以垂直滾動 */
+            padding-right: 15px; /* 增加一點右邊距，避免滾動條太貼近內容 */
+        }
+        
+        .modal-header, .form-actions {
+            flex-shrink: 0; /* 確保頭部和腳部不會被壓縮 */
+        }            
     </style>
 </head>
 <body>
@@ -580,8 +549,8 @@
         </div>
     </div> 
 
-<div id="edit-game-modal" class="modal-overlay">
-        <div class="modal-content">
+    <div id="edit-game-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
                 <h3 id="modal-game-title">編輯遊戲</h3>
                 <button class="modal-close">&times;</button>
