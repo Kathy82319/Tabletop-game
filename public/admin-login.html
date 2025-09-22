@@ -103,6 +103,40 @@
             .grid-span-2 { grid-column: span 1; }
             .profile-summary { border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; }
         }
+                .modal-content {
+            background: white; padding: 25px; border-radius: 8px;
+            width: 90%; max-width: 600px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column;
+            max-height: 90vh;
+        }
+
+        /* 【** 步驟 1: 讓表單填滿可用空間 **】 */
+        /* 我們需要讓 form 元素也成為 flex 容器的一部分 */
+        #edit-game-form {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* 確保內容不會溢出 form */
+            flex-grow: 1; /* 讓 form 填滿 modal-content 的剩餘空間 */
+        }
+        
+        .modal-body {
+            overflow-y: auto; /* 讓內容區塊可以垂直滾動 */
+            padding-right: 15px; /* 增加一點右邊距，避免滾動條太貼近內容 */
+        }
+        
+        .modal-header, .form-actions {
+            flex-shrink: 0; /* 確保頭部和腳部不會被壓縮 */
+        }
+
+        /* 【** 步驟 2: (可選，但建議) 幫按鈕區塊加上分隔線 **】 */
+        .form-actions {
+            margin-top: 20px;
+            text-align: right;
+            flex-shrink: 0;
+            padding-top: 20px; /* 增加上方間距 */
+            border-top: 1px solid var(--border-color); /* 加上分隔線 */
+        }
     </style>
 </head>
 <body>
