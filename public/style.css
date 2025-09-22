@@ -49,8 +49,6 @@ body {
     background-color: var(--color-background-start);
     background-image: radial-gradient(circle at top, var(--color-background-start), var(--color-background-end));
     
-    /* 如果您堅持要用圖片背景，請刪除上面兩行，並使用下面這行 */
-    /* background-image: url('您的Base64字串...'); */
     background-size: cover;
     background-attachment: fixed;
 }
@@ -342,32 +340,6 @@ input[readonly] {
 }
 .game-details { display: flex; gap: 15px; font-size: 0.9rem; }
 
-/* 遊戲/情報詳情頁 */
-.details-header { text-align: center; }
-.details-image {
-    max-width: 100%;
-    height: auto;
-    border-radius: var(--border-radius);
-    margin-bottom: 20px;
-    border: 2px solid var(--color-frame-gold);
-}
-.details-title { border: none; }
-.news-details-meta { color: var(--color-text-secondary); }
-.price-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    text-align: center;
-}
-.price-value {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--color-text-primary);
-}
-.stock-info {
-    font-size: 0.9rem;
-    color: var(--color-text-secondary);
-}
 
 /* C. 冒險者資料 (page-profile) */
 #qrcode-container {
@@ -537,23 +509,15 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
    ================================================================= */
 
 /* --- 1. 統一頁面主標題樣式 --- */
-/*
-  現在我們只認 class="page-main-title"，
-  不管它在哪個頁面或被什麼包住，樣式都會完全一樣。
-*/
 .page-main-title {
     text-align: center;
     font-size: 2.2rem; 
     font-weight: 600;
     color: var(--color-text-primary);
-    
-    /* 統一加上您想要的分隔線 */
     border-bottom: 2px solid var(--color-frame-gold);
-    
-    /* 統一間距 */
-    margin-top: 10px;    /* 標題與頁面頂部的距離 */
-    margin-bottom: 25px; /* 標題與下方內容的距離 */
-    padding-bottom: 10px;  /* 文字與分隔線的距離 */
+    margin-top: 10px;
+    margin-bottom: 25px;
+    padding-bottom: 10px;
 }
 
 
@@ -610,154 +574,86 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 /* =================================================================
    追加樣式 - 需求修改
    ================================================================= */
+/* --- 遊戲詳情頁 (page-game-details) --- */
 
-/* --- 需求 1：多選租借品項樣式 --- */
-#rental-games-container {
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 5px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    align-items: center;
+/* 圖片展示區 */
+.details-gallery {
+    margin-bottom: 15px;
 }
-.game-tag-chip {
-    background-color: var(--primary-color);
-    color: white;
-    padding: 5px 10px;
-    border-radius: 15px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9rem;
-}
-.game-tag-chip .remove-game-tag {
-    cursor: pointer;
-    font-weight: bold;
-    color: white;
-    background: none;
-    border: none;
-}
-#rental-game-search {
-    border: none;
-    outline: none;
-    flex-grow: 1;
-    padding: 5px;
-    min-width: 150px;
-}
-#game-search-results {
-    list-style-type: none;
-    padding: 0;
-    margin: 5px 0 0 0;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    max-height: 150px;
-    overflow-y: auto;
-}
-#game-search-results li {
-    padding: 10px;
-    cursor: pointer;
-}
-#game-search-results li:hover {
-    background-color: #f0f0f0;
-}
-
-/* --- 需求 4：儀表板可點擊樣式 --- */
-.dashboard-grid .stat-card {
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.dashboard-grid .stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-}
-
-/* --- 需求 5：表格排序圖示 --- */
-th.sortable {
-    cursor: pointer;
-}
-th.sortable::after {
-    content: ' \\2195'; /* 上下箭頭 */
-    font-size: 0.8em;
-    color: #999;
-}
-th.sortable.asc::after {
-    content: ' \\2191'; /* 向上箭頭 */
-    color: var(--primary-color);
-}
-th.sortable.desc::after {
-    content: ' \\2193'; /* 向下箭頭 */
-    color: var(--primary-color);
-}
-
-/* --- 修正：租借紀錄頁面排版 --- */
-.rental-card {
-    display: flex;
-    align-items: center; /* 讓圖片和文字垂直置中對齊 */
-    gap: 15px;
-}
-
-.rental-game-image {
-    width: 80px;
-    height: 80px;
-    flex-shrink: 0; /* 防止圖片被壓縮 */
+.details-image-main {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3; /* 維持比例 */
     object-fit: cover;
     border-radius: var(--border-radius);
+    border: 2px solid var(--color-frame-gold);
+    margin-bottom: 10px;
 }
-
-.rental-info {
-    flex-grow: 1; /* 讓文字區域佔滿剩餘空間 */
+.details-image-thumbnails {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
 }
-
-.rental-info h3, .rental-info p {
-    margin: 5px 0; /* 調整文字間的垂直距離 */
-}
-
-/* --- 需求 3：偏好遊戲多選樣式 --- */
-.tag-selection-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding-top: 5px;
-}
-
-.game-preference-tag {
-    font-family: var(--font-primary);
-    padding: 6px 14px;
-    border: 1px solid var(--color-frame-gold);
-    background: transparent;
-    color: var(--color-text-secondary);
-    border-radius: 16px;
+.details-image-thumbnail {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: calc(var(--border-radius) / 2);
+    border: 1px solid var(--color-text-secondary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+.details-image-thumbnail:hover, .details-image-thumbnail.active {
+    opacity: 1;
+    border: 2px solid var(--color-frame-gold);
 }
 
-.game-preference-tag.active {
-    background: var(--color-frame-gold);
-    color: white;
+
+/* 核心資訊網格 */
+.core-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    text-align: center;
+    padding: 10px;
+}
+.core-info-grid .info-item {
+    display: flex;
+    flex-direction: column;
+}
+.core-info-grid .info-item span {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+}
+.core-info-grid .info-item strong {
+    font-size: 1.3rem;
     font-weight: bold;
+    color: var(--color-text-primary);
 }
 
-/* --- 需求 2：美化租借品項標籤 --- */
-.game-tag-chip {
-    padding: 5px 8px 5px 12px; /* 調整內距讓文字和按鈕更協調 */
+/* 遊戲詳情頁的標籤容器 */
+#game-tags-container {
+    padding: 10px;
+    text-align: center;
 }
 
-.game-tag-chip .remove-game-tag {
-    font-size: 16px; /* 加大 X 按鈕 */
-    line-height: 1;
-    padding: 0 4px;
-    margin-left: 6px;
-    border-radius: 50%; /* 圓形按鈕 */
-    transition: background-color 0.2s;
+/* 遊戲詳情頁價格 */
+.price-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    text-align: center;
 }
-
-.game-tag-chip .remove-game-tag:hover {
-    background-color: rgba(255, 255, 255, 0.2); /* 滑鼠懸停時增加微亮效果 */
+.price-item p {
+    margin: 4px 0;
 }
-
-/* --- 需求：租借紀錄逾期樣式 --- */
-.rental-status.overdue-text {
-    color: var(--color-danger);
+.price-value {
+    font-size: 1.5rem;
     font-weight: bold;
+    color: var(--color-text-primary);
+}
+.price-tag { /* 取代原本的 .stock-info */
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
 }

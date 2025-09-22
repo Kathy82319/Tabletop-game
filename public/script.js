@@ -630,16 +630,73 @@ async function initializeRentalHistoryPage() {
     // 桌遊圖鑑頁
     // =================================================================
     function renderGameDetails(game) {
-        let priceHTML = `<p>請洽店內公告</p>`;
-        if (Number(game.sale_price) > 0 || Number(game.rent_price) > 0) {
-            priceHTML = `<div class="price-grid">${Number(game.for_sale_stock) > 0 ? `<div class="price-item"><p>售價</p><p class="price-value">$${game.sale_price}</p><p class="stock-info">庫存: ${game.for_sale_stock}</p></div>` : ''}${Number(game.for_rent_stock) > 0 ? `<div class="price-item"><p>租金 (三天)</p><p class="price-value">$${game.rent_price}</p><p class="stock-info">庫存: ${game.for_rent_stock}</p></div>` : ''}</div>`;
-        }
-        appContent.querySelector('.details-image').src = game.image_url;
-        appContent.querySelector('.details-image').alt = game.name;
+        // 1. 處理圖片
+        const mainImage = appContent.querySelector('.details-image-main');
+        const thumbnailsContainer = appContent.querySelector('.details-image-thumbnails');
+        
+        const images = [game.image_url, game.image_url_2, game.image_url_3].filter(Boolean);
+        
+        mainImage.src = images.length > 0 ? images[0] : 'placeholder.jpg';
+        
+        thumbnailsContainer.innerHTML = images.map((imgSrc, index) => 
+            `<img src="${imgSrc}" class="details-image-thumbnail ${index === 0 ? 'active' : ''}" data-src="${imgSrc}">`
+        ).join('');
+        
+        thumbnailsContainer.addEventListener('click', e => {
+            if (e.target.matches('.details-image-thumbnail')) {
+                mainImage.src = e.target.dataset.src;
+                thumbnailsContainer.querySelector('.active')?.classList.remove('active');
+                e.target.classList.add('active');
+            }
+        });
+
+        // 2. 處理核心資訊
         appContent.querySelector('.details-title').textContent = game.name;
-        appContent.querySelector('#game-intro-content').textContent = game.description;
-        appContent.querySelector('#game-price-content').innerHTML = priceHTML;
+        appContent.querySelector('#game-players').textContent = `${game.min_players} - ${game.max_players} 人`;
+        appContent.querySelector('#game-difficulty').textContent = game.difficulty;
+
+        // 3. 處理標籤
+        const tagsContainer = appContent.querySelector('#game-tags-container');
+        const tags = (game.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+        if (tags.length > 0) {
+            tagsContainer.innerHTML = tags.map(tag => `<span class="game-tag">${tag}</span>`).join('');
+            tagsContainer.style.display = 'block';
+        } else {
+            tagsContainer.style.display = 'none';
+        }
+        
+        // 4. 處理介紹
+        appContent.querySelector('#game-intro-content').textContent = game.description || '暫無介紹。';
+        
+        // 5. 處理補充說明
+        const supplementarySection = appContent.querySelector('#game-supplementary-section');
+        if (game.supplementary_info) {
+            appContent.querySelector('#game-supplementary-content').innerHTML = game.supplementary_info.replace(/\n/g, '<br>');
+            supplementarySection.style.display = 'block';
+        } else {
+            supplementarySection.style.display = 'none';
+        }
+
+        // 6. 處理價格 (修正 rent_price 為 0 的 bug 並移除庫存)
+        const priceContent = appContent.querySelector('#game-price-content');
+        let priceHTML = '';
+        const hasSalePrice = Number(game.sale_price) > 0;
+        const hasRentPrice = Number(game.rent_price) > 0;
+
+        if (hasSalePrice) {
+            priceHTML += `<div class="price-item"><p class="price-tag">參考售價</p><p class="price-value">$${game.sale_price}</p></div>`;
+        }
+        if (hasRentPrice) {
+            priceHTML += `<div class="price-item"><p class="price-tag">租借費用 (三天)</p><p class="price-value">$${game.rent_price}</p></div>`;
+        }
+        
+        if (priceHTML === '') {
+            priceContent.innerHTML = `<p style="text-align:center;">價格資訊請洽店內公告</p>`;
+        } else {
+            priceContent.innerHTML = `<div class="price-grid">${priceHTML}</div>`;
+        }
     }
+
 
     function renderGames() {
         const container = document.getElementById('game-list-container');
@@ -727,7 +784,6 @@ async function initializeRentalHistoryPage() {
             renderGames();
         });
     }
-
     // =================================================================
     // 場地預約頁
     // =================================================================

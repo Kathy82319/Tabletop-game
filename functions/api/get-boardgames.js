@@ -13,7 +13,7 @@ async function getAccessToken(env) {
       .setIssuedAt().setExpirationTime('1h').sign(privateKey);
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt }),
+      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type-jwt-bearer', assertion: jwt }),
     });
     const tokenData = await tokenResponse.json();
     if (!tokenResponse.ok) throw new Error(`從 Google 取得 access token 失敗: ${tokenData.error_description || tokenData.error}`);
@@ -45,7 +45,6 @@ async function runBoardgameSync(env) {
         return { success: true, message: 'Google Sheet 中沒有桌遊資料可同步。' };
     }
 
-    // **【修改處】** SQL 指令加入新欄位
     const stmt = DB.prepare(
         `INSERT INTO BoardGames (
             game_id, name, description, image_url, image_url_2, image_url_3, min_players, max_players,
@@ -70,14 +69,13 @@ async function runBoardgameSync(env) {
         const isVisible = String(rowData.is_visible).toUpperCase() === 'TRUE' ? 1 : 0;
         const for_sale_stock = (Number(rowData.total_stock) || 0) - (Number(rowData.for_rent_stock) || 0);
         
-        // **【修改處】** 綁定所有欄位的資料，包含新欄位
         return stmt.bind(
             rowData.game_id,
             rowData.name || '',
             rowData.description || '',
             rowData.image_url || '',
-            rowData.image_url_2 || '', // 新增
-            rowData.image_url_3 || '', // 新增
+            rowData.image_url_2 || '',
+            rowData.image_url_3 || '',
             Number(rowData.min_players) || 1,
             Number(rowData.max_players) || 4,
             rowData.difficulty || '普通',
@@ -91,7 +89,7 @@ async function runBoardgameSync(env) {
             Number(rowData.late_fee_per_day) || 50,
             isVisible,
             Number(rowData.display_order) || 999,
-            rowData.supplementary_info || '' // 新增
+            rowData.supplementary_info || ''
         );
     }).filter(op => op !== null);
     
@@ -101,4 +99,41 @@ async function runBoardgameSync(env) {
 
     await DB.batch(operations);
     return { success: true, message: `成功從 Google Sheet 同步了 ${operations.length} 筆桌遊資料到資料庫。` };
+}
+
+
+// 【** 關鍵修正：補上完整的 onRequest 函式 **】
+export async function onRequest(context) {
+    const { request, env } = context;
+    const db = env.DB;
+
+    try {
+        // 處理 GET 請求 (給前端 LIFF 和後台 CRM 使用)
+        if (request.method === 'GET') {
+            const stmt = db.prepare('SELECT * FROM BoardGames ORDER BY display_order ASC');
+            const { results } = await stmt.all();
+            return new Response(JSON.stringify(results || []), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
+
+        // 處理 POST 請求 (給後台 CRM 的「同步至資料庫」按鈕使用)
+        if (request.method === 'POST') {
+            const result = await runBoardgameSync(env);
+            return new Response(JSON.stringify(result), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
+
+        return new Response('Invalid request method.', { status: 405 });
+
+    } catch (error) {
+        console.error(`Error in get-boardgames API (Method: ${request.method}):`, error);
+        return new Response(JSON.stringify({ error: '獲取桌遊列表失敗。', details: error.message }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+        });
+    }
 }

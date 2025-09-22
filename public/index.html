@@ -46,14 +46,39 @@
     
     <div id="page-game-details">
         <button class="details-back-button">← 返回列表</button>
-        <div class="details-header">
-            <img src="" alt="" class="details-image">
-            <h1 class="details-title"></h1>
+        
+        <div class="details-gallery">
+            <img src="" alt="" class="details-image-main">
+            <div class="details-image-thumbnails">
+                </div>
         </div>
+
+        <h1 class="details-title" style="text-align: center;"></h1>
+        
+        <div class="details-section core-info-grid">
+            <div class="info-item">
+                <span>👥 建議人數</span>
+                <strong id="game-players">--</strong>
+            </div>
+            <div class="info-item">
+                <span>⭐ 遊戲難度</span>
+                <strong id="game-difficulty">--</strong>
+            </div>
+        </div>
+         <div class="details-section" id="game-tags-container">
+            </div>
+
+
         <div class="details-section">
             <h3>📜 遊戲介紹</h3>
             <p id="game-intro-content"></p>
         </div>
+
+        <div class="details-section" id="game-supplementary-section" style="display: none;">
+            <h3>📦 補充說明</h3>
+            <p id="game-supplementary-content"></p>
+        </div>
+
         <div class="details-section">
             <h3>💰 價格資訊</h3>
             <div id="game-price-content"></div>
