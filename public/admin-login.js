@@ -1,3 +1,5 @@
+// public/admin-login.js
+
 document.addEventListener('DOMContentLoaded', () => {
     
     // --- 【模組名稱：全域變數與 DOM 宣告】 ---
@@ -13,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editUserModal = document.getElementById('edit-user-modal');
     const editUserForm = document.getElementById('edit-user-form');
     const syncD1ToSheetBtn = document.getElementById('sync-d1-to-sheet-btn');
-    const userDetailsModal = document.getElementById('user-details-modal'); // 補上這一行
+    const userDetailsModal = document.getElementById('user-details-modal');
     
     // 庫存管理
     const gameListTbody = document.getElementById('game-list-tbody');
@@ -83,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedRentalUser = null;
     let selectedRentalGames = []; 
     let dueDateSortOrder = 'asc'; 
-    let sortableGames = null; // 新增：用於拖曳排序
+    let sortableGames = null;
 
     // --- 【模組名稱：手動全量同步】 ---
     const fullSyncRentalsBtn = document.getElementById('full-sync-rentals-btn');
@@ -94,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 fullSyncRentalsBtn.textContent = '同步中...';
                 fullSyncRentalsBtn.disabled = true;
-                // 我們呼叫您之前就有的 sync-rentals API
                 const response = await fetch('/api/admin/sync-rentals', { method: 'POST' });
                 const result = await response.json();
                 if (!response.ok) { throw new Error(result.details || '同步失敗'); }
@@ -130,16 +131,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-        // 關閉事件監聽(放在任意位置)
-        if (editRentalModal) {
+    if (editRentalModal) {
         editRentalModal.querySelector('.modal-close').addEventListener('click', () => editRentalModal.style.display = 'none');
         editRentalModal.querySelector('.btn-cancel').addEventListener('click', () => editRentalModal.style.display = 'none');
-        }
-        if (userDetailsModal) {
+    }
+    if (userDetailsModal) {
         userDetailsModal.querySelector('.modal-close').addEventListener('click', () => userDetailsModal.style.display = 'none');
-        }    
+    }    
 
-    // ---- 頁面切換邏輯 ----
     function showPage(pageId) {
         if (html5QrCode && html5QrCode.isScanning) {
             html5QrCode.stop().catch(err => console.error("停止掃描器失敗", err));
@@ -192,7 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('stat-outstanding-rentals').textContent = stats.outstanding_rentals_count || 0;
             document.getElementById('stat-due-today').textContent = stats.due_today_rentals_count || 0;
 
-            // ** 需求 4 修改：綁定點擊事件 **
             if(dashboardGrid) {
                 dashboardGrid.addEventListener('click', (e) => {
                     const card = e.target.closest('.stat-card');
@@ -201,15 +199,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const target = card.dataset.target;
                     if (target === 'bookings') {
                         showPage('bookings');
-                        // 自動點擊 '今日預約' 篩選器
                         document.querySelector('#booking-status-filter button[data-filter="today"]').click();
                     } else if (target === 'rentals-rented') {
                         showPage('rentals');
-                        // 自動點擊 '租借中' 篩選器
                         document.querySelector('#rental-status-filter button[data-filter="rented"]').click();
                     } else if (target === 'rentals-due-today') {
                         showPage('rentals');
-                        // 自動點擊 '今日到期' 篩選器
                         document.querySelector('#rental-status-filter button[data-filter="due_today"]').click();
                     }
                 });
@@ -439,39 +434,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
 async function openUserDetailsModal(userId) {
-        console.log("CRM 檢查點 A: 已進入 openUserDetailsModal 函式，收到的 userId 是:", userId);
-
-        if (!userId) {
-            console.error("CRM 流程中斷：傳入的 userId 是空的！");
-            return;
-        }
-        if (!userDetailsModal) {
-            console.error("CRM 流程中斷：在 JS 檔案頂部找不到 userDetailsModal 變數！請檢查 HTML 的 id 是否為 'user-details-modal'。");
-            return;
-        }
-        console.log("CRM 檢查點 B: userId 和 userDetailsModal 變數都存在。");
+        if (!userId) return;
+        if (!userDetailsModal) return;
 
         const contentContainer = userDetailsModal.querySelector('#user-details-content');
-        if (!contentContainer) {
-            console.error("CRM 流程中斷：在彈出視窗中找不到 id 為 'user-details-content' 的元素！");
-            return;
-        }
-        console.log("CRM 檢查點 C: 成功找到 contentContainer，準備顯示 Modal。");
+        if (!contentContainer) return;
 
         contentContainer.innerHTML = '<p>讀取中...</p>';
         userDetailsModal.style.display = 'flex';
-        console.log("CRM 檢查點 D: 已將 Modal 的 display 設為 'flex'，準備呼叫後端 API...");
 
         try {
             const response = await fetch(`/api/admin/user-details?userId=${userId}`);
-            console.log("CRM 檢查點 E: 後端 API 回應狀態碼:", response.status);
-
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(`API 請求失敗: ${errorText}`);
             }
             const data = await response.json();
-            console.log("CRM 檢查點 F: 成功獲取並解析 API 資料:", data);
             renderUserDetails(data);
         } catch (error) {
             console.error("CRM 執行錯誤:", error);
@@ -487,7 +465,6 @@ function renderUserDetails(data) {
     const displayName = profile.nickname || profile.line_display_name;
     document.getElementById('user-details-title').textContent = `顧客資料：${displayName}`;
 
-    // ** 需求 2 修改：在 profile-summary 中增加手機和職業福利 **
     contentContainer.innerHTML = `
         <div class="details-grid">
             <div class="profile-summary">
@@ -553,7 +530,6 @@ function renderHistoryTable(items, columns, headers) {
         if (col === 'created_at' || col === 'rental_date' || col === 'booking_date') {
             value = new Date(value).toLocaleDateString();
         }
-        // 【新增】狀態中文化邏輯
         if (col === 'status') {
             switch(value) {
                 case 'confirmed': value = '預約成功'; break;
@@ -561,7 +537,7 @@ function renderHistoryTable(items, columns, headers) {
                 case 'cancelled': value = '已取消'; break;
                 case 'rented': value = '租借中'; break;
                 case 'returned': value = '已歸還'; break;
-                case 'overdue': value = '<span style="color:var(--danger-color); font-weight:bold;">逾期</span>'; break; // 【新增這一行】
+                case 'overdue': value = '<span style="color:var(--danger-color); font-weight:bold;">逾期</span>'; break;
             }
         }
         return `<td>${value}</td>`;
@@ -743,13 +719,11 @@ function renderHistoryTable(items, columns, headers) {
 function applyGameFiltersAndRender() {
     if (!allGames) return;
 
-    // 1. 關鍵字搜尋
     const searchTerm = gameSearchInput.value.toLowerCase().trim();
     let filteredGames = searchTerm
         ? allGames.filter(game => (game.name || '').toLowerCase().includes(searchTerm))
         : [...allGames];
 
-    // 2. 庫存量篩選
     const stockFilterEl = document.querySelector('#inventory-stock-filter .active');
     if (stockFilterEl) {
         const stockFilter = stockFilterEl.dataset.filter;
@@ -760,7 +734,6 @@ function applyGameFiltersAndRender() {
         }
     }
 
-    // 3. 上架狀態篩選
     const visibilityFilterEl = document.querySelector('#inventory-visibility-filter .active');
     if(visibilityFilterEl) {
         const visibilityFilter = visibilityFilterEl.dataset.filter;
@@ -785,8 +758,6 @@ function renderGameList(games) {
         const isVisible = game.is_visible === 1;
         const tagsHtml = (game.tags || '').split(',').map(t => t.trim()).filter(Boolean).map(tag => `<span style="background:#eee; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${tag}</span>`).join(' ');
 
-        // 將原本的 <td>${game.display_order || 'N/A'}</td>
-        // 修改為包含拖曳圖示的儲存格
         row.innerHTML = `
             <td class="drag-handle-cell">
                 <span class="drag-handle">⠿</span>
@@ -817,16 +788,14 @@ function renderGameList(games) {
 
 async function fetchAllGames() {
     try {
-        // **【核心修正處】** 將 API 位址從 get-sheet-boardgames 改為 get-boardgames
         const response = await fetch('/api/get-boardgames');
         if (!response.ok) {
-             // 拋出更詳細的錯誤，方便未來除錯
             const errorText = await response.text();
             throw new Error(`從資料庫獲取桌遊列表失敗: ${errorText}`);
         }
         allGames = await response.json();
         applyGameFiltersAndRender();
-        initializeGameDragAndDrop(); // 渲染後初始化拖曳功能
+        initializeGameDragAndDrop();
     } catch (error) { 
         console.error('獲取桌遊列表失敗:', error);
         if(gameListTbody) gameListTbody.innerHTML = `<tr><td colspan="7" style="color: red;">讀取資料失敗，請檢查 API 紀錄。</td></tr>`;
@@ -840,12 +809,10 @@ function initializeGameDragAndDrop() {
     if (gameListTbody) {
         sortableGames = new Sortable(gameListTbody, {
             animation: 150,
-            // 將 handle 從 '.draggable-row' 改為 '.drag-handle'
             handle: '.drag-handle',
             onEnd: async (evt) => {
                 const orderedIds = Array.from(gameListTbody.children).map(row => row.dataset.gameId);
                 
-                // 立即更新前端視覺排序
                 allGames.sort((a, b) => orderedIds.indexOf(a.game_id) - orderedIds.indexOf(b.game_id));
                 applyGameFiltersAndRender();
 
@@ -858,11 +825,9 @@ function initializeGameDragAndDrop() {
                     if (!response.ok) {
                         throw new Error('儲存順序失敗，請刷新頁面重試。');
                     }
-                    // 重新從後端獲取一次資料，確保 display_order 是最新的
                     await fetchAllGames(); 
                 } catch (error) {
                     alert(error.message);
-                    // 如果失敗，可以選擇重新載入以還原
                     await fetchAllGames(); 
                 }
             }
@@ -909,7 +874,7 @@ if (syncGamesBtn) {
                 throw new Error(result.details || '同步失敗');
             }
             alert(result.message || '同步成功！');
-            await fetchAllGames(); // 同步後重新載入
+            await fetchAllGames();
         } catch (error) {
             alert(`錯誤：${error.message}`);
         } finally {
@@ -923,11 +888,9 @@ if (syncGamesBtn) {
 if (gameListTbody) {
     gameListTbody.addEventListener('click', (e) => {
         const target = e.target;
-        // **【修改處】** 直接從被點擊的按鈕上獲取 gameid
         const gameId = target.dataset.gameid; 
-        if (!gameId) return; // 如果點擊的不是帶有 data-gameid 的元素，就忽略
+        if (!gameId) return;
 
-        // 判斷點擊的是哪個按鈕並執行對應函式
         if (target.classList.contains('btn-edit-game')) {
             openEditGameModal(gameId);
         } else if (target.classList.contains('btn-rent')) {
@@ -943,7 +906,6 @@ function openEditGameModal(gameId) {
     if(editGameForm) editGameForm.reset();
     document.getElementById('modal-game-title').textContent = `編輯：${game.name}`;
     
-    // **【修改處】** 填入所有欄位的資料，包含新欄位
     document.getElementById('edit-game-id').value = game.game_id;
     document.getElementById('edit-game-id-display').value = game.game_id;
     document.getElementById('edit-game-name').value = game.name;
@@ -975,7 +937,6 @@ if(editGameModal) {
         editGameForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // 收集所有欄位的資料
             const updatedData = {
                 gameId: document.getElementById('edit-game-id').value,
                 name: document.getElementById('edit-game-name').value,
@@ -1006,9 +967,16 @@ if(editGameModal) {
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || '更新失敗');
                 
+                // 【** 關鍵修正：更新前端的資料狀態 **】
                 const gameIndex = allGames.findIndex(g => g.game_id === updatedData.gameId);
                 if (gameIndex !== -1) {
-                    allGames[gameIndex] = { ...allGames[gameIndex], ...updatedData, is_visible: updatedData.is_visible ? 1 : 0 };
+                    // 將回傳的更新資料合併到現有的 allGames 陣列中
+                    // 注意 is_visible 需要從布林值轉回 1 或 0
+                    allGames[gameIndex] = { 
+                        ...allGames[gameIndex], 
+                        ...updatedData,
+                        is_visible: updatedData.is_visible ? 1 : 0
+                    };
                 }
                 
                 applyGameFiltersAndRender();
@@ -1044,13 +1012,12 @@ async function applyRentalFiltersAndRender() {
         if (!response.ok) throw new Error('無法獲取租借列表');
         allRentals = await response.json();
 
-        // 在前端進行關鍵字篩選
         const filteredRentals = !keyword ? allRentals : allRentals.filter(rental => 
                                  (rental.game_name || '').toLowerCase().includes(keyword) ||
                                  (rental.nickname || rental.line_display_name || '').toLowerCase().includes(keyword)
                              );
         
-        sortRentals(); // 在渲染前先進行排序
+        sortRentals();
         renderRentalList(filteredRentals);
 
     } catch (error) { 
@@ -1068,7 +1035,6 @@ function sortRentals() {
             return dateB - dateA;
         }
     });
-    // 更新排序按鈕的視覺狀態
     if(sortDueDateBtn) {
         sortDueDateBtn.classList.remove('asc', 'desc');
         sortDueDateBtn.classList.add(dueDateSortOrder);
@@ -1314,7 +1280,6 @@ async function openCreateRentalModal(gameId) {
     const userSelect = document.getElementById('rental-user-select');
     if(userSelect) userSelect.style.display = 'none';
 
-    // 【修改處】自動帶入預設金額
     document.getElementById('rental-rent-price').value = game ? (game.rent_price || 0) : 0;
     document.getElementById('rental-deposit').value = game ? (game.deposit || 0) : 0;
     document.getElementById('rental-late-fee').value = game ? (game.late_fee_per_day || 50) : 50;
@@ -1372,12 +1337,11 @@ if(createRentalModal) {
                 if(rentalUserSelect) rentalUserSelect.style.display = 'none';
                 return;
             }
-            // ** 需求 2 修改：增加 real_name 到搜尋條件 **
             const filteredUsers = allUsers.filter(user => 
                 (user.line_display_name || '').toLowerCase().includes(searchTerm) ||
                 (user.nickname || '').toLowerCase().includes(searchTerm) ||
                 (user.user_id || '').toLowerCase().includes(searchTerm) ||
-                (user.real_name || '').toLowerCase().includes(searchTerm) // 新增此行
+                (user.real_name || '').toLowerCase().includes(searchTerm)
             );
             
             if(rentalUserSelect) {
@@ -1386,7 +1350,6 @@ if(createRentalModal) {
                     const option = document.createElement('option');
                     option.value = user.user_id;
                     const displayName = user.nickname || user.line_display_name;
-                    // 在選項中也顯示真實姓名，方便辨識
                     const realNameDisplay = user.real_name ? ` [${user.real_name}]` : '';
                     option.textContent = `${displayName}${realNameDisplay} (${user.user_id.substring(0, 10)}...)`;
                     rentalUserSelect.appendChild(option);
@@ -1453,7 +1416,6 @@ if (createRentalForm) {
             return;
         }
 
-        // 【修改處】讀取表單上的客製化金額
         const rentalData = {
             userId: selectedRentalUser.user_id,
             gameIds: selectedRentalGames.map(g => g.game_id),
@@ -1573,7 +1535,7 @@ flatpickr("#rental-due-date", { dateFormat: "Y-m-d", minDate: "today" });
     }
     
     async function initializeBookingSettings() {
-        if (bookingDatepicker) return; // 如果已初始化，則不再執行
+        if (bookingDatepicker) return;
 
         try {
             const response = await fetch('/api/admin/booking-settings');
@@ -1602,11 +1564,9 @@ flatpickr("#rental-due-date", { dateFormat: "Y-m-d", minDate: "today" });
         try {
             const newDisabledDates = bookingDatepicker.selectedDates.map(d => bookingDatepicker.formatDate(d, "Y-m-d"));
             
-            // 找出需要新增和刪除的日期
             const datesToAdd = newDisabledDates.filter(d => !disabledDates.includes(d));
             const datesToRemove = disabledDates.filter(d => !newDisabledDates.includes(d));
 
-            // 建立所有需要執行的 API 請求
             const promises = [];
             datesToAdd.forEach(date => {
                 promises.push(fetch('/api/admin/booking-settings', {
@@ -1623,10 +1583,8 @@ flatpickr("#rental-due-date", { dateFormat: "Y-m-d", minDate: "today" });
                 }));
             });
 
-            // 等待所有請求完成
             await Promise.all(promises);
 
-            // 成功後，更新本地的日期列表
             disabledDates = newDisabledDates;
             alert('公休日設定已成功儲存！');
             if (bookingSettingsModal) bookingSettingsModal.style.display = 'none';
@@ -1642,7 +1600,7 @@ flatpickr("#rental-due-date", { dateFormat: "Y-m-d", minDate: "today" });
 
     if(manageBookingDatesBtn) {
         manageBookingDatesBtn.addEventListener('click', () => {
-            initializeBookingSettings(); // 確保日曆已初始化
+            initializeBookingSettings();
             if (bookingSettingsModal) {
                 bookingSettingsModal.style.display = 'flex';
             }
@@ -1652,12 +1610,10 @@ flatpickr("#rental-due-date", { dateFormat: "Y-m-d", minDate: "today" });
     if(bookingSettingsModal) {
         bookingSettingsModal.querySelector('.modal-close').addEventListener('click', () => bookingSettingsModal.style.display = 'none');
         bookingSettingsModal.querySelector('.btn-cancel').addEventListener('click', () => bookingSettingsModal.style.display = 'none');
-        // 綁定新的儲存按鈕事件
         const saveBtn = bookingSettingsModal.querySelector('#save-booking-settings-btn');
         if(saveBtn) saveBtn.addEventListener('click', saveBookingSettings);
     }
 
-// REPLACE THIS EVENT LISTENER
 if(bookingListTbody){
     bookingListTbody.addEventListener('click', async (event) => {
         const target = event.target;
@@ -1689,7 +1645,6 @@ if(bookingListTbody){
                 '報到成功！', '報到失敗');
         }
         
-        // ** 需求 3 修改：取消按鈕的邏輯 **
         if (target.classList.contains('btn-cancel-booking')) {
             const booking = allBookings.find(b => b.booking_id == bookingId);
             openCancelBookingModal(booking);
@@ -1697,9 +1652,6 @@ if(bookingListTbody){
     });
 }
 
-// ADD THESE TWO ITEMS
-
-// ** 需求 3 新增：打開取消預約視窗的函式 **
 async function openCancelBookingModal(booking) {
     if (!booking || !cancelBookingModal) return;
 
@@ -1709,8 +1661,8 @@ async function openCancelBookingModal(booking) {
     const content = document.getElementById('cancel-direct-message-content');
     const confirmBtn = document.getElementById('confirm-cancel-booking-btn');
 
-    content.value = ''; // 清空
-    await fetchAllDrafts(); // 確保草稿已載入
+    content.value = '';
+    await fetchAllDrafts();
     select.innerHTML = '<option value="">-- 不發送通知或手動輸入 --</option>';
     allDrafts.forEach(draft => {
         const option = document.createElement('option');
@@ -1767,7 +1719,6 @@ async function openCancelBookingModal(booking) {
     cancelBookingModal.style.display = 'flex';
 }
 
-// ** 需求 3 新增：為取消視窗加上關閉按鈕事件 **
 if(cancelBookingModal) {
     cancelBookingModal.querySelector('.modal-close').addEventListener('click', () => cancelBookingModal.style.display = 'none');
 }
@@ -1868,13 +1819,9 @@ if(cancelBookingModal) {
     // =================================================================
     // 經驗紀錄模組
     // =================================================================
-// public/admin-login.js
-
 async function fetchAllExpHistory() {
     try {
-        // 【修改這裡】將網址對應到新的檔案名稱
         const response = await fetch('/api/admin/exp-history-list');
-
         if (!response.ok) throw new Error('無法獲取經驗紀錄');
         allExpHistory = await response.json();
         renderExpHistoryList(allExpHistory);
@@ -2086,10 +2033,9 @@ async function fetchAllExpHistory() {
             console.error('初始化職業設定失敗:', error);
             alert(`警告：無法從 Google Sheet 獲取職業設定。`);
         }
-        showPage('dashboard'); // 預設顯示儀表板
+        showPage('dashboard');
     }
     
     initialize();
 
 });
-
