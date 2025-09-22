@@ -807,14 +807,32 @@ async function initializeRentalHistoryPage() {
         document.querySelectorAll('#booking-wizard-container .booking-step').forEach(step => step.classList.remove('active'));
         const targetStep = document.getElementById(stepId);
         if (targetStep) targetStep.classList.add('active');
-        if(bookingHistoryStack[bookingHistoryStack.length - 1] !== stepId) bookingHistoryStack.push(stepId);
+
+        // ** 新增的關鍵邏輯 **
+        // 當顯示的是「選擇日期」這一步時，強制重置時段區塊的狀態
+        if (stepId === 'step-date-and-slots') {
+            const slotsPlaceholder = document.getElementById('slots-placeholder');
+            const slotsContainer = document.getElementById('booking-slots-container');
+            if (slotsPlaceholder && slotsContainer) {
+                // 恢復提示文字
+                slotsPlaceholder.textContent = '請先從上方選擇日期';
+                // 確保提示文字是可見的
+                slotsPlaceholder.style.display = 'block';
+                // 清空任何可能殘留的時段按鈕
+                slotsContainer.innerHTML = '';
+            }
+        }
+
+        if(bookingHistoryStack[bookingHistoryStack.length - 1] !== stepId) {
+            bookingHistoryStack.push(stepId);
+        }
     }
 
     function goBackBookingStep() {
         if (bookingHistoryStack.length > 1) {
             bookingHistoryStack.pop();
             const lastStep = bookingHistoryStack[bookingHistoryStack.length - 1];
-            showBookingStep(lastStep);
+            showBookingStep(lastStep); // 呼叫我們修改過的新函式
             return true;
         }
         return false;
