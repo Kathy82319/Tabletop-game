@@ -821,26 +821,28 @@ async function initializeRentalHistoryPage() {
     }
 
 // public/script.js
-async function initializeBookingPage() {
-    bookingHistoryStack = [];
-    showBookingStep('step-preference');
+    async function initializeBookingPage() {
+        bookingHistoryStack = [];
+        showBookingStep('step-preference');
 
-    document.getElementById('view-my-bookings-btn').addEventListener('click', () => {
-        showPage('page-my-bookings');
-    });
+        document.getElementById('view-my-bookings-btn').addEventListener('click', () => {
+            showPage('page-my-bookings');
+        });
 
-    try {
-        const response = await fetch('/api/bookings-check?month-init=true');
-        const data = await response.json();
-        disabledDatesByAdmin = data.disabledDates || [];
-    } catch (error) {
-        console.error("獲取禁用日期失敗:", error);
-        disabledDatesByAdmin = [];
-    }
+        try {
+            // 請求的 API 端點不變，但後端回傳的內容已改變
+            const response = await fetch('/api/bookings-check?month-init=true');
+            const data = await response.json();
+            // 將接收到的資料存到 enabledDatesByAdmin
+            enabledDatesByAdmin = data.enabledDates || []; 
+        } catch (error) {
+            console.error("獲取可預約日期失敗:", error);
+            enabledDatesByAdmin = [];
+        }
 
-    const wizardContainer = document.getElementById('booking-wizard-container');
-    if (wizardContainer) { // 【新增】保護措施
-        wizardContainer.addEventListener('click', async (e) => {
+        const wizardContainer = document.getElementById('booking-wizard-container');
+        if (wizardContainer) {
+            wizardContainer.addEventListener('click', async (e) => {
             // ... (原本的 click 事件邏輯不變) ...
              if (e.target.matches('.back-button')) {
                 goBackBookingStep();
@@ -873,29 +875,31 @@ async function initializeBookingPage() {
     }
 
     // 【關鍵修改】選取當前頁面上的日曆容器來初始化
-    const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
-    if (datepickerContainer) {
-        flatpickr(datepickerContainer, {
-            inline: true,
-            minDate: "today",
-            dateFormat: "Y-m-d",
-            locale: "zh_tw",
-            disable: disabledDatesByAdmin,
-            onChange: (selectedDates, dateStr) => {
-                bookingData.date = dateStr;
-                fetchAndRenderSlots(dateStr);
-            },
-        });
-    }
+        const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
+        if (datepickerContainer) {
+            flatpickr(datepickerContainer, {
+                inline: true,
+                minDate: "today",
+                dateFormat: "Y-m-d",
+                locale: "zh_tw",
+                // 【** 核心修改：從 disable 改為 enable **】
+                // 這樣日曆就只會開啟 enabledDatesByAdmin 陣列中的日期
+                enable: enabledDatesByAdmin,
+                onChange: (selectedDates, dateStr) => {
+                    bookingData.date = dateStr;
+                    fetchAndRenderSlots(dateStr);
+                },
+            });
+        }
 
-    const userData = await fetchGameData();
-    if (userData) {
-        const nameInput = document.getElementById('contact-name');
-        const phoneInput = document.getElementById('contact-phone');
-        if(nameInput) nameInput.value = userData.real_name || '';
-        if(phoneInput) phoneInput.value = userData.phone || '';
+        const userData = await fetchGameData();
+        if (userData) {
+            const nameInput = document.getElementById('contact-name');
+            const phoneInput = document.getElementById('contact-phone');
+            if(nameInput) nameInput.value = userData.real_name || '';
+            if(phoneInput) phoneInput.value = userData.phone || '';
+        }
     }
-}
 
     async function fetchAndRenderSlots(date) {
         const slotsPlaceholder = document.getElementById('slots-placeholder');
