@@ -46,13 +46,13 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    // **【修改處】** 接收所有欄位的資料
-    const { 
-        gameId, name, description, image_url, tags, 
-        min_players, max_players, difficulty, 
-        total_stock, for_rent_stock, 
+    // **【修改處】** 接收所有欄位，包含新增的欄位
+    const {
+        gameId, name, description, image_url, image_url_2, image_url_3, tags,
+        min_players, max_players, difficulty,
+        total_stock, for_rent_stock,
         sale_price, rent_price, deposit, late_fee_per_day,
-        is_visible 
+        is_visible, supplementary_info
     } = await context.request.json();
 
     if (!gameId || !name) {
@@ -61,26 +61,25 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
-    // **【修改處】** 更新 D1 資料庫的 SQL 指令，包含所有欄位
+    // **【修改處】** 更新 D1 資料庫的 SQL 指令，加入新欄位
     const stmt = db.prepare(
-      `UPDATE BoardGames SET 
-         name = ?, description = ?, image_url = ?, tags = ?, 
-         min_players = ?, max_players = ?, difficulty = ?, 
+      `UPDATE BoardGames SET
+         name = ?, description = ?, image_url = ?, image_url_2 = ?, image_url_3 = ?, tags = ?,
+         min_players = ?, max_players = ?, difficulty = ?,
          total_stock = ?, for_rent_stock = ?, for_sale_stock = ?,
-         sale_price = ?, rent_price = ?, deposit = ?, late_fee_per_day = ?, 
-         is_visible = ? 
+         sale_price = ?, rent_price = ?, deposit = ?, late_fee_per_day = ?,
+         is_visible = ?, supplementary_info = ?
        WHERE game_id = ?`
     );
-    // for_sale_stock 暫時用 total_stock - for_rent_stock 計算
     const for_sale_stock = (Number(total_stock) || 0) - (Number(for_rent_stock) || 0);
 
     const result = await stmt.bind(
-        name, description || '', image_url || '', tags || '',
+        name, description || '', image_url || '', image_url_2 || '', image_url_3 || '', tags || '',
         Number(min_players) || 1, Number(max_players) || 1, difficulty || '普通',
         Number(total_stock) || 0, Number(for_rent_stock) || 0, for_sale_stock,
         Number(sale_price) || 0, Number(rent_price) || 0,
         Number(deposit) || 0, Number(late_fee_per_day) || 50,
-        is_visible ? 1 : 0,
+        is_visible ? 1 : 0, supplementary_info || '',
         gameId
     ).run();
 
@@ -88,13 +87,14 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: `找不到遊戲 ID: ${gameId}，無法更新。` }), { status: 404 });
     }
 
-    // **【修改處】** 準備同步到 Google Sheet 的資料也包含所有欄位
+    // **【修改處】** 準備同步到 Google Sheet 的資料也包含新欄位
     const dataToSync = {
-        name, description, image_url, tags,
+        name, description, image_url, image_url_2, image_url_3, tags,
         min_players, max_players, difficulty,
         total_stock, for_rent_stock, for_sale_stock,
         sale_price, rent_price, deposit, late_fee_per_day,
-        is_visible: is_visible ? 'TRUE' : 'FALSE'
+        is_visible: is_visible ? 'TRUE' : 'FALSE',
+        supplementary_info
     };
     
     const sheetName = context.env.BOARDGAMES_SHEET_NAME;

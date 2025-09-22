@@ -45,38 +45,39 @@ async function runBoardgameSync(env) {
         return { success: true, message: 'Google Sheet 中沒有桌遊資料可同步。' };
     }
 
+    // **【修改處】** SQL 指令加入新欄位
     const stmt = DB.prepare(
         `INSERT INTO BoardGames (
-            game_id, name, description, image_url, min_players, max_players, 
-            difficulty, tags, total_stock, for_rent_stock, for_sale_stock, 
-            rent_price, sale_price, deposit, late_fee_per_day, is_visible, display_order
+            game_id, name, description, image_url, image_url_2, image_url_3, min_players, max_players,
+            difficulty, tags, total_stock, for_rent_stock, for_sale_stock,
+            rent_price, sale_price, deposit, late_fee_per_day, is_visible, display_order, supplementary_info
          )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(game_id) DO UPDATE SET
            name = excluded.name, description = excluded.description, image_url = excluded.image_url,
+           image_url_2 = excluded.image_url_2, image_url_3 = excluded.image_url_3,
            min_players = excluded.min_players, max_players = excluded.max_players, difficulty = excluded.difficulty,
            tags = excluded.tags, total_stock = excluded.total_stock, for_rent_stock = excluded.for_rent_stock,
            for_sale_stock = excluded.for_sale_stock, rent_price = excluded.rent_price, sale_price = excluded.sale_price,
            deposit = excluded.deposit, late_fee_per_day = excluded.late_fee_per_day,
-           is_visible = excluded.is_visible, display_order = excluded.display_order`
+           is_visible = excluded.is_visible, display_order = excluded.display_order, supplementary_info = excluded.supplementary_info`
     );
 
     const operations = rows.map(row => {
         const rowData = row.toObject();
-        
-        if (!rowData.game_id) {
-            console.warn("跳過一筆缺少 game_id 的資料:", rowData);
-            return null;
-        }
+        if (!rowData.game_id) return null;
 
         const isVisible = String(rowData.is_visible).toUpperCase() === 'TRUE' ? 1 : 0;
         const for_sale_stock = (Number(rowData.total_stock) || 0) - (Number(rowData.for_rent_stock) || 0);
         
+        // **【修改處】** 綁定所有欄位的資料，包含新欄位
         return stmt.bind(
             rowData.game_id,
             rowData.name || '',
             rowData.description || '',
             rowData.image_url || '',
+            rowData.image_url_2 || '', // 新增
+            rowData.image_url_3 || '', // 新增
             Number(rowData.min_players) || 1,
             Number(rowData.max_players) || 4,
             rowData.difficulty || '普通',
@@ -89,7 +90,8 @@ async function runBoardgameSync(env) {
             Number(rowData.deposit) || 0,
             Number(rowData.late_fee_per_day) || 50,
             isVisible,
-            Number(rowData.display_order) || 999
+            Number(rowData.display_order) || 999,
+            rowData.supplementary_info || '' // 新增
         );
     }).filter(op => op !== null);
     
@@ -98,43 +100,5 @@ async function runBoardgameSync(env) {
     }
 
     await DB.batch(operations);
-
     return { success: true, message: `成功從 Google Sheet 同步了 ${operations.length} 筆桌遊資料到資料庫。` };
-}
-
-// --- 主要請求處理 ---
-export async function onRequest(context) {
-    const { request, env } = context;
-
-    if (request.method === 'GET') {
-        try {
-            const db = env.DB;
-            const stmt = db.prepare('SELECT * FROM BoardGames ORDER BY display_order ASC, game_id ASC');
-            const { results } = await stmt.all();
-            return new Response(JSON.stringify(results || []), {
-                status: 200, headers: { 'Content-Type': 'application/json' },
-            });
-        } catch (error) {
-            console.error('Error in get-boardgames (GET):', error);
-            return new Response(JSON.stringify({ error: '獲取桌遊列表失敗。', details: error.message }), {
-                status: 500, headers: { 'Content-Type': 'application/json' },
-            });
-        }
-    }
-
-    if (request.method === 'POST') {
-        try {
-            const result = await runBoardgameSync(env);
-            return new Response(JSON.stringify(result), {
-                status: 200, headers: { 'Content-Type': 'application/json' },
-            });
-        } catch (error) {
-            console.error('Error in get-boardgames (POST):', error);
-            return new Response(JSON.stringify({ error: '同步失敗。', details: error.message }), {
-                status: 500, headers: { 'Content-Type': 'application/json' },
-            });
-        }
-    }
-
-    return new Response('Invalid request method.', { status: 405 });
 }

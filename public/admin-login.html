@@ -518,94 +518,69 @@
                 <h3 id="modal-game-title">編輯遊戲</h3>
                 <button class="modal-close">&times;</button>
             </div>
-            <form id="edit-game-form">
-                <input type="hidden" id="edit-game-id">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div>
-                        <div class="form-group">
-                            <label for="edit-game-name">遊戲名稱</label>
-                            <input type="text" id="edit-game-name" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-game-id-display">遊戲 ID (不可修改)</label>
-                            <input type="text" id="edit-game-id-display" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-game-tags">標籤 (以逗號分隔)</label>
-                            <input type="text" id="edit-game-tags">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-game-image">圖片網址</label>
-                            <input type="url" id="edit-game-image">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-game-desc">遊戲介紹</label>
-                            <textarea id="edit-game-desc" rows="6"></textarea>
-                        </div>
-                    </div>
-                    <div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-                            <div class="form-group">
-                                <label for="edit-min-players">最少人數</label>
-                                <input type="number" id="edit-min-players" min="1">
-                            </div>
-                            <div class="form-group">
-                                <label for="edit-max-players">最多人數</label>
-                                <input type="number" id="edit-max-players" min="1">
-                            </div>
-                            <div class="form-group">
-                                <label for="edit-difficulty">難度</label>
-                                <select id="edit-difficulty">
-                                    <option>簡單</option>
-                                    <option>普通</option>
-                                    <option>困難</option>
-                                    <option>專家</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div class="form-group">
-                                <label for="edit-total-stock">總庫存</label>
-                                <input type="number" id="edit-total-stock" min="0">
-                            </div>
-                             <div class="form-group">
-                                <label for="edit-for-rent-stock">可租借庫存</label>
-                                <input type="number" id="edit-for-rent-stock" min="0">
-                            </div>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                             <div class="form-group">
-                                <label for="edit-sale-price">售價</label>
-                                <input type="number" id="edit-sale-price" min="0">
-                            </div>
-                            <div class="form-group">
-                                <label for="edit-rent-price">租金</label>
-                                <input type="number" id="edit-rent-price" min="0">
-                            </div>
-                        </div>
-                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div class="form-group">
-                                <label for="edit-deposit">押金</label>
-                                <input type="number" id="edit-deposit" min="0">
-                            </div>
-                            <div class="form-group">
-                                <label for="edit-late-fee">每日逾期費</label>
-                                <input type="number" id="edit-late-fee" min="0">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label style="display: flex; align-items: center; margin-top: 20px;">
-                                <input type="checkbox" id="edit-is-visible" style="width: auto; margin-right: 10px;">
-                                是否上架 (顯示於 LIFF)
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="action-btn btn-cancel">取消</button>
-                    <button type="submit" class="action-btn btn-save">儲存變更</button>
-                </div>
-            </form>
+<form id="edit-game-form">
+    <input type="hidden" id="edit-game-id">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div>
+            <div class="form-group">
+                <label for="edit-game-name">遊戲名稱</label>
+                <input type="text" id="edit-game-name" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-game-id-display">遊戲 ID (不可修改)</label>
+                <input type="text" id="edit-game-id-display" readonly style="background: #e9ecef;">
+            </div>
+            <div class="form-group">
+                <label for="edit-game-tags">標籤 (以逗號分隔)</label>
+                <input type="text" id="edit-game-tags">
+            </div>
+            <div class="form-group">
+                <label for="edit-game-image">主要圖片網址</label>
+                <input type="url" id="edit-game-image" placeholder="https://...">
+            </div>
+            <div class="form-group">
+                <label for="edit-game-image-2">圖片網址 2 (選填)</label>
+                <input type="url" id="edit-game-image-2" placeholder="https://...">
+            </div>
+            <div class="form-group">
+                <label for="edit-game-image-3">圖片網址 3 (選填)</label>
+                <input type="url" id="edit-game-image-3" placeholder="https://...">
+            </div>
+        </div>
+        <div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div class="form-group"><label for="edit-min-players">最少人數</label><input type="number" id="edit-min-players" min="1"></div>
+                <div class="form-group"><label for="edit-max-players">最多人數</label><input type="number" id="edit-max-players" min="1"></div>
+                <div class="form-group"><label for="edit-difficulty">難度</label><select id="edit-difficulty"><option>簡單</option><option>普通</option><option>困難</option><option>專家</option></select></div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group"><label for="edit-total-stock">總庫存</label><input type="number" id="edit-total-stock" min="0"></div>
+                <div class="form-group"><label for="edit-for-rent-stock">可租借庫存</label><input type="number" id="edit-for-rent-stock" min="0"></div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group"><label for="edit-sale-price">售價</label><input type="number" id="edit-sale-price" min="0"></div>
+                <div class="form-group"><label for="edit-rent-price">租金</label><input type="number" id="edit-rent-price" min="0"></div>
+            </div>
+             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group"><label for="edit-deposit">押金</label><input type="number" id="edit-deposit" min="0"></div>
+                <div class="form-group"><label for="edit-late-fee">每日逾期費</label><input type="number" id="edit-late-fee" min="0"></div>
+            </div>
+            <div class="form-group"><label style="display: flex; align-items: center; margin-top: 10px;"><input type="checkbox" id="edit-is-visible" style="width: auto; margin-right: 10px;">是否上架 (顯示於 LIFF)</label></div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="edit-game-desc">遊戲介紹</label>
+        <textarea id="edit-game-desc" rows="4"></textarea>
+    </div>
+    <div class="form-group">
+        <label for="edit-supplementary-info">補充說明 (配件、注意事項等)</label>
+        <textarea id="edit-supplementary-info" rows="4"></textarea>
+    </div>
+    <div class="form-actions">
+        <button type="button" class="action-btn btn-cancel">取消</button>
+        <button type="submit" class="action-btn btn-save">儲存變更</button>
+    </div>
+</form>
         </div>
     </div>
     

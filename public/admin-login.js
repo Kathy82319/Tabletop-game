@@ -933,12 +933,14 @@ function openEditGameModal(gameId) {
     if(editGameForm) editGameForm.reset();
     document.getElementById('modal-game-title').textContent = `編輯：${game.name}`;
     
-    // 填入所有欄位的資料
+    // **【修改處】** 填入所有欄位的資料，包含新欄位
     document.getElementById('edit-game-id').value = game.game_id;
     document.getElementById('edit-game-id-display').value = game.game_id;
     document.getElementById('edit-game-name').value = game.name;
     document.getElementById('edit-game-tags').value = game.tags || '';
     document.getElementById('edit-game-image').value = game.image_url || '';
+    document.getElementById('edit-game-image-2').value = game.image_url_2 || '';
+    document.getElementById('edit-game-image-3').value = game.image_url_3 || '';
     document.getElementById('edit-game-desc').value = game.description || '';
     document.getElementById('edit-min-players').value = game.min_players || 1;
     document.getElementById('edit-max-players').value = game.max_players || 1;
@@ -950,6 +952,7 @@ function openEditGameModal(gameId) {
     document.getElementById('edit-deposit').value = game.deposit || 0;
     document.getElementById('edit-late-fee').value = game.late_fee_per_day || 50;
     document.getElementById('edit-is-visible').checked = game.is_visible === 1;
+    document.getElementById('edit-supplementary-info').value = game.supplementary_info || '';
     
     if(editGameModal) editGameModal.style.display = 'flex';
 }
@@ -968,6 +971,8 @@ if(editGameModal) {
                 name: document.getElementById('edit-game-name').value,
                 tags: document.getElementById('edit-game-tags').value,
                 image_url: document.getElementById('edit-game-image').value,
+                image_url_2: document.getElementById('edit-game-image-2').value,
+                image_url_3: document.getElementById('edit-game-image-3').value,
                 description: document.getElementById('edit-game-desc').value,
                 min_players: document.getElementById('edit-min-players').value,
                 max_players: document.getElementById('edit-max-players').value,
@@ -978,7 +983,8 @@ if(editGameModal) {
                 rent_price: document.getElementById('edit-rent-price').value,
                 deposit: document.getElementById('edit-deposit').value,
                 late_fee_per_day: document.getElementById('edit-late-fee').value,
-                is_visible: document.getElementById('edit-is-visible').checked
+                is_visible: document.getElementById('edit-is-visible').checked,
+                supplementary_info: document.getElementById('edit-supplementary-info').value
             };
 
             try {
