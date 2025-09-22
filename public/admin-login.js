@@ -83,6 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedRentalUser = null;
     let selectedRentalGames = []; 
     let dueDateSortOrder = 'asc'; 
+    let sortableGames = null; // 新增：用於拖曳排序
 
     // --- 【模組名稱：手動全量同步】 ---
     const fullSyncRentalsBtn = document.getElementById('full-sync-rentals-btn');
@@ -735,191 +736,268 @@ function renderHistoryTable(items, columns, headers) {
     }
 
 
-    // =================================================================
-    // 庫存管理模組
-    // =================================================================
-    function applyGameFiltersAndRender() {
-        if (!allGames) return;
+// =================================================================
+// 庫存管理模組
+// =================================================================
 
-        // 1. 關鍵字搜尋
-        const searchTerm = gameSearchInput.value.toLowerCase().trim();
-        let filteredGames = searchTerm
-            ? allGames.filter(game => (game.name || '').toLowerCase().includes(searchTerm))
-            : [...allGames];
+function applyGameFiltersAndRender() {
+    if (!allGames) return;
 
-        // 2. 庫存量篩選
-        const stockFilter = document.querySelector('#inventory-stock-filter .active').dataset.filter;
+    // 1. 關鍵字搜尋
+    const searchTerm = gameSearchInput.value.toLowerCase().trim();
+    let filteredGames = searchTerm
+        ? allGames.filter(game => (game.name || '').toLowerCase().includes(searchTerm))
+        : [...allGames];
+
+    // 2. 庫存量篩選
+    const stockFilterEl = document.querySelector('#inventory-stock-filter .active');
+    if (stockFilterEl) {
+        const stockFilter = stockFilterEl.dataset.filter;
         if (stockFilter === 'in_stock') {
             filteredGames = filteredGames.filter(game => Number(game.for_rent_stock) > 0);
         } else if (stockFilter === 'out_of_stock') {
             filteredGames = filteredGames.filter(game => Number(game.for_rent_stock) <= 0);
         }
+    }
 
-        // 3. 上架狀態篩選
-        const visibilityFilter = document.querySelector('#inventory-visibility-filter .active').dataset.filter;
+    // 3. 上架狀態篩選
+    const visibilityFilterEl = document.querySelector('#inventory-visibility-filter .active');
+    if(visibilityFilterEl) {
+        const visibilityFilter = visibilityFilterEl.dataset.filter;
         if (visibilityFilter === 'visible') {
-            filteredGames = filteredGames.filter(game => game.is_visible === 1 || String(game.is_visible).toUpperCase() === 'TRUE');
+            filteredGames = filteredGames.filter(game => game.is_visible === 1);
         } else if (visibilityFilter === 'hidden') {
-            filteredGames = filteredGames.filter(game => !(game.is_visible === 1 || String(game.is_visible).toUpperCase() === 'TRUE'));
+            filteredGames = filteredGames.filter(game => game.is_visible !== 1);
         }
+    }
+    
+    renderGameList(filteredGames);
+}
+
+function renderGameList(games) {
+    if (!gameListTbody) return;
+    gameListTbody.innerHTML = '';
+    games.forEach(game => {
+        const row = document.createElement('tr');
+        row.className = 'draggable-row'; // 用於拖曳
+        row.dataset.gameId = game.game_id; // 綁定 ID
         
-        renderGameList(filteredGames);
-    }
+        const isVisible = game.is_visible === 1;
+        const tagsHtml = (game.tags || '').split(',').map(t => t.trim()).filter(Boolean).map(tag => `<span style="background:#eee; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${tag}</span>`).join(' ');
 
-    function renderGameList(games) {
-        if (!gameListTbody) return;
-        gameListTbody.innerHTML = '';
-        games.forEach(game => {
-            const row = document.createElement('tr');
-            const isVisible = game.is_visible === 1 || String(game.is_visible).toUpperCase() === 'TRUE';
-            row.innerHTML = `
-                <td class="compound-cell">
-                    <div class="main-info">${game.name}</div>
-                    <div class="sub-info">ID: ${game.game_id}</div>
-                </td>
-                <td>${game.for_rent_stock}</td>
-                <td>${isVisible ? '是' : '否'}</td>
-                <td class="actions-cell" style="display: flex; gap: 5px; justify-content: center;">
-                    <button class="action-btn btn-rent" data-gameid="${game.game_id}" style="background-color: #007bff;">出借</button>
-                    <button class="action-btn btn-edit-game" data-gameid="${game.game_id}" style="background-color: #ffc107; color: #000;">編輯</button>
-                </td>
-            `;
-            gameListTbody.appendChild(row);
-        });
-    }
- 
-    async function fetchAllGames() {
-        try {
-            const response = await fetch('/api/get-sheet-boardgames');
-            if (!response.ok) throw new Error('從 Sheet 獲取桌遊列表失敗');
-            allGames = await response.json();
-            applyGameFiltersAndRender();
-        } catch (error) { 
-            console.error('獲取桌遊列表失敗:', error);
-            if(gameListTbody) gameListTbody.innerHTML = `<tr><td colspan="4" style="color: red;">讀取資料失敗</td></tr>`;
-        }
-    }
-    
-    if (gameSearchInput) {
-        gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
-    }
-    
-    // 為新的篩選按鈕群組加上事件監聽
-    const inventoryStockFilter = document.getElementById('inventory-stock-filter');
-    if (inventoryStockFilter) {
-        inventoryStockFilter.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                inventoryStockFilter.querySelector('.active')?.classList.remove('active');
-                e.target.classList.add('active');
-                applyGameFiltersAndRender();
-            }
-        });
-    }
+        row.innerHTML = `
+            <td>${game.display_order || 'N/A'}</td>
+            <td class="compound-cell" style="text-align: left;">
+                <div class="main-info">${game.name}</div>
+                <div class="sub-info">ID: ${game.game_id}</div>
+                <div class="sub-info" style="margin-top: 5px;">${tagsHtml}</div>
+            </td>
+            <td>${game.total_stock}</td>
+            <td>${game.for_rent_stock}</td>
+            <td class="compound-cell">
+                <div class="main-info">$${game.sale_price}</div>
+                <div class="sub-info">租金: $${game.rent_price}</div>
+            </td>
+            <td>${isVisible ? '是' : '否'}</td>
+            <td class="actions-cell">
+                <button class="action-btn btn-edit-game" data-gameid="${game.game_id}" style="background-color: #ffc107; color: #000;">編輯</button>
+            </td>
+        `;
+        gameListTbody.appendChild(row);
+    });
+}
 
-    const inventoryVisibilityFilter = document.getElementById('inventory-visibility-filter');
-    if (inventoryVisibilityFilter) {
-        inventoryVisibilityFilter.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                inventoryVisibilityFilter.querySelector('.active')?.classList.remove('active');
-                e.target.classList.add('active');
-                applyGameFiltersAndRender();
-            }
-        });
+async function fetchAllGames() {
+    try {
+        const response = await fetch('/api/get-boardgames'); // API 已被修改為按 display_order 排序
+        if (!response.ok) throw new Error('從資料庫獲取桌遊列表失敗');
+        allGames = await response.json();
+        applyGameFiltersAndRender();
+        initializeGameDragAndDrop(); // 渲染後初始化拖曳功能
+    } catch (error) { 
+        console.error('獲取桌遊列表失敗:', error);
+        if(gameListTbody) gameListTbody.innerHTML = `<tr><td colspan="7" style="color: red;">讀取資料失敗</td></tr>`;
     }
+}
 
-    if (syncGamesBtn) {
-        syncGamesBtn.addEventListener('click', async () => {
-            if (!confirm('確定要從 Google Sheet 同步所有桌遊資料到資料庫嗎？\n\n這將會用 Sheet 上的資料覆蓋現有資料。')) return;
-
-            try {
-                syncGamesBtn.textContent = '同步中...';
-                syncGamesBtn.disabled = true;
-                const response = await fetch('/api/get-boardgames', { method: 'POST' });
-                const result = await response.json();
-                if (!response.ok) {
-                    throw new Error(result.details || '同步失敗');
-                }
-                alert(result.message || '同步成功！');
-                await fetchAllGames();
-            } catch (error) {
-                alert(`錯誤：${error.message}`);
-            } finally {
-                syncGamesBtn.textContent = '同步至資料庫';
-                syncGamesBtn.disabled = false;
-            }
-        });
+function initializeGameDragAndDrop() {
+    if (sortableGames) {
+        sortableGames.destroy(); // 如果已存在，先銷毀舊的實例
     }
-
     if (gameListTbody) {
-        gameListTbody.addEventListener('click', (e) => {
-            const target = e.target;
-            const gameId = target.dataset.gameid;
-            if (!gameId) return;
+        sortableGames = new Sortable(gameListTbody, {
+            animation: 150,
+            handle: '.draggable-row',
+            onEnd: async (evt) => {
+                const orderedIds = Array.from(gameListTbody.children).map(row => row.dataset.gameId);
+                
+                // 立即更新前端視覺排序
+                allGames.sort((a, b) => orderedIds.indexOf(a.game_id) - orderedIds.indexOf(b.game_id));
+                applyGameFiltersAndRender();
 
-            if (target.classList.contains('btn-rent')) {
-                openCreateRentalModal(gameId);
-            }
-            if (target.classList.contains('btn-edit-game')) {
-                openEditGameModal(gameId);
-            }
-        });
-    }
-
-    function openEditGameModal(gameId) {
-        const game = allGames.find(g => g.game_id == gameId);
-        if (!game) return alert('找不到遊戲資料');
-
-        if(editGameForm) editGameForm.reset();
-        document.getElementById('modal-game-title').textContent = `編輯：${game.name}`;
-        document.getElementById('edit-game-id').value = game.game_id;
-        document.getElementById('edit-for-rent-stock').value = game.for_rent_stock || 0;
-        document.getElementById('edit-sale-price').value = game.sale_price || 0;
-        document.getElementById('edit-rent-price').value = game.rent_price || 0;
-        document.getElementById('edit-is-visible').checked = game.is_visible === 1 || String(game.is_visible).toUpperCase() === 'TRUE';
-        
-        if(editGameModal) editGameModal.style.display = 'flex';
-    }
-
-    if(editGameModal) {
-        editGameModal.querySelector('.modal-close').addEventListener('click', () => editGameModal.style.display = 'none');
-        editGameModal.querySelector('.btn-cancel').addEventListener('click', () => editGameModal.style.display = 'none');
-
-        if(editGameForm) {
-            editGameForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const gameId = document.getElementById('edit-game-id').value;
-                const updatedData = {
-                    gameId: gameId,
-                    for_rent_stock: document.getElementById('edit-for-rent-stock').value,
-                    sale_price: document.getElementById('edit-sale-price').value,
-                    rent_price: document.getElementById('edit-rent-price').value,
-                    is_visible: document.getElementById('edit-is-visible').checked
-                };
                 try {
-                    const response = await fetch('/api/admin/update-boardgame-details', {
+                    const response = await fetch('/api/admin/update-boardgame-order', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updatedData)
+                        body: JSON.stringify({ orderedGameIds: orderedIds })
                     });
-                    const result = await response.json();
-                    if (!response.ok) throw new Error(result.error || '更新失敗');
-                    
-                    const game = allGames.find(g => g.game_id === gameId);
-                    if (game) {
-                        Object.assign(game, updatedData, { is_visible: updatedData.is_visible ? 1 : 0 });
+                    if (!response.ok) {
+                        throw new Error('儲存順序失敗，請刷新頁面重試。');
                     }
-                    
-                    applyGameFiltersAndRender();
-                    editGameModal.style.display = 'none';
-                    alert('更新成功！');
+                    // 重新從後端獲取一次資料，確保 display_order 是最新的
+                    await fetchAllGames(); 
                 } catch (error) {
-                    alert(`錯誤：${error.message}`);
+                    alert(error.message);
+                    // 如果失敗，可以選擇重新載入以還原
+                    await fetchAllGames(); 
                 }
-            });
-        }
+            }
+        });
     }
+}
 
-// REPLACE THE ENTIRE "桌遊租借模組" SECTION WITH THIS
+if (gameSearchInput) {
+    gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
+}
+    
+const inventoryStockFilter = document.getElementById('inventory-stock-filter');
+if (inventoryStockFilter) {
+    inventoryStockFilter.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            inventoryStockFilter.querySelector('.active')?.classList.remove('active');
+            e.target.classList.add('active');
+            applyGameFiltersAndRender();
+        }
+    });
+}
+
+const inventoryVisibilityFilter = document.getElementById('inventory-visibility-filter');
+if (inventoryVisibilityFilter) {
+    inventoryVisibilityFilter.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            inventoryVisibilityFilter.querySelector('.active')?.classList.remove('active');
+            e.target.classList.add('active');
+            applyGameFiltersAndRender();
+        }
+    });
+}
+
+if (syncGamesBtn) {
+    syncGamesBtn.addEventListener('click', async () => {
+        if (!confirm('確定要從 Google Sheet 同步所有桌遊資料到資料庫嗎？\n\n這將會用 Sheet 上的資料覆蓋現有資料。')) return;
+
+        try {
+            syncGamesBtn.textContent = '同步中...';
+            syncGamesBtn.disabled = true;
+            const response = await fetch('/api/get-boardgames', { method: 'POST' });
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.details || '同步失敗');
+            }
+            alert(result.message || '同步成功！');
+            await fetchAllGames(); // 同步後重新載入
+        } catch (error) {
+            alert(`錯誤：${error.message}`);
+        } finally {
+            syncGamesBtn.textContent = '同步至資料庫';
+            syncGamesBtn.disabled = false;
+        }
+    });
+}
+
+if (gameListTbody) {
+    gameListTbody.addEventListener('click', (e) => {
+        const target = e.target;
+        const gameId = target.closest('tr')?.dataset.gameid;
+        if (!gameId) return;
+
+        if (target.classList.contains('btn-edit-game')) {
+            openEditGameModal(gameId);
+        }
+    });
+}
+
+function openEditGameModal(gameId) {
+    const game = allGames.find(g => g.game_id == gameId);
+    if (!game) return alert('找不到遊戲資料');
+
+    if(editGameForm) editGameForm.reset();
+    document.getElementById('modal-game-title').textContent = `編輯：${game.name}`;
+    
+    // 填入所有欄位的資料
+    document.getElementById('edit-game-id').value = game.game_id;
+    document.getElementById('edit-game-id-display').value = game.game_id;
+    document.getElementById('edit-game-name').value = game.name;
+    document.getElementById('edit-game-tags').value = game.tags || '';
+    document.getElementById('edit-game-image').value = game.image_url || '';
+    document.getElementById('edit-game-desc').value = game.description || '';
+    document.getElementById('edit-min-players').value = game.min_players || 1;
+    document.getElementById('edit-max-players').value = game.max_players || 1;
+    document.getElementById('edit-difficulty').value = game.difficulty || '普通';
+    document.getElementById('edit-total-stock').value = game.total_stock || 0;
+    document.getElementById('edit-for-rent-stock').value = game.for_rent_stock || 0;
+    document.getElementById('edit-sale-price').value = game.sale_price || 0;
+    document.getElementById('edit-rent-price').value = game.rent_price || 0;
+    document.getElementById('edit-deposit').value = game.deposit || 0;
+    document.getElementById('edit-late-fee').value = game.late_fee_per_day || 50;
+    document.getElementById('edit-is-visible').checked = game.is_visible === 1;
+    
+    if(editGameModal) editGameModal.style.display = 'flex';
+}
+
+if(editGameModal) {
+    editGameModal.querySelector('.modal-close').addEventListener('click', () => editGameModal.style.display = 'none');
+    editGameModal.querySelector('.btn-cancel').addEventListener('click', () => editGameModal.style.display = 'none');
+
+    if(editGameForm) {
+        editGameForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // 收集所有欄位的資料
+            const updatedData = {
+                gameId: document.getElementById('edit-game-id').value,
+                name: document.getElementById('edit-game-name').value,
+                tags: document.getElementById('edit-game-tags').value,
+                image_url: document.getElementById('edit-game-image').value,
+                description: document.getElementById('edit-game-desc').value,
+                min_players: document.getElementById('edit-min-players').value,
+                max_players: document.getElementById('edit-max-players').value,
+                difficulty: document.getElementById('edit-difficulty').value,
+                total_stock: document.getElementById('edit-total-stock').value,
+                for_rent_stock: document.getElementById('edit-for-rent-stock').value,
+                sale_price: document.getElementById('edit-sale-price').value,
+                rent_price: document.getElementById('edit-rent-price').value,
+                deposit: document.getElementById('edit-deposit').value,
+                late_fee_per_day: document.getElementById('edit-late-fee').value,
+                is_visible: document.getElementById('edit-is-visible').checked
+            };
+
+            try {
+                const response = await fetch('/api/admin/update-boardgame-details', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || '更新失敗');
+                
+                // 直接更新前端快取的資料
+                const gameIndex = allGames.findIndex(g => g.game_id === updatedData.gameId);
+                if (gameIndex !== -1) {
+                    allGames[gameIndex] = { ...allGames[gameIndex], ...updatedData, is_visible: updatedData.is_visible ? 1 : 0 };
+                }
+                
+                applyGameFiltersAndRender(); // 重新渲染列表
+                editGameModal.style.display = 'none';
+                alert('更新成功！');
+            } catch (error) {
+                alert(`錯誤：${error.message}`);
+            }
+        });
+    }
+}
+
+
 // =================================================================
 // 桌遊租借模組
 // =================================================================
