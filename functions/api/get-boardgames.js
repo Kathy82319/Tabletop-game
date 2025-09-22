@@ -12,7 +12,7 @@ async function getAccessToken(env) {
       .setAudience('https://oauth2.googleapis.com/token').setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
       .setIssuedAt().setExpirationTime('1h').sign(privateKey);
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST', headers: { 'Content-Type': 'application/x-form-urlencoded' },
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt }),
     });
     const tokenData = await tokenResponse.json();
@@ -22,9 +22,7 @@ async function getAccessToken(env) {
 
 async function getBoardGamesFromSheet(env) {
     const { GOOGLE_SHEET_ID, BOARDGAMES_SHEET_NAME } = env;
-    if (!GOOGLE_SHEET_ID) throw new Error('缺少 GOOGLE_SHEET_ID 環境變數。');
-    // ** 關鍵修改：檢查新的環境變數 **
-    if (!BOARDGAMES_SHEET_NAME) throw new Error('缺少 BOARDGAMES_SHEET_NAME 環境變數。');
+    if (!GOOGLE_SHEET_ID || !BOARDGAMES_SHEET_NAME) throw new Error('缺少 GOOGLE_SHEET_ID 或 BOARDGAMES_SHEET_NAME 環境變數。');
 
     const accessToken = await getAccessToken(env);
     const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
@@ -32,7 +30,6 @@ async function getBoardGamesFromSheet(env) {
     const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
     await doc.loadInfo();
     
-    // ** 關鍵修改：使用變數讀取工作表 **
     const sheet = doc.sheetsByTitle[BOARDGAMES_SHEET_NAME];
     if (!sheet) throw new Error(`在 Google Sheets 中找不到名為 "${BOARDGAMES_SHEET_NAME}" 的工作表。`);
 
@@ -48,7 +45,6 @@ async function runBoardgameSync(env) {
         return { success: true, message: 'Google Sheet 中沒有桌遊資料可同步。' };
     }
 
-    // **【修改處】** SQL 指令現在包含所有欄位
     const stmt = DB.prepare(
         `INSERT INTO BoardGames (
             game_id, name, description, image_url, min_players, max_players, 
@@ -76,7 +72,6 @@ async function runBoardgameSync(env) {
         const isVisible = String(rowData.is_visible).toUpperCase() === 'TRUE' ? 1 : 0;
         const for_sale_stock = (Number(rowData.total_stock) || 0) - (Number(rowData.for_rent_stock) || 0);
         
-        // **【修改處】** 綁定所有欄位的資料
         return stmt.bind(
             rowData.game_id,
             rowData.name || '',
