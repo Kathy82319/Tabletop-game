@@ -40,8 +40,6 @@ async function getBoardGamesFromSheet(env) {
 }
 
 // --- 同步邏輯 ---
-// 在 functions/api/get-boardgames.js 中
-// --- 同步邏輯 ---
 async function runBoardgameSync(env) {
     const { DB } = env;
 
@@ -50,6 +48,7 @@ async function runBoardgameSync(env) {
         return { success: true, message: 'Google Sheet 中沒有桌遊資料可同步。' };
     }
 
+    // **【修改處】** SQL 指令現在包含所有欄位
     const stmt = DB.prepare(
         `INSERT INTO BoardGames (
             game_id, name, description, image_url, min_players, max_players, 
@@ -75,7 +74,9 @@ async function runBoardgameSync(env) {
         }
 
         const isVisible = String(rowData.is_visible).toUpperCase() === 'TRUE' ? 1 : 0;
+        const for_sale_stock = (Number(rowData.total_stock) || 0) - (Number(rowData.for_rent_stock) || 0);
         
+        // **【修改處】** 綁定所有欄位的資料
         return stmt.bind(
             rowData.game_id,
             rowData.name || '',
@@ -87,13 +88,13 @@ async function runBoardgameSync(env) {
             rowData.tags || '',
             Number(rowData.total_stock) || 0,
             Number(rowData.for_rent_stock) || 0,
-            Number(rowData.for_sale_stock) || 0,
+            for_sale_stock,
             Number(rowData.rent_price) || 0,
             Number(rowData.sale_price) || 0,
             Number(rowData.deposit) || 0,
             Number(rowData.late_fee_per_day) || 50,
             isVisible,
-            Number(rowData.display_order) || 999 // 如果沒有順序，預設排在很後面
+            Number(rowData.display_order) || 999
         );
     }).filter(op => op !== null);
     
@@ -113,7 +114,6 @@ export async function onRequest(context) {
     if (request.method === 'GET') {
         try {
             const db = env.DB;
-            // 【修改這裡】加入 ORDER BY display_order ASC
             const stmt = db.prepare('SELECT * FROM BoardGames ORDER BY display_order ASC, game_id ASC');
             const { results } = await stmt.all();
             return new Response(JSON.stringify(results || []), {
