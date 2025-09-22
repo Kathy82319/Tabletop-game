@@ -106,7 +106,6 @@ async function runBoardgameSync(env) {
     return { success: true, message: `成功從 Google Sheet 同步了 ${operations.length} 筆桌遊資料到資料庫。` };
 }
 
-
 // --- 主要請求處理 ---
 export async function onRequest(context) {
     const { request, env } = context;
@@ -127,6 +126,20 @@ export async function onRequest(context) {
             });
         }
     }
-    
-    // ... (處理 POST 請求的部分保持不變) ...
+
+    if (request.method === 'POST') {
+        try {
+            const result = await runBoardgameSync(env);
+            return new Response(JSON.stringify(result), {
+                status: 200, headers: { 'Content-Type': 'application/json' },
+            });
+        } catch (error) {
+            console.error('Error in get-boardgames (POST):', error);
+            return new Response(JSON.stringify({ error: '同步失敗。', details: error.message }), {
+                status: 500, headers: { 'Content-Type': 'application/json' },
+            });
+        }
+    }
+
+    return new Response('Invalid request method.', { status: 405 });
 }
