@@ -813,14 +813,19 @@ row.innerHTML = `
 
 async function fetchAllGames() {
     try {
-        const response = await fetch('/api/get-boardgames'); // API 已被修改為按 display_order 排序
-        if (!response.ok) throw new Error('從資料庫獲取桌遊列表失敗');
+        // **【核心修正處】** 將 API 位址從 get-sheet-boardgames 改為 get-boardgames
+        const response = await fetch('/api/get-boardgames');
+        if (!response.ok) {
+             // 拋出更詳細的錯誤，方便未來除錯
+            const errorText = await response.text();
+            throw new Error(`從資料庫獲取桌遊列表失敗: ${errorText}`);
+        }
         allGames = await response.json();
         applyGameFiltersAndRender();
         initializeGameDragAndDrop(); // 渲染後初始化拖曳功能
     } catch (error) { 
         console.error('獲取桌遊列表失敗:', error);
-        if(gameListTbody) gameListTbody.innerHTML = `<tr><td colspan="7" style="color: red;">讀取資料失敗</td></tr>`;
+        if(gameListTbody) gameListTbody.innerHTML = `<tr><td colspan="7" style="color: red;">讀取資料失敗，請檢查 API 紀錄。</td></tr>`;
     }
 }
 
