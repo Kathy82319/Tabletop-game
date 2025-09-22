@@ -13,10 +13,10 @@ async function getAccessToken(env) {
       .setAudience('https://oauth2.googleapis.com/token').setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
       .setIssuedAt().setExpirationTime('1h').sign(privateKey);
       
-    // 【** 關鍵修正：更改 Body 的建立方式 **】
-    // 原本的 new URLSearchParams() 在 Cloudflare 環境中可能有問題
-    // 改為手動組合字串，與你專案中其他正常的 API 保持一致
-    const body = `grant_type=urn:ietf:params:oauth:grant-type-jwt-bearer&assertion=${jwt}`;
+    // 【** 最終關鍵修正：使用 encodeURIComponent **】
+    // 這樣可以確保 JWT 中的任何特殊字元都被正確編碼，避免 Google 解析錯誤
+    const grantType = 'urn:ietf:params:oauth:grant-type-jwt-bearer';
+    const body = `grant_type=${encodeURIComponent(grantType)}&assertion=${encodeURIComponent(jwt)}`;
 
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -26,9 +26,7 @@ async function getAccessToken(env) {
     
     const tokenData = await tokenResponse.json();
     
-    // 【** 關鍵修正：提供更詳細的錯誤日誌 **】
     if (!tokenResponse.ok) {
-        // 這樣如果再出錯，Log 會顯示完整的 Google 錯誤訊息，而不是 [object Object]
         const errorDetails = JSON.stringify(tokenData);
         throw new Error(`從 Google 取得 access token 失敗: ${errorDetails}`);
     }
@@ -36,6 +34,7 @@ async function getAccessToken(env) {
 }
 
 async function updateRowInSheet(env, sheetName, matchColumn, matchValue, updateData) {
+    // ... 此函式內容不變 ...
     const { GOOGLE_SHEET_ID } = env;
     if (!GOOGLE_SHEET_ID) throw new Error('缺少 GOOGLE_SHEET_ID 環境變數。');
     const accessToken = await getAccessToken(env);
@@ -57,6 +56,7 @@ async function updateRowInSheet(env, sheetName, matchColumn, matchValue, updateD
 // --- Google Sheets 工具函式結束 ---
 
 export async function onRequest(context) {
+    // ... 此函式剩餘內容不變 ...
   try {
     if (context.request.method !== 'POST') {
       return new Response('Invalid request method.', { status: 405 });
@@ -64,6 +64,7 @@ export async function onRequest(context) {
     
     const requestBody = await context.request.json();
     const { gameId } = requestBody;
+
 
     if (!gameId || !requestBody.name) {
       return new Response(JSON.stringify({ error: '缺少遊戲 ID 或名稱。' }), { status: 400 });
@@ -96,7 +97,6 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: `找不到遊戲 ID: ${gameId}，無法更新。` }), { status: 404 });
     }
 
-    // 準備要同步到 Sheet 的資料
     const { gameId: id, ...dataToSync } = requestBody; 
     dataToSync.is_visible = dataToSync.is_visible ? 'TRUE' : 'FALSE';
     dataToSync.for_sale_stock = for_sale_stock;
