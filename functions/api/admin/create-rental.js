@@ -57,7 +57,6 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    // 【修改處】接收客製化金額: rentPrice, deposit, lateFeePerDay
     const { 
         userId, gameIds, dueDate, name, phone,
         rentPrice, deposit, lateFeePerDay 
@@ -70,6 +69,7 @@ export async function onRequest(context) {
     const db = context.env.DB;
     const allGameNames = [];
     const dbOperations = [];
+    let createdRentalIds = [];
     
     for (const gameId of gameIds) {
         const game = await db.prepare('SELECT name, for_rent_stock FROM BoardGames WHERE game_id = ?').bind(gameId).first();
@@ -78,63 +78,57 @@ export async function onRequest(context) {
         
         allGameNames.push(game.name);
 
-        // **【核心修正處】** 調整 INSERT 的欄位順序與數量，使其與 bind 的參數完全對應
         const insertStmt = db.prepare(
             `INSERT INTO Rentals (user_id, game_id, due_date, name, phone, rent_price, deposit, late_fee_per_day) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING rental_id`
         );
         
         dbOperations.push(insertStmt.bind(
-            userId, 
-            gameId, 
-            dueDate, 
-            name, 
-            phone, 
-            Number(rentPrice) || 0, 
-            Number(deposit) || 0, 
-            Number(lateFeePerDay) || 50
+            userId, gameId, dueDate, name, phone, 
+            Number(rentPrice) || 0, Number(deposit) || 0, Number(lateFeePerDay) || 50
         ));
         
         const updateStmt = db.prepare('UPDATE BoardGames SET for_rent_stock = for_rent_stock - 1 WHERE game_id = ?');
         dbOperations.push(updateStmt.bind(gameId));
     }
     
-    // ** 步驟 2: 執行資料庫批次操作 **
     const results = await db.batch(dbOperations);
     
-    // 從 results 中提取出所有新生成的 rental_id
     results.forEach(result => {
         if (result.results && result.results.length > 0 && result.results[0].rental_id) {
             createdRentalIds.push(result.results[0].rental_id);
         }
     });
 
-    // ** 需求 1 (補充) 修改：組合包含所有遊戲的訊息 **
     const rentalDateStr = new Date().toISOString().split('T')[0];
     const rentalDuration = Math.round((new Date(dueDate) - new Date(rentalDateStr)) / (1000 * 60 * 60 * 24));
 
-    const message = `姓名：${name}\n` +
+    // 【** 關鍵修改：更新訊息模板 **】
+    const message = `🎉 租借資訊確認\n\n` +
+                    `姓名：${name}\n` +
                     `電話：${phone}\n` +
                     `日期：${rentalDateStr}\n` +
                     `租借時間：${rentalDuration}天\n` +
                     `歸還日期：${dueDate}\n` +
-                    `租借遊戲：\n- ${allGameNames.join('\n- ')}\n\n` + // 條列所有遊戲
-                    `租借規則：桌遊租借注意事項：\n1.收取遊戲定價之押金，於歸還桌遊時退還押金。\n2.內容物需現場自行依照說明書或配件表清點，並確認能正常使用，若歸還時有缺少或損毀，將不退還押金。\n3.最短租期為3天，租借當日即算第一天。\n4.逾期歸還，每逾期一天從押金扣50元。\n` +
-                    `如上面資訊沒有問題，請回覆「ok」並視為同意租借規則\n`+
+                    `租借遊戲：\n- ${allGameNames.join('\n- ')}\n\n` +
+                    `本次租金：$${rentPrice}\n` + // <--- 新增
+                    `收取押金：$${deposit}\n\n` + // <--- 新增
+                    `租借規則：\n` +
+                    `1. 收取遊戲押金，於歸還桌遊、確認內容物無誤後退還。\n` +
+                    `2. 內容物需現場清點，若歸還時有缺少或損毀，將不退還押金。\n` +
+                    `3. 最短租期為3天，租借當日即算第一天。\n` +
+                    `4. 逾期歸還，每逾期一天將從押金扣除 ${lateFeePerDay} 元。\n\n` + // <--- 使用客製化費用
+                    `如上面資訊沒有問題，請回覆「ok」並視為同意租借規則。\n`+
                     `感謝您的預約！`;
-
     // ** 步驟 4: 觸發所有背景任務 **
     context.waitUntil((async () => {
         try {
-            // 任務 A: 發送 LINE 訊息
-            const sendMessageUrl = new URL('/api/send-message', context.request.url);
-            await fetch(sendMessageUrl.toString(), {
+            await fetch(new URL('/api/send-message', context.request.url), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, message })
             });
 
-            // 任務 B: 逐筆同步租借紀錄到 Google Sheet
             for (const rentalId of createdRentalIds) {
                 const newRental = await db.prepare('SELECT * FROM Rentals WHERE rental_id = ?').bind(rentalId).first();
                 if (newRental) {
@@ -142,7 +136,6 @@ export async function onRequest(context) {
                 }
             }
             
-            // 任務 C: 逐筆更新遊戲庫存到 Google Sheet
             const sheetName = context.env.BOARDGAMES_SHEET_NAME;
             if (!sheetName) throw new Error("缺少 BOARDGAMES_SHEET_NAME 環境變數");
             

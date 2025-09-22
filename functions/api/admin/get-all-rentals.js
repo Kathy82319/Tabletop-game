@@ -11,20 +11,21 @@ export async function onRequest(context) {
     const statusFilter = url.searchParams.get('status');
     const today = new Date().toISOString().split('T')[0];
 
+    // 【** 步驟 1: 修改 SQL 查詢 **】
+    // 我們需要明確地從租借紀錄(r)中選取客製化的逾期費用 r.late_fee_per_day
     let query = `
       SELECT
         r.rental_id, r.user_id, r.rental_date, r.due_date, r.return_date, r.status,
         r.late_fee_override,
+        r.late_fee_per_day,  -- <--- 新增這一行，取得該筆租借設定的逾期費
         u.line_display_name, u.nickname,
-        b.name as game_name,
-        b.late_fee_per_day
+        b.name as game_name
       FROM Rentals AS r
       LEFT JOIN Users AS u ON r.user_id = u.user_id
       LEFT JOIN BoardGames AS b ON r.game_id = b.game_id
     `;
 
     const queryParams = [];
-    // ** 需求 4 (補充) 修改：增加 due_today 篩選邏輯 **
     if (statusFilter && statusFilter !== 'overdue' && statusFilter !== 'due_today') {
         query += " WHERE r.status = ?";
         queryParams.push(statusFilter);
@@ -53,10 +54,13 @@ export async function onRequest(context) {
             overdue_days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         }
         
+        // 【** 步驟 2: 修改計算邏輯 **】
         if (rental.late_fee_override !== null && rental.late_fee_override !== undefined) {
+            // 優先使用手動覆寫的金額
             calculated_late_fee = rental.late_fee_override;
         } else if (overdue_days > 0) {
-            calculated_late_fee = overdue_days * (rental.late_fee_per_day || 50);
+            // 如果沒有手動覆寫，就使用這筆租借紀錄上儲存的客製化逾期費來計算
+            calculated_late_fee = overdue_days * (rental.late_fee_per_day || 50); // 使用 r.late_fee_per_day
         }
 
         return { ...rental, derived_status, overdue_days, calculated_late_fee };
