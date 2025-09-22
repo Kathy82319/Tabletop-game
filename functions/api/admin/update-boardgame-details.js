@@ -47,13 +47,9 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
     
-    const {
-        gameId, name, description, image_url, image_url_2, image_url_3, tags,
-        min_players, max_players, difficulty,
-        total_stock, for_rent_stock,
-        sale_price, rent_price, deposit, late_fee_per_day,
-        is_visible, supplementary_info
-    } = await context.request.json();
+    const requestBody = await context.request.json();
+    const { gameId } = requestBody;
+
 
     if (!gameId || !requestBody.name) {
       return new Response(JSON.stringify({ error: '缺少遊戲 ID 或名稱。' }), { status: 400 });
@@ -86,14 +82,10 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: `找不到遊戲 ID: ${gameId}，無法更新。` }), { status: 404 });
     }
 
-    const dataToSync = {
-        name, description, image_url, image_url_2, image_url_3, tags,
-        min_players, max_players, difficulty,
-        total_stock, for_rent_stock, for_sale_stock,
-        sale_price, rent_price, deposit, late_fee_per_day,
-        is_visible: is_visible ? 'TRUE' : 'FALSE',
-        supplementary_info
-    };
+    const { gameId: id, ...dataToSync } = requestBody; // 移除 gameId，因為它不是 Sheet 欄位
+    dataToSync.is_visible = dataToSync.is_visible ? 'TRUE' : 'FALSE';
+    dataToSync.for_sale_stock = for_sale_stock;
+
 
     const sheetName = context.env.BOARDGAMES_SHEET_NAME;
     
@@ -104,11 +96,7 @@ export async function onRequest(context) {
         context.waitUntil(
             updateRowInSheet(context.env, sheetName, 'game_id', gameId, dataToSync)
             .catch(err => {
-                // 讓錯誤日誌更詳細，方便你從後台Log中判斷問題
-                console.error(`背景同步桌遊資訊 (ID: ${gameId}) 失敗:`, err.message);
-                if (err.response) { // 如果是 API 錯誤，印出詳細資訊
-                    console.error("Google API Response:", JSON.stringify(err.response.data, null, 2));
-                }
+                console.error(`[背景同步失敗] 更新 game_id ${gameId} 時發生嚴重錯誤:`, err);
             })
         );
     }
