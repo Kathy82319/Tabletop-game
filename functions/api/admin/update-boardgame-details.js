@@ -40,22 +40,37 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    const { gameId, for_rent_stock, sale_price, rent_price, is_visible } = await context.request.json();
+    // 接收所有欄位的資料
+    const { 
+        gameId, name, description, image_url, tags, 
+        min_players, max_players, difficulty, 
+        total_stock, for_rent_stock, 
+        sale_price, rent_price, deposit, late_fee_per_day,
+        is_visible 
+    } = await context.request.json();
 
-    if (!gameId) {
-      return new Response(JSON.stringify({ error: '缺少遊戲 ID。' }), { status: 400 });
+    if (!gameId || !name) {
+      return new Response(JSON.stringify({ error: '缺少遊戲 ID 或名稱。' }), { status: 400 });
     }
 
     const db = context.env.DB;
     
     // 1. 更新 D1 資料庫
     const stmt = db.prepare(
-      'UPDATE BoardGames SET for_rent_stock = ?, sale_price = ?, rent_price = ?, is_visible = ? WHERE game_id = ?'
+      `UPDATE BoardGames SET 
+         name = ?, description = ?, image_url = ?, tags = ?, 
+         min_players = ?, max_players = ?, difficulty = ?, 
+         total_stock = ?, for_rent_stock = ?, 
+         sale_price = ?, rent_price = ?, deposit = ?, late_fee_per_day = ?, 
+         is_visible = ? 
+       WHERE game_id = ?`
     );
     const result = await stmt.bind(
-        Number(for_rent_stock) || 0,
-        Number(sale_price) || 0,
-        Number(rent_price) || 0,
+        name, description, image_url, tags,
+        Number(min_players) || 1, Number(max_players) || 1, difficulty,
+        Number(total_stock) || 0, Number(for_rent_stock) || 0,
+        Number(sale_price) || 0, Number(rent_price) || 0,
+        Number(deposit) || 0, Number(late_fee_per_day) || 50,
         is_visible ? 1 : 0,
         gameId
     ).run();
@@ -64,15 +79,15 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: `找不到遊戲 ID: ${gameId}，無法更新。` }), { status: 404 });
     }
 
-    // 2. 觸發背景任務，將變動同步到 Google Sheet
+    // 2. 準備要同步到 Google Sheet 的資料
     const dataToSync = {
-        for_rent_stock,
-        sale_price,
-        rent_price,
+        name, description, image_url, tags,
+        min_players, max_players, difficulty,
+        total_stock, for_rent_stock,
+        sale_price, rent_price, deposit, late_fee_per_day,
         is_visible: is_visible ? 'TRUE' : 'FALSE'
     };
     
-    // ** 關鍵修改：使用變數讀取工作表名稱 **
     const sheetName = context.env.BOARDGAMES_SHEET_NAME;
     if (!sheetName) {
         console.error(`背景同步桌遊資訊失敗: 缺少 BOARDGAMES_SHEET_NAME 環境變數`);
@@ -82,7 +97,7 @@ export async function onRequest(context) {
             .catch(err => console.error("背景同步桌遊資訊失敗:", err))
         );
     }
-    return new Response(JSON.stringify({ success: true, message: '成功更新桌遊資訊！' }), {
+    return new Response(JSON.stringify({ success: true, message: '成功更新桌遊詳細資訊！' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
