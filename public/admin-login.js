@@ -996,13 +996,12 @@ if(editGameModal) {
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || '更新失敗');
                 
-                // 直接更新前端快取的資料
                 const gameIndex = allGames.findIndex(g => g.game_id === updatedData.gameId);
                 if (gameIndex !== -1) {
                     allGames[gameIndex] = { ...allGames[gameIndex], ...updatedData, is_visible: updatedData.is_visible ? 1 : 0 };
                 }
                 
-                applyGameFiltersAndRender(); // 重新渲染列表
+                applyGameFiltersAndRender();
                 editGameModal.style.display = 'none';
                 alert('更新成功！');
             } catch (error) {
