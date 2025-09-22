@@ -6,35 +6,21 @@ import * as jose from 'jose';
 async function getAccessToken(env) {
     const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY } = env;
     if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) throw new Error('缺少 Google 服務帳號的環境變數。');
-    
     const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
     const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets' })
       .setProtectedHeader({ alg: 'RS256', typ: 'JWT' }).setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
       .setAudience('https://oauth2.googleapis.com/token').setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
       .setIssuedAt().setExpirationTime('1h').sign(privateKey);
-      
-    // 【** 最終關鍵修正：使用 encodeURIComponent **】
-    // 這樣可以確保 JWT 中的任何特殊字元都被正確編碼，避免 Google 解析錯誤
-    const grantType = 'urn:ietf:params:oauth:grant-type-jwt-bearer';
-    const body = `grant_type=${encodeURIComponent(grantType)}&assertion=${encodeURIComponent(jwt)}`;
-
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body,
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt }),
     });
-    
     const tokenData = await tokenResponse.json();
-    
-    if (!tokenResponse.ok) {
-        const errorDetails = JSON.stringify(tokenData);
-        throw new Error(`從 Google 取得 access token 失敗: ${errorDetails}`);
-    }
+    if (!tokenResponse.ok) throw new Error(`從 Google 取得 access token 失敗: ${tokenData.error_description || tokenData.error}`);
     return tokenData.access_token;
 }
 
 async function updateRowInSheet(env, sheetName, matchColumn, matchValue, updateData) {
-    // ... 此函式內容不變 ...
     const { GOOGLE_SHEET_ID } = env;
     if (!GOOGLE_SHEET_ID) throw new Error('缺少 GOOGLE_SHEET_ID 環境變數。');
     const accessToken = await getAccessToken(env);
@@ -48,15 +34,13 @@ async function updateRowInSheet(env, sheetName, matchColumn, matchValue, updateD
     if (rowToUpdate) {
         rowToUpdate.assign(updateData);
         await rowToUpdate.save();
-        console.log(`[背景同步成功] 已更新工作表 "${sheetName}" 中 game_id 為 ${matchValue} 的資料。`);
     } else {
-        console.warn(`[背景同步警告] 在工作表 "${sheetName}" 中找不到 ${matchColumn} 為 "${matchValue}" 的資料列，無法更新。`);
+        console.warn(`在工作表 "${sheetName}" 中找不到 ${matchColumn} 為 "${matchValue}" 的資料列，無法更新。`);
     }
 }
 // --- Google Sheets 工具函式結束 ---
 
 export async function onRequest(context) {
-    // ... 此函式剩餘內容不變 ...
   try {
     if (context.request.method !== 'POST') {
       return new Response('Invalid request method.', { status: 405 });
@@ -64,7 +48,6 @@ export async function onRequest(context) {
     
     const requestBody = await context.request.json();
     const { gameId } = requestBody;
-
 
     if (!gameId || !requestBody.name) {
       return new Response(JSON.stringify({ error: '缺少遊戲 ID 或名稱。' }), { status: 400 });
@@ -97,6 +80,7 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: `找不到遊戲 ID: ${gameId}，無法更新。` }), { status: 404 });
     }
 
+    // 準備要同步到 Sheet 的資料
     const { gameId: id, ...dataToSync } = requestBody; 
     dataToSync.is_visible = dataToSync.is_visible ? 'TRUE' : 'FALSE';
     dataToSync.for_sale_stock = for_sale_stock;
