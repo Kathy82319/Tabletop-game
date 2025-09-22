@@ -895,18 +895,39 @@ async function initializeRentalHistoryPage() {
     // 【關鍵修改】選取當前頁面上的日曆容器來初始化
         const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
         if (datepickerContainer) {
+            // 【** 請用下面的版本完整取代你現有的 flatpickr() 初始化區塊 **】
             flatpickr(datepickerContainer, {
                 inline: true,
                 minDate: "today",
                 dateFormat: "Y-m-d",
                 locale: "zh_tw",
-                // 【** 核心修改：從 disable 改為 enable **】
-                // 這樣日曆就只會開啟 enabledDatesByAdmin 陣列中的日期
                 enable: enabledDatesByAdmin,
+                
+                // onChange 事件只會在點擊 "可選取" 日期時觸發，這是正確的
                 onChange: (selectedDates, dateStr) => {
                     bookingData.date = dateStr;
                     fetchAndRenderSlots(dateStr);
                 },
+
+                // ** 新增 onClick 事件來處理所有點擊 **
+                // 無論點擊的是否為可選日期，這個事件都會觸發
+                onClick: (selectedDates, dateStr, instance) => {
+                    // 檢查被點擊的日期元素是否包含 'flatpickr-disabled' class
+                    // 我們需要稍微延遲檢查，確保 flatpickr 完成了 class 的更新
+                    setTimeout(() => {
+                        const clickedElement = instance.selectedDateElem;
+                        if (clickedElement && clickedElement.classList.contains('flatpickr-disabled')) {
+                            // 如果是不可選的日期，就重置時段選擇區
+                            const slotsPlaceholder = document.getElementById('slots-placeholder');
+                            const slotsContainer = document.getElementById('booking-slots-container');
+                            if (slotsPlaceholder && slotsContainer) {
+                                slotsPlaceholder.textContent = '此日期未開放預約'; // 給予更明確的提示
+                                slotsPlaceholder.style.display = 'block';
+                                slotsContainer.innerHTML = '';
+                            }
+                        }
+                    }, 10); // 10毫秒的延遲通常就足夠了
+                }
             });
         }
 
