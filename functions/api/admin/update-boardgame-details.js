@@ -46,7 +46,6 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    // **【修改處】** 接收所有欄位，包含新增的欄位
     const {
         gameId, name, description, image_url, image_url_2, image_url_3, tags,
         min_players, max_players, difficulty,
@@ -61,7 +60,6 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
-    // **【修改處】** 更新 D1 資料庫的 SQL 指令，加入新欄位
     const stmt = db.prepare(
       `UPDATE BoardGames SET
          name = ?, description = ?, image_url = ?, image_url_2 = ?, image_url_3 = ?, tags = ?,
@@ -87,7 +85,6 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: `找不到遊戲 ID: ${gameId}，無法更新。` }), { status: 404 });
     }
 
-    // **【修改處】** 準備同步到 Google Sheet 的資料也包含新欄位
     const dataToSync = {
         name, description, image_url, image_url_2, image_url_3, tags,
         min_players, max_players, difficulty,
@@ -98,14 +95,23 @@ export async function onRequest(context) {
     };
     
     const sheetName = context.env.BOARDGAMES_SHEET_NAME;
+
+    // 【** 關鍵修正：增加更明確的檢查與日誌 **】
     if (!sheetName) {
-        console.error(`背景同步桌遊資訊失敗: 缺少 BOARDGAMES_SHEET_NAME 環境變數`);
+        console.error("背景同步任務無法啟動: 缺少 `BOARDGAMES_SHEET_NAME` 環境變數。請至 Cloudflare Pages 後台設定。");
     } else {
         context.waitUntil(
             updateRowInSheet(context.env, sheetName, 'game_id', gameId, dataToSync)
-            .catch(err => console.error("背景同步桌遊資訊失敗:", err))
+            .catch(err => {
+                // 讓錯誤日誌更詳細，方便你從後台Log中判斷問題
+                console.error(`背景同步桌遊資訊 (ID: ${gameId}) 失敗:`, err.message);
+                if (err.response) { // 如果是 API 錯誤，印出詳細資訊
+                    console.error("Google API Response:", JSON.stringify(err.response.data, null, 2));
+                }
+            })
         );
     }
+    
     return new Response(JSON.stringify({ success: true, message: '成功更新桌遊詳細資訊！' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },

@@ -84,7 +84,44 @@
         #user-details-modal table { font-size: 0.85rem; }
         #user-details-modal th, #user-details-modal td { padding: 0.6rem; }
         .message-sender { margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem; }
-        .draggable-row { cursor: move; } /* 新增：拖曳樣式 */
+        .draggable-row { cursor: default; } /* 將整行的游標改回預設 */
+        .drag-handle-cell { text-align: left !important; }
+        .drag-handle {
+            cursor: move; /* 只有圖示是拖曳游標 */
+            display: inline-block;
+            width: 20px;
+            font-size: 1.2rem;
+            color: #999;
+            margin-right: 5px;
+                    }
+                /* 【** 步驟 2: 新增/修改這些樣式 **】 */
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            /* 新增下面三行 */
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh; /* 限制 modal 最高為螢幕高度的 90% */
+        }
+        
+        /* 針對遊戲編輯 modal 的特殊寬度 */
+        #edit-game-modal .modal-content {
+            max-width: 800px;
+        }
+
+        /* 新增這個 class */
+        .modal-body {
+            overflow-y: auto; /* 讓內容區塊可以垂直滾動 */
+            padding-right: 15px; /* 增加一點右邊距，避免滾動條太貼近內容 */
+        }
+        
+        .modal-header, .form-actions {
+            flex-shrink: 0; /* 確保頭部和腳部不會被壓縮 */
+        }            
     </style>
 </head>
 <body>
@@ -518,10 +555,10 @@
                 <h3 id="modal-game-title">編輯遊戲</h3>
                 <button class="modal-close">&times;</button>
             </div>
-<form id="edit-game-form">
-    <input type="hidden" id="edit-game-id">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-        <div>
+        <form id="edit-game-form">
+            <div class="modal-body"> <input type="hidden" id="edit-game-id">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    </div>
             <div class="form-group">
                 <label for="edit-game-name">遊戲名稱</label>
                 <input type="text" id="edit-game-name" required>

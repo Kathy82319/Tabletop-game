@@ -779,34 +779,38 @@ function renderGameList(games) {
     gameListTbody.innerHTML = '';
     games.forEach(game => {
         const row = document.createElement('tr');
-        row.className = 'draggable-row'; // 用於拖曳
-        row.dataset.gameId = game.game_id; // 綁定 ID
+        row.className = 'draggable-row';
+        row.dataset.gameId = game.game_id;
         
         const isVisible = game.is_visible === 1;
         const tagsHtml = (game.tags || '').split(',').map(t => t.trim()).filter(Boolean).map(tag => `<span style="background:#eee; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${tag}</span>`).join(' ');
 
-        // **【修改處】** 在 actions-cell 中重新加入 "出借" 按鈕
-row.innerHTML = `
-    <td>${game.display_order || 'N/A'}</td>
-    <td class="compound-cell" style="text-align: left;">
-        <div class="main-info">${game.name}</div>
-        <div class="sub-info">ID: ${game.game_id}</div>
-        <div class="sub-info" style="margin-top: 5px;">${tagsHtml}</div>
-    </td>
-    <td>${game.total_stock}</td>
-    <td>${game.for_rent_stock}</td>
-    <td class="compound-cell">
-        <div class="main-info">$${game.sale_price}</div>
-        <div class="sub-info">租金: $${game.rent_price}</div>
-    </td>
-    <td>${isVisible ? '是' : '否'}</td>
-    <td class="actions-cell">
-        <div style="display: flex; gap: 5px; justify-content: center;">
-            <button class="action-btn btn-rent" data-gameid="${game.game_id}" style="background-color: #007bff;">出借</button>
-            <button class="action-btn btn-edit-game" data-gameid="${game.game_id}" style="background-color: #ffc107; color: #000;">編輯</button>
-        </div>
-    </td>
-`;
+        // 將原本的 <td>${game.display_order || 'N/A'}</td>
+        // 修改為包含拖曳圖示的儲存格
+        row.innerHTML = `
+            <td class="drag-handle-cell">
+                <span class="drag-handle">⠿</span>
+                ${game.display_order || 'N/A'}
+            </td>
+            <td class="compound-cell" style="text-align: left;">
+                <div class="main-info">${game.name}</div>
+                <div class="sub-info">ID: ${game.game_id}</div>
+                <div class="sub-info" style="margin-top: 5px;">${tagsHtml}</div>
+            </td>
+            <td>${game.total_stock}</td>
+            <td>${game.for_rent_stock}</td>
+            <td class="compound-cell">
+                <div class="main-info">$${game.sale_price}</div>
+                <div class="sub-info">租金: $${game.rent_price}</div>
+            </td>
+            <td>${isVisible ? '是' : '否'}</td>
+            <td class="actions-cell">
+                <div style="display: flex; gap: 5px; justify-content: center;">
+                    <button class="action-btn btn-rent" data-gameid="${game.game_id}" style="background-color: #007bff;">出借</button>
+                    <button class="action-btn btn-edit-game" data-gameid="${game.game_id}" style="background-color: #ffc107; color: #000;">編輯</button>
+                </div>
+            </td>
+        `;
         gameListTbody.appendChild(row);
     });
 }
@@ -831,12 +835,13 @@ async function fetchAllGames() {
 
 function initializeGameDragAndDrop() {
     if (sortableGames) {
-        sortableGames.destroy(); // 如果已存在，先銷毀舊的實例
+        sortableGames.destroy();
     }
     if (gameListTbody) {
         sortableGames = new Sortable(gameListTbody, {
             animation: 150,
-            handle: '.draggable-row',
+            // 將 handle 從 '.draggable-row' 改為 '.drag-handle'
+            handle: '.drag-handle',
             onEnd: async (evt) => {
                 const orderedIds = Array.from(gameListTbody.children).map(row => row.dataset.gameId);
                 

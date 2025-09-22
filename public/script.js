@@ -629,6 +629,22 @@ async function initializeRentalHistoryPage() {
     // =================================================================
     // 桌遊圖鑑頁
     // =================================================================
+    function difficultyToStars(difficulty) {
+    const levels = {
+        '簡單': 1,
+        '普通': 2,
+        '困難': 3,
+        '專家': 4
+    };
+    const level = levels[difficulty] || 2; // 如果找不到對應的難度，預設為2顆星
+    const totalStars = 4;
+    let stars = '';
+    for (let i = 0; i < totalStars; i++) {
+        stars += i < level ? '★' : '☆';
+    }
+    return stars;
+    }
+
     function renderGameDetails(game) {
         // 1. 處理圖片
         const mainImage = appContent.querySelector('.details-image-main');
@@ -653,7 +669,7 @@ async function initializeRentalHistoryPage() {
         // 2. 處理核心資訊
         appContent.querySelector('.details-title').textContent = game.name;
         appContent.querySelector('#game-players').textContent = `${game.min_players} - ${game.max_players} 人`;
-        appContent.querySelector('#game-difficulty').textContent = game.difficulty;
+        appContent.querySelector('#game-difficulty').textContent = difficultyToStars(game.difficulty);
 
         // 3. 處理標籤
         const tagsContainer = appContent.querySelector('#game-tags-container');
