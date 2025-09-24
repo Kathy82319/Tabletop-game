@@ -70,13 +70,31 @@
         .stat-card .stat-subtext { color: var(--text-light); font-size: 0.9rem; margin-top: 5px;}
 
     /* CRM Modal Styles (優化空間版本) */
+        /* 1. 固定 CRM 彈出視窗的整體框架 */
         #user-details-modal .modal-content {
-            max-width: 800px;
+            max-height: 85vh; /* 設定視窗最大高度為螢幕的 85% */
+            display: flex;
+            flex-direction: column;
         }
-        .details-grid {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 1rem; /* 縮小網格間距 */
+        #user-details-modal .details-grid {
+            overflow-y: auto; /* 讓中間的主要內容區域可以滾動 */
+            padding-right: 15px; /* 增加一點右邊距，避免滾動條太貼近內容 */
+        }
+
+        /* 2. 修正 "顧客備註" 標題的文字間距和空白行問題 */
+        .crm-notes-section h4 {
+            letter-spacing: normal; /* 將文字間距恢復正常 */
+            margin-bottom: 0.5rem;  /* 縮小標題和內容之間的距離，解決空白行問題 */
+        }
+        /* 3. 增加備註區塊的高度 */
+        .crm-notes-section {
+            max-height: 7em; /* 將最大高度從 5em 增加到 7em，大約是 4-5 行文字 */
+        }
+        /* 4. 讓 "發送 LINE 訊息" 區塊往下移一點 */
+        #user-details-modal .message-sender {
+            margin-top: auto; /* 自動將此區塊推到視窗底部 */
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
         }
         .profile-summary {
             text-align: left;
