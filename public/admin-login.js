@@ -570,13 +570,11 @@ function renderUserDetails(data) {
     const displayName = profile.nickname || profile.line_display_name;
     document.getElementById('user-details-title').textContent = displayName;
 
-    // 1. 清空主容器，為建立新內容做準備
-    contentContainer.innerHTML = ''; 
+    contentContainer.innerHTML = '';
 
     const creationDate = new Date(profile.created_at).toLocaleDateString();
     const avatarSrc = `/api/admin/get-avatar?userId=${profile.user_id}`;
 
-    // 2. 建立所有最外層的佈局元素
     const grid = document.createElement('div');
     grid.className = 'details-grid';
 
@@ -589,8 +587,7 @@ function renderUserDetails(data) {
     const messageSender = document.createElement('div');
     messageSender.className = 'message-sender';
     
-    // 3. 填充左側的個人資料 (Summary)
-    // (這部分的邏輯是正確的，我們保持不變)
+    // 填充左側的個人資料 (Summary)
     const avatarImg = document.createElement('img');
     avatarImg.src = avatarSrc;
     avatarImg.alt = "Profile Picture";
@@ -620,13 +617,12 @@ function renderUserDetails(data) {
     summary.appendChild(createProfileLine('福利', profile.perk));
     summary.appendChild(createProfileLine('標籤', profile.tag));
 
-    // 4. 【核心修正】依序建立並填充右側的詳細資訊 (Details)
-    
-    // 4.1. 如果有備註，就先建立並放入備註區塊
+    // 依序建立並填充右側的詳細資訊 (Details)
     if (profile.notes) {
         const notesSection = document.createElement('div');
         notesSection.className = 'crm-notes-section'; 
-        notesSection.style.cssText = 'margin-bottom: 1rem; padding: 0.8rem; background-color: #fffbe6; border-radius: 6px; border: 1px solid #ffe58f;';
+        // 【修改點】在此處加入 max-height 和 overflow-y
+        notesSection.style.cssText = 'margin-bottom: 1rem; padding: 0.8rem; background-color: #fffbe6; border-radius: 6px; border: 1px solid #ffe58f; max-height: 5em; overflow-y: auto;';
         
         const notesTitle = document.createElement('h4');
         notesTitle.textContent = '顧客備註';
@@ -640,10 +636,9 @@ function renderUserDetails(data) {
         notesSection.appendChild(notesTitle);
         notesSection.appendChild(notesContent);
         
-        details.appendChild(notesSection); // 將備註區塊放入右側容器
+        details.appendChild(notesSection);
     }
 
-    // 4.2. 接著建立頁籤按鈕
     const tabsContainer = document.createElement('div');
     tabsContainer.className = 'details-tabs';
     tabsContainer.innerHTML = `
@@ -651,9 +646,8 @@ function renderUserDetails(data) {
         <button class="details-tab" data-target="tab-bookings">預約紀錄</button>
         <button class="details-tab" data-target="tab-exp">經驗值紀錄</button>
     `;
-    details.appendChild(tabsContainer); // 將頁籤按鈕放入右側容器
+    details.appendChild(tabsContainer);
 
-    // 4.3. 最後建立頁籤內容，並填入歷史紀錄表格
     const tabContents = document.createElement('div');
     const rentalTab = document.createElement('div');
     rentalTab.id = 'tab-rentals';
@@ -673,9 +667,9 @@ function renderUserDetails(data) {
     tabContents.appendChild(rentalTab);
     tabContents.appendChild(bookingTab);
     tabContents.appendChild(expTab);
-    details.appendChild(tabContents); // 將頁籤內容放入右側容器
+    details.appendChild(tabContents);
 
-    // 5. 填充訊息發送區 (保持不變)
+    // 填充訊息發送區
     messageSender.innerHTML = `
         <h4>發送 LINE 訊息</h4>
         <div class="form-group">
@@ -691,13 +685,13 @@ function renderUserDetails(data) {
         </div>
     `;
 
-    // 6. 將所有主要區塊組裝到頁面上
+    // 將所有主要區塊組裝到頁面上
     grid.appendChild(summary);
     grid.appendChild(details);
     contentContainer.appendChild(grid);
     contentContainer.appendChild(messageSender);
 
-    // 7. 重新為新的頁籤按鈕綁定點擊事件
+    // 重新為新的頁籤按鈕綁定點擊事件
     tabsContainer.addEventListener('click', e => {
         if (e.target.tagName === 'BUTTON') {
             tabsContainer.querySelector('.active')?.classList.remove('active');
@@ -708,7 +702,7 @@ function renderUserDetails(data) {
         }
     });
 
-    // 8. 載入訊息草稿
+    // 載入訊息草稿
     loadAndBindMessageDrafts(profile.user_id);
 }
 
