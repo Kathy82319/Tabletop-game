@@ -287,7 +287,9 @@ input[readonly] {
     flex-wrap: wrap;
     gap: 8px;
 }
-#tag-filter-container button, #more-tags-btn, #clear-filters {
+
+/* 【問題2 & 4 修正】統一標籤按鈕樣式 & 確保換行 */
+.filter-tag-btn {
     font-family: var(--font-primary);
     padding: 6px 14px;
     border: 1px solid var(--color-frame-gold);
@@ -297,36 +299,67 @@ input[readonly] {
     cursor: pointer;
     transition: all 0.3s ease;
 }
-#tag-filter-container button.active {
+
+.filter-tag-btn.active {
     background: var(--color-frame-gold);
     color: white;
 }
+
+#more-tags-btn, #clear-filters {
+    font-family: var(--font-primary);
+    padding: 6px 14px;
+    border: 1px solid var(--color-frame-gold);
+    background: transparent;
+    color: var(--color-text-secondary);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
 #clear-filters {
     background-color: var(--color-danger);
     color: white;
     border-color: var(--color-danger);
 }
 
+/* 【問題1 修正】遊戲卡片列表改為兩欄式 Grid */
+#game-list-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
 /* 遊戲卡片 (由 script.js 生成) */
 .game-card {
     display: flex;
-    gap: 15px;
+    flex-direction: column; /* 改為垂直排列 */
+    gap: 10px;
+    padding: 10px; /* 稍微減少 padding */
 }
 .game-image {
-    width: 80px;
-    height: 80px;
+    width: 100%; /* 圖片寬度填滿卡片 */
+    height: 120px; /* 給定一個固定高度 */
     object-fit: cover;
     border-radius: var(--border-radius);
     border: 1px solid var(--color-frame-gold);
 }
 .game-info { flex: 1; }
-.game-title { margin: 0; padding: 0; border: none; font-size: 1.3rem; }
+.game-title {
+    margin: 0;
+    padding: 0;
+    border: none;
+    font-size: 1.1rem; /* 稍微縮小字體以適應空間 */
+    /* 強制文字換行 */
+    white-space: normal;
+    word-break: break-all;
+}
 .game-description {
-    font-size: 0.9rem;
+    font-size: 0.8rem; /* 稍微縮小字體 */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    margin: 5px 0;
 }
 .game-tags { margin: 8px 0; }
 .game-tag {
@@ -335,10 +368,11 @@ input[readonly] {
     color: var(--color-frame-gold);
     padding: 2px 8px;
     border-radius: 10px;
-    font-size: 0.8rem;
+    font-size: 0.75rem; /* 稍微縮小字體 */
     margin-right: 5px;
+    margin-bottom: 5px;
 }
-.game-details { display: flex; gap: 15px; font-size: 0.9rem; }
+.game-details { display: flex; flex-direction: column; gap: 5px; font-size: 0.8rem; }
 
 
 /* C. 冒險者資料 (page-profile) */

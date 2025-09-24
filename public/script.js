@@ -710,9 +710,18 @@ async function initializeRentalHistoryPage() {
             container.innerHTML = '<p>找不到符合條件的遊戲。</p>';
             return;
         }
-        container.innerHTML = filteredGames.map(game => `<div class="game-card" data-game-id="${game.game_id}"><img src="${game.image_url}" alt="${game.name}" class="game-image"><div class="game-info"><h3 class="game-title">${game.name}</h3><p class="game-description">${game.description}</p><div class="game-tags">${(game.tags || '').split(',').map(t => t.trim()).filter(Boolean).map(tag => `<span class="game-tag">${tag}</span>`).join('')}</div><div class="game-details"><span>👥 ${game.min_players}-${game.max_players} 人</span><span>⭐ 難度: ${game.difficulty}</span></div></div></div>`).join('');
+        container.innerHTML = filteredGames.map(game => `
+            <div class="game-card" data-game-id="${game.game_id}">
+                <img src="${game.image_url || 'placeholder.jpg'}" alt="${game.name}" class="game-image">
+                <div class="game-info">
+                    <h3 class="game-title">${game.name}</h3>
+                    <p class="game-description">${game.description}</p>
+                </div>
+            </div>
+        `).join('');
     }
 
+    // 【問題2、3、4 修正】替換整個 populateFilters 函式
     function populateFilters() {
         const primaryContainer = document.getElementById('primary-tags');
         const secondaryContainer = document.getElementById('secondary-tags');
@@ -729,9 +738,13 @@ async function initializeRentalHistoryPage() {
             const btn = document.createElement('button');
             btn.textContent = tag;
             btn.dataset.tag = tag;
+            btn.className = 'filter-tag-btn'; // 【問題2 修正】使用統一的 class
+
             btn.addEventListener('click', () => {
                 const currentActive = document.querySelector('#tag-filter-container button.active');
-                if (currentActive) currentActive.classList.remove('active');
+                if (currentActive) {
+                    currentActive.classList.remove('active');
+                }
                 
                 if (activeFilters.tag === tag) {
                     activeFilters.tag = null;
@@ -748,7 +761,8 @@ async function initializeRentalHistoryPage() {
                 secondaryContainer.appendChild(btn);
             }
         });
-
+        
+        // 【問題3 修正】修正按鈕點擊邏輯
         if (secondaryContainer.children.length > 0) {
             moreBtn.style.display = 'inline-block';
             moreBtn.addEventListener('click', () => {
@@ -760,6 +774,7 @@ async function initializeRentalHistoryPage() {
             moreBtn.style.display = 'none';
         }
     }
+
 
     async function initializeGamesPage() {
         if (allGames.length === 0) {
