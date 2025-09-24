@@ -275,7 +275,7 @@ input[readonly] {
     object-fit: cover;
 }
 
-
+/* B. 桌遊圖鑑 (page-games & page-game-details) */
 /* B. 桌遊圖鑑 (page-games & page-game-details) */
 #filter-controls {
     display: flex;
