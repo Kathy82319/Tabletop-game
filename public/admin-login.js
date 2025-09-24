@@ -1086,12 +1086,14 @@ function renderRentalList(rentals) {
             default:
                 statusBadge = `<span>${rental.status}</span>`;
         }
+        
+        // 【** 修改 row.innerHTML **】
         row.innerHTML = `
             <td>${statusBadge}</td>
             <td>${rental.game_name}</td>
             <td>${userName}</td>
             <td>${rental.due_date}</td>
-            <td class="actions-cell" style="display: flex; gap: 5px; justify-content: center;">
+            <td>${rental.return_date || '--'}</td> <td class="actions-cell" style="display: flex; gap: 5px; justify-content: center;">
                 <button class="action-btn btn-edit-rental" data-rentalid="${rental.rental_id}" style="background-color:#007bff;">管理</button>
                 <button class="action-btn btn-return" data-rentalid="${rental.rental_id}" style="background-color:#17a2b8;" ${rental.status === 'returned' ? 'disabled' : ''}>歸還</button>
             </td>
