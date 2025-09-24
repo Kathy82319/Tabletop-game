@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const userId = document.getElementById('login-userid').value.trim();
+            const username = document.getElementById('login-username').value.trim();
             const password = document.getElementById('login-password').value;
             if(loginStatus) loginStatus.textContent = '';
             if(loginButton) {
@@ -2427,7 +2427,7 @@ async function fetchAllExpHistory() {
         }
         showPage('dashboard'); // 預設顯示儀表板
     }
- 
+  
     }
 });
  

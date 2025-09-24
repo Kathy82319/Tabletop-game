@@ -1,4 +1,4 @@
-// functions/api/admin/auth/login.js
+// functions/api/admin/auth/login.js (新版)
 import * as jose from 'jose';
 
 export async function onRequest(context) {
@@ -6,22 +6,25 @@ export async function onRequest(context) {
         return new Response('Invalid method', { status: 405 });
     }
     try {
-        const { userId, password } = await context.request.json();
-        if (!userId || !password) {
+        // 【修改點 1】接收 username 而不是 userId
+        const { username, password } = await context.request.json();
+        if (!username || !password) {
             return new Response(JSON.stringify({ error: '缺少帳號或密碼。' }), { status: 400 });
         }
+
         const db = context.env.DB;
-        const user = await db.prepare("SELECT * FROM Users WHERE user_id = ? AND role = 'admin'").bind(userId).first();
+        // 【修改點 2】改用 username 來查詢使用者
+        const user = await db.prepare("SELECT * FROM Users WHERE username = ? AND role = 'admin'").bind(username).first();
 
         if (!user) {
              return new Response(JSON.stringify({ error: '帳號不存在或非管理員。' }), { status: 401 });
         }
 
-        // 簡易密碼驗證，此處應替換為安全的雜湊比對
-        if (password !== context.env.ADMIN_PASSWORD) { // 假設您在環境變數中設定了一個臨時密碼
+        if (password !== context.env.ADMIN_PASSWORD) {
             return new Response(JSON.stringify({ error: '密碼錯誤。' }), { status: 401 });
         }
 
+        // --- 產生 JWT Token (此部分不變) ---
         const secret = new TextEncoder().encode(context.env.JWT_SECRET);
         const alg = 'HS256';
         const jwt = await new jose.SignJWT({ userId: user.user_id, role: user.role })
