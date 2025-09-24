@@ -489,7 +489,8 @@ function renderUserDetails(data) {
 
     // 【修正】格式化日期並在 HTML 中新增欄位
     const creationDate = new Date(profile.created_at).toLocaleDateString();
-
+// 【修正】如果 line_picture_url 不存在，就使用一個內嵌的 SVG 預設圖示
+    const avatarSrc = profile.line_picture_url || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIHJ4PSI1MCIgZmlsbD0iI0YwRjBGMCcvPjxwYXRoIGQ9Ik01MCA1MS41QzM5Ljc3NSA1MS41IDMxLjUgNTkuNzc1IDMxLjUgNzBWNzMuMjVİNjguNVY3MEM2OC41IDU5Ljc3NSA2MC4yMjUgNTEuNSA1MCA1MS41Wk01MCA0OC41QzU1Ljc1IDQ4LjUgNjAuNSA0My43NSA2MC41IDM4QzYwLjUgMzIuMjUgNTUuNzUgMjcuNSA1MCAyNy41QzQ0LjI1IDI3LjUgMzkuNSAzMi4yNSAzOS41IDM4QzM5LjUgNDMuNzUgNDQuMjUgNDguNSA1MCA0OC41WiIgZmlsbD0iI0JERUJFQiIvPjwvc3ZnPg==';
     contentContainer.innerHTML = `
         <div class="details-grid">
             <div class="profile-summary">
