@@ -487,10 +487,11 @@ function renderUserDetails(data) {
     const displayName = profile.nickname || profile.line_display_name;
     document.getElementById('user-details-title').textContent = `顧客資料：${displayName}`;
 
-    // 【修正】格式化日期並在 HTML 中新增欄位
     const creationDate = new Date(profile.created_at).toLocaleDateString();
-// 【修正】如果 line_picture_url 不存在，就使用一個內嵌的 SVG 預設圖示
+
+    // 【修正】如果 line_picture_url 不存在，就使用一個內嵌的 SVG 預設圖示
     const avatarSrc = profile.line_picture_url || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIHJ4PSI1MCIgZmlsbD0iI0YwRjBGMCcvPjxwYXRoIGQ9Ik01MCA1MS41QzM5Ljc3NSA1MS41IDMxLjUgNTkuNzc1IDMxLjUgNzBWNzMuMjVİNjguNVY3MEM2OC41IDU5Ljc3NSA2MC4yMjUgNTEuNSA1MCA1MS41Wk01MCA0OC41QzU1Ljc1IDQ4LjUgNjAuNSA0My43NSA2MC41IDM4QzYwLjUgMzIuMjUgNTUuNzUgMjcuNSA1MCAyNy41QzQ0LjI1IDI3LjUgMzkuNSAzMi4yNSAzOS41IDM4QzM5LjUgNDMuNzUgNDQuMjUgNDguNSA1MCA0OC41WiIgZmlsbD0iI0JERUJFQiIvPjwvc3ZnPg==';
+
     contentContainer.innerHTML = `
         <div class="details-grid">
             <div class="profile-summary">
@@ -501,7 +502,7 @@ function renderUserDetails(data) {
                 <p><strong>Email:</strong> ${profile.email || '未設定'}</p>
                 <p><strong>偏好遊戲:</strong> ${profile.preferred_games || '未設定'}</p>
                 <p><strong>建檔日期:</strong> ${creationDate}</p>
-                <hr style="border-color: var(--border-color); border-style: dashed;">
+                <hr style="border-color: var(--border-color); border-style: dashed; margin: 1rem 0;">
                 <p><strong>等級:</strong> ${profile.level} (${profile.current_exp}/10 EXP)</p>
                 <p><strong>職業:</strong> ${profile.class}</p>
                 <p><strong>福利:</strong> ${profile.perk || '無'}</p>
@@ -539,6 +540,7 @@ function renderUserDetails(data) {
             </div>
         </div>
     `;
+
     const tabsContainer = contentContainer.querySelector('.details-tabs');
     const contentsContainer = contentContainer.querySelector('.profile-details');
     tabsContainer.addEventListener('click', e => {
