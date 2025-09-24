@@ -1,4 +1,58 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const loginContainer = document.getElementById('login-container');
+    const adminPanel = document.getElementById('admin-panel');
+    const loginForm = document.getElementById('login-form');
+    const loginStatus = document.getElementById('login-status');
+    const loginButton = document.getElementById('login-button');
+    const logoutBtn = document.getElementById('logout-btn');
+
+        // --- 登入/登出邏輯 ---
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+            if(loginStatus) loginStatus.textContent = '';
+            if(loginButton) {
+                loginButton.disabled = true;
+                loginButton.textContent = '登入中...';
+            }
+            
+        try {
+            const response = await fetch('/api/admin/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                // 【修正點 2】傳送給後端的 JSON key 必須是 username
+                body: JSON.stringify({ username, password }) 
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || '登入失敗');
+
+            if(loginContainer) loginContainer.style.display = 'none';
+            if(adminPanel) adminPanel.style.display = 'block';
+            initializeAdminPanel(); 
+
+        } catch (error) {
+            if(loginStatus) loginStatus.textContent = error.message;
+        } finally {
+            if(loginButton) {
+                loginButton.disabled = false;
+                loginButton.textContent = '登入';
+            }
+        }
+    });
+}
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            await fetch('/api/admin/auth/logout');
+            window.location.reload();
+        });
+    }
+
+
+function initializeAdminPanel() {
     
     // --- 【模組名稱：全域變數與 DOM 宣告】 ---
     const mainNav = document.querySelector('.nav-tabs');
@@ -221,36 +275,59 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     // =================================================================
-    // 顧客管理模組
-    // =================================================================
+    //     // 【安全修正】使用 DOM API 和 textContent 重寫 renderUserList 函式，防止 XSS 攻擊
     function renderUserList(users) {
         if (!userListTbody) return;
-        userListTbody.innerHTML = '';
+        userListTbody.innerHTML = ''; // 清空現有內容
+
         users.forEach(user => {
-            const row = document.createElement('tr');
+            const row = userListTbody.insertRow(); // 建立 <tr> 元素
             row.dataset.userId = user.user_id;
             row.style.cursor = 'pointer';
-            
+
+            // 處理顯示名稱
             const displayName = user.nickname ? `${user.line_display_name} (${user.nickname})` : user.line_display_name;
+
+            // 建立每個儲存格 <td>
+            const cellName = row.insertCell();
+            const cellLevel = row.insertCell();
+            const cellExp = row.insertCell();
+            const cellClass = row.insertCell();
+            const cellTag = row.insertCell();
+            const cellActions = row.insertCell();
+
+            // --- 填充「名稱/ID」儲存格 (安全方式) ---
+            cellName.className = 'compound-cell';
+            cellName.style.textAlign = 'left';
+            const mainInfoDiv = document.createElement('div');
+            mainInfoDiv.className = 'main-info';
+            mainInfoDiv.textContent = displayName || 'N/A'; // 使用 textContent
+            const subInfoDiv = document.createElement('div');
+            subInfoDiv.className = 'sub-info';
+            subInfoDiv.textContent = user.user_id; // 使用 textContent
+            cellName.appendChild(mainInfoDiv);
+            cellName.appendChild(subInfoDiv);
+
+            // --- 填充其他儲存格 (安全方式) ---
+            cellLevel.textContent = user.level;
+            cellExp.textContent = `${user.current_exp} / 10`;
+            cellClass.textContent = user.class || '無';
             
-            row.innerHTML = `
-                <td class="compound-cell" style="text-align: left;">
-                    <div class="main-info">${displayName || 'N/A'}</div>
-                    <div class="sub-info">${user.user_id}</div>
-                </td>
-                <td>${user.level}</td>
-                <td>${user.current_exp} / 10</td>
-                <td>${user.class || '無'}</td>
-                <td><span class="tag-display">${user.tag || '無'}</span></td>
-                <td class="actions-cell">
-                    <button class="action-btn btn-edit">編輯</button>
-                </td>
-            `;
-            userListTbody.appendChild(row);
+            const tagSpan = document.createElement('span');
+            tagSpan.className = 'tag-display';
+            tagSpan.textContent = user.tag || '無';
+            cellTag.appendChild(tagSpan);
+
+            cellActions.className = 'actions-cell';
+            const editButton = document.createElement('button');
+            editButton.className = 'action-btn btn-edit';
+            editButton.textContent = '編輯';
+            cellActions.appendChild(editButton);
         });
     }
 
     async function fetchAllUsers() {
+        // (此函式邏輯不變)
         if (allUsers.length > 0) return;
         try {
             const response = await fetch('/api/get-users');
@@ -471,61 +548,92 @@ async function openUserDetailsModal(userId) {
                 throw new Error(`API 請求失敗: ${errorText}`);
             }
             const data = await response.json();
-            console.log("CRM 檢查點 F: 成功獲取並解析 API 資料:", data);
-            renderUserDetails(data);
+            renderUserDetails(data); // <-- 呼叫下面重寫過的安全版本
         } catch (error) {
             console.error("CRM 執行錯誤:", error);
             contentContainer.innerHTML = `<p style="color:red;">載入資料時發生錯誤：${error.message}</p>`;
         }
     }
 
-function renderUserDetails(data) {
-    const { profile, bookings, rentals, exp_history } = data;
-    const contentContainer = userDetailsModal.querySelector('#user-details-content');
-    if (!contentContainer) return;
-    
-    const displayName = profile.nickname || profile.line_display_name;
-    document.getElementById('user-details-title').textContent = `顧客資料：${displayName}`;
+    function renderUserDetails(data) {
+        const { profile, bookings, rentals, exp_history } = data;
+        const contentContainer = userDetailsModal.querySelector('#user-details-content');
+        if (!contentContainer) return;
+        
+        const displayName = profile.nickname || profile.line_display_name;
+        document.getElementById('user-details-title').textContent = displayName;
 
-    const creationDate = new Date(profile.created_at).toLocaleDateString();
+        // 【安全修正】先清空容器，再逐步建立元素
+        contentContainer.innerHTML = ''; 
 
-    // 【核心修正】將 <img> 的 src 直接指向我們新建的代理 API
-    const avatarSrc = `/api/admin/get-avatar?userId=${profile.user_id}`;
+        const creationDate = new Date(profile.created_at).toLocaleDateString();
+        const avatarSrc = `/api/admin/get-avatar?userId=${profile.user_id}`;
 
-    contentContainer.innerHTML = `
-        <div class="details-grid">
-            <div class="profile-summary">
-                <img src="${avatarSrc}" alt="Profile Picture">
-                <h4>${displayName}</h4>
-                <p><strong>姓名:</strong> ${profile.real_name || '未設定'}</p>
-                <p><strong>電話:</strong> ${profile.phone || '未設定'}</p>
-                <p><strong>Email:</strong> ${profile.email || '未設定'}</p>
-                <p><strong>偏好遊戲:</strong> ${profile.preferred_games || '未設定'}</p>
-                <p><strong>建檔日期:</strong> ${creationDate}</p>
-                <hr style="border-color: var(--border-color); border-style: dashed; margin: 1rem 0;">
-                <p><strong>等級:</strong> ${profile.level} (${profile.current_exp}/10 EXP)</p>
-                <p><strong>職業:</strong> ${profile.class}</p>
-                <p><strong>福利:</strong> ${profile.perk || '無'}</p>
-                <p><strong>標籤:</strong> ${profile.tag || '無'}</p>
+        // 建立外層 Grid
+        const grid = document.createElement('div');
+        grid.className = 'details-grid';
+
+        // 建立左側 Profile Summary
+        const summary = document.createElement('div');
+        summary.className = 'profile-summary';
+        
+        // 建立右側 Profile Details
+        const details = document.createElement('div');
+        details.className = 'profile-details';
+
+        // 建立訊息發送區
+        const messageSender = document.createElement('div');
+        messageSender.className = 'message-sender';
+        
+        // --- 填充左側 Profile Summary ---
+        const avatarImg = document.createElement('img');
+        avatarImg.src = avatarSrc;
+        avatarImg.alt = "Profile Picture";
+        summary.appendChild(avatarImg);
+
+        const h4 = document.createElement('h4');
+        h4.textContent = displayName;
+        summary.appendChild(h4);
+
+        // 使用一個輔助函式來建立 <p> 標籤，避免重複程式碼
+        function createProfileLine(label, value) {
+            const p = document.createElement('p');
+            const strong = document.createElement('strong');
+            strong.textContent = `${label}: `;
+            p.appendChild(strong);
+            p.append(document.createTextNode(value || '未設定')); // 使用 append 和 createTextNode，等同於 textContent
+            return p;
+        }
+
+        summary.appendChild(createProfileLine('姓名', profile.real_name));
+        summary.appendChild(createProfileLine('電話', profile.phone));
+        summary.appendChild(createProfileLine('Email', profile.email));
+        summary.appendChild(createProfileLine('偏好遊戲', profile.preferred_games));
+        summary.appendChild(createProfileLine('建檔日期', creationDate));
+        summary.appendChild(document.createElement('hr'));
+        summary.appendChild(createProfileLine('等級', `${profile.level} (${profile.current_exp}/10 EXP)`));
+        summary.appendChild(createProfileLine('職業', profile.class));
+        summary.appendChild(createProfileLine('福利', profile.perk));
+        summary.appendChild(createProfileLine('標籤', profile.tag));
+
+        // --- 填充右側 Profile Details ---
+        details.innerHTML = `
+            <div class="details-tabs">
+                <button class="details-tab active" data-target="tab-rentals">租借紀錄</button>
+                <button class="details-tab" data-target="tab-bookings">預約紀錄</button>
+                <button class="details-tab" data-target="tab-exp">經驗值紀錄</button>
             </div>
-            <div class="profile-details">
-                <div class="details-tabs">
-                    <button class="details-tab active" data-target="tab-rentals">租借紀錄</button>
-                    <button class="details-tab" data-target="tab-bookings">預約紀錄</button>
-                    <button class="details-tab" data-target="tab-exp">經驗值紀錄</button>
-                </div>
-                <div id="tab-rentals" class="details-tab-content active">
-                    ${renderHistoryTable(rentals, ['rental_date', 'game_name', 'status'], { rental_date: '租借日', game_name: '遊戲', status: '狀態' })}
-                </div>
-                <div id="tab-bookings" class="details-tab-content">
-                    ${renderHistoryTable(bookings, ['booking_date', 'num_of_people', 'status'], { booking_date: '預約日', num_of_people: '人數', status: '狀態' })}
-                </div>
-                <div id="tab-exp" class="details-tab-content">
-                    ${renderHistoryTable(exp_history, ['created_at', 'reason', 'exp_added'], { created_at: '日期', reason: '原因', exp_added: '經驗' })}
-                </div>
-            </div>
-        </div>
-        <div class="message-sender">
+            <div id="tab-rentals" class="details-tab-content active"></div>
+            <div id="tab-bookings" class="details-tab-content"></div>
+            <div id="tab-exp" class="details-tab-content"></div>
+        `;
+        // 將 renderHistoryTable 的結果 (HTML 字串) 安全地插入
+        details.querySelector('#tab-rentals').appendChild(renderHistoryTable(rentals, ['rental_date', 'game_name', 'status'], { rental_date: '租借日', game_name: '遊戲', status: '狀態' }));
+        details.querySelector('#tab-bookings').appendChild(renderHistoryTable(bookings, ['booking_date', 'num_of_people', 'status'], { booking_date: '預約日', num_of_people: '人數', status: '狀態' }));
+        details.querySelector('#tab-exp').appendChild(renderHistoryTable(exp_history, ['created_at', 'reason', 'exp_added'], { created_at: '日期', reason: '原因', exp_added: '經驗' }));
+
+        // --- 填充訊息發送區 ---
+        messageSender.innerHTML = `
             <h4>發送 LINE 訊息</h4>
             <div class="form-group">
                 <label for="message-draft-select">選擇訊息草稿</label>
@@ -538,46 +646,82 @@ function renderUserDetails(data) {
             <div class="form-actions">
                 <button id="send-direct-message-btn" class="action-btn btn-save" data-userid="${profile.user_id}">確認發送</button>
             </div>
-        </div>
-    `;
+        `;
 
-    const tabsContainer = contentContainer.querySelector('.details-tabs');
-    const contentsContainer = contentContainer.querySelector('.profile-details');
-    tabsContainer.addEventListener('click', e => {
-        if (e.target.tagName === 'BUTTON') {
-            tabsContainer.querySelector('.active').classList.remove('active');
-            e.target.classList.add('active');
-            contentsContainer.querySelector('.details-tab-content.active').classList.remove('active');
-            contentsContainer.querySelector(`#${e.target.dataset.target}`).classList.add('active');
-        }
-    });
-    
-    loadAndBindMessageDrafts(profile.user_id);
-}
-    
-function renderHistoryTable(items, columns, headers) {
-    if (!items || items.length === 0) return '<p>無相關紀錄</p>';
-    let head = '<tr>' + Object.values(headers).map(h => `<th>${h}</th>`).join('') + '</tr>';
-    let body = items.map(item => '<tr>' + columns.map(col => {
-        let value = item[col];
-        if (col === 'created_at' || col === 'rental_date' || col === 'booking_date') {
-            value = new Date(value).toLocaleDateString();
-        }
-        // 【新增】狀態中文化邏輯
-        if (col === 'status') {
-            switch(value) {
-                case 'confirmed': value = '預約成功'; break;
-                case 'checked-in': value = '已報到'; break;
-                case 'cancelled': value = '已取消'; break;
-                case 'rented': value = '租借中'; break;
-                case 'returned': value = '已歸還'; break;
-                case 'overdue': value = '<span style="color:var(--danger-color); font-weight:bold;">逾期</span>'; break; // 【新增這一行】
+        // 將所有建立好的區塊放入容器
+        grid.appendChild(summary);
+        grid.appendChild(details);
+        contentContainer.appendChild(grid);
+        contentContainer.appendChild(messageSender);
+
+        // 重新綁定頁籤點擊事件
+        const tabsContainer = contentContainer.querySelector('.details-tabs');
+        tabsContainer.addEventListener('click', e => {
+            if (e.target.tagName === 'BUTTON') {
+                tabsContainer.querySelector('.active').classList.remove('active');
+                e.target.classList.add('active');
+                details.querySelector('.details-tab-content.active').classList.remove('active');
+                details.querySelector(`#${e.target.dataset.target}`).classList.add('active');
             }
+        });
+        
+        loadAndBindMessageDrafts(profile.user_id);
+    }
+        
+    // 【安全修正】讓 renderHistoryTable 回傳一個 DOM 片段 (DocumentFragment) 而不是 HTML 字串
+    function renderHistoryTable(items, columns, headers) {
+        const fragment = document.createDocumentFragment();
+        if (!items || items.length === 0) {
+            const p = document.createElement('p');
+            p.textContent = '無相關紀錄';
+            fragment.appendChild(p);
+            return fragment;
         }
-        return `<td>${value}</td>`;
-    }).join('') + '</tr>').join('');
-    return `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
-}
+        
+        const table = document.createElement('table');
+        const thead = table.createTHead();
+        const tbody = table.createTBody();
+        const headRow = thead.insertRow();
+        
+        Object.values(headers).forEach(hText => {
+            const th = document.createElement('th');
+            th.textContent = hText;
+            headRow.appendChild(th);
+        });
+
+        items.forEach(item => {
+            const row = tbody.insertRow();
+            columns.forEach(col => {
+                const cell = row.insertCell();
+                let value = item[col];
+                
+                if (col === 'created_at' || col === 'rental_date' || col === 'booking_date') {
+                    value = new Date(value).toLocaleDateString();
+                }
+                
+                // 處理狀態時，因為包含 HTML，所以要特別處理
+                if (col === 'status') {
+                    switch(value) {
+                        case 'confirmed': cell.textContent = '預約成功'; break;
+                        case 'checked-in': cell.textContent = '已報到'; break;
+                        case 'cancelled': cell.textContent = '已取消'; break;
+                        case 'rented': cell.textContent = '租借中'; break;
+                        case 'returned': cell.textContent = '已歸還'; break;
+                        case 'overdue': 
+                            // 只有這個情況是安全的，因為 HTML 是我們自己寫死的，不是來自使用者輸入
+                            cell.innerHTML = '<span style="color:var(--danger-color); font-weight:bold;">逾期</span>'; 
+                            break;
+                        default: cell.textContent = value;
+                    }
+                } else {
+                    cell.textContent = value; // 其他所有情況都用 textContent
+                }
+            });
+        });
+        
+        fragment.appendChild(table);
+        return fragment;
+    }
 
     // =================================================================
     // 訊息草稿模組
@@ -602,16 +746,28 @@ function renderHistoryTable(items, columns, headers) {
         if (!draftListTbody) return;
         draftListTbody.innerHTML = '';
         drafts.forEach(draft => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${draft.title}</td>
-                <td>${draft.content.substring(0, 50)}...</td>
-                <td class="actions-cell">
-                    <button class="action-btn btn-edit" data-draftid="${draft.draft_id}">編輯</button>
-                    <button class="action-btn btn-delete-draft" data-draftid="${draft.draft_id}" style="background-color: var(--danger-color);">刪除</button>
-                </td>
-            `;
-            draftListTbody.appendChild(row);
+            const row = draftListTbody.insertRow();
+            const cellTitle = row.insertCell();
+            const cellContent = row.insertCell();
+            const cellActions = row.insertCell();
+            
+            cellTitle.textContent = draft.title;
+            cellContent.textContent = draft.content.substring(0, 50) + '...';
+            cellActions.className = 'actions-cell';
+            
+            const editBtn = document.createElement('button');
+            editBtn.className = 'action-btn btn-edit';
+            editBtn.dataset.draftid = draft.draft_id;
+            editBtn.textContent = '編輯';
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'action-btn btn-delete-draft';
+            deleteBtn.dataset.draftid = draft.draft_id;
+            deleteBtn.style.backgroundColor = 'var(--danger-color)';
+            deleteBtn.textContent = '刪除';
+            
+            cellActions.appendChild(editBtn);
+            cellActions.appendChild(deleteBtn);
         });
     }
 
@@ -780,44 +936,90 @@ function applyGameFiltersAndRender() {
     renderGameList(filteredGames);
 }
 
-function renderGameList(games) {
-    if (!gameListTbody) return;
-    gameListTbody.innerHTML = '';
-    games.forEach(game => {
-        const row = document.createElement('tr');
-        row.className = 'draggable-row';
-        row.dataset.gameId = game.game_id;
-        
-        const isVisible = game.is_visible === 1;
-        const tagsHtml = (game.tags || '').split(',').map(t => t.trim()).filter(Boolean).map(tag => `<span style="background:#eee; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${tag}</span>`).join(' ');
+    // 【安全修正】重寫 renderGameList
+    function renderGameList(games) {
+        if (!gameListTbody) return;
+        gameListTbody.innerHTML = '';
+        games.forEach(game => {
+            const row = gameListTbody.insertRow();
+            row.className = 'draggable-row';
+            row.dataset.gameId = game.game_id;
+            
+            const isVisible = game.is_visible === 1;
+            
+            const cellOrder = row.insertCell();
+            const cellGame = row.insertCell();
+            const cellTotalStock = row.insertCell();
+            const cellRentStock = row.insertCell();
+            const cellPrice = row.insertCell();
+            const cellVisible = row.insertCell();
+            const cellActions = row.insertCell();
 
-        row.innerHTML = `
-            <td class="drag-handle-cell">
-                <span class="drag-handle">⠿</span>
-                ${game.display_order || 'N/A'}
-            </td>
-            <td class="compound-cell" style="text-align: left;">
-                <div class="main-info">${game.name}</div>
-                <div class="sub-info">ID: ${game.game_id}</div>
-                <div class="sub-info" style="margin-top: 5px;">${tagsHtml}</div>
-            </td>
-            <td>${game.total_stock}</td>
-            <td>${game.for_rent_stock}</td>
-            <td class="compound-cell">
-                <div class="main-info">$${game.sale_price}</div>
-                <div class="sub-info">租金: $${game.rent_price}</div>
-            </td>
-            <td>${isVisible ? '是' : '否'}</td>
-            <td class="actions-cell">
-                <div style="display: flex; gap: 5px; justify-content: center;">
-                    <button class="action-btn btn-rent" data-gameid="${game.game_id}" style="background-color: #007bff;">出借</button>
-                    <button class="action-btn btn-edit-game" data-gameid="${game.game_id}" style="background-color: #ffc107; color: #000;">編輯</button>
-                </div>
-            </td>
-        `;
-        gameListTbody.appendChild(row);
-    });
-}
+            // 順序欄
+            cellOrder.className = 'drag-handle-cell';
+            const handleSpan = document.createElement('span');
+            handleSpan.className = 'drag-handle';
+            handleSpan.textContent = '⠿';
+            cellOrder.appendChild(handleSpan);
+            cellOrder.append(document.createTextNode(game.display_order || 'N/A'));
+
+            // 遊戲欄
+            cellGame.className = 'compound-cell';
+            cellGame.style.textAlign = 'left';
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'main-info';
+            nameDiv.textContent = game.name;
+            const idDiv = document.createElement('div');
+            idDiv.className = 'sub-info';
+            idDiv.textContent = `ID: ${game.game_id}`;
+            const tagsDiv = document.createElement('div');
+            tagsDiv.className = 'sub-info';
+            tagsDiv.style.marginTop = '5px';
+            (game.tags || '').split(',').map(t => t.trim()).filter(Boolean).forEach(tag => {
+                const tagSpan = document.createElement('span');
+                tagSpan.style.cssText = 'background:#eee; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px;';
+                tagSpan.textContent = tag;
+                tagsDiv.appendChild(tagSpan);
+            });
+            cellGame.appendChild(nameDiv);
+            cellGame.appendChild(idDiv);
+            cellGame.appendChild(tagsDiv);
+
+            // 其他欄
+            cellTotalStock.textContent = game.total_stock;
+            cellRentStock.textContent = game.for_rent_stock;
+            
+            cellPrice.className = 'compound-cell';
+            const saleDiv = document.createElement('div');
+            saleDiv.className = 'main-info';
+            saleDiv.textContent = `$${game.sale_price}`;
+            const rentDiv = document.createElement('div');
+            rentDiv.className = 'sub-info';
+            rentDiv.textContent = `租金: $${game.rent_price}`;
+            cellPrice.appendChild(saleDiv);
+            cellPrice.appendChild(rentDiv);
+
+            cellVisible.textContent = isVisible ? '是' : '否';
+            
+            // 操作欄
+            cellActions.className = 'actions-cell';
+            const actionContainer = document.createElement('div');
+            actionContainer.style.cssText = 'display: flex; gap: 5px; justify-content: center;';
+            const rentBtn = document.createElement('button');
+            rentBtn.className = 'action-btn btn-rent';
+            rentBtn.dataset.gameid = game.game_id;
+            rentBtn.style.backgroundColor = '#007bff';
+            rentBtn.textContent = '出借';
+            const editBtn = document.createElement('button');
+            editBtn.className = 'action-btn btn-edit-game';
+            editBtn.dataset.gameid = game.game_id;
+            editBtn.style.cssText = 'background-color: #ffc107; color: #000;';
+            editBtn.textContent = '編輯';
+            actionContainer.appendChild(rentBtn);
+            actionContainer.appendChild(editBtn);
+            cellActions.appendChild(actionContainer);
+        });
+    }
 
 async function fetchAllGames() {
     try {
@@ -1077,40 +1279,64 @@ function sortRentals() {
 }
 
 function renderRentalList(rentals) {
-    if (!rentalListTbody) return;
-    rentalListTbody.innerHTML = '';
-    rentals.forEach(rental => {
-        const row = document.createElement('tr');
-        const userName = rental.nickname || rental.line_display_name || '未知用戶';
-        let statusBadge = '';
-        switch(rental.derived_status) {
-            case 'overdue':
-                statusBadge = '<span style="background-color: var(--danger-color); color: #fff; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">逾期未歸還</span>';
-                break;
-            case 'rented':
-                statusBadge = '<span style="background-color: #ffc107; color: #000; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">租借中</span>';
-                break;
-            case 'returned':
-                statusBadge = '<span style="background-color: #28a745; color: #fff; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">已歸還</span>';
-                break;
-            default:
-                statusBadge = `<span>${rental.status}</span>`;
-        }
-        
-        // 【** 修改 row.innerHTML **】
-        row.innerHTML = `
-            <td>${statusBadge}</td>
-            <td>${rental.game_name}</td>
-            <td>${userName}</td>
-            <td>${rental.due_date}</td>
-            <td>${rental.return_date || '--'}</td> <td class="actions-cell" style="display: flex; gap: 5px; justify-content: center;">
-                <button class="action-btn btn-edit-rental" data-rentalid="${rental.rental_id}" style="background-color:#007bff;">管理</button>
-                <button class="action-btn btn-return" data-rentalid="${rental.rental_id}" style="background-color:#17a2b8;" ${rental.status === 'returned' ? 'disabled' : ''}>歸還</button>
-            </td>
-        `;
-        rentalListTbody.appendChild(row);
-    });
-}
+        if (!rentalListTbody) return;
+        rentalListTbody.innerHTML = '';
+        rentals.forEach(rental => {
+            const row = rentalListTbody.insertRow();
+            const userName = rental.nickname || rental.line_display_name || '未知用戶';
+            
+            const cellStatus = row.insertCell();
+            const cellGame = row.insertCell();
+            const cellUser = row.insertCell();
+            const cellDue = row.insertCell();
+            const cellReturn = row.insertCell();
+            const cellActions = row.insertCell();
+
+            // 狀態欄 (包含安全的 HTML)
+            let statusBadgeHTML = '';
+            switch(rental.derived_status) {
+                case 'overdue':
+                    statusBadgeHTML = '<span style="background-color: var(--danger-color); color: #fff; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">逾期未歸還</span>';
+                    break;
+                case 'rented':
+                    statusBadgeHTML = '<span style="background-color: #ffc107; color: #000; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">租借中</span>';
+                    break;
+                case 'returned':
+                    statusBadgeHTML = '<span style="background-color: #28a745; color: #fff; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">已歸還</span>';
+                    break;
+                default:
+                    const span = document.createElement('span');
+                    span.textContent = rental.status;
+                    statusBadgeHTML = span.outerHTML;
+            }
+            cellStatus.innerHTML = statusBadgeHTML; // 此處是安全的，因為 HTML 內容由我們控制
+
+            // 其他欄
+            cellGame.textContent = rental.game_name;
+            cellUser.textContent = userName;
+            cellDue.textContent = rental.due_date;
+            cellReturn.textContent = rental.return_date || '--';
+
+            // 操作欄
+            cellActions.className = 'actions-cell';
+            const actionContainer = document.createElement('div');
+            actionContainer.style.cssText = 'display: flex; gap: 5px; justify-content: center;';
+            const manageBtn = document.createElement('button');
+            manageBtn.className = 'action-btn btn-edit-rental';
+            manageBtn.dataset.rentalid = rental.rental_id;
+            manageBtn.style.backgroundColor = '#007bff';
+            manageBtn.textContent = '管理';
+            const returnBtn = document.createElement('button');
+            returnBtn.className = 'action-btn btn-return';
+            returnBtn.dataset.rentalid = rental.rental_id;
+            returnBtn.style.backgroundColor = '#17a2b8';
+            returnBtn.disabled = (rental.status === 'returned');
+            returnBtn.textContent = '歸還';
+            actionContainer.appendChild(manageBtn);
+            actionContainer.appendChild(returnBtn);
+            cellActions.appendChild(actionContainer);
+        });
+    }
 
 function fetchAllRentals() {
     applyRentalFiltersAndRender();
@@ -1517,37 +1743,72 @@ flatpickr("#rental-due-date", { dateFormat: "Y-m-d", minDate: "today" });
     // =================================================================
     // 訂位管理模組
     // =================================================================
-    function renderBookingList(bookings) {
+  function renderBookingList(bookings) {
         if (!bookingListTbody) return;
         bookingListTbody.innerHTML = '';
         if (bookings.length === 0) {
-            bookingListTbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">找不到符合條件的預約。</td></tr>';
+            const row = bookingListTbody.insertRow();
+            const cell = row.insertCell();
+            cell.colSpan = 5;
+            cell.style.textAlign = 'center';
+            cell.textContent = '找不到符合條件的預約。';
             return;
         }
         bookings.forEach(booking => {
-            const row = document.createElement('tr');
+            const row = bookingListTbody.insertRow();
             let statusText = '未知';
             if (booking.status === 'confirmed') statusText = '預約成功';
             if (booking.status === 'checked-in') statusText = '已報到';
             if (booking.status === 'cancelled') statusText = '已取消';
 
-            row.innerHTML = `
-                <td class="compound-cell">
-                    <div class="main-info">${booking.booking_date}</div>
-                    <div class="sub-info">${booking.time_slot}</div>
-                </td>
-                <td class="compound-cell">
-                    <div class="main-info">${booking.contact_name}</div>
-                    <div class="sub-info">${booking.contact_phone}</div>
-                </td>
-                <td>${booking.num_of_people}</td>
-                <td>${statusText}</td>
-                <td class="actions-cell">
-                    <button class="action-btn btn-check-in" data-bookingid="${booking.booking_id}" style="background-color: #28a745;" ${booking.status !== 'confirmed' ? 'disabled' : ''}>報到</button>
-                    <button class="action-btn btn-cancel-booking" data-bookingid="${booking.booking_id}" style="background-color: var(--danger-color);" ${booking.status === 'cancelled' ? 'disabled' : ''}>取消</button>
-                </td>
-            `;
-            bookingListTbody.appendChild(row);
+            const cellTime = row.insertCell();
+            const cellClient = row.insertCell();
+            const cellPeople = row.insertCell();
+            const cellStatus = row.insertCell();
+            const cellActions = row.insertCell();
+
+            // 時間欄
+            cellTime.className = 'compound-cell';
+            const dateDiv = document.createElement('div');
+            dateDiv.className = 'main-info';
+            dateDiv.textContent = booking.booking_date;
+            const slotDiv = document.createElement('div');
+            slotDiv.className = 'sub-info';
+            slotDiv.textContent = booking.time_slot;
+            cellTime.appendChild(dateDiv);
+            cellTime.appendChild(slotDiv);
+
+            // 客戶欄
+            cellClient.className = 'compound-cell';
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'main-info';
+            nameDiv.textContent = booking.contact_name;
+            const phoneDiv = document.createElement('div');
+            phoneDiv.className = 'sub-info';
+            phoneDiv.textContent = booking.contact_phone;
+            cellClient.appendChild(nameDiv);
+            cellClient.appendChild(phoneDiv);
+
+            // 其他欄
+            cellPeople.textContent = booking.num_of_people;
+            cellStatus.textContent = statusText;
+            
+            // 操作欄
+            cellActions.className = 'actions-cell';
+            const checkInBtn = document.createElement('button');
+            checkInBtn.className = 'action-btn btn-check-in';
+            checkInBtn.dataset.bookingid = booking.booking_id;
+            checkInBtn.style.backgroundColor = '#28a745';
+            checkInBtn.disabled = (booking.status !== 'confirmed');
+            checkInBtn.textContent = '報到';
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'action-btn btn-cancel-booking';
+            cancelBtn.dataset.bookingid = booking.booking_id;
+            cancelBtn.style.backgroundColor = 'var(--danger-color)';
+            cancelBtn.disabled = (booking.status === 'cancelled');
+            cancelBtn.textContent = '取消';
+            cellActions.appendChild(checkInBtn);
+            cellActions.appendChild(cancelBtn);
         });
     }
 
@@ -1941,28 +2202,46 @@ async function fetchAllExpHistory() {
         if (!expHistoryTbody) return;
         expHistoryTbody.innerHTML = '';
         if (records.length === 0) {
-            expHistoryTbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">找不到符合條件的紀錄。</td></tr>`;
+            const row = expHistoryTbody.insertRow();
+            const cell = row.insertCell();
+            cell.colSpan = 4;
+            cell.style.textAlign = 'center';
+            cell.textContent = '找不到符合條件的紀錄。';
             return;
         }
         records.forEach(record => {
-            const row = document.createElement('tr');
+            const row = expHistoryTbody.insertRow();
             const displayName = record.nickname || record.line_display_name || '未知使用者';
             const date = new Date(record.created_at).toLocaleString('sv').replace(' ', '\n');
             const expClass = record.exp_added > 0 ? 'exp-gain' : 'exp-loss';
             const expSign = record.exp_added > 0 ? '+' : '';
-
-            row.innerHTML = `
-                <td class="compound-cell">
-                    <div class="main-info">${displayName}</div>
-                    <div class="sub-info">${record.user_id}</div>
-                </td>
-                <td style="white-space: pre-wrap;">${date}</td>
-                <td>${record.reason}</td>
-                <td class="${expClass}" style="font-weight:bold;">${expSign}${record.exp_added}</td>
-            `;
-            expHistoryTbody.appendChild(row);
+            
+            const cellUser = row.insertCell();
+            const cellDate = row.insertCell();
+            const cellReason = row.insertCell();
+            const cellExp = row.insertCell();
+            
+            // 使用者欄
+            cellUser.className = 'compound-cell';
+            const userDiv = document.createElement('div');
+            userDiv.className = 'main-info';
+            userDiv.textContent = displayName;
+            const userIdDiv = document.createElement('div');
+            userIdDiv.className = 'sub-info';
+            userIdDiv.textContent = record.user_id;
+            cellUser.appendChild(userDiv);
+            cellUser.appendChild(userIdDiv);
+            
+            // 其他欄
+            cellDate.style.whiteSpace = 'pre-wrap';
+            cellDate.textContent = date;
+            cellReason.textContent = record.reason;
+            cellExp.className = expClass;
+            cellExp.style.fontWeight = 'bold';
+            cellExp.textContent = `${expSign}${record.exp_added}`;
         });
     }
+
 
     if (expUserFilterInput) {
         expUserFilterInput.addEventListener('input', () => {
@@ -1987,19 +2266,27 @@ async function fetchAllExpHistory() {
         if(!newsListTbody) return;
         newsListTbody.innerHTML = '';
         newsItems.forEach(news => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${news.title}</td>
-                <td>${news.category}</td>
-                <td>${news.published_date}</td>
-                <td>${news.is_published ? '已發布' : '草稿'}</td>
-                <td class="actions-cell">
-                    <button class="action-btn btn-edit" data-news-id="${news.id}">編輯</button>
-                </td>
-            `;
-            newsListTbody.appendChild(row);
+            const row = newsListTbody.insertRow();
+            const cellTitle = row.insertCell();
+            const cellCategory = row.insertCell();
+            const cellDate = row.insertCell();
+            const cellStatus = row.insertCell();
+            const cellActions = row.insertCell();
+
+            cellTitle.textContent = news.title;
+            cellCategory.textContent = news.category;
+            cellDate.textContent = news.published_date;
+            cellStatus.textContent = news.is_published ? '已發布' : '草稿';
+
+            cellActions.className = 'actions-cell';
+            const editBtn = document.createElement('button');
+            editBtn.className = 'action-btn btn-edit';
+            editBtn.dataset.newsId = news.id;
+            editBtn.textContent = '編輯';
+            cellActions.appendChild(editBtn);
         });
     }
+    
 
     async function fetchAllNews() {
         try {
@@ -2141,8 +2428,7 @@ async function fetchAllExpHistory() {
         }
         showPage('dashboard'); // 預設顯示儀表板
     }
-    
-    initialize();
-
+  
+    }
 });
-
+ 
