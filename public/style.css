@@ -54,7 +54,7 @@ body {
 }
 
 #app-content {
-    padding: 10px 15px;
+    min-height: calc(100vh - 80px - 20px); /* 螢幕高度 - 導覽列高度 - 上下 padding */
 }
 
 /* 標題樣式 */
@@ -287,7 +287,10 @@ input[readonly] {
     flex-wrap: wrap;
     gap: 8px;
 }
-#tag-filter-container button, #more-tags-btn, #clear-filters {
+/* 【** 步驟 1: 修改這個 CSS 選擇器 **】 */
+/* 將原本的 #tag-filter-container button 改為更明確的 .filter-group button */
+/* 這樣可以確保主要和次要標籤群組內的按鈕樣式都一致 */
+#tag-filter-container .filter-group button, #more-tags-btn, #clear-filters {
     font-family: var(--font-primary);
     padding: 6px 14px;
     border: 1px solid var(--color-frame-gold);
@@ -297,7 +300,9 @@ input[readonly] {
     cursor: pointer;
     transition: all 0.3s ease;
 }
-#tag-filter-container button.active {
+
+/* 【** 步驟 2: 修改這個 CSS 選擇器 **】 */
+#tag-filter-container .filter-group button.active {
     background: var(--color-frame-gold);
     color: white;
 }
@@ -306,6 +311,7 @@ input[readonly] {
     color: white;
     border-color: var(--color-danger);
 }
+
 
 /* 遊戲卡片 (由 script.js 生成) */
 .game-card {
@@ -662,3 +668,27 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     color: var(--color-text-secondary);
 }
 
+/* public/style.css */
+
+/* --- 修正：租借紀錄頁面排版 --- */
+.rental-card {
+    display: flex;
+    align-items: center; /* 讓圖片和文字垂直置中對齊 */
+    gap: 15px;
+}
+
+.rental-game-image {
+    width: 80px;      /* 設定固定寬度 */
+    height: 80px;     /* 設定固定高度 */
+    flex-shrink: 0;   /* 防止圖片被壓縮 */
+    object-fit: cover;/* 確保圖片等比例填滿空間不變形 */
+    border-radius: var(--border-radius);
+}
+
+.rental-info {
+    flex-grow: 1; /* 讓文字區域佔滿剩餘空間 */
+}
+
+.rental-info h3, .rental-info p {
+    margin: 5px 0; /* 調整文字間的垂直距離 */
+}

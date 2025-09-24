@@ -529,22 +529,7 @@ async function initializeRentalHistoryPage() {
         document.getElementById('edit-profile-phone').value = userData.phone || '';
         document.getElementById('edit-profile-email').value = userData.email || '';
         
-        const gamesSelect = document.getElementById('edit-profile-games');
-        const otherGamesInput = document.getElementById('edit-profile-games-other');
-        const standardGameTypes = Array.from(gamesSelect.options).map(opt => opt.value);
-        
-        if (userData.preferred_games && !standardGameTypes.includes(userData.preferred_games)) {
-            gamesSelect.value = '其他';
-            otherGamesInput.style.display = 'block';
-            otherGamesInput.value = userData.preferred_games;
-        } else {
-            gamesSelect.value = userData.preferred_games || '未提供';
-            otherGamesInput.style.display = 'none';
-        }
 
-        gamesSelect.addEventListener('change', () => {
-            otherGamesInput.style.display = (gamesSelect.value === '其他') ? 'block' : 'none';
-        });
 
     // ** 需求 3 修改：處理偏好遊戲多選 **
     const gamesContainer = document.getElementById('preferred-games-container');
