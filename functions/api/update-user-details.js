@@ -66,24 +66,26 @@ async function updateRowInSheet(env, sheetName, matchColumn, matchValue, updateD
 }
 // ** END: 關鍵修正 **
 
-// --- 主要 API 邏輯 (保持不變) ---
+// --- 主要 API 邏輯 ---
 export async function onRequest(context) {
   try {
     if (context.request.method !== 'POST') {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    const { userId, level, current_exp, tag, user_class, perk } = await context.request.json();
+    // 【修改點 1】從請求中接收新的 notes 欄位
+    const { userId, level, current_exp, tag, user_class, perk, notes } = await context.request.json();
 
     if (!userId) {
       return new Response(JSON.stringify({ error: '缺少使用者 ID。' }), { status: 400 });
     }
 
     const db = context.env.DB;
-    
-    console.log(`[API] 正在更新 D1 資料庫中的使用者: ${userId}`);
-    const stmt = db.prepare('UPDATE Users SET level = ?, current_exp = ?, tag = ?, class = ?, perk = ? WHERE user_id = ?');
-    const result = await stmt.bind(Number(level) || 1, Number(current_exp) || 0, tag, user_class, perk, userId).run();
+
+    // 【修改點 2】在 UPDATE 語句中加入 notes = ?
+    const stmt = db.prepare('UPDATE Users SET level = ?, current_exp = ?, tag = ?, class = ?, perk = ?, notes = ? WHERE user_id = ?');
+    // 【修改點 3】將 notes 綁定到 SQL 語句中
+    const result = await stmt.bind(Number(level) || 1, Number(current_exp) || 0, tag, user_class, perk, notes || '', userId).run();
 
     if (result.meta.changes === 0) {
       return new Response(JSON.stringify({ error: `在 D1 中找不到使用者 ID: ${userId}，無法更新資料。` }), {
@@ -91,15 +93,16 @@ export async function onRequest(context) {
       });
     }
 
-    console.log(`[API] 已觸發背景任務，將更新 Google Sheet 中的使用者: ${userId}`);
+    // 【修改點 4】將 notes 加入到要同步至 Google Sheet 的資料中
     const dataToSync = {
         level: level,
         current_exp: current_exp,
         tag: tag,
         class: user_class,
-        perk: perk
+        perk: perk,
+        notes: notes || ''
     };
-    
+
     context.waitUntil(
         updateRowInSheet(context.env, '使用者列表', 'user_id', userId, dataToSync)
         .catch(err => console.error(`背景同步 Google Sheet 失敗 (使用者: ${userId}):`, err))

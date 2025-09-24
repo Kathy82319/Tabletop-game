@@ -383,6 +383,7 @@ function initializeAdminPanel() {
         const otherPerkInput = document.getElementById('edit-perk-other-input');
         const tagSelect = document.getElementById('edit-tag-select');
         const otherTagInput = document.getElementById('edit-tag-other-input');
+        const notesTextarea = document.getElementById('edit-notes-textarea'); // 【新增這一行】
         classSelect.innerHTML = '';
         perkSelect.innerHTML = '';
         for (const className in classPerks) {
@@ -424,6 +425,7 @@ function initializeAdminPanel() {
             otherTagInput.style.display = 'none';
             otherTagInput.value = '';
         }
+        notesTextarea.value = user.notes || ''; // 【新增這一行】
         editUserModal.style.display = 'flex';
     }
 
@@ -477,7 +479,8 @@ function initializeAdminPanel() {
                 current_exp: document.getElementById('edit-exp-input').value,
                 tag: newTag,
                 user_class: newClass,
-                perk: newPerk
+                perk: newPerk,
+                notes: document.getElementById('edit-notes-textarea').value
             };
             try {
                 const response = await fetch('/api/update-user-details', {
@@ -493,6 +496,7 @@ function initializeAdminPanel() {
                     user.tag = updatedData.tag;
                     user.class = updatedData.user_class;
                     user.perk = updatedData.perk;
+                    user.notes = updatedData.notes; // 【新增這一行】
                 }
                 renderUserList(allUsers);
                 editUserModal.style.display = 'none';
@@ -653,7 +657,27 @@ async function openUserDetailsModal(userId) {
         grid.appendChild(summary);
         grid.appendChild(details);
         contentContainer.appendChild(grid);
+        // 【新增這個區塊】
+if (profile.notes) {
+    const notesSection = document.createElement('div');
+    notesSection.className = 'message-sender'; // 借用現有樣式
+    notesSection.style.marginTop = '1rem';
+    notesSection.style.backgroundColor = '#fffbe6'; // 淡黃色背景以突顯
+
+    const notesTitle = document.createElement('h4');
+    notesTitle.textContent = '顧客備註';
+
+    const notesContent = document.createElement('p');
+    notesContent.style.whiteSpace = 'pre-wrap'; // 讓換行符號生效
+    notesContent.textContent = profile.notes;
+
+    notesSection.appendChild(notesTitle);
+    notesSection.appendChild(notesContent);
+    contentContainer.appendChild(notesSection);
+}
+
         contentContainer.appendChild(messageSender);
+
 
         // 重新綁定頁籤點擊事件
         const tabsContainer = contentContainer.querySelector('.details-tabs');
