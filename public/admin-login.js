@@ -489,16 +489,10 @@ function renderUserDetails(data) {
 
     const creationDate = new Date(profile.created_at).toLocaleDateString();
 
-    // --- 【除錯訊息】 ---
-    // 當您在後台點開 CRM 視窗時，請按 F12 打開瀏覽器的開發者工具，
-    // 在 Console (主控台) 中查看這裡印出的訊息，可以幫助我們判斷問題。
-    console.log("從資料庫讀到的頭像網址:", profile.line_picture_url);
-    // --- 【除錯訊息結束】 ---
-
-    // 【修正】更嚴格的頭像處理邏輯
-    const placeholderAvatar = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIHJ4PSI1MCIgZmlsbD0iI0YwRjBGMCcvPjxwYXRoIGQ9Ik01MCA1MS41QzM5Ljc3NSA1MS41IDMxLjUgNTkuNzc1IDMxLjUgNzBWNzMuMjVİNjguNVY3MEM2OC41IDU5Ljc3NSA2MC4yMjUgNTEuNSA1MCA1MS41Wk01MCA0OC41QzU1Ljc1IDQ4LjUgNjAuNSA0My43NSA2MC41IDM4QzYwLjUgMzIuMjUgNTUuNzUgMjcuNSA1MCAyNy41QzQ0LjI1IDI3LjUgMzkuNSAzMi4yNSAzOS41IDM4QzM5LjUgNDMuNzUgNDQuMjUgNDguNSA1MCA0OC41WiIgZmlsbD0iI0JERUJFQiIvPjwvc3ZnPg==';
+    // 【修正】使用一個全新的、保證有效的 SVG Base64 編碼作為預設圖示
+    const placeholderAvatar = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IiNFMEUwRTAiPjxwYXRoIGQ9Ik0xMiAxMmMyLjIxIDAgNC0xLjc5IDQtNHMtMS43OS00LTQtNC00IDEuNzktNCA0IDEuNzkgNCA0IDR6bTAgMmMtMi42NyAwLTggMS4zNC04IDR2MmgxNnYtMmMwLTIuNjYtNS4zMy00LTgtNHoiLz48L3N2Zz4=';
     let avatarSrc = placeholderAvatar;
-    // 只有當 line_picture_url 存在，且是以 'http' 開頭的有效網址時，才使用它
+    
     if (profile.line_picture_url && typeof profile.line_picture_url === 'string' && profile.line_picture_url.startsWith('http')) {
         avatarSrc = profile.line_picture_url;
     }
