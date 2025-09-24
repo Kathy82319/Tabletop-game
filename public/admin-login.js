@@ -2427,6 +2427,6 @@ async function fetchAllExpHistory() {
         }
         showPage('dashboard'); // 預設顯示儀表板
     }
-
+ 
     }
 });
