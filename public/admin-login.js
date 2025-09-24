@@ -7,23 +7,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logout-btn');
 
         // --- 登入/登出邏輯 ---
-    if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('login-username').value.trim();
-            const password = document.getElementById('login-password').value;
-            if(loginStatus) loginStatus.textContent = '';
-            if(loginButton) {
-                loginButton.disabled = true;
-                loginButton.textContent = '登入中...';
-            }
-            
+if (loginForm) {
+    // 【修改點 1】將這個事件監聽器函式標記為 async
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById('login-username').value.trim();
+        const password = document.getElementById('login-password').value;
+
+        if(loginStatus) loginStatus.textContent = '';
+        if(loginButton) {
+            loginButton.disabled = true;
+            loginButton.textContent = '登入中...';
+        }
+
         try {
             const response = await fetch('/api/admin/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // 【修正點 2】傳送給後端的 JSON key 必須是 username
-                body: JSON.stringify({ username, password }) 
+                body: JSON.stringify({ username, password })
             });
 
             const result = await response.json();
@@ -31,8 +33,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if(loginContainer) loginContainer.style.display = 'none';
             if(adminPanel) adminPanel.style.display = 'block';
-            initializeAdminPanel(); 
-            showPage('dashboard'); //
+
+            // 【修改點 2】使用 await 等待整個後台介面初始化完成
+            await initializeAdminPanel(); 
 
         } catch (error) {
             if(loginStatus) loginStatus.textContent = error.message;
@@ -560,35 +563,30 @@ async function openUserDetailsModal(userId) {
         }
     }
 
-    function renderUserDetails(data) {
-        const { profile, bookings, rentals, exp_history } = data;
-        const contentContainer = userDetailsModal.querySelector('#user-details-content');
-        if (!contentContainer) return;
-        
-        const displayName = profile.nickname || profile.line_display_name;
-        document.getElementById('user-details-title').textContent = displayName;
+function renderUserDetails(data) {
+    const { profile, bookings, rentals, exp_history } = data;
+    const contentContainer = userDetailsModal.querySelector('#user-details-content');
+    if (!contentContainer) return;
 
-        // 【安全修正】先清空容器，再逐步建立元素
-        contentContainer.innerHTML = ''; 
+    const displayName = profile.nickname || profile.line_display_name;
+    document.getElementById('user-details-title').textContent = displayName;
 
-        const creationDate = new Date(profile.created_at).toLocaleDateString();
-        const avatarSrc = `/api/admin/get-avatar?userId=${profile.user_id}`;
+    contentContainer.innerHTML = ''; 
 
-        // 建立外層 Grid
-        const grid = document.createElement('div');
-        grid.className = 'details-grid';
+    const creationDate = new Date(profile.created_at).toLocaleDateString();
+    const avatarSrc = `/api/admin/get-avatar?userId=${profile.user_id}`;
 
-        // 建立左側 Profile Summary
-        const summary = document.createElement('div');
-        summary.className = 'profile-summary';
-        
-        // 建立右側 Profile Details
-        const details = document.createElement('div');
-        details.className = 'profile-details';
+    const grid = document.createElement('div');
+    grid.className = 'details-grid';
 
-        // 建立訊息發送區
-        const messageSender = document.createElement('div');
-        messageSender.className = 'message-sender';
+    const summary = document.createElement('div');
+    summary.className = 'profile-summary';
+
+    const details = document.createElement('div');
+    details.className = 'profile-details';
+
+    const messageSender = document.createElement('div');
+    messageSender.className = 'message-sender';
         
         // --- 填充左側 Profile Summary ---
         const avatarImg = document.createElement('img');
@@ -658,39 +656,71 @@ async function openUserDetailsModal(userId) {
         grid.appendChild(details);
         contentContainer.appendChild(grid);
         // 【新增這個區塊】
-if (profile.notes) {
-    const notesSection = document.createElement('div');
-    notesSection.className = 'message-sender'; // 借用現有樣式
-    notesSection.style.marginTop = '1rem';
-    notesSection.style.backgroundColor = '#fffbe6'; // 淡黃色背景以突顯
+    if (profile.notes) {
+        const notesSection = document.createElement('div');
+        // 我們不再借用 message-sender 的樣式，給它一個專屬的 class
+        notesSection.className = 'crm-notes-section'; 
+        notesSection.style.cssText = 'margin-bottom: 1rem; padding: 0.8rem; background-color: #fffbe6; border-radius: 6px; border: 1px solid #ffe58f;';
 
-    const notesTitle = document.createElement('h4');
-    notesTitle.textContent = '顧客備註';
+        const notesTitle = document.createElement('h4');
+        notesTitle.textContent = '顧客備註';
+        notesTitle.style.marginTop = 0;
 
-    const notesContent = document.createElement('p');
-    notesContent.style.whiteSpace = 'pre-wrap'; // 讓換行符號生效
-    notesContent.textContent = profile.notes;
+        const notesContent = document.createElement('p');
+        notesContent.style.whiteSpace = 'pre-wrap';
+        notesContent.style.margin = 0;
+        notesContent.textContent = profile.notes;
 
-    notesSection.appendChild(notesTitle);
-    notesSection.appendChild(notesContent);
-    contentContainer.appendChild(notesSection);
-}
+        notesSection.appendChild(notesTitle);
+        notesSection.appendChild(notesContent);
 
-        contentContainer.appendChild(messageSender);
+        // 2. 【將備註區塊先放入 details 容器】
+        details.appendChild(notesSection);
+    }
+
+    // 3. 【再建立並放入頁籤區塊】
+    const tabsContainer = document.createElement('div');
+    tabsContainer.className = 'details-tabs';
+    tabsContainer.innerHTML = `
+        <button class="details-tab active" data-target="tab-rentals">租借紀錄</button>
+        <button class="details-tab" data-target="tab-bookings">預約紀錄</button>
+        <button class="details-tab" data-target="tab-exp">經驗值紀錄</button>
+    `;
+    details.appendChild(tabsContainer);
+
+    // 4. 【最後建立並放入頁籤內容區塊】
+    const tabContents = document.createElement('div');
+    tabContents.innerHTML = `
+        <div id="tab-rentals" class="details-tab-content active"></div>
+        <div id="tab-bookings" class="details-tab-content"></div>
+        <div id="tab-exp" class="details-tab-content"></div>
+    `;
+    tabContents.querySelector('#tab-rentals').appendChild(renderHistoryTable(rentals, ['rental_date', 'game_name', 'status'], { rental_date: '租借日', game_name: '遊戲', status: '狀態' }));
+    tabContents.querySelector('#tab-bookings').appendChild(renderHistoryTable(bookings, ['booking_date', 'num_of_people', 'status'], { booking_date: '預約日', num_of_people: '人數', status: '狀態' }));
+    tabContents.querySelector('#tab-exp').appendChild(renderHistoryTable(exp_history, ['created_at', 'reason', 'exp_added'], { created_at: '日期', reason: '原因', exp_added: '經驗' }));
+    details.appendChild(tabContents);
+
+    // --- 填充訊息發送區 (此部分不變) ---
+    messageSender.innerHTML = `...`;
+
+    // 將所有建立好的區塊放入容器 (此部分不變)
+    grid.appendChild(summary);
+    grid.appendChild(details);
+    contentContainer.appendChild(grid);
+    contentContainer.appendChild(messageSender);
 
 
-        // 重新綁定頁籤點擊事件
-        const tabsContainer = contentContainer.querySelector('.details-tabs');
-        tabsContainer.addEventListener('click', e => {
-            if (e.target.tagName === 'BUTTON') {
-                tabsContainer.querySelector('.active').classList.remove('active');
-                e.target.classList.add('active');
-                details.querySelector('.details-tab-content.active').classList.remove('active');
-                details.querySelector(`#${e.target.dataset.target}`).classList.add('active');
-            }
-        });
-        
-        loadAndBindMessageDrafts(profile.user_id);
+    // 重新綁定頁籤點擊事件 (此部分不變)
+    tabsContainer.addEventListener('click', e => {
+        if (e.target.tagName === 'BUTTON') {
+            tabsContainer.querySelector('.active').classList.remove('active');
+            e.target.classList.add('active');
+            details.querySelector('.details-tab-content.active').classList.remove('active');
+            details.querySelector(`#${e.target.dataset.target}`).classList.add('active');
+        }
+    });
+
+    loadAndBindMessageDrafts(profile.user_id);
     }
         
     // 【安全修正】讓 renderHistoryTable 回傳一個 DOM 片段 (DocumentFragment) 而不是 HTML 字串
@@ -2451,9 +2481,13 @@ async function fetchAllExpHistory() {
             console.error('初始化職業設定失敗:', error);
             alert(`警告：無法從 Google Sheet 獲取職業設定。`);
         }
-       // 預設顯示儀表板 showPage('dashboard'); 
+        // 【修改點 5】我們不再在這裡呼叫 showPage
     }
-  
+
+    // 【修改點 6】使用 await 等待 initialize() 完成所有非同步任務
+    await initialize();
+    // 【修改點 7】在所有東西都準備好之後，最後才呼叫 showPage('dashboard')
+    showPage('dashboard'); 
     }
 });
  
