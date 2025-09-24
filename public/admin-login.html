@@ -84,6 +84,18 @@
         #user-details-modal table { font-size: 0.85rem; }
         #user-details-modal th, #user-details-modal td { padding: 0.6rem; }
         .message-sender { margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem; }
+        #user-details-modal .modal-content {
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh; /* 稍微縮小視窗最大高度 */
+        }
+        #user-details-content {
+            flex-grow: 1;     /* 讓內容區域自動填滿可用空間 */
+            padding: 0 15px;  /* 增加一些內距避免內容太貼邊 */
+        }
+        #user-details-modal .modal-header {
+            flex-shrink: 0; /* 確保頭部區域不會被壓縮 */
+        }        
         /* 【** 庫存管理頁樣式 **】 */
         .draggable-row { cursor: default; }
         .drag-handle-cell { text-align: left !important; }
