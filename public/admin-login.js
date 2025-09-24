@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginButton = document.getElementById('login-button');
     const logoutBtn = document.getElementById('logout-btn');
 
-    // --- 登入邏輯 ---
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
