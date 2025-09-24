@@ -70,31 +70,13 @@
         .stat-card .stat-subtext { color: var(--text-light); font-size: 0.9rem; margin-top: 5px;}
 
     /* CRM Modal Styles (優化空間版本) */
-        /* 1. 固定 CRM 彈出視窗的整體框架 */
         #user-details-modal .modal-content {
-            max-height: 85vh; /* 設定視窗最大高度為螢幕的 85% */
-            display: flex;
-            flex-direction: column;
+            max-width: 800px;
         }
-        #user-details-modal .details-grid {
-            overflow-y: auto; /* 讓中間的主要內容區域可以滾動 */
-            padding-right: 15px; /* 增加一點右邊距，避免滾動條太貼近內容 */
-        }
-
-        /* 2. 修正 "顧客備註" 標題的文字間距和空白行問題 */
-        .crm-notes-section h4 {
-            letter-spacing: normal; /* 將文字間距恢復正常 */
-            margin-bottom: 0.5rem;  /* 縮小標題和內容之間的距離，解決空白行問題 */
-        }
-        /* 3. 增加備註區塊的高度 */
-        .crm-notes-section {
-            max-height: 7em; /* 將最大高度從 5em 增加到 7em，大約是 4-5 行文字 */
-        }
-        /* 4. 讓 "發送 LINE 訊息" 區塊往下移一點 */
-        #user-details-modal .message-sender {
-            margin-top: auto; /* 自動將此區塊推到視窗底部 */
-            padding-top: 1rem;
-            border-top: 1px solid var(--border-color);
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1rem; /* 縮小網格間距 */
         }
         .profile-summary {
             text-align: left;
@@ -220,24 +202,20 @@
             </form>
         </div>
     </div>
-
-    <div id="admin-panel" style="display: none;">
-        <header class="header">
-            <h1>店務管理系統</h1>
-            <button id="logout-btn" style="position: absolute; right: 1.5rem; top: 0.8rem; padding: 0.4rem 0.8rem;" class="action-btn btn-cancel">登出</button>
-        </header>
-        <nav class="nav-tabs">
-            <a href="#dashboard" class="active">儀表板</a>
-            <a href="#users">顧客管理</a>
-            <a href="#inventory">庫存管理</a>
-            <a href="#rentals">桌遊租借</a>
-            <a href="#bookings">訂位管理</a>
-            <a href="#exp-history">經驗紀錄</a>
-            <a href="#news">情報管理</a>
-            <a href="#drafts">訊息草稿</a>
-            <a href="#store-info">店家資訊</a>
-            <a href="#scan">掃碼加點</a>
-        </nav>
+    <div id="admin-panel" style="display: none;"></div>    
+    <header class="header"><h1>店務管理系統</h1></header>
+    <nav class="nav-tabs">
+        <a href="#dashboard" class="active">儀表板</a>
+        <a href="#users">顧客管理</a>
+        <a href="#inventory">庫存管理</a>
+        <a href="#rentals">桌遊租借</a>
+        <a href="#bookings">訂位管理</a>
+        <a href="#exp-history">經驗紀錄</a>
+        <a href="#news">情報管理</a>
+        <a href="#drafts">訊息草稿</a>
+        <a href="#store-info">店家資訊</a>
+        <a href="#scan">掃碼加點</a>
+    </nav>
     
 <main class="main-content">
         <div id="page-dashboard" class="page active">
@@ -553,10 +531,6 @@
                     </select>
                     <input type="text" id="edit-tag-other-input" placeholder="請輸入自訂標籤" style="display: none; margin-top: 10px;">
                 </div>
-<div class="form-group">
-    <label for="edit-notes-textarea">備註</label>
-    <textarea id="edit-notes-textarea" rows="4" placeholder="記錄客人的特殊事項..."></textarea>
-</div>                
                 <div class="form-actions">
                     <button type="button" class="action-btn btn-cancel">取消</button>
                     <button type="submit" class="action-btn btn-save">儲存</button>
