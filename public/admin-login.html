@@ -83,7 +83,7 @@
         .details-tab-content.active { display: block; max-height: 300px; overflow-y: auto; }
         #user-details-modal table { font-size: 0.85rem; }
         #user-details-modal th, #user-details-modal td { padding: 0.6rem; }
-        .message-sender { margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem; }
+        .message-sender { margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem; flex-grow: 1; overflow: hidden; }
         #user-details-modal .modal-content {
             display: flex;
             flex-direction: column;
@@ -96,6 +96,9 @@
         #user-details-modal .modal-header {
             flex-shrink: 0; /* 確保頭部區域不會被壓縮 */
         }        
+
+
+
         /* 【** 庫存管理頁樣式 **】 */
         .draggable-row { cursor: default; }
         .drag-handle-cell { text-align: left !important; }
