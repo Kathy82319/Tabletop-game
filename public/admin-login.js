@@ -1,21 +1,25 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- 登入畫面相關元素 ---
     const loginContainer = document.getElementById('login-container');
     const adminPanel = document.getElementById('admin-panel');
     const loginForm = document.getElementById('login-form');
     const loginStatus = document.getElementById('login-status');
     const loginButton = document.getElementById('login-button');
     const logoutBtn = document.getElementById('logout-btn');
-
+    // --- 登入邏輯 ---
     if (loginForm) {
+        // 【修正點】將這個事件監聽器函式標記為 async，這樣內部才能使用 await
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('login-username').value.trim();
             const password = document.getElementById('login-password').value;
+            
             if (loginStatus) loginStatus.textContent = '';
             if (loginButton) {
                 loginButton.disabled = true;
                 loginButton.textContent = '登入中...';
             }
+            
             try {
                 const response = await fetch('/api/admin/auth/login', {
                     method: 'POST',
@@ -28,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 登入成功，切換畫面並初始化後台
                 loginContainer.style.display = 'none';
                 adminPanel.style.display = 'block';
-                await initializeAdminPanel(); // 等待後台介面完全初始化
+                await initializeAdminPanel(); // 使用 await 確保後台介面完全初始化後再繼續
 
             } catch (error) {
                 if (loginStatus) loginStatus.textContent = error.message;
@@ -49,8 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-
-function initializeAdminPanel() {
+async function initializeAdminPanel() {
     
     // --- 【模組名稱：全域變數與 DOM 宣告】 ---
     const mainNav = document.querySelector('.nav-tabs');
