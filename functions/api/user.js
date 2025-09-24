@@ -56,6 +56,16 @@ export async function onRequest(context) {
     const expToNextLevel = 10;
 
     if (user) {
+      // 【核心修正】如果使用者已存在，就更新他們最新的 LINE 名稱和頭像
+      // 這樣可以確保資料庫中的資訊永遠是使用者當前的狀態
+      const stmt = db.prepare(
+        'UPDATE Users SET line_display_name = ?, line_picture_url = ? WHERE user_id = ?'
+      );
+      await stmt.bind(displayName, pictureUrl, userId).run();
+      
+      // 重新獲取一次完整的 user 資料回傳給前端
+      user = await db.prepare('SELECT * FROM Users WHERE user_id = ?').bind(userId).first();
+
       return new Response(JSON.stringify({ ...user, expToNextLevel }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
     } else {
