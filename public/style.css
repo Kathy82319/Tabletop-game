@@ -358,28 +358,39 @@ input[readonly] {
 .game-info {
     flex: 1;
     display: flex;
-    flex-direction: column; /* 讓內容垂直排列 */
+    flex-direction: column;
 }
 .game-title {
-    margin: 0 0 8px 0; /* 標題下方留點空間 */
+    margin: 0 0 8px 0;
     padding: 0;
     border: none;
     font-size: 1.1rem;
     white-space: normal;
     word-break: break-all;
 }
-/* 【修正】將 game-details 和 game-tags 的樣式加回來並調整 */
+/* 【新增】簡介的樣式 */
+.game-description {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin: 0 0 8px 0;
+    flex-grow: 1; /* 讓簡介填滿剩餘空間，確保卡片等高 */
+}
 .game-details {
     display: flex;
-    justify-content: space-between; /* 左右對齊 */
+    justify-content: space-between;
     font-size: 0.8rem;
     color: var(--color-text-secondary);
     margin-bottom: 8px;
-    flex-wrap: wrap; /* 人數多時可換行 */
+    flex-wrap: wrap;
 }
 .game-tags {
-    margin-top: auto; /* 將標籤推到卡片底部 */
+    /* 【修正】移除 margin-top: auto，讓標籤自然排列 */
     padding-top: 8px;
+    border-top: 1px dashed rgba(184, 134, 11, 0.3); /* 加上分隔線增加層次感 */
     flex-wrap: wrap;
     line-height: 1.6;
 }
