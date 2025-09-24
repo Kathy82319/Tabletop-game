@@ -41,21 +41,20 @@ html {
 body {
     margin: 0;
     padding: 0;
-    /* 【** 關鍵修正 1 **】 */
-    /* 將 padding-bottom 移到 #app-content，讓 body 本身沒有多餘內距 */
+    padding-bottom: 80px; /* 避免內容被下方導航列遮擋 */
     font-family: var(--font-primary);
     color: var(--color-text-primary);
+    
+    /* 核心：使用放射漸層營造黃昏的層次感 */
     background-color: var(--color-background-start);
     background-image: radial-gradient(circle at top, var(--color-background-start), var(--color-background-end));
+    
     background-size: cover;
     background-attachment: fixed;
 }
 
 #app-content {
     padding: 10px 15px;
-    /* 【** 關鍵修正 2 **】 */
-    /* 給予足夠的底部空間，確保內容再多也不會遮擋到 Tab Bar */
-    padding-bottom: 80px; 
 }
 
 /* 標題樣式 */
@@ -288,9 +287,7 @@ input[readonly] {
     flex-wrap: wrap;
     gap: 8px;
 }
-/* 【** 關鍵修正 3: 統一所有標籤按鈕的樣式 **】 */
-/* 移除原本針對 button 的規則，改用一個更通用的 class 名稱 */
-.filter-btn {
+#tag-filter-container button, #more-tags-btn, #clear-filters {
     font-family: var(--font-primary);
     padding: 6px 14px;
     border: 1px solid var(--color-frame-gold);
@@ -300,8 +297,7 @@ input[readonly] {
     cursor: pointer;
     transition: all 0.3s ease;
 }
-
-.filter-btn.active {
+#tag-filter-container button.active {
     background: var(--color-frame-gold);
     color: white;
 }
@@ -310,7 +306,6 @@ input[readonly] {
     color: white;
     border-color: var(--color-danger);
 }
-
 
 /* 遊戲卡片 (由 script.js 生成) */
 .game-card {
