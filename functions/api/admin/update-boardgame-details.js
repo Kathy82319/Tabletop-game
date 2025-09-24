@@ -63,7 +63,7 @@ if (isNaN(minPlayers) || minPlayers < 1 || minPlayers > 100) {
     if (!gameId || !requestBody.name) {
       return new Response(JSON.stringify({ error: '缺少遊戲 ID 或名稱。' }), { status: 400 });
     }
-
+ 
     const db = context.env.DB;
     
     const stmt = db.prepare(
