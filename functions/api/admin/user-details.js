@@ -16,7 +16,9 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: '缺少 user_id 參數。' }), { status: 400 });
     }
 
-    const userProfile = await db.prepare("SELECT * FROM Users WHERE user_id = ?").bind(userId).first();
+        const userProfile = await db.prepare(
+        "SELECT user_id, line_display_name, nickname, real_name, phone, email, preferred_games, class, level, current_exp, tag, perk, created_at FROM Users WHERE user_id = ?"
+        ).bind(userId).first();
     if (!userProfile) {
         return new Response(JSON.stringify({ error: `找不到使用者 ID: ${userId}` }), { status: 404 });
     }

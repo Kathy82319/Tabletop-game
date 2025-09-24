@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
             otherPerkInput.style.display = 'block';
             otherPerkInput.value = user.perk || '';
         }
-        const standardTags = ["", "會員", "員工", "特殊"];
+        const standardTags = ["", "會員", "員工", "黑名單", "特殊"];
         if (user.tag && !standardTags.includes(user.tag)) {
             tagSelect.value = 'other';
             otherTagInput.style.display = 'block';
@@ -487,16 +487,24 @@ function renderUserDetails(data) {
     const displayName = profile.nickname || profile.line_display_name;
     document.getElementById('user-details-title').textContent = `顧客資料：${displayName}`;
 
-    // ** 需求 2 修改：在 profile-summary 中增加手機和職業福利 **
+    // 【修正】格式化日期並在 HTML 中新增欄位
+    const creationDate = new Date(profile.created_at).toLocaleDateString();
+
     contentContainer.innerHTML = `
         <div class="details-grid">
             <div class="profile-summary">
                 <img src="${profile.line_picture_url || 'placeholder.jpg'}" alt="Profile Picture">
                 <h4>${displayName}</h4>
-                <p>姓名: ${profile.real_name || '未設定'}</p>
-                <p>電話: ${profile.phone || '未設定'}</p> <p>等級: ${profile.level} (${profile.current_exp}/10 EXP)</p>
-                <p>職業: ${profile.class}</p>
-                <p>福利: ${profile.perk || '無'}</p> <p>標籤: ${profile.tag || '無'}</p>
+                <p><strong>姓名:</strong> ${profile.real_name || '未設定'}</p>
+                <p><strong>電話:</strong> ${profile.phone || '未設定'}</p>
+                <p><strong>Email:</strong> ${profile.email || '未設定'}</p>
+                <p><strong>偏好遊戲:</strong> ${profile.preferred_games || '未設定'}</p>
+                <p><strong>建檔日期:</strong> ${creationDate}</p>
+                <hr style="border-color: var(--border-color); border-style: dashed;">
+                <p><strong>等級:</strong> ${profile.level} (${profile.current_exp}/10 EXP)</p>
+                <p><strong>職業:</strong> ${profile.class}</p>
+                <p><strong>福利:</strong> ${profile.perk || '無'}</p>
+                <p><strong>標籤:</strong> ${profile.tag || '無'}</p>
             </div>
             <div class="profile-details">
                 <div class="details-tabs">
@@ -530,7 +538,6 @@ function renderUserDetails(data) {
             </div>
         </div>
     `;
-
     const tabsContainer = contentContainer.querySelector('.details-tabs');
     const contentsContainer = contentContainer.querySelector('.profile-details');
     tabsContainer.addEventListener('click', e => {
