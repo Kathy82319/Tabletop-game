@@ -344,48 +344,55 @@ input[readonly] {
 /* 遊戲卡片 (由 script.js 生成) */
 .game-card {
     display: flex;
-    flex-direction: column; /* 改為垂直排列 */
+    flex-direction: column;
     gap: 10px;
-    padding: 10px; /* 稍微減少 padding */
+    padding: 10px;
 }
 .game-image {
-    width: 100%; /* 圖片寬度填滿卡片 */
-    height: 120px; /* 給定一個固定高度 */
+    width: 100%;
+    height: 120px;
     object-fit: cover;
     border-radius: var(--border-radius);
     border: 1px solid var(--color-frame-gold);
 }
-.game-info { flex: 1; }
+.game-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column; /* 讓內容垂直排列 */
+}
 .game-title {
-    margin: 0;
+    margin: 0 0 8px 0; /* 標題下方留點空間 */
     padding: 0;
     border: none;
-    font-size: 1.1rem; /* 稍微縮小字體以適應空間 */
-    /* 強制文字換行 */
+    font-size: 1.1rem;
     white-space: normal;
     word-break: break-all;
 }
-.game-description {
-    font-size: 0.8rem; /* 稍微縮小字體 */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    margin: 5px 0;
+/* 【修正】將 game-details 和 game-tags 的樣式加回來並調整 */
+.game-details {
+    display: flex;
+    justify-content: space-between; /* 左右對齊 */
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 8px;
+    flex-wrap: wrap; /* 人數多時可換行 */
 }
-.game-tags { margin: 8px 0; }
+.game-tags {
+    margin-top: auto; /* 將標籤推到卡片底部 */
+    padding-top: 8px;
+    flex-wrap: wrap;
+    line-height: 1.6;
+}
 .game-tag {
     display: inline-block;
     background-color: rgba(184, 134, 11, 0.2);
     color: var(--color-frame-gold);
     padding: 2px 8px;
     border-radius: 10px;
-    font-size: 0.75rem; /* 稍微縮小字體 */
+    font-size: 0.75rem;
     margin-right: 5px;
     margin-bottom: 5px;
 }
-.game-details { display: flex; flex-direction: column; gap: 5px; font-size: 0.8rem; }
-
 
 /* C. 冒險者資料 (page-profile) */
 #qrcode-container {

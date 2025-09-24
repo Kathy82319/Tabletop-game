@@ -710,12 +710,19 @@ async function initializeRentalHistoryPage() {
             container.innerHTML = '<p>找不到符合條件的遊戲。</p>';
             return;
         }
+        // 【修正】將人數、難度、標籤的 HTML 結構加回來
         container.innerHTML = filteredGames.map(game => `
             <div class="game-card" data-game-id="${game.game_id}">
                 <img src="${game.image_url || 'placeholder.jpg'}" alt="${game.name}" class="game-image">
                 <div class="game-info">
                     <h3 class="game-title">${game.name}</h3>
-                    <p class="game-description">${game.description}</p>
+                    <div class="game-details">
+                        <span>👥 ${game.min_players}-${game.max_players} 人</span>
+                        <span>⭐ 難度: ${game.difficulty}</span>
+                    </div>
+                    <div class="game-tags">
+                        ${(game.tags || '').split(',').map(t => t.trim()).filter(Boolean).map(tag => `<span class="game-tag">${tag}</span>`).join('')}
+                    </div>
                 </div>
             </div>
         `).join('');
