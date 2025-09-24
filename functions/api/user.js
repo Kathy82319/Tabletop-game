@@ -52,12 +52,10 @@ export async function onRequest(context) {
     const db = context.env.DB;
     
     let user = await db.prepare('SELECT * FROM Users WHERE user_id = ?').bind(userId).first();
-
     const expToNextLevel = 10;
 
     if (user) {
       // 【核心修正】如果使用者已存在，就更新他們最新的 LINE 名稱和頭像
-      // 這樣可以確保資料庫中的資訊永遠是使用者當前的狀態
       const stmt = db.prepare(
         'UPDATE Users SET line_display_name = ?, line_picture_url = ? WHERE user_id = ?'
       );
@@ -85,9 +83,8 @@ export async function onRequest(context) {
         'INSERT INTO Users (user_id, line_display_name, line_picture_url, real_name, class, level, current_exp, perk) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
       ).bind(newUser.user_id, newUser.line_display_name, newUser.line_picture_url, newUser.real_name, newUser.class, newUser.level, newUser.current_exp, newUser.perk).run();
       
-      // 背景同步邏輯需要更新以包含 real_name
       const sheetData = { ...newUser };
-      delete sheetData.user_id; // addRowToSheet 通常不需要 user_id
+      delete sheetData.user_id;
       context.waitUntil(addRowToSheet(context.env, context.env.USERS_SHEET_NAME, sheetData));
 
       return new Response(JSON.stringify({ ...newUser, expToNextLevel }), { status: 201, headers: { 'Content-Type': 'application/json' } });
