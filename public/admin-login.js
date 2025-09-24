@@ -494,7 +494,7 @@ function renderUserDetails(data) {
     contentContainer.innerHTML = `
         <div class="details-grid">
             <div class="profile-summary">
-                <img src="${profile.line_picture_url || 'placeholder.jpg'}" alt="Profile Picture">
+                <img src="${avatarSrc}" alt="Profile Picture" style="width: 100px; height: 100px; border-radius: 50%;">
                 <h4>${displayName}</h4>
                 <p><strong>姓名:</strong> ${profile.real_name || '未設定'}</p>
                 <p><strong>電話:</strong> ${profile.phone || '未設定'}</p>
