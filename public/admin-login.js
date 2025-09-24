@@ -560,6 +560,8 @@ async function openUserDetailsModal(userId) {
         }
     }
 
+// public/admin-login.js
+
 function renderUserDetails(data) {
     const { profile, bookings, rentals, exp_history } = data;
     const contentContainer = userDetailsModal.querySelector('#user-details-content');
@@ -568,11 +570,13 @@ function renderUserDetails(data) {
     const displayName = profile.nickname || profile.line_display_name;
     document.getElementById('user-details-title').textContent = displayName;
 
+    // 1. 清空主容器，為建立新內容做準備
     contentContainer.innerHTML = ''; 
 
     const creationDate = new Date(profile.created_at).toLocaleDateString();
     const avatarSrc = `/api/admin/get-avatar?userId=${profile.user_id}`;
 
+    // 2. 建立所有最外層的佈局元素
     const grid = document.createElement('div');
     grid.className = 'details-grid';
 
@@ -584,85 +588,50 @@ function renderUserDetails(data) {
 
     const messageSender = document.createElement('div');
     messageSender.className = 'message-sender';
-        
-        // --- 填充左側 Profile Summary ---
-        const avatarImg = document.createElement('img');
-        avatarImg.src = avatarSrc;
-        avatarImg.alt = "Profile Picture";
-        summary.appendChild(avatarImg);
+    
+    // 3. 填充左側的個人資料 (Summary)
+    // (這部分的邏輯是正確的，我們保持不變)
+    const avatarImg = document.createElement('img');
+    avatarImg.src = avatarSrc;
+    avatarImg.alt = "Profile Picture";
+    summary.appendChild(avatarImg);
 
-        const h4 = document.createElement('h4');
-        h4.textContent = displayName;
-        summary.appendChild(h4);
+    const h4 = document.createElement('h4');
+    h4.textContent = displayName;
+    summary.appendChild(h4);
 
-        // 使用一個輔助函式來建立 <p> 標籤，避免重複程式碼
-        function createProfileLine(label, value) {
-            const p = document.createElement('p');
-            const strong = document.createElement('strong');
-            strong.textContent = `${label}: `;
-            p.appendChild(strong);
-            p.append(document.createTextNode(value || '未設定')); // 使用 append 和 createTextNode，等同於 textContent
-            return p;
-        }
+    function createProfileLine(label, value) {
+        const p = document.createElement('p');
+        const strong = document.createElement('strong');
+        strong.textContent = `${label}: `;
+        p.appendChild(strong);
+        p.append(document.createTextNode(value || '未設定'));
+        return p;
+    }
 
-        summary.appendChild(createProfileLine('姓名', profile.real_name));
-        summary.appendChild(createProfileLine('電話', profile.phone));
-        summary.appendChild(createProfileLine('Email', profile.email));
-        summary.appendChild(createProfileLine('偏好遊戲', profile.preferred_games));
-        summary.appendChild(createProfileLine('建檔日期', creationDate));
-        summary.appendChild(document.createElement('hr'));
-        summary.appendChild(createProfileLine('等級', `${profile.level} (${profile.current_exp}/10 EXP)`));
-        summary.appendChild(createProfileLine('職業', profile.class));
-        summary.appendChild(createProfileLine('福利', profile.perk));
-        summary.appendChild(createProfileLine('標籤', profile.tag));
+    summary.appendChild(createProfileLine('姓名', profile.real_name));
+    summary.appendChild(createProfileLine('電話', profile.phone));
+    summary.appendChild(createProfileLine('Email', profile.email));
+    summary.appendChild(createProfileLine('偏好遊戲', profile.preferred_games));
+    summary.appendChild(createProfileLine('建檔日期', creationDate));
+    summary.appendChild(document.createElement('hr'));
+    summary.appendChild(createProfileLine('等級', `${profile.level} (${profile.current_exp}/10 EXP)`));
+    summary.appendChild(createProfileLine('職業', profile.class));
+    summary.appendChild(createProfileLine('福利', profile.perk));
+    summary.appendChild(createProfileLine('標籤', profile.tag));
 
-        // --- 填充右側 Profile Details ---
-        details.innerHTML = `
-            <div class="details-tabs">
-                <button class="details-tab active" data-target="tab-rentals">租借紀錄</button>
-                <button class="details-tab" data-target="tab-bookings">預約紀錄</button>
-                <button class="details-tab" data-target="tab-exp">經驗值紀錄</button>
-            </div>
-            <div id="tab-rentals" class="details-tab-content active"></div>
-            <div id="tab-bookings" class="details-tab-content"></div>
-            <div id="tab-exp" class="details-tab-content"></div>
-        `;
-        // 將 renderHistoryTable 的結果 (HTML 字串) 安全地插入
-        details.querySelector('#tab-rentals').appendChild(renderHistoryTable(rentals, ['rental_date', 'game_name', 'status'], { rental_date: '租借日', game_name: '遊戲', status: '狀態' }));
-        details.querySelector('#tab-bookings').appendChild(renderHistoryTable(bookings, ['booking_date', 'num_of_people', 'status'], { booking_date: '預約日', num_of_people: '人數', status: '狀態' }));
-        details.querySelector('#tab-exp').appendChild(renderHistoryTable(exp_history, ['created_at', 'reason', 'exp_added'], { created_at: '日期', reason: '原因', exp_added: '經驗' }));
-
-        // --- 填充訊息發送區 ---
-        messageSender.innerHTML = `
-            <h4>發送 LINE 訊息</h4>
-            <div class="form-group">
-                <label for="message-draft-select">選擇訊息草稿</label>
-                <select id="message-draft-select"><option value="">-- 手動輸入或選擇草稿 --</option></select>
-            </div>
-            <div class="form-group">
-                <label for="direct-message-content">訊息內容</label>
-                <textarea id="direct-message-content" rows="4"></textarea>
-            </div>
-            <div class="form-actions">
-                <button id="send-direct-message-btn" class="action-btn btn-save" data-userid="${profile.user_id}">確認發送</button>
-            </div>
-        `;
-
-        // 將所有建立好的區塊放入容器
-        grid.appendChild(summary);
-        grid.appendChild(details);
-        contentContainer.appendChild(grid);
-        // 【新增這個區塊】
+    // 4. 【核心修正】依序建立並填充右側的詳細資訊 (Details)
+    
+    // 4.1. 如果有備註，就先建立並放入備註區塊
     if (profile.notes) {
         const notesSection = document.createElement('div');
-        // 我們不再借用 message-sender 的樣式，給它一個專屬的 class
         notesSection.className = 'crm-notes-section'; 
         notesSection.style.cssText = 'margin-bottom: 1rem; padding: 0.8rem; background-color: #fffbe6; border-radius: 6px; border: 1px solid #ffe58f;';
-
+        
         const notesTitle = document.createElement('h4');
         notesTitle.textContent = '顧客備註';
         notesTitle.style.marginTop = 0;
-
+        
         const notesContent = document.createElement('p');
         notesContent.style.whiteSpace = 'pre-wrap';
         notesContent.style.margin = 0;
@@ -670,12 +639,11 @@ function renderUserDetails(data) {
 
         notesSection.appendChild(notesTitle);
         notesSection.appendChild(notesContent);
-
-        // 2. 【將備註區塊先放入 details 容器】
-        details.appendChild(notesSection);
+        
+        details.appendChild(notesSection); // 將備註區塊放入右側容器
     }
 
-    // 3. 【再建立並放入頁籤區塊】
+    // 4.2. 接著建立頁籤按鈕
     const tabsContainer = document.createElement('div');
     tabsContainer.className = 'details-tabs';
     tabsContainer.innerHTML = `
@@ -683,43 +651,68 @@ function renderUserDetails(data) {
         <button class="details-tab" data-target="tab-bookings">預約紀錄</button>
         <button class="details-tab" data-target="tab-exp">經驗值紀錄</button>
     `;
-    details.appendChild(tabsContainer);
+    details.appendChild(tabsContainer); // 將頁籤按鈕放入右側容器
 
-    // 4. 【最後建立並放入頁籤內容區塊】
+    // 4.3. 最後建立頁籤內容，並填入歷史紀錄表格
     const tabContents = document.createElement('div');
-    tabContents.innerHTML = `
-        <div id="tab-rentals" class="details-tab-content active"></div>
-        <div id="tab-bookings" class="details-tab-content"></div>
-        <div id="tab-exp" class="details-tab-content"></div>
+    const rentalTab = document.createElement('div');
+    rentalTab.id = 'tab-rentals';
+    rentalTab.className = 'details-tab-content active';
+    rentalTab.appendChild(renderHistoryTable(rentals, ['rental_date', 'game_name', 'status'], { rental_date: '租借日', game_name: '遊戲', status: '狀態' }));
+    
+    const bookingTab = document.createElement('div');
+    bookingTab.id = 'tab-bookings';
+    bookingTab.className = 'details-tab-content';
+    bookingTab.appendChild(renderHistoryTable(bookings, ['booking_date', 'num_of_people', 'status'], { booking_date: '預約日', num_of_people: '人數', status: '狀態' }));
+    
+    const expTab = document.createElement('div');
+    expTab.id = 'tab-exp';
+    expTab.className = 'details-tab-content';
+    expTab.appendChild(renderHistoryTable(exp_history, ['created_at', 'reason', 'exp_added'], { created_at: '日期', reason: '原因', exp_added: '經驗' }));
+
+    tabContents.appendChild(rentalTab);
+    tabContents.appendChild(bookingTab);
+    tabContents.appendChild(expTab);
+    details.appendChild(tabContents); // 將頁籤內容放入右側容器
+
+    // 5. 填充訊息發送區 (保持不變)
+    messageSender.innerHTML = `
+        <h4>發送 LINE 訊息</h4>
+        <div class="form-group">
+            <label for="message-draft-select">選擇訊息草稿</label>
+            <select id="message-draft-select"><option value="">-- 手動輸入或選擇草稿 --</option></select>
+        </div>
+        <div class="form-group">
+            <label for="direct-message-content">訊息內容</label>
+            <textarea id="direct-message-content" rows="4"></textarea>
+        </div>
+        <div class="form-actions">
+            <button id="send-direct-message-btn" class="action-btn btn-save" data-userid="${profile.user_id}">確認發送</button>
+        </div>
     `;
-    tabContents.querySelector('#tab-rentals').appendChild(renderHistoryTable(rentals, ['rental_date', 'game_name', 'status'], { rental_date: '租借日', game_name: '遊戲', status: '狀態' }));
-    tabContents.querySelector('#tab-bookings').appendChild(renderHistoryTable(bookings, ['booking_date', 'num_of_people', 'status'], { booking_date: '預約日', num_of_people: '人數', status: '狀態' }));
-    tabContents.querySelector('#tab-exp').appendChild(renderHistoryTable(exp_history, ['created_at', 'reason', 'exp_added'], { created_at: '日期', reason: '原因', exp_added: '經驗' }));
-    details.appendChild(tabContents);
 
-    // --- 填充訊息發送區 (此部分不變) ---
-    messageSender.innerHTML = `...`;
-
-    // 將所有建立好的區塊放入容器 (此部分不變)
+    // 6. 將所有主要區塊組裝到頁面上
     grid.appendChild(summary);
     grid.appendChild(details);
     contentContainer.appendChild(grid);
     contentContainer.appendChild(messageSender);
 
-
-    // 重新綁定頁籤點擊事件 (此部分不變)
+    // 7. 重新為新的頁籤按鈕綁定點擊事件
     tabsContainer.addEventListener('click', e => {
         if (e.target.tagName === 'BUTTON') {
-            tabsContainer.querySelector('.active').classList.remove('active');
+            tabsContainer.querySelector('.active')?.classList.remove('active');
             e.target.classList.add('active');
-            details.querySelector('.details-tab-content.active').classList.remove('active');
-            details.querySelector(`#${e.target.dataset.target}`).classList.add('active');
+            
+            tabContents.querySelector('.details-tab-content.active')?.classList.remove('active');
+            tabContents.querySelector(`#${e.target.dataset.target}`)?.classList.add('active');
         }
     });
 
+    // 8. 載入訊息草稿
     loadAndBindMessageDrafts(profile.user_id);
-    }
-        
+}
+
+
     // 【安全修正】讓 renderHistoryTable 回傳一個 DOM 片段 (DocumentFragment) 而不是 HTML 字串
     function renderHistoryTable(items, columns, headers) {
         const fragment = document.createDocumentFragment();
