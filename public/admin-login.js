@@ -18,30 +18,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 loginButton.textContent = '登入中...';
             }
             
-            try {
-                const response = await fetch('/api/admin/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, password })
-                });
-                
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error || '登入失敗');
-                
-                if(loginContainer) loginContainer.style.display = 'none';
-                if(adminPanel) adminPanel.style.display = 'block';
-                initializeAdminPanel(); 
+        try {
+            const response = await fetch('/api/admin/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                // 【修正點 2】傳送給後端的 JSON key 必須是 username
+                body: JSON.stringify({ username, password }) 
+            });
 
-            } catch (error) {
-                if(loginStatus) loginStatus.textContent = error.message;
-            } finally {
-                if(loginButton) {
-                    loginButton.disabled = false;
-                    loginButton.textContent = '登入';
-                }
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || '登入失敗');
+
+            if(loginContainer) loginContainer.style.display = 'none';
+            if(adminPanel) adminPanel.style.display = 'block';
+            initializeAdminPanel(); 
+
+        } catch (error) {
+            if(loginStatus) loginStatus.textContent = error.message;
+        } finally {
+            if(loginButton) {
+                loginButton.disabled = false;
+                loginButton.textContent = '登入';
             }
-        });
-    }
+        }
+    });
+}
 
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
