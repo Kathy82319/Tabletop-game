@@ -47,6 +47,17 @@ export async function onRequest(context) {
     }
     
     const requestBody = await context.request.json();
+// --- 【新增】伺服器端驗證 ---
+if (!requestBody.gameId || typeof requestBody.name !== 'string' || requestBody.name.trim() === '') {
+    return new Response(JSON.stringify({ error: '遊戲 ID 與名稱為必填。' }), { status: 400 });
+}
+if (requestBody.name.length > 100) {
+    return new Response(JSON.stringify({ error: '遊戲名稱不可超過 100 字。' }), { status: 400 });
+}
+const minPlayers = Number(requestBody.min_players);
+if (isNaN(minPlayers) || minPlayers < 1 || minPlayers > 100) {
+    return new Response(JSON.stringify({ error: '最少人數必須是 1-100 的數字。' }), { status: 400 });
+}    
     const { gameId } = requestBody;
 
     if (!gameId || !requestBody.name) {
