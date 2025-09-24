@@ -69,34 +69,63 @@
         .stat-card .stat-value { font-size: 2.5rem; font-weight: bold; color: var(--primary-color); }
         .stat-card .stat-subtext { color: var(--text-light); font-size: 0.9rem; margin-top: 5px;}
 
-        /* CRM Modal Styles */
-        #user-details-modal .modal-content { max-width: 800px; }
-        .details-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; }
-        .profile-summary { text-align: left; } /* 改為靠左對齊 */
-        .profile-summary img { width: 100px; height: 100px; border-radius: 50%; margin-bottom: 1rem; }
-        .profile-summary h4 { margin: 0.5rem 0; }
-        .profile-summary p { margin: 0.2rem 0; color: var(--text-light); }
-        .details-tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; }
-        .details-tab { padding: 0.8rem 1rem; cursor: pointer; }
-        .details-tab.active { border-bottom: 3px solid var(--primary-color); font-weight: bold; }
-        .details-tab-content { display: none; }
-        .details-tab-content.active { display: block; max-height: 300px; overflow-y: auto; }
-        #user-details-modal table { font-size: 0.85rem; }
-        #user-details-modal th, #user-details-modal td { padding: 0.6rem; }
-        .message-sender { margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem; flex-grow: 1; overflow: hidden; }
+    /* CRM Modal Styles (優化空間版本) */
         #user-details-modal .modal-content {
-            display: flex;
-            flex-direction: column;
-            max-height: 85vh; /* 稍微縮小視窗最大高度 */
+            max-width: 800px;
         }
-        #user-details-content {
-            flex-grow: 1;     /* 讓內容區域自動填滿可用空間 */
-            padding: 0 15px;  /* 增加一些內距避免內容太貼邊 */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1rem; /* 縮小網格間距 */
         }
-        #user-details-modal .modal-header {
-            flex-shrink: 0; /* 確保頭部區域不會被壓縮 */
-        }        
+        .profile-summary {
+            text-align: left;
+            word-break: break-all; /* 避免長字串撐開版面 */
+        }
+        .profile-summary img {
+            width: 80px; /* 縮小頭像 */
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 0.5rem; /* 縮小頭像下方間距 */
+            display: block;
+            background-color: #f0f0f0;
+            border: 1px solid var(--border-color);
+        }
+        .profile-summary h4 { margin: 0.2rem 0; }
+        .profile-summary p {
+            margin: 0.15rem 0; /* 大幅縮小文字行間距 */
+            font-size: 0.8rem; /* 稍微縮小字體 */
+            color: var(--text-light);
+        }
+        .profile-summary hr { margin: 0.5rem 0; }
 
+        .details-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 0.5rem; /* 縮小頁籤下方間距 */
+        }
+        .details-tab {
+            padding: 0.5rem 0.8rem; /* 縮小頁籤上下內距 */
+            cursor: pointer;
+        }
+        .details-tab.active {
+            border-bottom: 3px solid var(--primary-color);
+            font-weight: bold;
+        }
+        .details-tab-content { display: none; }
+        .details-tab-content.active {
+            display: block;
+            max-height: 220px; /* 設定一個最大高度，內容超長時內部會產生捲軸 */
+            overflow-y: auto;
+        }
+        #user-details-modal table { font-size: 0.8rem; }
+        #user-details-modal th, #user-details-modal td { padding: 0.4rem; } /* 縮小表格內距 */
+
+        .message-sender {
+            margin-top: 1rem; /* 縮小訊息發送區上方間距 */
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem; /* 縮小訊息發送區上方內距 */
+        }
 
 
         /* 【** 庫存管理頁樣式 **】 */
