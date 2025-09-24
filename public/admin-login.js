@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(loginContainer) loginContainer.style.display = 'none';
             if(adminPanel) adminPanel.style.display = 'block';
             initializeAdminPanel(); 
+            showPage('dashboard'); //
 
         } catch (error) {
             if(loginStatus) loginStatus.textContent = error.message;
@@ -2426,7 +2427,7 @@ async function fetchAllExpHistory() {
             console.error('初始化職業設定失敗:', error);
             alert(`警告：無法從 Google Sheet 獲取職業設定。`);
         }
-        showPage('dashboard'); // 預設顯示儀表板
+       // 預設顯示儀表板 showPage('dashboard'); 
     }
   
     }
