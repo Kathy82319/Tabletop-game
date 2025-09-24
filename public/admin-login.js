@@ -489,13 +489,8 @@ function renderUserDetails(data) {
 
     const creationDate = new Date(profile.created_at).toLocaleDateString();
 
-    // 【修正】使用一個全新的、保證有效的 SVG Base64 編碼作為預設圖示
-    const placeholderAvatar = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IiNFMEUwRTAiPjxwYXRoIGQ9Ik0xMiAxMmMyLjIxIDAgNC0xLjc5IDQtNHMtMS43OS00LTQtNC00IDEuNzktNCA0IDEuNzkgNCA0IDR6bTAgMmMtMi42NyAwLTggMS4zNC04IDR2MmgxNnYtMmMwLTIuNjYtNS4zMy00LTgtNHoiLz48L3N2Zz4=';
-    let avatarSrc = placeholderAvatar;
-    
-    if (profile.line_picture_url && typeof profile.line_picture_url === 'string' && profile.line_picture_url.startsWith('http')) {
-        avatarSrc = profile.line_picture_url;
-    }
+    // 【核心修正】將 <img> 的 src 直接指向我們新建的代理 API
+    const avatarSrc = `/api/admin/get-avatar?userId=${profile.user_id}`;
 
     contentContainer.innerHTML = `
         <div class="details-grid">
