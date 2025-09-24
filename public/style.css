@@ -276,19 +276,23 @@ input[readonly] {
 }
 
 /* B. 桌遊圖鑑 (page-games & page-game-details) */
+/* B. 桌遊圖鑑 (page-games & page-game-details) */
 #filter-controls {
     display: flex;
     flex-direction: column;
     gap: 15px;
     margin-bottom: 20px;
 }
+
+/* 【修正】將所有篩選按鈕（標籤、收合、清除）都放在一個會自動換行的容器中 */
 #tag-filter-container {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+    align-items: center; /* 讓按鈕垂直置中對齊 */
 }
 
-/* 【問題2 & 4 修正】統一標籤按鈕樣式 & 確保換行 */
+/* 【修正】為所有標籤按鈕定義一個統一的樣式 */
 .filter-tag-btn {
     font-family: var(--font-primary);
     padding: 6px 14px;
@@ -298,6 +302,12 @@ input[readonly] {
     border-radius: 16px;
     cursor: pointer;
     transition: all 0.3s ease;
+    flex-shrink: 0; /* 防止按鈕被壓縮 */
+}
+
+/* 【修正】將主要和次要標籤容器改為只佔用內容寬度，以便換行 */
+#primary-tags, #secondary-tags {
+    display: contents; /* 讓裡面的按鈕直接繼承 #tag-filter-container 的 flex 排版 */
 }
 
 .filter-tag-btn.active {
@@ -314,12 +324,14 @@ input[readonly] {
     border-radius: 16px;
     cursor: pointer;
     transition: all 0.3s ease;
+    margin-left: auto; /* 【新增】讓這兩個按鈕自動推到最右邊 */
 }
 
 #clear-filters {
     background-color: var(--color-danger);
     color: white;
     border-color: var(--color-danger);
+    margin-left: 8px; /* 與前一個按鈕的間距 */
 }
 
 /* 【問題1 修正】遊戲卡片列表改為兩欄式 Grid */

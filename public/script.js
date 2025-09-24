@@ -723,25 +723,31 @@ async function initializeRentalHistoryPage() {
 
     // 【問題2、3、4 修正】替換整個 populateFilters 函式
     function populateFilters() {
-        const primaryContainer = document.getElementById('primary-tags');
-        const secondaryContainer = document.getElementById('secondary-tags');
-        const moreBtn = document.getElementById('more-tags-btn');
-        if(!primaryContainer || !secondaryContainer || !moreBtn) return;
+        // 【修正】將容器目標改為 #tag-filter-container
+        const filterContainer = document.getElementById('tag-filter-container');
+        const primaryTagsContainer = document.getElementById('primary-tags');
+        const secondaryTagsContainer = document.getElementById('secondary-tags');
         
-        const primaryTags = ["家庭", "兒童", "派對", "陣營", "小品", "策略"];
+        // 舊的按鈕先移除，避免重複生成
+        document.getElementById('more-tags-btn')?.remove();
+        document.getElementById('clear-filters')?.remove();
+
+        if(!filterContainer || !primaryTagsContainer || !secondaryTagsContainer) return;
+        
+        const primaryTagsList = ["家庭", "兒童", "派對", "陣營", "小品", "策略"];
         const allTags = [...new Set(allGames.flatMap(g => (g.tags || '').split(',')).map(t => t.trim()).filter(Boolean))];
         
-        primaryContainer.innerHTML = '';
-        secondaryContainer.innerHTML = '';
+        primaryTagsContainer.innerHTML = '';
+        secondaryTagsContainer.innerHTML = '';
 
         allTags.forEach(tag => {
             const btn = document.createElement('button');
             btn.textContent = tag;
             btn.dataset.tag = tag;
-            btn.className = 'filter-tag-btn'; // 【問題2 修正】使用統一的 class
+            btn.className = 'filter-tag-btn'; // 【修正】為所有按鈕加上統一的 class
 
             btn.addEventListener('click', () => {
-                const currentActive = document.querySelector('#tag-filter-container button.active');
+                const currentActive = filterContainer.querySelector('.filter-tag-btn.active');
                 if (currentActive) {
                     currentActive.classList.remove('active');
                 }
@@ -755,26 +761,46 @@ async function initializeRentalHistoryPage() {
                 renderGames();
             });
 
-            if (primaryTags.includes(tag)) {
-                primaryContainer.appendChild(btn);
+            if (primaryTagsList.includes(tag)) {
+                primaryTagsContainer.appendChild(btn);
             } else {
-                secondaryContainer.appendChild(btn);
+                secondaryTagsContainer.appendChild(btn);
             }
         });
+
+        // 【修正】在所有標籤後面動態新增「更多」和「清除」按鈕
+        const moreBtn = document.createElement('button');
+        moreBtn.id = 'more-tags-btn';
+        moreBtn.textContent = '更多標籤';
+
+        const clearBtn = document.createElement('button');
+        clearBtn.id = 'clear-filters';
+        clearBtn.textContent = '清除所有篩選';
         
-        // 【問題3 修正】修正按鈕點擊邏輯
-        if (secondaryContainer.children.length > 0) {
+        // 將按鈕加入到主容器的末尾
+        filterContainer.appendChild(moreBtn);
+        filterContainer.appendChild(clearBtn);
+
+        // 重新綁定事件
+        if (secondaryTagsContainer.children.length > 0) {
             moreBtn.style.display = 'inline-block';
             moreBtn.addEventListener('click', () => {
-                const isHidden = secondaryContainer.style.display === 'none';
-                secondaryContainer.style.display = isHidden ? 'flex' : 'none';
+                const isHidden = secondaryTagsContainer.style.display === 'none';
+                secondaryTagsContainer.style.display = isHidden ? 'contents' : 'none';
                 moreBtn.textContent = isHidden ? '收起標籤' : '更多標籤';
             });
         } else {
             moreBtn.style.display = 'none';
         }
-    }
 
+        clearBtn.addEventListener('click', () => {
+            activeFilters.keyword = '';
+            activeFilters.tag = null;
+            document.getElementById('keyword-search').value = '';
+            document.querySelectorAll('#tag-filter-container button').forEach(b => b.classList.remove('active'));
+            renderGames();
+        });
+    }
 
     async function initializeGamesPage() {
         if (allGames.length === 0) {
