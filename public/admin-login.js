@@ -6,48 +6,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginButton = document.getElementById('login-button');
     const logoutBtn = document.getElementById('logout-btn');
 
-        // --- 登入/登出邏輯 ---
-if (loginForm) {
-    // 【修改點 1】將這個事件監聽器函式標記為 async
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const username = document.getElementById('login-username').value.trim();
-        const password = document.getElementById('login-password').value;
-
-        if(loginStatus) loginStatus.textContent = '';
-        if(loginButton) {
-            loginButton.disabled = true;
-            loginButton.textContent = '登入中...';
-        }
-
-        try {
-            const response = await fetch('/api/admin/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || '登入失敗');
-
-            if(loginContainer) loginContainer.style.display = 'none';
-            if(adminPanel) adminPanel.style.display = 'block';
-
-            // 【修改點 2】使用 await 等待整個後台介面初始化完成
-            await initializeAdminPanel(); 
-
-        } catch (error) {
-            if(loginStatus) loginStatus.textContent = error.message;
-        } finally {
-            if(loginButton) {
-                loginButton.disabled = false;
-                loginButton.textContent = '登入';
+    // --- 登入邏輯 ---
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+            if (loginStatus) loginStatus.textContent = '';
+            if (loginButton) {
+                loginButton.disabled = true;
+                loginButton.textContent = '登入中...';
             }
-        }
-    });
-}
+            try {
+                const response = await fetch('/api/admin/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || '登入失敗');
 
+                // 登入成功，切換畫面並初始化後台
+                loginContainer.style.display = 'none';
+                adminPanel.style.display = 'block';
+                await initializeAdminPanel(); // 等待後台介面完全初始化
+
+            } catch (error) {
+                if (loginStatus) loginStatus.textContent = error.message;
+            } finally {
+                if (loginButton) {
+                    loginButton.disabled = false;
+                    loginButton.textContent = '登入';
+                }
+            }
+        });
+    }
+
+    // --- 登出邏輯 ---
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
             await fetch('/api/admin/auth/logout');
