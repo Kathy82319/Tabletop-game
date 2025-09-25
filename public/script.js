@@ -517,6 +517,19 @@ async function initializeRentalHistoryPage() {
     // 編輯個人資料頁
     // =================================================================
     async function initializeEditProfilePage() {
+            // 【新增的程式碼區塊 START】
+        // 檢查全域變數 allGames 是否為空，如果為空，就先從後端獲取一次
+    if (allGames.length === 0) {
+        try {
+            const res = await fetch('/api/get-boardgames');
+            if (!res.ok) throw new Error('無法獲取遊戲資料');
+            allGames = await res.json();
+        } catch (error) {
+            console.error('獲取遊戲標籤失敗:', error);
+            // 即使失敗，也要讓頁面繼續載入，只是標籤區會是空的
+        }
+    }
+        // 【新增的程式碼區塊 END】
         if (!userProfile) return;
 
         document.getElementById('edit-profile-name').value = userProfile.displayName;

@@ -384,50 +384,67 @@ async function initializeAdminPanel() {
         const tagSelect = document.getElementById('edit-tag-select');
         const otherTagInput = document.getElementById('edit-tag-other-input');
         const notesTextarea = document.getElementById('edit-notes-textarea'); // 【新增這一行】
-        classSelect.innerHTML = '';
-        perkSelect.innerHTML = '';
-        for (const className in classPerks) {
-            const classOption = document.createElement('option');
-            classOption.value = className;
-            classOption.textContent = className;
-            classSelect.appendChild(classOption);
-            const perkOption = document.createElement('option');
-            perkOption.value = classPerks[className];
-            perkOption.textContent = classPerks[className];
-            perkSelect.appendChild(perkOption);
-        }
-        classSelect.appendChild(new Option('其他 (自訂)', 'other'));
-        perkSelect.appendChild(new Option('其他 (自訂)', 'other'));
-        if (classPerks[user.class]) {
-            classSelect.value = user.class;
-            otherClassInput.style.display = 'none';
-        } else {
-            classSelect.value = 'other';
-            otherClassInput.style.display = 'block';
-            otherClassInput.value = user.class || '';
-        }
-        const standardPerks = Object.values(classPerks);
-        if (standardPerks.includes(user.perk)) {
-            perkSelect.value = user.perk;
-            otherPerkInput.style.display = 'none';
-        } else {
-            perkSelect.value = 'other';
-            otherPerkInput.style.display = 'block';
-            otherPerkInput.value = user.perk || '';
-        }
-        const standardTags = ["", "會員", "員工", "黑名單", "特殊"];
-        if (user.tag && !standardTags.includes(user.tag)) {
-            tagSelect.value = 'other';
-            otherTagInput.style.display = 'block';
-            otherTagInput.value = user.tag;
-        } else {
-            tagSelect.value = user.tag || '';
-            otherTagInput.style.display = 'none';
-            otherTagInput.value = '';
-        }
-        notesTextarea.value = user.notes || ''; // 【新增這一行】
-        editUserModal.style.display = 'flex';
+    // 【修正點 1】先清空兩個下拉選單，避免重複疊加
+    classSelect.innerHTML = '';
+    perkSelect.innerHTML = '';
+
+    // 【修正點 2】建立一個不重複的福利列表，用於判斷
+    const standardPerks = [...new Set(Object.values(classPerks))];
+
+    // --- 填充「職業」下拉選單 ---
+    for (const className in classPerks) {
+        const option = document.createElement('option');
+        option.value = className;
+        option.textContent = className;
+        classSelect.appendChild(option);
     }
+    classSelect.appendChild(new Option('其他 (自訂)', 'other'));
+
+    // --- 填充「福利」下拉選單 ---
+    standardPerks.forEach(perkDescription => {
+        const option = document.createElement('option');
+        option.value = perkDescription;
+        option.textContent = perkDescription;
+        perkSelect.appendChild(option);
+    });
+    perkSelect.appendChild(new Option('其他 (自訂)', 'other'));
+
+
+    // --- 設定職業下拉選單的預設值 ---
+    if (classPerks[user.class]) {
+        classSelect.value = user.class;
+        otherClassInput.style.display = 'none';
+    } else {
+        classSelect.value = 'other';
+        otherClassInput.style.display = 'block';
+        otherClassInput.value = user.class || '';
+    }
+    
+    // --- 設定福利下拉選單的預設值 ---
+    if (standardPerks.includes(user.perk)) {
+        perkSelect.value = user.perk;
+        otherPerkInput.style.display = 'none';
+    } else {
+        perkSelect.value = 'other';
+        otherPerkInput.style.display = 'block';
+        otherPerkInput.value = user.perk || '';
+    }
+
+    // --- 設定標籤和其他欄位的預設值 (保持不變) ---
+    const standardTags = ["", "會員", "員工", "黑名單", "特殊"];
+    if (user.tag && !standardTags.includes(user.tag)) {
+        tagSelect.value = 'other';
+        otherTagInput.style.display = 'block';
+        otherTagInput.value = user.tag;
+    } else {
+        tagSelect.value = user.tag || '';
+        otherTagInput.style.display = 'none';
+        otherTagInput.value = '';
+    }
+    notesTextarea.value = user.notes || '';
+    
+    editUserModal.style.display = 'flex';
+}
 
     if(document.getElementById('edit-class-select')) {
         document.getElementById('edit-class-select').addEventListener('change', (e) => {
