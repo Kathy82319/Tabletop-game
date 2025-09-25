@@ -517,9 +517,8 @@ async function initializeRentalHistoryPage() {
     // 編輯個人資料頁
     // =================================================================
 // public/script.js (initializeEditProfilePage 修正版)
-
 async function initializeEditProfilePage() {
-    // 步驟 1: 確保遊戲資料已載入，以便獲取標籤
+    // 步驟 1: 確保遊戲資料已載入
     if (allGames.length === 0) {
         try {
             const res = await fetch('/api/get-boardgames');
@@ -541,18 +540,18 @@ async function initializeEditProfilePage() {
     document.getElementById('edit-profile-nickname').value = userData.nickname || '';
     document.getElementById('edit-profile-phone').value = userData.phone || '';
     document.getElementById('edit-profile-email').value = userData.email || '';
-    
-    // 步驟 3: 處理「偏好遊戲類型」的顯示邏輯
+
+    // 步驟 3: 【核心修改】處理「偏好遊戲類型」的顯示邏輯
     const gamesContainer = document.getElementById('preferred-games-container');
     const otherContainer = document.getElementById('preferred-games-other-container');
     const otherInput = document.getElementById('preferred-games-other-input');
 
     if (gamesContainer && otherContainer && otherInput) {
-        // 獲取所有標準標籤
+        // 從所有遊戲中提取出不重複的標籤列表
         const allStandardTags = [...new Set(allGames.flatMap(g => (g.tags || '').split(',')).map(t => t.trim()).filter(Boolean))];
         
-        // 獲取使用者已儲存的偏好
-        const userTags = new Set((userData.preferred_games || '').split(',').filter(Boolean));
+        // 獲取使用者已儲存的偏好，並轉換為 Set 以方便快速查找
+        const userTags = new Set((userData.preferred_games || '').split(',').map(tag => tag.trim()).filter(Boolean));
         
         // 找出使用者自訂的標籤 (不在標準標籤內的)
         const userCustomTags = [...userTags].filter(tag => !allStandardTags.includes(tag));
@@ -560,34 +559,53 @@ async function initializeEditProfilePage() {
         // 渲染標準標籤按鈕
         gamesContainer.innerHTML = allStandardTags.map(tag => {
             const isActive = userTags.has(tag) ? 'active' : '';
-            return `<button type="button" class="game-preference-tag ${isActive}" data-tag="${tag}">${tag}</button>`;
+            return `<button type="button" class="preference-tag-btn ${isActive}" data-tag="${tag}">${tag}</button>`;
         }).join('');
         
         // 新增「其他」按鈕
         const otherBtn = document.createElement('button');
         otherBtn.type = 'button';
-        otherBtn.className = 'game-preference-tag';
+        otherBtn.className = 'preference-tag-btn';
         otherBtn.textContent = '其他';
         gamesContainer.appendChild(otherBtn);
 
-        // 如果使用者有自訂標籤，則預設展開「其他」區塊
+        // 如果使用者有自訂標籤，則預設展開「其他」區塊並填入值
         if (userCustomTags.length > 0) {
             otherBtn.classList.add('active');
             otherContainer.style.display = 'block';
             otherInput.value = userCustomTags.join(', ');
+        } else {
+            otherContainer.style.display = 'none';
         }
 
-        // 綁定所有按鈕的點擊事件
+        // 綁定所有標籤按鈕的點擊事件
         gamesContainer.addEventListener('click', (e) => {
-            if (e.target.classList.contains('game-preference-tag')) {
+            const target = e.target;
+            if (target.classList.contains('preference-tag-btn')) {
                 // 如果點擊的是「其他」按鈕
-                if (e.target === otherBtn) {
-                    otherBtn.classList.toggle('active');
-                    otherContainer.style.display = otherBtn.classList.contains('active') ? 'block' : 'none';
+                if (target === otherBtn) {
+                    const isNowActive = otherBtn.classList.toggle('active');
+                    otherContainer.style.display = isNowActive ? 'block' : 'none';
                 } else {
                     // 點擊的是一般標籤按鈕
-                    e.target.classList.toggle('active');
+                    target.classList.toggle('active');
                 }
+            }
+        });
+        
+        // 為「其他」輸入框加上字數限制
+        otherInput.addEventListener('input', () => {
+            let value = otherInput.value;
+            let chineseCount = (value.match(/[\u4e00-\u9fa5]/g) || []).length;
+            let englishCount = (value.match(/[a-zA-Z]/g) || []).length;
+            
+            if (chineseCount > 10) {
+                value = Array.from(value).filter(char => /[\u4e00-\u9fa5]/.test(char)).slice(0, 10).join('');
+                otherInput.value = value;
+            }
+            if (englishCount > 30) {
+                 value = Array.from(value).filter(char => /[a-zA-Z]/.test(char)).slice(0, 30).join('');
+                 otherInput.value = value;
             }
         });
     }
@@ -600,13 +618,14 @@ async function initializeEditProfilePage() {
         statusMsg.textContent = '儲存中...';
 
         // 收集所有被選中的標準標籤
-        let selectedGames = Array.from(gamesContainer.querySelectorAll('.game-preference-tag.active:not(:last-child)'))
-                                 .map(btn => btn.dataset.tag);
+        let selectedGames = Array.from(gamesContainer.querySelectorAll('.preference-tag-btn.active'))
+                                 .map(btn => btn.dataset.tag)
+                                 .filter(tag => tag); // 過濾掉 "其他" 按鈕的 undefined
         
         // 如果「其他」按鈕被選中，則收集自訂標籤
         if (otherContainer.style.display === 'block' && otherInput.value.trim() !== '') {
             const customTags = otherInput.value.trim().split(/[,，\s]+/).filter(Boolean);
-            selectedGames = [...selectedGames, ...customTags];
+            selectedGames.push(...customTags);
         }
 
         const formData = {
@@ -615,7 +634,7 @@ async function initializeEditProfilePage() {
             nickname: document.getElementById('edit-profile-nickname').value,
             phone: document.getElementById('edit-profile-phone').value,
             email: document.getElementById('edit-profile-email').value,
-            preferredGames: [...new Set(selectedGames)], // 去除重複項
+            preferredGames: [...new Set(selectedGames)], // 使用 Set 去除重複項
             displayName: userProfile.displayName,
             pictureUrl: userProfile.pictureUrl || ''
         };
@@ -627,7 +646,7 @@ async function initializeEditProfilePage() {
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || '儲存失敗');
             
-            gameData = {}; // 清空快取
+            gameData = {}; // 清空快取，確保下次進入時資料是新的
             statusMsg.textContent = '儲存成功！';
             statusMsg.style.color = 'green';
             setTimeout(() => goBackPage(), 1500);
