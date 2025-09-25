@@ -1,66 +1,69 @@
 export async function onRequest(context) {
   try {
-    if (context.request.method !== 'POST') {
+    if (context.request.method !== 'GET') {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    const body = await context.request.json();
-    const { userId, level, current_exp, tag, user_class, perk, notes } = body;
+    const { request, env } = context;
+    const db = env.DB;
+    const url = new URL(request.url);
+    const userId = url.searchParams.get('userId');
 
-    // --- 【新增的驗證區塊】 ---
-    const errors = [];
-    if (!userId || typeof userId !== 'string') errors.push('無效的使用者 ID。');
-    
-    const levelNum = Number(level);
-    if (isNaN(levelNum) || !Number.isInteger(levelNum) || levelNum < 1) errors.push('等級必須是大於 0 的整數。');
-    
-    const expNum = Number(current_exp);
-    if (isNaN(expNum) || !Number.isInteger(expNum) || expNum < 0) errors.push('經驗值必須是非負整數。');
-    
-    if (tag && (typeof tag !== 'string' || tag.length > 50)) errors.push('標籤長度不可超過 50 字。');
-    if (user_class && (typeof user_class !== 'string' || user_class.length > 50)) errors.push('職業名稱長度不可超過 50 字。');
-    if (perk && (typeof perk !== 'string' || perk.length > 100)) errors.push('福利內容長度不可超過 100 字。');
-    if (notes && (typeof notes !== 'string' || notes.length > 500)) errors.push('備註長度不可超過 500 字。');
-
-    if (errors.length > 0) {
-        return new Response(JSON.stringify({ error: errors.join(' ') }), { status: 400 });
-    }
-    // --- 【驗證區塊結束】 ---
-
-    const db = context.env.DB;
-    
-    const stmt = db.prepare('UPDATE Users SET level = ?, current_exp = ?, tag = ?, class = ?, perk = ?, notes = ? WHERE user_id = ?');
-    const result = await stmt.bind(levelNum, expNum, tag, user_class, perk, notes || '', userId).run();
-
-    if (result.meta.changes === 0) {
-      return new Response(JSON.stringify({ error: `在 D1 中找不到使用者 ID: ${userId}，無法更新資料。` }), {
-        status: 404
-      });
+    if (!userId) {
+      return new Response(JSON.stringify({ error: '缺少 user_id 參數。' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
-    const dataToSync = {
-        level: levelNum,
-        current_exp: expNum,
-        tag: tag,
-        class: user_class,
-        perk: perk,
-        notes: notes || ''
+    const userProfile = await db.prepare(
+        `SELECT user_id, line_display_name, nickname, real_name, phone, email, 
+                preferred_games, class, level, current_exp, tag, perk, notes, created_at 
+         FROM Users WHERE user_id = ?`
+    ).bind(userId).first();
+
+    if (!userProfile) {
+        return new Response(JSON.stringify({ error: `找不到使用者 ID: ${userId}` }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    const bookingsStmt = db.prepare("SELECT * FROM Bookings WHERE user_id = ? ORDER BY booking_date DESC");
+    const { results: bookingHistory } = await bookingsStmt.bind(userId).all();
+
+    const rentalsStmt = db.prepare(`
+        SELECT r.*, b.name as game_name, b.late_fee_per_day
+        FROM Rentals AS r
+        LEFT JOIN BoardGames as b ON r.game_id = b.game_id
+        WHERE r.user_id = ?
+        ORDER BY r.rental_date DESC
+    `);
+    let { results: rentalHistory } = await rentalsStmt.bind(userId).all();
+
+    if (rentalHistory) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        rentalHistory = rentalHistory.map(rental => {
+            const dueDate = new Date(rental.due_date);
+            if (rental.status === 'rented' && dueDate < today) {
+                return { ...rental, status: 'overdue' };
+            }
+            return rental;
+        });
+    }
+
+    const expStmt = db.prepare("SELECT * FROM ExpHistory WHERE user_id = ? ORDER BY created_at DESC");
+    const { results: expHistory } = await expStmt.bind(userId).all();
+
+    const userDetails = {
+      profile: userProfile,
+      bookings: bookingHistory || [],
+      rentals: rentalHistory || [],
+      exp_history: expHistory || [],
     };
 
-    context.waitUntil(
-        updateRowInSheet(context.env, '使用者列表', 'user_id', userId, dataToSync)
-        .catch(err => console.error(`背景同步 Google Sheet 失敗 (使用者: ${userId}):`, err))
-    );
-
-    return new Response(JSON.stringify({ success: true, message: '成功更新使用者資料！' }), {
+    return new Response(JSON.stringify(userDetails), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in update-user-details API:', error);
-    return new Response(JSON.stringify({ error: '更新資料失敗。' }), {
-      status: 500,
-    });
+    console.error('Error in user-details API:', error);
+    return new Response(JSON.stringify({ error: '獲取使用者詳細資料失敗。', details: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
