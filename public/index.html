@@ -181,12 +181,16 @@
             <label for="edit-profile-email">電子信箱</label>
             <input type="email" id="edit-profile-email" placeholder="用於接收活動通知 (選填)">
         </div>
-        <div class="input-group">
-            <label>偏好的遊戲類型 (可多選)</label>
-            <div id="preferred-games-container" class="tag-selection-container">
-            </div>
+<div class="input-group">
+    <label>偏好的遊戲類型 (可多選)</label>
+    <div id="preferred-games-container" class="tag-selection-container">
         </div>
-        <button type="submit" class="cta-button" style="margin-top: 20px;">儲存資料</button>
+    <div id="preferred-games-other-container" class="input-group" style="display: none; margin-top: 15px;">
+        <label for="preferred-games-other-input">其他類型 (請以逗號分隔)</label>
+        <input type="text" id="preferred-games-other-input" placeholder="例如：合作, 奇幻">
+    </div>
+</div>
+<button type="submit" class="cta-button" style="margin-top: 20px;">儲存資料</button>
     </form>
     <p id="edit-profile-form-status" class="form-status"></p>
 </div>

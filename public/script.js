@@ -516,9 +516,10 @@ async function initializeRentalHistoryPage() {
     // =================================================================
     // 編輯個人資料頁
     // =================================================================
-    async function initializeEditProfilePage() {
-            // 【新增的程式碼區塊 START】
-        // 檢查全域變數 allGames 是否為空，如果為空，就先從後端獲取一次
+// public/script.js (initializeEditProfilePage 修正版)
+
+async function initializeEditProfilePage() {
+    // 步驟 1: 確保遊戲資料已載入，以便獲取標籤
     if (allGames.length === 0) {
         try {
             const res = await fetch('/api/get-boardgames');
@@ -526,81 +527,95 @@ async function initializeRentalHistoryPage() {
             allGames = await res.json();
         } catch (error) {
             console.error('獲取遊戲標籤失敗:', error);
-            // 即使失敗，也要讓頁面繼續載入，只是標籤區會是空的
         }
     }
-        // 【新增的程式碼區塊 END】
-        if (!userProfile) return;
 
-        document.getElementById('edit-profile-name').value = userProfile.displayName;
+    if (!userProfile) return;
 
-        const userData = await fetchGameData();
-        if (!userData) return;
-        
-        document.getElementById('edit-profile-real-name').value = userData.real_name || '';
-        document.getElementById('edit-profile-nickname').value = userData.nickname || '';
-        document.getElementById('edit-profile-phone').value = userData.phone || '';
-        document.getElementById('edit-profile-email').value = userData.email || '';
-        
-
-
-    // ** 需求 3 修改：處理偏好遊戲多選 **
+    // 步驟 2: 填充基本資料 (保持不變)
+    document.getElementById('edit-profile-name').value = userProfile.displayName;
+    const userData = await fetchGameData();
+    if (!userData) return;
+    
+    document.getElementById('edit-profile-real-name').value = userData.real_name || '';
+    document.getElementById('edit-profile-nickname').value = userData.nickname || '';
+    document.getElementById('edit-profile-phone').value = userData.phone || '';
+    document.getElementById('edit-profile-email').value = userData.email || '';
+    
+    // 步驟 3: 處理「偏好遊戲類型」的顯示邏輯
     const gamesContainer = document.getElementById('preferred-games-container');
-    if (gamesContainer) {
-        // 從 allGames 變數中提取所有不重複的標籤
-        const allTags = [...new Set(allGames.flatMap(g => (g.tags || '').split(',')).map(t => t.trim()).filter(Boolean))];
-        
-        // 使用者已選的標籤 (從字串轉為陣列)
-        const userTags = (userData.preferred_games || '').split(',').filter(Boolean);
+    const otherContainer = document.getElementById('preferred-games-other-container');
+    const otherInput = document.getElementById('preferred-games-other-input');
 
-        gamesContainer.innerHTML = allTags.map(tag => {
-            const isActive = userTags.includes(tag) ? 'active' : '';
+    if (gamesContainer && otherContainer && otherInput) {
+        // 獲取所有標準標籤
+        const allStandardTags = [...new Set(allGames.flatMap(g => (g.tags || '').split(',')).map(t => t.trim()).filter(Boolean))];
+        
+        // 獲取使用者已儲存的偏好
+        const userTags = new Set((userData.preferred_games || '').split(',').filter(Boolean));
+        
+        // 找出使用者自訂的標籤 (不在標準標籤內的)
+        const userCustomTags = [...userTags].filter(tag => !allStandardTags.includes(tag));
+
+        // 渲染標準標籤按鈕
+        gamesContainer.innerHTML = allStandardTags.map(tag => {
+            const isActive = userTags.has(tag) ? 'active' : '';
             return `<button type="button" class="game-preference-tag ${isActive}" data-tag="${tag}">${tag}</button>`;
         }).join('');
+        
+        // 新增「其他」按鈕
+        const otherBtn = document.createElement('button');
+        otherBtn.type = 'button';
+        otherBtn.className = 'game-preference-tag';
+        otherBtn.textContent = '其他';
+        gamesContainer.appendChild(otherBtn);
 
-        // 綁定點擊事件
+        // 如果使用者有自訂標籤，則預設展開「其他」區塊
+        if (userCustomTags.length > 0) {
+            otherBtn.classList.add('active');
+            otherContainer.style.display = 'block';
+            otherInput.value = userCustomTags.join(', ');
+        }
+
+        // 綁定所有按鈕的點擊事件
         gamesContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('game-preference-tag')) {
-                e.target.classList.toggle('active');
+                // 如果點擊的是「其他」按鈕
+                if (e.target === otherBtn) {
+                    otherBtn.classList.toggle('active');
+                    otherContainer.style.display = otherBtn.classList.contains('active') ? 'block' : 'none';
+                } else {
+                    // 點擊的是一般標籤按鈕
+                    e.target.classList.toggle('active');
+                }
             }
         });
     }
 
+    // 步驟 4: 修改表單提交邏輯
     const form = document.getElementById('edit-profile-form');
     form.onsubmit = async (event) => {
         event.preventDefault();
         const statusMsg = document.getElementById('edit-profile-form-status');
+        statusMsg.textContent = '儲存中...';
 
-            const realNameInput = document.getElementById('edit-profile-real-name');
-            const realName = realNameInput.value.trim();
-            const chineseCharCount = (realName.match(/[\u4e00-\u9fa5]/g) || []).length;
-            const englishCharCount = (realName.match(/[a-zA-Z]/g) || []).length;
-
-            if (chineseCharCount > 10) {
-                statusMsg.textContent = '錯誤：姓名欄位中文字數不可超過 10 個字。';
-                statusMsg.style.color = 'red';
-                return;
-            }
-            if (englishCharCount > 20) {
-                statusMsg.textContent = '錯誤：姓名欄位英文字母不可超過 20 個。';
-                statusMsg.style.color = 'red';
-                return;
-            }
-
-            statusMsg.textContent = '儲存中...';
-        // ** 需求 3 修改：從按鈕狀態收集偏好遊戲 **
-        let selectedGames = [];
-        if (gamesContainer) {
-            selectedGames = Array.from(gamesContainer.querySelectorAll('.game-preference-tag.active')).map(btn => btn.dataset.tag);
+        // 收集所有被選中的標準標籤
+        let selectedGames = Array.from(gamesContainer.querySelectorAll('.game-preference-tag.active:not(:last-child)'))
+                                 .map(btn => btn.dataset.tag);
+        
+        // 如果「其他」按鈕被選中，則收集自訂標籤
+        if (otherContainer.style.display === 'block' && otherInput.value.trim() !== '') {
+            const customTags = otherInput.value.trim().split(/[,，\s]+/).filter(Boolean);
+            selectedGames = [...selectedGames, ...customTags];
         }
 
         const formData = {
             userId: userProfile.userId,
-            realName: realName,
+            realName: document.getElementById('edit-profile-real-name').value.trim(),
             nickname: document.getElementById('edit-profile-nickname').value,
             phone: document.getElementById('edit-profile-phone').value,
             email: document.getElementById('edit-profile-email').value,
-            preferredGames: selectedGames, // 傳送陣列
+            preferredGames: [...new Set(selectedGames)], // 去除重複項
             displayName: userProfile.displayName,
             pictureUrl: userProfile.pictureUrl || ''
         };
@@ -612,7 +627,7 @@ async function initializeRentalHistoryPage() {
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || '儲存失敗');
             
-            gameData = {}; // 清空快取以便下次刷新
+            gameData = {}; // 清空快取
             statusMsg.textContent = '儲存成功！';
             statusMsg.style.color = 'green';
             setTimeout(() => goBackPage(), 1500);
@@ -620,10 +635,9 @@ async function initializeRentalHistoryPage() {
         } catch (error) {
             statusMsg.textContent = `儲存失敗: ${error.message}`;
             statusMsg.style.color = 'red';
-            }
-        };
-    }
-    
+        }
+    };
+}
     // =================================================================
     // 桌遊圖鑑頁
     // =================================================================
