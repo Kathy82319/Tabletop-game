@@ -44,9 +44,12 @@ export async function onRequest(context) {
     }
 
     const { id } = await context.request.json();
-    if (!id) {
-      return new Response(JSON.stringify({ error: '缺少情報 ID。' }), { status: 400 });
+    
+    // --- 【新增的驗證區塊】 ---
+    if (!id || typeof id !== 'number') {
+      return new Response(JSON.stringify({ error: '缺少有效的情報 ID。' }), { status: 400 });
     }
+    // --- 【驗證區塊結束】 ---
 
     const db = context.env.DB;
     
@@ -57,7 +60,6 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({ error: `找不到 ID 為 ${id} 的情報。` }), { status: 404 });
     }
 
-    // ** 關鍵改動：觸發背景同步任務 **
     context.waitUntil(
         deleteRowFromSheet(context.env, context.env.NEWS_SHEET_NAME, 'id', id)
         .catch(err => console.error("背景同步刪除情報失敗:", err))

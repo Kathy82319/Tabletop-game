@@ -49,13 +49,23 @@ export async function onRequest(context) {
 
     const { bookingId, status } = await context.request.json();
 
-    if (!bookingId || !status) {
-      return new Response(JSON.stringify({ error: '缺少預約 ID 或狀態。' }), { status: 400 });
+    // --- 【新增的驗證區塊】 ---
+    const errors = [];
+    if (!bookingId || !Number.isInteger(bookingId)) {
+        errors.push('無效的預約 ID。');
     }
+    const allowedStatus = ['confirmed', 'checked-in', 'cancelled'];
+    if (!status || !allowedStatus.includes(status)) {
+        errors.push('無效的狀態值。');
+    }
+
+    if (errors.length > 0) {
+        return new Response(JSON.stringify({ error: errors.join(' ') }), { status: 400 });
+    }
+    // --- 【驗證區塊結束】 ---
 
     const db = context.env.DB;
     
-    // 1. 更新 D1 資料庫
     const stmt = db.prepare('UPDATE Bookings SET status = ? WHERE booking_id = ?');
     const result = await stmt.bind(status, bookingId).run();
 
@@ -65,14 +75,13 @@ export async function onRequest(context) {
       });
     }
 
-    // 2. 觸發背景任務，將狀態變動同步到 Google Sheet
     context.waitUntil(
         updateRowInSheet(
             context.env, 
-            '預約紀錄',         // 您的工作表名稱
-            'booking_id',       // 用來匹配的欄位
-            bookingId,          // 要匹配的值
-            { status: status }  // 要更新的資料
+            '預約紀錄',
+            'booking_id',
+            bookingId,
+            { status: status }
         ).catch(err => console.error("背景同步預約狀態失敗:", err))
     );
 

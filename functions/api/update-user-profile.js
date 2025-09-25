@@ -76,17 +76,39 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    const { userId, realName, nickname, phone, email, preferredGames, displayName, pictureUrl } = await context.request.json();
+    const body = await context.request.json();
+    const { userId, realName, nickname, phone, email, preferredGames, displayName, pictureUrl } = body;
 
-    if (!userId || !nickname || !phone) {
-      return new Response(JSON.stringify({ error: '使用者 ID、暱稱和電話為必填欄位。' }), {
-        status: 400, headers: { 'Content-Type': 'application/json' },
-      });
+    // --- 【新增的驗證區塊】 ---
+    const errors = [];
+    if (!userId || typeof userId !== 'string') {
+        errors.push('無效的使用者 ID。');
     }
+    if (!nickname || typeof nickname !== 'string' || nickname.trim().length === 0 || nickname.length > 50) {
+        errors.push('暱稱為必填，且長度不可超過 50 字。');
+    }
+    if (!phone || !/^\d{10}$/.test(phone)) {
+        errors.push('請輸入有效的 10 碼手機號碼。');
+    }
+    if (realName && typeof realName !== 'string' || realName.length > 50) {
+        errors.push('真實姓名長度不可超過 50 字。');
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errors.push('請輸入有效的電子信箱格式。');
+    }
+    if (displayName === undefined || pictureUrl === undefined) {
+        errors.push('缺少必要的 LINE 使用者資訊。');
+    }
+
+    if (errors.length > 0) {
+        return new Response(JSON.stringify({ error: errors.join(' ') }), {
+            status: 400, headers: { 'Content-Type': 'application/json' },
+        });
+    }
+    // --- 【驗證區塊結束】 ---
 
     const db = context.env.DB;
     
-    // ** 需求 3 修改：將陣列轉換為逗號分隔的字串 **
     const preferredGamesString = Array.isArray(preferredGames) ? preferredGames.join(',') : preferredGames || '未提供';
 
     const stmt = db.prepare(
@@ -97,7 +119,7 @@ export async function onRequest(context) {
         nickname, 
         phone, 
         email || '',
-        preferredGamesString, // 使用處理過的字串
+        preferredGamesString,
         displayName,
         pictureUrl,
         userId

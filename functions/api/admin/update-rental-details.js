@@ -43,11 +43,26 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    const { rentalId, dueDate, lateFeeOverride } = await context.request.json();
+    const body = await context.request.json();
+    const { rentalId, dueDate, lateFeeOverride } = body;
 
-    if (!rentalId) {
-      return new Response(JSON.stringify({ error: '缺少租借 ID。' }), { status: 400 });
+    // --- 【新增的驗證區塊】 ---
+    const errors = [];
+    if (!rentalId || !Number.isInteger(rentalId)) {
+        errors.push('缺少有效的租借 ID。');
     }
+    if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+        errors.push('無效的歸還日期格式。');
+    }
+    const feeOverrideNum = Number(lateFeeOverride);
+    if (lateFeeOverride !== undefined && lateFeeOverride !== null && lateFeeOverride !== '' && (isNaN(feeOverrideNum) || feeOverrideNum < 0)) {
+        errors.push('手動覆寫金額必須是有效的非負數。');
+    }
+
+    if (errors.length > 0) {
+        return new Response(JSON.stringify({ error: errors.join(' ') }), { status: 400 });
+    }
+    // --- 【驗證區塊結束】 ---
 
     const db = context.env.DB;
     const updates = [];
@@ -60,7 +75,7 @@ export async function onRequest(context) {
 
     if (lateFeeOverride !== undefined) {
         updates.push("late_fee_override = ?");
-        const valueToSet = (lateFeeOverride === '' || lateFeeOverride === null) ? null : Number(lateFeeOverride);
+        const valueToSet = (lateFeeOverride === '' || lateFeeOverride === null) ? null : feeOverrideNum;
         params.push(valueToSet);
     }
 
@@ -79,10 +94,10 @@ export async function onRequest(context) {
 
     const dataToSync = {};
     if (dueDate) dataToSync.due_date = dueDate;
-    if (lateFeeOverride !== undefined) dataToSync.late_fee_override = (lateFeeOverride === '' || lateFeeOverride === null) ? '' : Number(lateFeeOverride);
+    if (lateFeeOverride !== undefined) dataToSync.late_fee_override = (lateFeeOverride === '' || lateFeeOverride === null) ? '' : feeOverrideNum;
 
     context.waitUntil(
-        updateRowInSheet(context.env, '預約紀錄', 'rental_id', rentalId, dataToSync)
+        updateRowInSheet(context.env, '桌遊租借者', 'rental_id', rentalId, dataToSync)
         .catch(err => console.error("背景同步更新租借詳情失敗:", err))
     );
 

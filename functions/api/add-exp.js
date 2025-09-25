@@ -71,9 +71,20 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
     const { userId, expValue, reason } = await context.request.json();
-    if (!userId || typeof expValue !== 'number' || expValue <= 0) {
-      return new Response(JSON.stringify({ error: '無效的使用者 ID 或經驗值。' }), { status: 400 });
+
+    // --- 【新增的驗證區塊】 ---
+    if (!userId || typeof userId !== 'string') {
+        return new Response(JSON.stringify({ error: '無效的使用者 ID。' }), { status: 400 });
     }
+    const exp = Number(expValue);
+    if (isNaN(exp) || !Number.isInteger(exp) || exp <= 0 || exp > 1000) {
+        return new Response(JSON.stringify({ error: '經驗值必須是 1 到 1000 之間的正整數。' }), { status: 400 });
+    }
+    if (!reason || typeof reason !== 'string' || reason.trim().length === 0 || reason.length > 100) {
+        return new Response(JSON.stringify({ error: '原因為必填，且長度不可超過 100 字。' }), { status: 400 });
+    }
+    // --- 【驗證區塊結束】 ---
+    
     const db = context.env.DB;
     const userStmt = db.prepare('SELECT level, current_exp FROM Users WHERE user_id = ?');
     let user = await userStmt.bind(userId).first();
@@ -81,7 +92,7 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: `找不到使用者 ID: ${userId}` }), { status: 404 });
     }
     let currentLevel = user.level;
-    let currentExp = user.current_exp + expValue;
+    let currentExp = user.current_exp + exp;
     const requiredExp = 10;
     while (currentExp >= requiredExp) {
       currentExp -= requiredExp;
@@ -89,14 +100,11 @@ export async function onRequest(context) {
     }
     await db.batch([
       db.prepare('UPDATE Users SET level = ?, current_exp = ? WHERE user_id = ?').bind(currentLevel, currentExp, userId),
-      db.prepare('INSERT INTO ExpHistory (user_id, exp_added, reason) VALUES (?, ?, ?)').bind(userId, expValue, reason || '未提供原因')
+      db.prepare('INSERT INTO ExpHistory (user_id, exp_added, reason) VALUES (?, ?, ?)').bind(userId, exp, reason)
     ]);
     
-    // ** START: 關鍵修正 - 觸發兩個背景任務 **
-    // 任務一：記錄到歷史工作表 (不變)
-    context.waitUntil(syncSingleExpToSheet(context.env, { userId, expValue, reason }));
+    context.waitUntil(syncSingleExpToSheet(context.env, { userId, expValue: exp, reason }));
     
-    // 任務二：更新使用者列表工作表
     const userDataToSync = {
         level: currentLevel,
         current_exp: currentExp
@@ -105,11 +113,10 @@ export async function onRequest(context) {
         updateRowInSheet(context.env, context.env.USERS_SHEET_NAME, 'user_id', userId, userDataToSync)
         .catch(err => console.error(`背景同步更新使用者列表失敗 (User: ${userId}):`, err))
     );
-    // ** END: 關鍵修正 **
     
     return new Response(JSON.stringify({ 
         success: true, 
-        message: `成功新增 ${expValue} 點經驗值。`,
+        message: `成功新增 ${exp} 點經驗值。`,
         newLevel: currentLevel,
         newExp: currentExp
     }), {

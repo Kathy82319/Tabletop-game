@@ -26,10 +26,28 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
-    const { address, phone, opening_hours, description } = await context.request.json();
-    if (!address || !phone || !opening_hours || !description) {
-      return new Response(JSON.stringify({ error: '所有欄位皆為必填。' }), { status: 400 });
+    const body = await context.request.json();
+    const { address, phone, opening_hours, description } = body;
+
+    // --- 【新增的驗證區塊】 ---
+    const errors = [];
+    if (!address || typeof address !== 'string' || address.trim().length === 0 || address.length > 200) {
+        errors.push('地址為必填，且長度不可超過 200 字。');
     }
+    if (!phone || typeof phone !== 'string' || phone.trim().length === 0 || phone.length > 50) {
+        errors.push('電話為必填，且長度不可超過 50 字。');
+    }
+    if (!opening_hours || typeof opening_hours !== 'string' || opening_hours.trim().length === 0 || opening_hours.length > 500) {
+        errors.push('營業時間為必填，且長度不可超過 500 字。');
+    }
+    if (!description || typeof description !== 'string' || description.trim().length === 0 || description.length > 2000) {
+        errors.push('公會介紹為必填，且長度不可超過 2000 字。');
+    }
+
+    if (errors.length > 0) {
+        return new Response(JSON.stringify({ error: errors.join(' ') }), { status: 400 });
+    }
+    // --- 【驗證區塊結束】 ---
 
     const db = context.env.DB;
     
@@ -38,7 +56,6 @@ export async function onRequest(context) {
     );
     await stmt.bind(address, phone, opening_hours, description).run();
 
-    // ** 關鍵改動：觸發背景同步任務 **
     const infoDataToSync = { address, phone, opening_hours, description };
     context.waitUntil(
         updateRowInSheet(context.env, context.env.STORE_INFO_SHEET_NAME, 'id', 1, infoDataToSync)

@@ -34,10 +34,9 @@ async function getSheet(env, sheetName) {
 export async function onRequest(context) {
     const { request, env } = context;
     const db = env.DB;
-    const DRAFTS_SHEET_NAME = 'MessageDrafts'; // Google Sheet 工作表名稱
+    const DRAFTS_SHEET_NAME = 'MessageDrafts';
 
     try {
-        // 處理 GET 請求：獲取所有草稿
         if (request.method === 'GET') {
             const { results } = await db.prepare("SELECT * FROM MessageDrafts ORDER BY created_at DESC").all();
             return new Response(JSON.stringify(results || []), {
@@ -45,18 +44,20 @@ export async function onRequest(context) {
             });
         }
 
-        // 處理 POST 請求：新增一則草稿
         if (request.method === 'POST') {
             const { title, content } = await request.json();
-            if (!title || !content) {
-                return new Response(JSON.stringify({ error: '標題和內容為必填欄位。' }), { status: 400 });
+            // --- 【驗證】 ---
+            if (!title || typeof title !== 'string' || title.trim().length === 0 || title.length > 100) {
+                return new Response(JSON.stringify({ error: '標題為必填，且長度不可超過 100 字。' }), { status: 400 });
             }
+            if (!content || typeof content !== 'string' || content.trim().length === 0 || content.length > 1000) {
+                return new Response(JSON.stringify({ error: '內容為必填，且長度不可超過 1000 字。' }), { status: 400 });
+            }
+            // --- 【驗證結束】 ---
 
-            // 1. 新增到 D1 資料庫並獲取新 ID
             const result = await db.prepare("INSERT INTO MessageDrafts (title, content) VALUES (?, ?) RETURNING *")
                                    .bind(title, content).first();
 
-            // 2. 背景同步到 Google Sheet
             context.waitUntil(
                 getSheet(env, DRAFTS_SHEET_NAME)
                     .then(sheet => sheet.addRow(result))
@@ -66,18 +67,23 @@ export async function onRequest(context) {
             return new Response(JSON.stringify(result), { status: 201 });
         }
 
-        // 處理 PUT 請求：更新一則草稿
         if (request.method === 'PUT') {
             const { draft_id, title, content } = await request.json();
-            if (!draft_id || !title || !content) {
-                return new Response(JSON.stringify({ error: 'ID、標題和內容為必填欄位。' }), { status: 400 });
+            // --- 【驗證】 ---
+            if (!draft_id || !Number.isInteger(draft_id)) {
+                 return new Response(JSON.stringify({ error: '無效的草稿 ID。' }), { status: 400 });
             }
+            if (!title || typeof title !== 'string' || title.trim().length === 0 || title.length > 100) {
+                return new Response(JSON.stringify({ error: '標題為必填，且長度不可超過 100 字。' }), { status: 400 });
+            }
+            if (!content || typeof content !== 'string' || content.trim().length === 0 || content.length > 1000) {
+                return new Response(JSON.stringify({ error: '內容為必填，且長度不可超過 1000 字。' }), { status: 400 });
+            }
+            // --- 【驗證結束】 ---
 
-            // 1. 更新 D1 資料庫
             await db.prepare("UPDATE MessageDrafts SET title = ?, content = ? WHERE draft_id = ?")
                     .bind(title, content, draft_id).run();
 
-            // 2. 背景同步更新 Google Sheet
             context.waitUntil(
                 getSheet(env, DRAFTS_SHEET_NAME).then(async sheet => {
                     const rows = await sheet.getRows();
@@ -92,17 +98,16 @@ export async function onRequest(context) {
             return new Response(JSON.stringify({ success: true }), { status: 200 });
         }
 
-        // 處理 DELETE 請求：刪除一則草稿
         if (request.method === 'DELETE') {
             const { draft_id } = await request.json();
-            if (!draft_id) {
-                return new Response(JSON.stringify({ error: '缺少草稿 ID。' }), { status: 400 });
+            // --- 【驗證】 ---
+            if (!draft_id || !Number.isInteger(draft_id)) {
+                return new Response(JSON.stringify({ error: '缺少有效的草稿 ID。' }), { status: 400 });
             }
+            // --- 【驗證結束】 ---
 
-            // 1. 從 D1 資料庫刪除
             await db.prepare("DELETE FROM MessageDrafts WHERE draft_id = ?").bind(draft_id).run();
 
-            // 2. 背景同步從 Google Sheet 刪除
             context.waitUntil(
                 getSheet(env, DRAFTS_SHEET_NAME).then(async sheet => {
                     const rows = await sheet.getRows();
