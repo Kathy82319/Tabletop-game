@@ -92,9 +92,7 @@ export async function onRequest(context) {
     const currentBooking = await checkStmt.bind(bookingDate).first();
     const tablesAlreadyBooked = currentBooking.total_tables_booked || 0;
 
-    // if ((tablesAlreadyBooked + tablesNeeded) > dailyLimit) { // 若您有每日上限功能，請取消註解此區塊
-    //   return new Response(JSON.stringify({ error: `抱歉，${bookingDate} 當日剩餘桌數不足以容納您的預約。` }), { status: 409 });
-    // }
+
 
     const insertStmt = db.prepare(
       'INSERT INTO Bookings (user_id, contact_name, contact_phone, booking_date, time_slot, num_of_people, tables_occupied) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -110,7 +108,7 @@ export async function onRequest(context) {
         );
     }
 
-    const message = `🎉 預約成功！\n\n` + `姓名：${contactName}\n電話：${contactPhone}\n` + `日期：${bookingDate}\n時段：${timeSlot}\n` + `人數：${numOfPeople} 人 (預計 ${tablesNeeded} 桌)\n\n` + `感謝您的預約，我們到時見！`;
+    const message = `🎉 預約成功！\n\n` + `姓名：${contactName}\n電話：${contactPhone}\n` + `日期：${bookingDate}\n時段：${timeSlot}\n` + `人數：${numOfPeople} 人 \n\n` + `感謝您的預約，我們到時見！`;
 
     return new Response(JSON.stringify({ success: true, message: '預約成功！', confirmationMessage: message }), { status: 201 });
   } catch (error) {

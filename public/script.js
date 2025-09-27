@@ -961,7 +961,7 @@ function renderGames() {
                 }
                 const tablesNeeded = Math.ceil(bookingData.people / PEOPLE_PER_TABLE);
                 if (tablesNeeded > dailyAvailability.available) {
-                    alert(`抱歉，座位不足！您需要 ${tablesNeeded} 桌，但當日僅剩 ${dailyAvailability.available} 桌可預約。`);
+                    alert(`抱歉，線上預訂的座位不足！建議您直接傳訊跟我們確認當日桌數哦。(⁰▿⁰)`);
                     return;
                 }
                 renderSummary();
