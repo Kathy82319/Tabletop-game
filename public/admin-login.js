@@ -144,6 +144,29 @@ async function initializeAdminPanel() {
     }
 
 
+//讓日曆和列表都能使用預訂
+const handleStatusUpdate = async (id, newStatus, confirmMsg, successMsg, errorMsg) => {
+    const booking = allBookings.find(b => b.booking_id == id);
+    if (!booking) return;
+    if (confirm(confirmMsg)) {
+         try {
+            const response = await fetch('/api/update-booking-status', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookingId: Number(id), status: newStatus })
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || errorMsg);
+            alert(successMsg);
+            
+            // 更新前端資料狀態並重新渲染
+            booking.status = newStatus;
+            renderBookingList(allBookings); // 重新渲染列表
+            updateCalendar(); // 重新渲染日曆
+        } catch (error) { alert(`錯誤：${error.message}`); }
+    }
+};
+
+
 //手動建立訂單的
 if (createBookingBtn) {
     createBookingBtn.addEventListener('click', openCreateBookingModal);
@@ -417,19 +440,28 @@ function renderCalendar(year, month) {
 
         const bookingsForDay = allBookings.filter(b => b.booking_date === dateStr);
         
-        // 【核心修改】為每個預約建立包含按鈕的 HTML 結構
         bookingsForDay.forEach(booking => {
             const bookingEl = document.createElement('div');
             bookingEl.className = 'calendar-booking';
-            
+            // 【核心修改 1】根據預約狀態，新增對應的 class
+            bookingEl.classList.add(`status-${booking.status}`);
+
             const infoSpan = document.createElement('span');
             infoSpan.className = 'calendar-booking-info';
-            infoSpan.textContent = `${booking.time_slot} ${booking.contact_name}`;
+            
+            // 【核心修改 2】根據狀態顯示不同文字
+            let displayText = `${booking.time_slot} ${booking.contact_name}`;
+            if (booking.status === 'checked-in') {
+                displayText += ' (已報到)';
+            } else if (booking.status === 'cancelled') {
+                displayText += ' (已取消)';
+            }
+            infoSpan.textContent = displayText;
             
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'calendar-booking-actions';
             
-            // 只有在 'confirmed' 狀態下，按鈕才可用
+            // 【核心修改 3】只有在 'confirmed' 狀態下才顯示按鈕
             if (booking.status === 'confirmed') {
                 const checkInBtn = document.createElement('button');
                 checkInBtn.className = 'btn-check-in';
@@ -2263,31 +2295,11 @@ async function fetchAllBookings(status = 'all_upcoming') { // 預設獲取所有
     }
 
 
-
-// REPLACE THIS EVENT LISTENER
 if(bookingListTbody){
     bookingListTbody.addEventListener('click', async (event) => {
         const target = event.target;
         const bookingId = target.dataset.bookingid;
         if (!bookingId) return;
-
-        const handleStatusUpdate = async (id, newStatus, confirmMsg, successMsg, errorMsg) => {
-            const booking = allBookings.find(b => b.booking_id == id);
-            if (!booking) return;
-            if (confirm(confirmMsg)) {
-                 try {
-                    const response = await fetch('/api/update-booking-status', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ bookingId: Number(id), status: newStatus })
-                    });
-                    const result = await response.json();
-                    if (!response.ok) throw new Error(result.error || errorMsg);
-                    alert(successMsg);
-                    booking.status = newStatus;
-                    renderBookingList(allBookings);
-                } catch (error) { alert(`錯誤：${error.message}`); }
-            }
-        };
 
         if (target.classList.contains('btn-check-in')) {
             const booking = allBookings.find(b => b.booking_id == bookingId);
@@ -2296,7 +2308,6 @@ if(bookingListTbody){
                 '報到成功！', '報到失敗');
         }
         
-        // ** 需求 3 修改：取消按鈕的邏輯 **
         if (target.classList.contains('btn-cancel-booking')) {
             const booking = allBookings.find(b => b.booking_id == bookingId);
             openCancelBookingModal(booking);

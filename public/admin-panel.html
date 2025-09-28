@@ -46,21 +46,32 @@
 .day-number { font-weight: bold; }
 .day-other-month .day-number { color: #ccc; }
 .calendar-booking {
-    font-size: 0.8rem; /* 稍微調整字體大小 */
+    font-size: 0.8rem;
     padding: 5px;
     margin-top: 5px;
     border-radius: 4px;
     background-color: var(--info-color);
     color: white;
-    /* 【新增】從單行文字變為 flex 容器，為按鈕佈局做準備 */
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 5px;
+    transition: background-color 0.3s, opacity 0.3s; /* 新增過渡效果 */
+}
+/* 【新增】已報到狀態的樣式 */
+.calendar-booking.status-checked-in {
+    background-color: var(--secondary-color); /* 灰色 */
+    opacity: 0.7;
+}
+
+/* 【新增】已取消狀態的樣式 */
+.calendar-booking.status-cancelled {
+    background-color: var(--danger-color); /* 紅色 */
+    opacity: 0.6;
+    text-decoration: line-through; /* 加上刪除線 */
 }
 
 .calendar-booking-info {
-    /* 【新增】讓文字部分自動延伸，並處理長文字溢出 */
     flex-grow: 1;
     white-space: nowrap;
     overflow: hidden;
