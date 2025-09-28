@@ -20,7 +20,7 @@ export async function onRequest(context) {
         const db = context.env.DB;
 
         const insertStmt = db.prepare(
-            'INSERT INTO Bookings (user_id, contact_name, contact_phone, booking_date, time_slot, num_of_people, item) VALUES (?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO Bookings (user_id, contact_name, contact_phone, booking_date, time_slot, num_of_people,tables_occupied,booking_preference,status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
         );
         await insertStmt.bind(
             userId, contactName, contactPhone, bookingDate, 

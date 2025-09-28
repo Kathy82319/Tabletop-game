@@ -244,7 +244,7 @@ function openCreateBookingModal() {
     // 產生時間選項
     const slotSelect = document.getElementById('booking-slot-select');
     slotSelect.innerHTML = '<option value="">-- 請選擇 --</option>';
-    for (let hour = 8; hour <= 18; hour++) {
+    for (let hour = 11; hour <= 21; hour++) {
         const timeString = `${hour.toString().padStart(2, '0')}:00`;
         const option = document.createElement('option');
         option.value = timeString;
