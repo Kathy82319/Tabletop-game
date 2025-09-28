@@ -1,5 +1,5 @@
 // functions/api/admin/create-booking.js
-
+//要去資料庫放寬user_id要求必定寫入的條件
 export async function onRequest(context) {
     try {
         if (context.request.method !== 'POST') {
