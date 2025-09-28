@@ -196,6 +196,7 @@ if (createBookingModal) {
                 nameInput.readOnly = true; // 不允許手動輸入
                 phoneInput.readOnly = true;
             }
+            }
     });
 }
 
