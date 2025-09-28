@@ -8,27 +8,31 @@ export async function onRequest(context) {
 
         const body = await context.request.json();
         const {
-            userId, bookingDate, timeSlot, contactName,
-            contactPhone, numOfPeople, item
+            userId, // userId 仍然會被接收，可能是會員ID，也可能是 null
+            bookingDate,
+            timeSlot,
+            contactName,
+            contactPhone,
+            numOfPeople,
+            item
         } = body;
 
-        // 後端嚴格驗證
-        if (!userId || !bookingDate || !timeSlot || !contactName || !contactPhone || !numOfPeople) {
-            return new Response(JSON.stringify({ error: '所有必填欄位皆不可為空' }), { status: 400 });
+        // 【核心修正】後端驗證移除了對 !userId 的檢查
+        if (!bookingDate || !timeSlot || !contactName || !contactPhone || !numOfPeople) {
+            return new Response(JSON.stringify({ error: '除了會員外，所有必填欄位皆不可為空' }), { status: 400 });
         }
 
         const db = context.env.DB;
-        const PEOPLE_PER_TABLE = 4; // 您可以根據需求調整每桌人數
+        const PEOPLE_PER_TABLE = 4;
         const tablesNeeded = Math.ceil(Number(numOfPeople) / PEOPLE_PER_TABLE);
 
-        // 【核心修正】修正 INSERT 語句，確保欄位與數值數量一致
         const stmt = db.prepare(
             `INSERT INTO Bookings (user_id, contact_name, contact_phone, booking_date, time_slot, num_of_people, tables_occupied, booking_preference, status) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')`
         );
         
         await stmt.bind(
-            userId, 
+            userId, // 此處的 userId 可以是 null，D1 資料庫會正確處理
             contactName, 
             contactPhone, 
             bookingDate, 
