@@ -229,6 +229,29 @@ if (calendarNextMonthBtn) {
         userDetailsModal.querySelector('.modal-close').addEventListener('click', () => userDetailsModal.style.display = 'none');
         }    
 
+    if (calendarGrid) {
+        calendarGrid.addEventListener('click', async (event) => {
+            const target = event.target;
+            const bookingId = target.dataset.bookingid;
+            if (!bookingId) return;
+
+            // 尋找被點擊的 booking 物件
+            const booking = allBookings.find(b => b.booking_id == bookingId);
+            if (!booking) return;
+
+            // 重複利用列表視圖的現有邏輯
+            if (target.classList.contains('btn-check-in')) {
+                await handleStatusUpdate(bookingId, 'checked-in', 
+                    `確定要將 ${booking.booking_date} ${booking.contact_name} 的預約標示為「已報到」嗎？`,
+                    '報到成功！', '報到失敗');
+            }
+            
+            if (target.classList.contains('btn-cancel-booking')) {
+                openCancelBookingModal(booking);
+            }
+        });
+    }
+        
 
 //手動建立預約訂單
 function openCreateBookingModal() {
@@ -352,7 +375,9 @@ async function handleCreateBookingSubmit(e) {
             const pageId = event.target.getAttribute('href').substring(1);
             showPage(pageId);
         }
-    });
+    }
+);
+
 
 
 //預訂畫面的日曆顯示
@@ -390,12 +415,40 @@ function renderCalendar(year, month) {
         dayNumber.textContent = day;
         dayCell.appendChild(dayNumber);
 
-        // 篩選出當天的預約
         const bookingsForDay = allBookings.filter(b => b.booking_date === dateStr);
+        
+        // 【核心修改】為每個預約建立包含按鈕的 HTML 結構
         bookingsForDay.forEach(booking => {
             const bookingEl = document.createElement('div');
             bookingEl.className = 'calendar-booking';
-            bookingEl.textContent = `${booking.time_slot} ${booking.contact_name}`;
+            
+            const infoSpan = document.createElement('span');
+            infoSpan.className = 'calendar-booking-info';
+            infoSpan.textContent = `${booking.time_slot} ${booking.contact_name}`;
+            
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'calendar-booking-actions';
+            
+            // 只有在 'confirmed' 狀態下，按鈕才可用
+            if (booking.status === 'confirmed') {
+                const checkInBtn = document.createElement('button');
+                checkInBtn.className = 'btn-check-in';
+                checkInBtn.textContent = '✓';
+                checkInBtn.title = '報到';
+                checkInBtn.dataset.bookingid = booking.booking_id;
+                
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'btn-cancel-booking';
+                cancelBtn.textContent = '✕';
+                cancelBtn.title = '取消';
+                cancelBtn.dataset.bookingid = booking.booking_id;
+                
+                actionsDiv.appendChild(checkInBtn);
+                actionsDiv.appendChild(cancelBtn);
+            }
+            
+            bookingEl.appendChild(infoSpan);
+            bookingEl.appendChild(actionsDiv);
             dayCell.appendChild(bookingEl);
         });
         calendarGrid.appendChild(dayCell);
