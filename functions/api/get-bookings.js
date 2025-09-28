@@ -9,16 +9,17 @@ export async function onRequest(context) {
     const { request, env } = context;
     const db = env.DB;
     const url = new URL(request.url);
-    const statusFilter = url.searchParams.get('status'); // 獲取 URL 中的 status 參數
+    const statusFilter = url.searchParams.get('status');
 
     let query = "SELECT * FROM Bookings";
     const queryParams = [];
     const conditions = [];
 
-    // 根據收到的 statusFilter 動態建立 SQL 查詢條件
     if (statusFilter) {
-        // 特別處理 "today" 篩選條件
-        if (statusFilter === 'today') {
+        // 【核心修正】新增對 'all_upcoming' 的處理
+        if (statusFilter === 'all_upcoming') {
+            conditions.push("booking_date >= date('now', 'localtime')");
+        } else if (statusFilter === 'today') {
             conditions.push("booking_date = date('now', 'localtime')");
             conditions.push("status IN ('confirmed', 'checked-in')");
         } else {
@@ -26,7 +27,7 @@ export async function onRequest(context) {
             queryParams.push(statusFilter);
         }
     } else {
-        // 如果沒有任何篩選條件，預設只顯示今天及未來的已確認預約
+        // 預設情況（例如從 LIFF 前端直接呼叫時）保持不變
         conditions.push("booking_date >= date('now', 'localtime')");
         conditions.push("status = 'confirmed'");
     }
@@ -35,7 +36,6 @@ export async function onRequest(context) {
         query += " WHERE " + conditions.join(" AND ");
     }
     
-    // 預設排序方式
     query += " ORDER BY booking_date DESC, time_slot ASC";
 
     const stmt = db.prepare(query).bind(...queryParams);
