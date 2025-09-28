@@ -1,4 +1,4 @@
-// functions/api/admin/create-booking.js (手動建立訂單)
+// functions/api/admin/create-booking.js
 
 export async function onRequest(context) {
     try {
@@ -8,7 +8,7 @@ export async function onRequest(context) {
 
         const body = await context.request.json();
         const {
-            userId, bookingDate, timeSlot, contactName, 
+            userId, bookingDate, timeSlot, contactName,
             contactPhone, numOfPeople, item
         } = body;
 
@@ -18,13 +18,24 @@ export async function onRequest(context) {
         }
 
         const db = context.env.DB;
+        const PEOPLE_PER_TABLE = 4; // 您可以根據需求調整每桌人數
+        const tablesNeeded = Math.ceil(Number(numOfPeople) / PEOPLE_PER_TABLE);
 
-        const insertStmt = db.prepare(
-            'INSERT INTO Bookings (user_id, contact_name, contact_phone, booking_date, time_slot, num_of_people,tables_occupied,booking_preference,status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        // 【核心修正】修正 INSERT 語句，確保欄位與數值數量一致
+        const stmt = db.prepare(
+            `INSERT INTO Bookings (user_id, contact_name, contact_phone, booking_date, time_slot, num_of_people, tables_occupied, booking_preference, status) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')`
         );
-        await insertStmt.bind(
-            userId, contactName, contactPhone, bookingDate, 
-            timeSlot, Number(numOfPeople), item || null
+        
+        await stmt.bind(
+            userId, 
+            contactName, 
+            contactPhone, 
+            bookingDate, 
+            timeSlot, 
+            Number(numOfPeople), 
+            tablesNeeded,
+            item || null
         ).run();
         
         return new Response(JSON.stringify({ success: true, message: '預約已成功建立' }), {

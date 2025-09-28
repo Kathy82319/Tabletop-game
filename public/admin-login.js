@@ -2671,7 +2671,7 @@ async function fetchAllExpHistory() {
 
     // 【修改點 6】使用 await 等待 initialize() 完成所有非同步任務
     await initialize();
-    // 【修改點 7】在所有東西都準備好之後，最後才呼叫 showPage('dashboard')
+    await fetchAllUsers();
     showPage('dashboard'); 
     }
 });
