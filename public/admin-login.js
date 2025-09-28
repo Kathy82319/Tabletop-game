@@ -23,62 +23,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function initializeAdminPanel() {
 
-
-//手動建立訂單的
-if (createBookingBtn) {
-    createBookingBtn.addEventListener('click', openCreateBookingModal);
-}
-if (createBookingModal) {
-    createBookingModal.querySelector('.modal-close').addEventListener('click', () => createBookingModal.style.display = 'none');
-    createBookingModal.querySelector('.btn-cancel').addEventListener('click', () => createBookingModal.style.display = 'none');
-
-    document.getElementById('booking-user-search').addEventListener('input', (e) => handleAdminUserSearch(e.target.value.toLowerCase().trim()));
-
-    document.getElementById('booking-user-select').addEventListener('change', (e) => {
-        const selectedUser = allUsers.find(user => user.user_id === e.target.value);
-        if (selectedUser) {
-            document.getElementById('booking-name-input').value = selectedUser.nickname || selectedUser.line_display_name;
-            document.getElementById('booking-phone-input').value = selectedUser.phone || '';
-        }
-    });
-}
-
-//切換日曆的
-if (createBookingForm) {
-    createBookingForm.addEventListener('submit', handleCreateBookingSubmit);
-}    
-
-if (switchToCalendarViewBtn) {
-    switchToCalendarViewBtn.addEventListener('click', () => {
-        const isCalendarVisible = calendarViewContainer.style.display !== 'none';
-        if (isCalendarVisible) {
-            calendarViewContainer.style.display = 'none';
-            listViewContainer.style.display = 'block';
-            switchToCalendarViewBtn.textContent = '切換至行事曆';
-        } else {
-            calendarViewContainer.style.display = 'block';
-            listViewContainer.style.display = 'none';
-            switchToCalendarViewBtn.textContent = '切換回列表';
-            fetchAllBookings('all_upcoming'); // 確保日曆有完整資料
-        }
-    });
-}
-
-if (calendarPrevMonthBtn) {
-    calendarPrevMonthBtn.addEventListener('click', () => {
-        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
-        updateCalendar();
-    });
-}
-
-if (calendarNextMonthBtn) {
-    calendarNextMonthBtn.addEventListener('click', () => {
-        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
-        updateCalendar();
-    });
-}
-
-    
     // --- 【模組名稱：全域變數與 DOM 宣告】 ---
     const mainNav = document.querySelector('.nav-tabs');
     const pages = document.querySelectorAll('.page');
@@ -198,6 +142,61 @@ if (calendarNextMonthBtn) {
             }
         });
     }
+
+
+//手動建立訂單的
+if (createBookingBtn) {
+    createBookingBtn.addEventListener('click', openCreateBookingModal);
+}
+if (createBookingModal) {
+    createBookingModal.querySelector('.modal-close').addEventListener('click', () => createBookingModal.style.display = 'none');
+    createBookingModal.querySelector('.btn-cancel').addEventListener('click', () => createBookingModal.style.display = 'none');
+
+    document.getElementById('booking-user-search').addEventListener('input', (e) => handleAdminUserSearch(e.target.value.toLowerCase().trim()));
+
+    document.getElementById('booking-user-select').addEventListener('change', (e) => {
+        const selectedUser = allUsers.find(user => user.user_id === e.target.value);
+        if (selectedUser) {
+            document.getElementById('booking-name-input').value = selectedUser.nickname || selectedUser.line_display_name;
+            document.getElementById('booking-phone-input').value = selectedUser.phone || '';
+        }
+    });
+}
+
+//切換日曆的
+if (createBookingForm) {
+    createBookingForm.addEventListener('submit', handleCreateBookingSubmit);
+}    
+
+if (switchToCalendarViewBtn) {
+    switchToCalendarViewBtn.addEventListener('click', () => {
+        const isCalendarVisible = calendarViewContainer.style.display !== 'none';
+        if (isCalendarVisible) {
+            calendarViewContainer.style.display = 'none';
+            listViewContainer.style.display = 'block';
+            switchToCalendarViewBtn.textContent = '切換至行事曆';
+        } else {
+            calendarViewContainer.style.display = 'block';
+            listViewContainer.style.display = 'none';
+            switchToCalendarViewBtn.textContent = '切換回列表';
+            fetchAllBookings('all_upcoming'); // 確保日曆有完整資料
+        }
+    });
+}
+
+if (calendarPrevMonthBtn) {
+    calendarPrevMonthBtn.addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+        updateCalendar();
+    });
+}
+
+if (calendarNextMonthBtn) {
+    calendarNextMonthBtn.addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+        updateCalendar();
+    });
+}
 
     //--- 【模組名稱：手動同步訂位紀錄】 ---
     const fullSyncBookingsBtn = document.getElementById('full-sync-bookings-btn');
