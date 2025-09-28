@@ -178,13 +178,27 @@ if (createBookingModal) {
     document.getElementById('booking-user-search').addEventListener('input', (e) => handleAdminUserSearch(e.target.value.toLowerCase().trim()));
 
     document.getElementById('booking-user-select').addEventListener('change', (e) => {
-        const selectedUser = allUsers.find(user => user.user_id === e.target.value);
-        if (selectedUser) {
-            document.getElementById('booking-name-input').value = selectedUser.nickname || selectedUser.line_display_name;
-            document.getElementById('booking-phone-input').value = selectedUser.phone || '';
+        const nameInput = document.getElementById('booking-name-input');
+        const phoneInput = document.getElementById('booking-phone-input');
+
+        if (e.target.value === 'add_new_guest') {
+            // 【核心修改】如果選擇了"新增非會員"
+            nameInput.value = ''; // 清空姓名以便手動輸入
+            phoneInput.value = ''; // 清空電話以便手動輸入
+            nameInput.readOnly = false; // 允許手動輸入
+            phoneInput.readOnly = false;
+            nameInput.focus(); // 讓使用者可以直接開始打字
+        } else {
+            // 如果選擇的是一般會員
+            const selectedUser = allUsers.find(user => user.user_id === e.target.value);
+            if (selectedUser) {
+                nameInput.value = selectedUser.nickname || selectedUser.line_display_name;
+                phoneInput.value = selectedUser.phone || '';
+                nameInput.readOnly = true; // 不允許手動輸入
+                phoneInput.readOnly = true;
+            }
         }
     });
-}
 
 //切換日曆的
 if (createBookingForm) {
@@ -321,22 +335,38 @@ function handleAdminUserSearch(searchTerm) {
         const option = new Option(`${displayName} (${user.user_id.substring(0, 10)}...)`, user.user_id);
         userSelect.appendChild(option);
     });
+
+    // 【核心修改】在所有搜尋結果後面，加上"新增非會員"的選項
+    const guestOption = new Option('-- 新增非會員預約 --', 'add_new_guest');
+    userSelect.appendChild(guestOption);
+
     userSelect.style.display = 'block';
 }
 
 async function handleCreateBookingSubmit(e) {
     e.preventDefault();
-    const selectedUserId = document.getElementById('booking-user-select').value;
-    if (!selectedUserId) {
-        alert('請務必從搜尋結果中選擇一位會員！');
-        return;
+    
+    const selectedValue = document.getElementById('booking-user-select').value;
+    const contactName = document.getElementById('booking-name-input').value;
+    
+    let userId = null;
+
+    // 【核心修改】根據下拉選單的值來決定 userId
+    if (selectedValue && selectedValue !== 'add_new_guest') {
+        userId = selectedValue;
+    } else if (!selectedValue || selectedValue === 'add_new_guest') {
+        if (!contactName.trim()) {
+            alert('非會員預約請務必手動填寫聯絡姓名！');
+            return;
+        }
+        userId = null; // 確認 userId 為 null
     }
 
     const bookingData = {
-        userId: selectedUserId,
+        userId: userId,
         bookingDate: document.getElementById('booking-date-input').value,
         timeSlot: document.getElementById('booking-slot-select').value,
-        contactName: document.getElementById('booking-name-input').value,
+        contactName: contactName,
         contactPhone: document.getElementById('booking-phone-input').value,
         numOfPeople: document.getElementById('booking-people-input').value,
         item: document.getElementById('booking-item-input').value
@@ -353,7 +383,7 @@ async function handleCreateBookingSubmit(e) {
 
         alert('預約建立成功！');
         createBookingModal.style.display = 'none';
-        await fetchAllBookings(); // 重新載入列表
+        await fetchAllBookings('all_upcoming');
 
     } catch (error) {
         alert(`錯誤：${error.message}`);
