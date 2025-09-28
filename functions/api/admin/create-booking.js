@@ -23,7 +23,7 @@ export async function onRequest(context) {
         }
 
         const db = context.env.DB;
-        const PEOPLE_PER_TABLE = 4;
+        const PEOPLE_PER_TABLE = 4; // 您可以根據需求調整每桌人數
         const tablesNeeded = Math.ceil(Number(numOfPeople) / PEOPLE_PER_TABLE);
 
         // 【核心修正】修正 INSERT 語句，確保欄位與數值數量完全一致
@@ -34,7 +34,7 @@ export async function onRequest(context) {
         );
         
         await stmt.bind(
-            userId, // 如果是 null，資料庫會直接存入 NULL
+            userId, // 此處的 userId 可以是 null，資料庫會正確處理
             contactName, 
             contactPhone, 
             bookingDate, 
