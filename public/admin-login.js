@@ -180,7 +180,6 @@ if (createBookingModal) {
     document.getElementById('booking-user-select').addEventListener('change', (e) => {
         const nameInput = document.getElementById('booking-name-input');
         const phoneInput = document.getElementById('booking-phone-input');
-
         if (e.target.value === 'add_new_guest') {
             // 【核心修改】如果選擇了"新增非會員"
             nameInput.value = ''; // 清空姓名以便手動輸入
@@ -197,8 +196,8 @@ if (createBookingModal) {
                 nameInput.readOnly = true; // 不允許手動輸入
                 phoneInput.readOnly = true;
             }
-        }
     });
+}
 
 //切換日曆的
 if (createBookingForm) {
