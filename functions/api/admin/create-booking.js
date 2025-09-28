@@ -8,7 +8,7 @@ export async function onRequest(context) {
 
         const body = await context.request.json();
         const {
-            userId, // userId 仍然會被接收，可能是會員ID，也可能是 null
+            userId, // 接收 userId，可能是會員ID，也可能是 null
             bookingDate,
             timeSlot,
             contactName,
@@ -17,7 +17,7 @@ export async function onRequest(context) {
             item
         } = body;
 
-        // 【核心修正】後端驗證移除了對 !userId 的檢查
+        // 後端驗證，userId 現在是可選的
         if (!bookingDate || !timeSlot || !contactName || !contactPhone || !numOfPeople) {
             return new Response(JSON.stringify({ error: '除了會員外，所有必填欄位皆不可為空' }), { status: 400 });
         }
@@ -26,13 +26,15 @@ export async function onRequest(context) {
         const PEOPLE_PER_TABLE = 4;
         const tablesNeeded = Math.ceil(Number(numOfPeople) / PEOPLE_PER_TABLE);
 
+        // 【核心修正】修正 INSERT 語句，確保欄位與數值數量完全一致
+        // 我們明確指定要插入的 9 個欄位，並提供 8 個變數 + 1 個預設值 'confirmed'
         const stmt = db.prepare(
             `INSERT INTO Bookings (user_id, contact_name, contact_phone, booking_date, time_slot, num_of_people, tables_occupied, booking_preference, status) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')`
         );
         
         await stmt.bind(
-            userId, // 此處的 userId 可以是 null，D1 資料庫會正確處理
+            userId, // 如果是 null，資料庫會直接存入 NULL
             contactName, 
             contactPhone, 
             bookingDate, 
