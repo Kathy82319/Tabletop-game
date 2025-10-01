@@ -1439,6 +1439,9 @@ if (inventoryVisibilityFilter) {
     });
 }
 
+
+
+
 if (syncGamesBtn) {
     syncGamesBtn.addEventListener('click', async () => {
         if (!confirm('確定要從 Google Sheet 同步所有桌遊資料到資料庫嗎？\n\n這將會用 Sheet 上的資料覆蓋現有資料。')) return;
@@ -1446,7 +1449,8 @@ if (syncGamesBtn) {
         try {
             syncGamesBtn.textContent = '同步中...';
             syncGamesBtn.disabled = true;
-            const response = await fetch('/api/get-boardgames', { method: 'POST' });
+            // 【** 關鍵修改 **】將 API 端點指向新的、受保護的路由
+            const response = await fetch('/api/admin/sync-boardgames-from-sheet', { method: 'POST' });
             const result = await response.json();
             if (!response.ok) {
                 throw new Error(result.details || '同步失敗');
@@ -1461,7 +1465,6 @@ if (syncGamesBtn) {
         }
     });
 }
-
 
 if (gameListTbody) {
     gameListTbody.addEventListener('click', (e) => {
