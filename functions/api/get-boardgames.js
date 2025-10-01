@@ -13,27 +13,30 @@ async function getAccessToken(env) {
       .setIssuedAt().setExpirationTime('1h').sign(privateKey);
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type-jwt-bearer', assertion: jwt }),
+      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt }),
     });
     const tokenData = await tokenResponse.json();
     if (!tokenResponse.ok) throw new Error(`從 Google 取得 access token 失敗: ${tokenData.error_description || tokenData.error}`);
     return tokenData.access_token;
 }
 
-async function getBoardGamesFromSheet(env) {
-    const { GOOGLE_SHEET_ID, BOARDGAMES_SHEET_NAME } = env;
-    if (!GOOGLE_SHEET_ID || !BOARDGAMES_SHEET_NAME) throw new Error('缺少 GOOGLE_SHEET_ID 或 BOARDGAMES_SHEET_NAME 環境變數。');
-
+async function updateRowInSheet(env, sheetName, matchColumn, matchValue, updateData) {
+    const { GOOGLE_SHEET_ID } = env;
+    if (!GOOGLE_SHEET_ID) throw new Error('缺少 GOOGLE_SHEET_ID 環境變數。');
     const accessToken = await getAccessToken(env);
     const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
-    
     const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
     await doc.loadInfo();
-    
-    const sheet = doc.sheetsByTitle[BOARDGAMES_SHEET_NAME];
-    if (!sheet) throw new Error(`在 Google Sheets 中找不到名為 "${BOARDGAMES_SHEET_NAME}" 的工作表。`);
-
-    return await sheet.getRows();
+    const sheet = doc.sheetsByTitle[sheetName];
+    if (!sheet) throw new Error(`在 Google Sheets 中找不到名為 "${sheetName}" 的工作表。`);
+    const rows = await sheet.getRows();
+    const rowToUpdate = rows.find(row => row.get(matchColumn) == matchValue);
+    if (rowToUpdate) {
+        rowToUpdate.assign(updateData);
+        await rowToUpdate.save();
+    } else {
+        console.warn(`在工作表 "${sheetName}" 中找不到 ${matchColumn} 為 "${matchValue}" 的資料列，無法更新。`);
+    }
 }
 
 // --- 同步邏輯 ---
