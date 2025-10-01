@@ -1141,20 +1141,38 @@ async function initializeBookingPage() {
     // =================================================================
     // 店家資訊頁
     // =================================================================
-    async function initializeInfoPage() {
-        try {
-            const response = await fetch('/api/get-store-info');
-            if (!response.ok) throw new Error('無法獲取店家資訊');
-            const info = await response.json();
-            document.getElementById('store-address').textContent = info.address;
-            document.getElementById('store-phone').textContent = info.phone;
-            document.getElementById('store-hours').innerHTML = info.opening_hours.replace(/\n/g, '<br>');
-            document.getElementById('store-description').innerHTML = info.description.replace(/\n/g, '<br>');
-        } catch (error) {
-             document.getElementById('store-info-container').innerHTML = `<p style="color:red;">${error.message}</p>`;
-        }
-    }
+async function initializeInfoPage() {
+    try {
+        const response = await fetch('/api/get-store-info');
+        if (!response.ok) throw new Error('無法獲取店家資訊');
+        const info = await response.json();
 
+        // --- 【修改後的邏輯】 ---
+        const addressText = info.address;
+        const addressSpan = document.getElementById('store-address');
+        const addressLink = document.getElementById('store-address-link');
+
+        // 1. 填上地址文字
+        if (addressSpan) {
+            addressSpan.textContent = addressText;
+        }
+
+        // 2. 產生並設定Google地圖連結
+        if (addressLink) {
+            // 使用 encodeURIComponent 將地址轉換成安全的 URL 格式
+            const encodedAddress = encodeURIComponent(addressText);
+            addressLink.href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+        }
+        // --- 【修改結束】 ---
+
+        document.getElementById('store-phone').textContent = info.phone;
+        document.getElementById('store-hours').innerHTML = info.opening_hours.replace(/\n/g, '<br>');
+        document.getElementById('store-description').innerHTML = info.description.replace(/\n/g, '<br>');
+    } catch (error) {
+         const container = document.getElementById('store-info-container');
+         if(container) container.innerHTML = `<p style="color:red;">${error.message}</p>`;
+    }
+}
     // =================================================================
     // Tab Bar 主導航
     // =================================================================
