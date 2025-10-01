@@ -918,31 +918,46 @@ function renderGames() {
         return false;
     }
 
-// public/script.js
-    async function initializeBookingPage() {
-        bookingHistoryStack = [];
-        showBookingStep('step-preference');
+async function initializeBookingPage() {
+    bookingHistoryStack = [];
+    showBookingStep('step-preference');
 
-        document.getElementById('view-my-bookings-btn').addEventListener('click', () => {
-            showPage('page-my-bookings');
-        });
+    document.getElementById('view-my-bookings-btn').addEventListener('click', () => {
+        showPage('page-my-bookings');
+    });
 
-        try {
-            // 請求的 API 端點不變，但後端回傳的內容已改變
-            const response = await fetch('/api/bookings-check?month-init=true');
-            const data = await response.json();
-            // 將接收到的資料存到 enabledDatesByAdmin
-            enabledDatesByAdmin = data.enabledDates || []; 
-        } catch (error) {
-            console.error("獲取可預約日期失敗:", error);
-            enabledDatesByAdmin = [];
-        }
+    try {
+        // 【** 步驟 1: 獲取店家資訊 **】
+        const infoResponse = await fetch('/api/get-store-info');
+        if (!infoResponse.ok) throw new Error('無法載入店家設定');
+        const storeInfo = await infoResponse.json();
+        
+        // 【** 步驟 2: 填充文字到對應的 HTML 元素 **】
+        // innerText 會自動處理換行
+        const btnMain = document.getElementById('booking-btn-main-text');
+        const btnSub = document.getElementById('booking-btn-sub-text');
+        const promoText = document.getElementById('booking-promo-text');
+        const noticeText = document.getElementById('booking-notice-text');
 
-        const wizardContainer = document.getElementById('booking-wizard-container');
-        if (wizardContainer) {
-            wizardContainer.addEventListener('click', async (e) => {
-            // ... (原本的 click 事件邏輯不變) ...
-             if (e.target.matches('.back-button')) {
+        if (btnMain) btnMain.innerText = storeInfo.booking_button_main || '一次性入場';
+        if (btnSub) btnSub.innerText = storeInfo.booking_button_sub || '';
+        if (promoText) promoText.innerText = storeInfo.booking_promo_text || '';
+        if (noticeText) noticeText.innerText = storeInfo.booking_notice_text || '';
+
+
+        // 【** 步驟 3: 既有的日期設定邏輯 (保持不變) **】
+        const response = await fetch('/api/bookings-check?month-init=true');
+        const data = await response.json();
+        enabledDatesByAdmin = data.enabledDates || []; 
+    } catch (error) {
+        console.error("初始化預約頁面失敗:", error);
+        // 您可以在此處加入錯誤提示
+    }
+
+    const wizardContainer = document.getElementById('booking-wizard-container');
+    if (wizardContainer) {
+        wizardContainer.addEventListener('click', async (e) => {
+            if (e.target.matches('.back-button')) {
                 goBackBookingStep();
             } else if (e.target.closest('.preference-btn')) {
                 showBookingStep('step-date-and-slots');
@@ -972,53 +987,43 @@ function renderGames() {
         });
     }
 
-    // 【關鍵修改】選取當前頁面上的日曆容器來初始化
-        const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
-        if (datepickerContainer) {
-            // 【** 請用下面的版本完整取代你現有的 flatpickr() 初始化區塊 **】
-            flatpickr(datepickerContainer, {
-                inline: true,
-                minDate: "today",
-                dateFormat: "Y-m-d",
-                locale: "zh_tw",
-                enable: enabledDatesByAdmin,
-                
-                // onChange 事件只會在點擊 "可選取" 日期時觸發，這是正確的
-                onChange: (selectedDates, dateStr) => {
-                    bookingData.date = dateStr;
-                    fetchAndRenderSlots(dateStr);
-                },
-
-                // ** 新增 onClick 事件來處理所有點擊 **
-                // 無論點擊的是否為可選日期，這個事件都會觸發
-                onClick: (selectedDates, dateStr, instance) => {
-                    // 檢查被點擊的日期元素是否包含 'flatpickr-disabled' class
-                    // 我們需要稍微延遲檢查，確保 flatpickr 完成了 class 的更新
-                    setTimeout(() => {
-                        const clickedElement = instance.selectedDateElem;
-                        if (clickedElement && clickedElement.classList.contains('flatpickr-disabled')) {
-                            // 如果是不可選的日期，就重置時段選擇區
-                            const slotsPlaceholder = document.getElementById('slots-placeholder');
-                            const slotsContainer = document.getElementById('booking-slots-container');
-                            if (slotsPlaceholder && slotsContainer) {
-                                slotsPlaceholder.textContent = '此日期未開放預約'; // 給予更明確的提示
-                                slotsPlaceholder.style.display = 'block';
-                                slotsContainer.innerHTML = '';
-                            }
+    const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
+    if (datepickerContainer) {
+        flatpickr(datepickerContainer, {
+            inline: true,
+            minDate: "today",
+            dateFormat: "Y-m-d",
+            locale: "zh_tw",
+            enable: enabledDatesByAdmin,
+            onChange: (selectedDates, dateStr) => {
+                bookingData.date = dateStr;
+                fetchAndRenderSlots(dateStr);
+            },
+            onClick: (selectedDates, dateStr, instance) => {
+                setTimeout(() => {
+                    const clickedElement = instance.selectedDateElem;
+                    if (clickedElement && clickedElement.classList.contains('flatpickr-disabled')) {
+                        const slotsPlaceholder = document.getElementById('slots-placeholder');
+                        const slotsContainer = document.getElementById('booking-slots-container');
+                        if (slotsPlaceholder && slotsContainer) {
+                            slotsPlaceholder.textContent = '此日期未開放預約';
+                            slotsPlaceholder.style.display = 'block';
+                            slotsContainer.innerHTML = '';
                         }
-                    }, 10); // 10毫秒的延遲通常就足夠了
-                }
-            });
-        }
-
-        const userData = await fetchGameData();
-        if (userData) {
-            const nameInput = document.getElementById('contact-name');
-            const phoneInput = document.getElementById('contact-phone');
-            if(nameInput) nameInput.value = userData.real_name || '';
-            if(phoneInput) phoneInput.value = userData.phone || '';
-        }
+                    }
+                }, 10);
+            }
+        });
     }
+
+    const userData = await fetchGameData();
+    if (userData) {
+        const nameInput = document.getElementById('contact-name');
+        const phoneInput = document.getElementById('contact-phone');
+        if(nameInput) nameInput.value = userData.real_name || '';
+        if(phoneInput) phoneInput.value = userData.phone || '';
+    }
+}
 
     async function fetchAndRenderSlots(date) {
         const slotsPlaceholder = document.getElementById('slots-placeholder');

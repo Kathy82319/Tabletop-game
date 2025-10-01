@@ -2720,38 +2720,48 @@ async function fetchAllExpHistory() {
     // =================================================================
     // 店家資訊管理模組
     // =================================================================
-    async function fetchStoreInfo() {
-        try {
-            const response = await fetch('/api/get-store-info');
-            if (!response.ok) throw new Error('無法載入店家資訊');
-            const info = await response.json();
-            document.getElementById('info-address').value = info.address;
-            document.getElementById('info-phone').value = info.phone;
-            document.getElementById('info-hours').value = info.opening_hours;
-            document.getElementById('info-desc').value = info.description;
-        } catch (error) { alert(`錯誤：${error.message}`); }
-    }
+async function fetchStoreInfo() {
+    try {
+        const response = await fetch('/api/get-store-info');
+        if (!response.ok) throw new Error('無法載入店家資訊');
+        const info = await response.json();
+        document.getElementById('info-address').value = info.address;
+        document.getElementById('info-phone').value = info.phone;
+        document.getElementById('info-hours').value = info.opening_hours;
+        document.getElementById('info-desc').value = info.description;
+        // 【** 新增部分 **】
+        document.getElementById('info-booking-main').value = info.booking_button_main || '';
+        document.getElementById('info-booking-sub').value = info.booking_button_sub || '';
+        document.getElementById('info-booking-promo').value = info.booking_promo_text || '';
+        document.getElementById('info-booking-notice').value = info.booking_notice_text || '';
+    } catch (error) { alert(`錯誤：${error.message}`); }
+}
 
-    if(storeInfoForm) {
-        storeInfoForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = {
-                address: document.getElementById('info-address').value,
-                phone: document.getElementById('info-phone').value,
-                opening_hours: document.getElementById('info-hours').value,
-                description: document.getElementById('info-desc').value
-            };
-            try {
-                const response = await fetch('/api/admin/update-store-info', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
-                });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error || '更新失敗');
-                alert('更新成功！');
-            } catch (error) { alert(`錯誤：${error.message}`); }
-        });
-    }
+if(storeInfoForm) {
+    storeInfoForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = {
+            address: document.getElementById('info-address').value,
+            phone: document.getElementById('info-phone').value,
+            opening_hours: document.getElementById('info-hours').value,
+            description: document.getElementById('info-desc').value,
+            // 【** 新增部分 **】
+            booking_button_main: document.getElementById('info-booking-main').value,
+            booking_button_sub: document.getElementById('info-booking-sub').value,
+            booking_promo_text: document.getElementById('info-booking-promo').value,
+            booking_notice_text: document.getElementById('info-booking-notice').value
+        };
+        try {
+            const response = await fetch('/api/admin/update-store-info', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || '更新失敗');
+            alert('更新成功！');
+        } catch (error) { alert(`錯誤：${error.message}`); }
+    });
+}
 
     // ---- 初始化 ----
     async function initialize() {
