@@ -880,46 +880,48 @@ function renderGames() {
             renderGames();
         });
     }
-    // =================================================================
-    // 場地預約頁
-    // =================================================================
-    function showBookingStep(stepId) {
-        document.querySelectorAll('#booking-wizard-container .booking-step').forEach(step => step.classList.remove('active'));
-        const targetStep = document.getElementById(stepId);
-        if (targetStep) targetStep.classList.add('active');
 
-        // ** 新增的關鍵邏輯 **
-        // 當顯示的是「選擇日期」這一步時，強制重置時段區塊的狀態
-        if (stepId === 'step-date-and-slots') {
-            const slotsPlaceholder = document.getElementById('slots-placeholder');
-            const slotsContainer = document.getElementById('booking-slots-container');
-            if (slotsPlaceholder && slotsContainer) {
-                // 恢復提示文字
-                slotsPlaceholder.textContent = '請先從上方選擇日期';
-                // 確保提示文字是可見的
-                slotsPlaceholder.style.display = 'block';
-                // 清空任何可能殘留的時段按鈕
-                slotsContainer.innerHTML = '';
-            }
+// =================================================================
+// 場地預約頁 (從這裡開始取代)
+// =================================================================
+function showBookingStep(stepId, isBackAction = false) {
+    document.querySelectorAll('#booking-wizard-container .booking-step').forEach(step => step.classList.remove('active'));
+    const targetStep = document.getElementById(stepId);
+    if (targetStep) targetStep.classList.add('active');
+
+    // 當顯示的是「選擇日期」這一步時，重置時段區塊
+    if (stepId === 'step-date-and-slots') {
+        const slotsPlaceholder = document.getElementById('slots-placeholder');
+        const slotsContainer = document.getElementById('booking-slots-container');
+        if (slotsPlaceholder && slotsContainer) {
+            slotsPlaceholder.textContent = '請先從上方選擇日期';
+            slotsPlaceholder.style.display = 'block';
+            slotsContainer.innerHTML = '';
         }
-
+    }
+    
+    // 【** 關鍵修正 **】只有在不是返回操作時，才將步驟推入歷史堆疊
+    if (!isBackAction) {
         if(bookingHistoryStack[bookingHistoryStack.length - 1] !== stepId) {
             bookingHistoryStack.push(stepId);
         }
     }
+}
 
-    function goBackBookingStep() {
-        if (bookingHistoryStack.length > 1) {
-            bookingHistoryStack.pop();
-            const lastStep = bookingHistoryStack[bookingHistoryStack.length - 1];
-            showBookingStep(lastStep); // 呼叫我們修改過的新函式
-            return true;
-        }
-        return false;
+function goBackBookingStep() {
+    // 堆疊中至少要有兩個步驟才能返回 (例如：從步驟2回到步驟1)
+    if (bookingHistoryStack.length > 1) {
+        bookingHistoryStack.pop(); // 移除目前步驟
+        const lastStep = bookingHistoryStack[bookingHistoryStack.length - 1]; // 取得上一個步驟
+        showBookingStep(lastStep, true); // 顯示上一個步驟，並標示為返回操作
+        return true; // 表示成功返回
     }
+    // 如果無法返回 (已在第一步)，返回 false
+    return false;
+}
 
 async function initializeBookingPage() {
-    bookingHistoryStack = [];
+    bookingHistoryStack = []; // 每次進入預約頁都重置步驟歷史
     showBookingStep('step-preference');
 
     document.getElementById('view-my-bookings-btn').addEventListener('click', () => {
@@ -931,7 +933,6 @@ async function initializeBookingPage() {
         if (!infoResponse.ok) throw new Error('無法載入店家設定');
         const storeInfo = await infoResponse.json();
         
-        // 【** 修改點 1: 填充新的 HTML 元素 **】
         const announcementBox = document.getElementById('booking-announcement-box');
         const bookingBtn = document.getElementById('go-to-booking-step-btn');
         const promoText = document.getElementById('booking-promo-text');
@@ -949,10 +950,16 @@ async function initializeBookingPage() {
 
     const wizardContainer = document.getElementById('booking-wizard-container');
     if (wizardContainer) {
-        wizardContainer.addEventListener('click', async (e) => {
+        // 【** 關鍵修正 **】確保舊的監聽器被移除，避免重複綁定
+        const newWizardContainer = wizardContainer.cloneNode(true);
+        wizardContainer.parentNode.replaceChild(newWizardContainer, wizardContainer);
+
+        newWizardContainer.addEventListener('click', async (e) => {
+            // 【** 關鍵修正 **】當返回按鈕被點擊
             if (e.target.matches('.back-button')) {
+                // 我們只執行 wizard 內部的返回邏輯
+                // goBackBookingStep() 會處理所有事情
                 goBackBookingStep();
-            // 【** 修改點 2: 將點擊事件綁定到新的按鈕上 **】
             } else if (e.target.closest('#go-to-booking-step-btn')) {
                 showBookingStep('step-date-and-slots');
             } else if (e.target.matches('#to-summary-btn')) {
@@ -1019,119 +1026,118 @@ async function initializeBookingPage() {
     }
 }
 
-    async function fetchAndRenderSlots(date) {
-        const slotsPlaceholder = document.getElementById('slots-placeholder');
-        const slotsContainer = document.getElementById('booking-slots-container');
-        slotsPlaceholder.textContent = '正在查詢當日空位...';
-        slotsContainer.innerHTML = '';
-        slotsPlaceholder.style.display = 'block';
+async function fetchAndRenderSlots(date) {
+    const slotsPlaceholder = document.getElementById('slots-placeholder');
+    const slotsContainer = document.getElementById('booking-slots-container');
+    slotsPlaceholder.textContent = '正在查詢當日空位...';
+    slotsContainer.innerHTML = '';
+    slotsPlaceholder.style.display = 'block';
 
-        try {
-            const response = await fetch(`/api/bookings-check?date=${date}`);
-            if (!response.ok) throw new Error('查詢失敗');
-            dailyAvailability = await response.json();
-            
-            if (dailyAvailability.available <= 0) {
-                slotsPlaceholder.textContent = '抱歉，本日預約已額滿';
-                return;
-            }
-            
-            slotsPlaceholder.style.display = 'none';
-            
-            const now = new Date();
-            const todayStr = now.toISOString().split('T')[0];
-            const isToday = (date === todayStr);
+    try {
+        const response = await fetch(`/api/bookings-check?date=${date}`);
+        if (!response.ok) throw new Error('查詢失敗');
+        dailyAvailability = await response.json();
+        
+        if (dailyAvailability.available <= 0) {
+            slotsPlaceholder.textContent = '抱歉，本日預約已額滿';
+            return;
+        }
+        
+        slotsPlaceholder.style.display = 'none';
+        
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        const isToday = (date === todayStr);
 
-            slotsContainer.innerHTML = AVAILABLE_TIME_SLOTS.map(slot => {
-                let isDisabled = false;
-                if (isToday) {
-                    const [hour, minute] = slot.split(':');
-                    const slotTime = new Date();
-                    slotTime.setHours(hour, minute, 0, 0);
-                    if (slotTime < now) {
-                        isDisabled = true;
-                    }
+        slotsContainer.innerHTML = AVAILABLE_TIME_SLOTS.map(slot => {
+            let isDisabled = false;
+            if (isToday) {
+                const [hour, minute] = slot.split(':');
+                const slotTime = new Date();
+                slotTime.setHours(hour, minute, 0, 0);
+                if (slotTime < now) {
+                    isDisabled = true;
                 }
-                return `<button class="slot-button" ${isDisabled ? 'disabled' : ''}>${slot}</button>`;
-            }).join('');
-            
-            slotsContainer.querySelectorAll('.slot-button:not([disabled])').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    bookingData.timeSlot = btn.textContent;
-                    document.getElementById('contact-summary').textContent = `${bookingData.date} 的 ${bookingData.timeSlot}`;
-                    showBookingStep('step-contact');
-                });
-            });
-
-        } catch (error) {
-            slotsPlaceholder.textContent = `查詢空位失敗：${error.message}`;
-        }
-    }
-
-    function renderSummary() {
-        const summaryCard = document.getElementById('booking-summary-card');
-        summaryCard.innerHTML = `
-            <p><span>姓名:</span><span>${bookingData.name}</span></p>
-            <p><span>電話:</span><span>${bookingData.phone}</span></p>
-            <p><span>日期:</span><span>${bookingData.date}</span></p>
-            <p><span>時段:</span><span>${bookingData.timeSlot}</span></p>
-            <p><span>人數:</span><span>${bookingData.people} 人</span></p>
-        `;
-    }
-
-    async function handleBookingConfirmation(confirmBtn) {
-        if (confirmBtn.dataset.isSubmitting === 'true') return;
-
-        try {
-            confirmBtn.dataset.isSubmitting = 'true';
-            confirmBtn.disabled = true;
-            confirmBtn.textContent = '處理中...';
-            
-            const bookingPayload = {
-                userId: userProfile.userId,
-                bookingDate: bookingData.date,
-                timeSlot: bookingData.timeSlot,
-                numOfPeople: bookingData.people,
-                contactName: bookingData.name,
-                contactPhone: bookingData.phone
-            };
-
-            const createRes = await fetch('/api/bookings-create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(bookingPayload)
-            });
-
-            if (!createRes.ok) {
-                const errorResult = await createRes.json();
-                throw new Error(errorResult.error || '建立預約時發生未知錯誤');
             }
-            
-            const result = await createRes.json();
-            
-            await fetch('/api/send-message', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: userProfile.userId, message: result.confirmationMessage })
+            return `<button class="slot-button" ${isDisabled ? 'disabled' : ''}>${slot}</button>`;
+        }).join('');
+        
+        slotsContainer.querySelectorAll('.slot-button:not([disabled])').forEach(btn => {
+            btn.addEventListener('click', () => {
+                bookingData.timeSlot = btn.textContent;
+                document.getElementById('contact-summary').textContent = `${bookingData.date} 的 ${bookingData.timeSlot}`;
+                showBookingStep('step-contact');
             });
+        });
 
-            document.getElementById('booking-result-content').innerHTML = `
-                <h2 class="success">✅ 預約成功！</h2>
-                <p>已將預約確認訊息發送至您的 LINE，我們到時見！</p>
-                <button id="booking-done-btn" class="cta-button">返回預約首頁</button>`;
-            showBookingStep('step-result');
-
-            document.getElementById('booking-done-btn').addEventListener('click', () => showPage('page-booking'));
-
-        } catch (error) {
-            alert(`預約失敗：${error.message}`);
-        } finally {
-            confirmBtn.dataset.isSubmitting = 'false';
-            confirmBtn.disabled = false;
-            confirmBtn.textContent = '確認送出';
-        }
+    } catch (error) {
+        slotsPlaceholder.textContent = `查詢空位失敗：${error.message}`;
     }
+}
 
+function renderSummary() {
+    const summaryCard = document.getElementById('booking-summary-card');
+    summaryCard.innerHTML = `
+        <p><span>姓名:</span><span>${bookingData.name}</span></p>
+        <p><span>電話:</span><span>${bookingData.phone}</span></p>
+        <p><span>日期:</span><span>${bookingData.date}</span></p>
+        <p><span>時段:</span><span>${bookingData.timeSlot}</span></p>
+        <p><span>人數:</span><span>${bookingData.people} 人</span></p>
+    `;
+}
+
+async function handleBookingConfirmation(confirmBtn) {
+    if (confirmBtn.dataset.isSubmitting === 'true') return;
+
+    try {
+        confirmBtn.dataset.isSubmitting = 'true';
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = '處理中...';
+        
+        const bookingPayload = {
+            userId: userProfile.userId,
+            bookingDate: bookingData.date,
+            timeSlot: bookingData.timeSlot,
+            numOfPeople: bookingData.people,
+            contactName: bookingData.name,
+            contactPhone: bookingData.phone
+        };
+
+        const createRes = await fetch('/api/bookings-create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bookingPayload)
+        });
+
+        if (!createRes.ok) {
+            const errorResult = await createRes.json();
+            throw new Error(errorResult.error || '建立預約時發生未知錯誤');
+        }
+        
+        const result = await createRes.json();
+        
+        await fetch('/api/send-message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userProfile.userId, message: result.confirmationMessage })
+        });
+
+        document.getElementById('booking-result-content').innerHTML = `
+            <h2 class="success">✅ 預約成功！</h2>
+            <p>已將預約確認訊息發送至您的 LINE，我們到時見！</p>
+            <button id="booking-done-btn" class="cta-button">返回預約首頁</button>`;
+        showBookingStep('step-result');
+
+        document.getElementById('booking-done-btn').addEventListener('click', () => showPage('page-booking'));
+
+    } catch (error) {
+        alert(`預約失敗：${error.message}`);
+    } finally {
+        confirmBtn.dataset.isSubmitting = 'false';
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '確認送出';
+    }
+}
     // =================================================================
     // 店家資訊頁
     // =================================================================
