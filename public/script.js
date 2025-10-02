@@ -79,13 +79,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    window.addEventListener('popstate', (event) => {
-        if (pageHistory.length > 1) {
-            pageHistory.pop();
-            const previousPageId = pageHistory[pageHistory.length - 1];
-            showPage(previousPageId, true);
-        }
-    });
+window.addEventListener('popstate', (event) => {
+    // 檢查我們的歷史紀錄中是否還有上一頁
+    if (pageHistory.length > 1) {
+        // 如果有，就從歷史紀錄中移除目前頁面
+        pageHistory.pop();
+        // 取得上一頁的ID
+        const previousPageId = pageHistory[pageHistory.length - 1];
+        // 顯示上一頁，並告知 showPage 這是返回操作，不要再新增歷史紀錄
+        showPage(previousPageId, true);
+    } else {
+        // 【** 核心修正 **】
+        // 如果歷史紀錄只剩一筆，代表已經退無可退，就主動關閉 LIFF 視窗。
+        liff.closeWindow();
+    }
+});
     
 function goBackBookingStep() {
     if (bookingHistoryStack.length > 1) {
