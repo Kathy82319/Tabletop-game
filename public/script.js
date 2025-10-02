@@ -92,11 +92,12 @@ document.addEventListener('DOMContentLoaded', () => {
 appContent.addEventListener('click', (event) => {
     const target = event.target;
 
-    // 只處理「非」預約流程中的返回按鈕
-    if (target.matches('.details-back-button')) {
-        goBackPage();
+    // --- 核心修正：讓兩種返回按鈕都呼叫同一個函式 ---
+    if (target.matches('.back-button') || target.matches('.details-back-button')) {
+        goBackPage(); // 全部統一由全域返回函式處理
         return;
     }
+
 
     // 處理情報卡片點擊
     const newsCard = target.closest('.news-card');
@@ -121,6 +122,20 @@ appContent.addEventListener('click', (event) => {
         }
         return;
     }
+    // 處理預約流程中的「下一步」按鈕
+    if (target.closest('#go-to-booking-step-btn')) {
+        showBookingStep('step-date-and-slots');
+        return;
+    }
+    if (target.matches('#to-summary-btn')) {
+        handleBookingNextStep();
+        return;
+    }
+    if (target.matches('#confirm-booking-btn')) {
+        handleBookingConfirmation(target);
+        return;
+    }
+
 });
     
     // =================================================================
