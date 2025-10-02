@@ -919,7 +919,94 @@ function showBookingStep(stepId, isBackAction = false) {
     }
 }
 
-sync function initializeBookingPage(
+
+
+async function initializeBookingPage() {
+    bookingHistoryStack = []; // 每次進入都重置內部歷史
+    showBookingStep('step-preference'); // 顯示第一步，並記錄到內部歷史
+
+    // --- 綁定非 wizard 內的按鈕 ---
+    const viewMyBookingsBtn = document.getElementById('view-my-bookings-btn');
+    if (viewMyBookingsBtn) {
+        viewMyBookingsBtn.addEventListener('click', () => {
+            showPage('page-my-bookings');
+        });
+    }
+
+    // --- 填充動態文字 ---
+    try {
+        const infoResponse = await fetch('/api/get-store-info');
+        if (!infoResponse.ok) throw new Error('無法載入店家設定');
+        const storeInfo = await infoResponse.json();
+        
+        const announcementBox = document.getElementById('booking-announcement-box');
+        const bookingBtn = document.getElementById('go-to-booking-step-btn');
+        const promoText = document.getElementById('booking-promo-text');
+
+        if (announcementBox) announcementBox.innerText = storeInfo.booking_announcement_text || '';
+        if (bookingBtn) bookingBtn.innerText = storeInfo.booking_button_text || '開始預約';
+        if (promoText) promoText.innerText = storeInfo.booking_promo_text || '';
+
+        const response = await fetch('/api/bookings-check?month-init=true');
+        const data = await response.json();
+        enabledDatesByAdmin = data.enabledDates || []; 
+    } catch (error) {
+        console.error("初始化預約頁面失敗:", error);
+    }
+    
+    // --- 【核心修正：為預約流程容器建立獨立且唯一的事件監聽】 ---
+    const wizardContainer = document.getElementById('booking-wizard-container');
+    if (wizardContainer) {
+        const newWizardContainer = wizardContainer.cloneNode(true);
+        wizardContainer.parentNode.replaceChild(newWizardContainer, wizardContainer);
+
+        newWizardContainer.addEventListener('click', (e) => {
+            if (e.target.matches('.back-button')) {
+                goBackBookingStep(); // 只呼叫內部的返回函式
+            } else if (e.target.closest('#go-to-booking-step-btn')) {
+                showBookingStep('step-date-and-slots');
+            } else if (e.target.matches('#to-summary-btn')) {
+                handleBookingNextStep();
+            } else if (e.target.matches('#confirm-booking-btn')) {
+                handleBookingConfirmation(e.target);
+            }
+        });
+    }
+    
+    // --- Flatpickr 和自動填入資料邏輯不變 ---
+    const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
+    if (datepickerContainer) {
+        flatpickr(datepickerContainer, {
+            inline: true, minDate: "today", dateFormat: "Y-m-d", locale: "zh_tw",
+            enable: enabledDatesByAdmin,
+            onChange: (selectedDates, dateStr) => {
+                bookingData.date = dateStr;
+                fetchAndRenderSlots(dateStr);
+            },
+            onClick: (selectedDates, dateStr, instance) => {
+                setTimeout(() => {
+                    const clickedElement = instance.selectedDateElem;
+                    if (clickedElement && clickedElement.classList.contains('flatpickr-disabled')) {
+                        const slotsPlaceholder = document.getElementById('slots-placeholder');
+                        const slotsContainer = document.getElementById('booking-slots-container');
+                        if (slotsPlaceholder && slotsContainer) {
+                            slotsPlaceholder.textContent = '此日期未開放預約';
+                            slotsPlaceholder.style.display = 'block';
+                            slotsContainer.innerHTML = '';
+                        }
+                    }
+                }, 10);
+            }
+        });
+    }
+    const userData = await fetchGameData();
+    if (userData) {
+        const nameInput = document.getElementById('contact-name');
+        const phoneInput = document.getElementById('contact-phone');
+        if(nameInput) nameInput.value = userData.real_name || '';
+        if(phoneInput) phoneInput.value = userData.phone || '';
+    }
+}
 
 
 // 新增這個函式
