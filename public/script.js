@@ -910,7 +910,6 @@ function showBookingStep(stepId, isBackAction = false) {
 }
 
 
-
 async function initializeBookingPage() {
     // 【** 核心修改：移除 bookingHistoryStack，因為不再需要它了 **】
     showBookingStep('step-preference');
@@ -944,7 +943,31 @@ async function initializeBookingPage() {
         console.error("初始化預約頁面失敗:", error);
     }
     
-    // --- Flatpickr 日期選擇器的邏輯 (不變) ---
+    // --- 【** 核心修正：為預約流程容器建立獨立的事件監聽 **】 ---
+    const wizardContainer = document.getElementById('booking-wizard-container');
+    if (wizardContainer) {
+        // 為了避免重複綁定，我們先移除舊的監聽器 (如果存在的話)
+        if (wizardContainer.handler) {
+            wizardContainer.removeEventListener('click', wizardContainer.handler);
+        }
+
+        // 定義一個新的處理函式
+        wizardContainer.handler = (e) => {
+            if (e.target.matches('.back-button')) {
+                goBackBookingStep();
+            } else if (e.target.closest('#go-to-booking-step-btn')) {
+                showBookingStep('step-date-and-slots');
+            } else if (e.target.matches('#to-summary-btn')) {
+                handleBookingNextStep();
+            } else if (e.target.matches('#confirm-booking-btn')) {
+                handleBookingConfirmation(e.target);
+            }
+        };
+        
+        // 綁定新的處理函式
+        wizardContainer.addEventListener('click', wizardContainer.handler);
+    }
+    
     const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
     if (datepickerContainer) {
         flatpickr(datepickerContainer, {
@@ -974,7 +997,6 @@ async function initializeBookingPage() {
         });
     }
 
-    // --- 自動填入使用者資料 (邏輯不變) ---
     const userData = await fetchGameData();
     if (userData) {
         const nameInput = document.getElementById('contact-name');
@@ -983,6 +1005,7 @@ async function initializeBookingPage() {
         if(phoneInput) phoneInput.value = userData.phone || '';
     }
 }
+
 
 // 新增這個函式
 function handleBookingNextStep() {
