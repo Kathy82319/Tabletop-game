@@ -92,19 +92,13 @@ document.addEventListener('DOMContentLoaded', () => {
 appContent.addEventListener('click', (event) => {
     const target = event.target;
 
-    // --- 處理所有「返回」按鈕 ---
-    // 1. 如果點擊的是預約流程中的返回按鈕
-    if (target.matches('.back-button')) {
-        goBackBookingStep(); // 只執行預約流程的返回
-        return; // 結束，不再執行後續判斷
-    }
-    // 2. 如果點擊的是其他頁面的返回按鈕
+    // 只處理「非」預約流程中的返回按鈕
     if (target.matches('.details-back-button')) {
-         goBackPage(); // 執行全域的返回
-         return;
+        goBackPage();
+        return;
     }
 
-    // --- 處理其他點擊事件 (這部分邏輯保持不變) ---
+    // 處理情報卡片點擊
     const newsCard = target.closest('.news-card');
     if (newsCard && newsCard.dataset.newsId) {
         const newsId = parseInt(newsCard.dataset.newsId, 10);
@@ -115,6 +109,19 @@ appContent.addEventListener('click', (event) => {
         }
         return;
     }
+    
+    // 處理遊戲卡片點擊
+    const gameCard = target.closest('.game-card');
+    if (gameCard && gameCard.dataset.gameId) {
+        const gameId = gameCard.dataset.gameId;
+        const gameItem = allGames.find(g => g.game_id == gameId);
+        if (gameItem) {
+            showPage('page-game-details');
+            renderGameDetails(gameItem);
+        }
+        return;
+    }
+});
     
     const gameCard = target.closest('.game-card');
     if (gameCard && gameCard.dataset.gameId) {
@@ -948,10 +955,15 @@ async function initializeBookingPage() {
     bookingHistoryStack = []; // 每次進入預約頁都重置步驟歷史
     showBookingStep('step-preference');
 
-    document.getElementById('view-my-bookings-btn').addEventListener('click', () => {
-        showPage('page-my-bookings');
-    });
+    // --- 綁定非 wizard 內的按鈕 ---
+    const viewMyBookingsBtn = document.getElementById('view-my-bookings-btn');
+    if (viewMyBookingsBtn) {
+        viewMyBookingsBtn.addEventListener('click', () => {
+            showPage('page-my-bookings');
+        });
+    }
 
+    // --- 填充動態文字 ---
     try {
         const infoResponse = await fetch('/api/get-store-info');
         if (!infoResponse.ok) throw new Error('無法載入店家設定');
@@ -972,7 +984,30 @@ async function initializeBookingPage() {
         console.error("初始化預約頁面失敗:", error);
     }
     
-    // 注意：這裡不再有 wizardContainer 的事件監聽器，因為已經移到全域了
+    // --- 【** 核心修正：為預約流程容器建立獨立的事件監聽 **】 ---
+    const wizardContainer = document.getElementById('booking-wizard-container');
+    if (wizardContainer) {
+        // 為了避免重複綁定，我們先移除舊的監聽器 (如果存在的話)
+        if (wizardContainer.handler) {
+            wizardContainer.removeEventListener('click', wizardContainer.handler);
+        }
+
+        // 定義一個新的處理函式
+        wizardContainer.handler = (e) => {
+            if (e.target.matches('.back-button')) {
+                goBackBookingStep();
+            } else if (e.target.closest('#go-to-booking-step-btn')) {
+                showBookingStep('step-date-and-slots');
+            } else if (e.target.matches('#to-summary-btn')) {
+                handleBookingNextStep();
+            } else if (e.target.matches('#confirm-booking-btn')) {
+                handleBookingConfirmation(e.target);
+            }
+        };
+        
+        // 綁定新的處理函式
+        wizardContainer.addEventListener('click', wizardContainer.handler);
+    }
     
     const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
     if (datepickerContainer) {
@@ -1011,6 +1046,7 @@ async function initializeBookingPage() {
         if(phoneInput) phoneInput.value = userData.phone || '';
     }
 }
+
 
 // 新增這個函式
 function handleBookingNextStep() {
