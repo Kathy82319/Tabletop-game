@@ -898,35 +898,21 @@ function showBookingStep(stepId, isBackAction = false) {
     const targetStep = document.getElementById(stepId);
     if (targetStep) targetStep.classList.add('active');
 
-    if (stepId === 'step-date-and-slots') {
-        const slotsPlaceholder = document.getElementById('slots-placeholder');
-        const slotsContainer = document.getElementById('booking-slots-container');
-        if (slotsPlaceholder && slotsContainer) {
-            slotsPlaceholder.textContent = '請先從上方選擇日期';
-            slotsPlaceholder.style.display = 'block';
-            slotsContainer.innerHTML = '';
-        }
-    }
-    
+    // 【** 核心修改：將步驟也視為一個獨立頁面 **】
     if (!isBackAction) {
-        if(bookingHistoryStack[bookingHistoryStack.length - 1] !== stepId) {
-            bookingHistoryStack.push(stepId);
-        }
+        // 為每個步驟创建一个獨立的歷史紀錄狀態
+        const state = { page: `page-booking-${stepId}` };
+        const url = `#page-booking-${stepId}`;
+        history.pushState(state, '', url);
+        // 將這個「偽頁面」ID 加入全域歷史紀錄中
+        pageHistory.push(state.page);
     }
 }
 
-function goBackBookingStep() {
-    if (bookingHistoryStack.length > 1) {
-        bookingHistoryStack.pop();
-        const lastStep = bookingHistoryStack[bookingHistoryStack.length - 1];
-        showBookingStep(lastStep, true);
-        return true;
-    }
-    return false;
-}
+
 
 async function initializeBookingPage() {
-    bookingHistoryStack = []; // 每次進入預約頁都重置步驟歷史
+    // 【** 核心修改：移除 bookingHistoryStack，因為不再需要它了 **】
     showBookingStep('step-preference');
 
     // --- 綁定非 wizard 內的按鈕 ---
@@ -937,7 +923,7 @@ async function initializeBookingPage() {
         });
     }
 
-    // --- 填充動態文字 ---
+    // --- 填充動態文字 (邏輯不變) ---
     try {
         const infoResponse = await fetch('/api/get-store-info');
         if (!infoResponse.ok) throw new Error('無法載入店家設定');
@@ -958,31 +944,7 @@ async function initializeBookingPage() {
         console.error("初始化預約頁面失敗:", error);
     }
     
-    // --- 【** 核心修正：為預約流程容器建立獨立的事件監聽 **】 ---
-    const wizardContainer = document.getElementById('booking-wizard-container');
-    if (wizardContainer) {
-        // 為了避免重複綁定，我們先移除舊的監聽器 (如果存在的話)
-        if (wizardContainer.handler) {
-            wizardContainer.removeEventListener('click', wizardContainer.handler);
-        }
-
-        // 定義一個新的處理函式
-        wizardContainer.handler = (e) => {
-            if (e.target.matches('.back-button')) {
-                goBackBookingStep();
-            } else if (e.target.closest('#go-to-booking-step-btn')) {
-                showBookingStep('step-date-and-slots');
-            } else if (e.target.matches('#to-summary-btn')) {
-                handleBookingNextStep();
-            } else if (e.target.matches('#confirm-booking-btn')) {
-                handleBookingConfirmation(e.target);
-            }
-        };
-        
-        // 綁定新的處理函式
-        wizardContainer.addEventListener('click', wizardContainer.handler);
-    }
-    
+    // --- Flatpickr 日期選擇器的邏輯 (不變) ---
     const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
     if (datepickerContainer) {
         flatpickr(datepickerContainer, {
@@ -1012,6 +974,7 @@ async function initializeBookingPage() {
         });
     }
 
+    // --- 自動填入使用者資料 (邏輯不變) ---
     const userData = await fetchGameData();
     if (userData) {
         const nameInput = document.getElementById('contact-name');
@@ -1020,7 +983,6 @@ async function initializeBookingPage() {
         if(phoneInput) phoneInput.value = userData.phone || '';
     }
 }
-
 
 // 新增這個函式
 function handleBookingNextStep() {
