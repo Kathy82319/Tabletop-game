@@ -123,32 +123,6 @@ appContent.addEventListener('click', (event) => {
     }
 });
     
-    const gameCard = target.closest('.game-card');
-    if (gameCard && gameCard.dataset.gameId) {
-        const gameId = gameCard.dataset.gameId;
-        const gameItem = allGames.find(g => g.game_id == gameId);
-        if (gameItem) {
-            showPage('page-game-details');
-            renderGameDetails(gameItem);
-        }
-        return;
-    }
-
-    // 3. 如果點擊的是預約流程中的「下一步」按鈕
-    if (target.closest('#go-to-booking-step-btn')) {
-        showBookingStep('step-date-and-slots');
-        return;
-    }
-    if (target.matches('#to-summary-btn')) {
-        handleBookingNextStep(); // 我們會新增這個小函式
-        return;
-    }
-    if (target.matches('#confirm-booking-btn')) {
-        handleBookingConfirmation(target);
-        return;
-    }
-});
-
     // =================================================================
     // 首頁 (最新情報)
     // =================================================================
