@@ -926,7 +926,8 @@ function showBookingStep(stepId, isBackAction = false) {
 
 
 async function initializeBookingPage() {
-    // 【** 核心修改：移除 bookingHistoryStack，因為不再需要它了 **】
+    // 【** 核心修正：移除 bookingHistoryStack，統一使用全域歷史 **】
+    // 每次進入頁面時，將預約的第一步作為一個歷史紀錄點
     showBookingStep('step-preference');
 
     // --- 綁定非 wizard 內的按鈕 ---
@@ -936,7 +937,6 @@ async function initializeBookingPage() {
             showPage('page-my-bookings');
         });
     }
-
     // --- 填充動態文字 (邏輯不變) ---
     try {
         const infoResponse = await fetch('/api/get-store-info');
@@ -958,18 +958,18 @@ async function initializeBookingPage() {
         console.error("初始化預約頁面失敗:", error);
     }
     
-    // --- 【** 核心修正：為預約流程容器建立獨立的事件監聽 **】 ---
+    // --- 【** 核心修正：為預約流程容器建立獨立且唯一的事件監聽 **】 ---
     const wizardContainer = document.getElementById('booking-wizard-container');
     if (wizardContainer) {
-        // 為了避免重複綁定，我們先移除舊的監聽器 (如果存在的話)
-        if (wizardContainer.handler) {
-            wizardContainer.removeEventListener('click', wizardContainer.handler);
-        }
+        // 為了避免重複綁定，我們克隆節點並替換它，這是最徹底的移除舊監聽器的方法
+        const newWizardContainer = wizardContainer.cloneNode(true);
+        wizardContainer.parentNode.replaceChild(newWizardContainer, wizardContainer);
 
-        // 定義一個新的處理函式
-        wizardContainer.handler = (e) => {
+        // 只在新克隆的節點上綁定一次事件
+        newWizardContainer.addEventListener('click', (e) => {
             if (e.target.matches('.back-button')) {
-                goBackBookingStep();
+                // 因為現在所有步驟都是全域歷史的一部分，所以直接呼叫全域返回即可
+                goBackPage();
             } else if (e.target.closest('#go-to-booking-step-btn')) {
                 showBookingStep('step-date-and-slots');
             } else if (e.target.matches('#to-summary-btn')) {
@@ -977,10 +977,7 @@ async function initializeBookingPage() {
             } else if (e.target.matches('#confirm-booking-btn')) {
                 handleBookingConfirmation(e.target);
             }
-        };
-        
-        // 綁定新的處理函式
-        wizardContainer.addEventListener('click', wizardContainer.handler);
+        });
     }
     
     const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
