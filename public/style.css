@@ -492,6 +492,19 @@ input[readonly] {
     background-color: rgba(74, 55, 40, 0.05);
 }
 
+/* --- 預約頁公告樣式 --- */
+.announcement-box {
+    background-color: var(--color-card-background);
+    border: 1px solid var(--color-frame-gold);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    margin-top: 15px;
+    box-shadow: var(--box-shadow);
+    white-space: pre-wrap; /* 讓換行符號生效 */
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+}
+
 /* 日期選擇器 Flatpickr 樣式覆蓋 */
 .flatpickr-calendar {
     background: var(--color-card-background) !important;

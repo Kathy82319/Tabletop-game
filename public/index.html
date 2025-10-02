@@ -198,21 +198,24 @@
     <div id="page-booking">
         <div id="booking-wizard-container">
 <div id="step-preference" class="booking-step active">
-    <div class="booking-header"><h1 class="page-main-title">場地預約</h1><p class="booking-subtitle">冒險從你預約的這天開始</p></div>
-    <div class="preference-options">
-        <button class="preference-btn" data-preference="一次性">
-            <h3 id="booking-btn-main-text"></h3>
-            <p id="booking-btn-sub-text"></p>
-        </button>
+    <div class="booking-header">
+        <h1 class="page-main-title">場地預約</h1>
+        <p class="booking-subtitle">冒險從你預約的這天開始</p>
     </div>
-    <button class="cta-button" id="view-my-bookings-btn" style="margin-top: 20px; background: var(--color-text-secondary);">查看我的預約</button>
+
+    <div id="booking-announcement-box" class="announcement-box">
+        </div>
+    
+    <button class="cta-button preference-btn" id="go-to-booking-step-btn" style="margin-top: 15px; background: var(--color-cta-background);">
+        </button>
+    
+    <button class="cta-button" id="view-my-bookings-btn" style="margin-top: 15px; background: var(--color-text-secondary);">查看我的預約</button>
+    
     <div class="discount-highlight">
         <p id="booking-promo-text"></p>
     </div>
-    <div class="booking-notice">
-        <p id="booking-notice-text"></p>
+    
     </div>
-</div>
             <div id="step-date-and-slots" class="booking-step">
                 <button class="back-button">← 返回</button>
                 <h2>選擇預約日期與時段</h2>

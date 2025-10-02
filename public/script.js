@@ -927,31 +927,24 @@ async function initializeBookingPage() {
     });
 
     try {
-        // 【** 步驟 1: 獲取店家資訊 **】
         const infoResponse = await fetch('/api/get-store-info');
         if (!infoResponse.ok) throw new Error('無法載入店家設定');
         const storeInfo = await infoResponse.json();
         
-        // 【** 步驟 2: 填充文字到對應的 HTML 元素 **】
-        // innerText 會自動處理換行
-        const btnMain = document.getElementById('booking-btn-main-text');
-        const btnSub = document.getElementById('booking-btn-sub-text');
+        // 【** 修改點 1: 填充新的 HTML 元素 **】
+        const announcementBox = document.getElementById('booking-announcement-box');
+        const bookingBtn = document.getElementById('go-to-booking-step-btn');
         const promoText = document.getElementById('booking-promo-text');
-        const noticeText = document.getElementById('booking-notice-text');
 
-        if (btnMain) btnMain.innerText = storeInfo.booking_button_main || '一次性入場';
-        if (btnSub) btnSub.innerText = storeInfo.booking_button_sub || '';
+        if (announcementBox) announcementBox.innerText = storeInfo.booking_announcement_text || '';
+        if (bookingBtn) bookingBtn.innerText = storeInfo.booking_button_text || '開始預約';
         if (promoText) promoText.innerText = storeInfo.booking_promo_text || '';
-        if (noticeText) noticeText.innerText = storeInfo.booking_notice_text || '';
 
-
-        // 【** 步驟 3: 既有的日期設定邏輯 (保持不變) **】
         const response = await fetch('/api/bookings-check?month-init=true');
         const data = await response.json();
         enabledDatesByAdmin = data.enabledDates || []; 
     } catch (error) {
         console.error("初始化預約頁面失敗:", error);
-        // 您可以在此處加入錯誤提示
     }
 
     const wizardContainer = document.getElementById('booking-wizard-container');
@@ -959,7 +952,8 @@ async function initializeBookingPage() {
         wizardContainer.addEventListener('click', async (e) => {
             if (e.target.matches('.back-button')) {
                 goBackBookingStep();
-            } else if (e.target.closest('.preference-btn')) {
+            // 【** 修改點 2: 將點擊事件綁定到新的按鈕上 **】
+            } else if (e.target.closest('#go-to-booking-step-btn')) {
                 showBookingStep('step-date-and-slots');
             } else if (e.target.matches('#to-summary-btn')) {
                 const peopleInput = document.getElementById('booking-people');
