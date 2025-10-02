@@ -71,26 +71,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function goBackPage() {
-        if (pageHistory.length > 1) {
-            history.back();
-        } else {
-            liff.closeWindow();
-        }
+// public/script.js
+
+function goBackPage() {
+    // 【核心修正】在執行返回前，先檢查是否在預約頁面中
+    const currentPageId = pageHistory[pageHistory.length - 1];
+
+    // 如果目前在預約頁，且內部步驟可以返回，則優先處理內部返回
+    if (currentPageId === 'page-booking' && bookingHistoryStack.length > 1) {
+        goBackBookingStep(); // 呼叫內部返回函式
+    } 
+    // 否則，執行全域的頁面返回
+    else if (pageHistory.length > 1) {
+        history.back();
+    } 
+    // 如果都不能返回，才關閉視窗
+    else {
+        liff.closeWindow();
     }
+}
 
 window.addEventListener('popstate', (event) => {
-    // 檢查我們的歷史紀錄中是否還有上一頁
-    if (pageHistory.length > 1) {
-        // 如果有，就從歷史紀錄中移除目前頁面
-        pageHistory.pop();
-        // 取得上一頁的ID
+    // 手機返回鍵觸發 popstate 時，我們的 pageHistory 已經被瀏覽器自動回退了
+    // 所以我們只需要根據新的、較短的 pageHistory 來決定顯示哪個頁面
+
+    // 移除當前頁面，讓 pageHistory 與瀏覽器的狀態同步
+    pageHistory.pop(); 
+
+    if (pageHistory.length > 0) {
         const previousPageId = pageHistory[pageHistory.length - 1];
-        // 顯示上一頁，並告知 showPage 這是返回操作，不要再新增歷史紀錄
+        // 顯示上一頁，並告知是返回操作
         showPage(previousPageId, true);
     } else {
-        // 【** 核心修正 **】
-        // 如果歷史紀錄只剩一筆，代表已經退無可退，就主動關閉 LIFF 視窗。
+        // 如果 pageHistory 變空了，代表已退到最開始，此時應關閉視窗
         liff.closeWindow();
     }
 });
