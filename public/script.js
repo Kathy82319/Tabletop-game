@@ -893,8 +893,9 @@ function renderGames() {
 // =================================================================
 // 場地預約頁 (從這裡開始取代)
 // =================================================================
-
 // public/script.js
+
+// (找到舊的 initializeBookingPage 函式並用下面的版本完整替換它)
 
 async function initializeBookingPage(stepId = 'step-preference') {
     showBookingStep(stepId);
@@ -937,31 +938,32 @@ async function initializeBookingPage(stepId = 'step-preference') {
     
     const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
     if (datepickerContainer) {
+        // 如果後台沒有設定任何可預約日期，則顯示提示訊息
         if (enabledDatesByAdmin.length === 0) {
             datepickerContainer.innerHTML = '<p style="text-align:center; color: var(--color-danger);">目前沒有開放預約的日期。</p>';
-            return;
-        }
-        flatpickr(datepickerContainer, {
-            inline: true, minDate: "today", dateFormat: "Y-m-d", locale: "zh_tw",
-            enable: enabledDatesByAdmin,
-            onChange: (selectedDates, dateStr) => {
-                bookingData.date = dateStr;
-                fetchAndRenderSlots(dateStr);
-            },
-            onClick: (selectedDates, dateStr, instance) => {
-              setTimeout(() => {
-                const clickedElement = instance.selectedDateElem;
-                if (clickedElement && clickedElement.classList.contains('flatpickr-disabled')) {
-                    const slotsPlaceholder = appContent.querySelector('#slots-placeholder');
-                    if (slotsPlaceholder) {
-                        slotsPlaceholder.textContent = '此日期未開放預約';
-                        slotsPlaceholder.style.display = 'block';
-                        appContent.querySelector('#booking-slots-container').innerHTML = '';
+        } else {
+            flatpickr(datepickerContainer, {
+                inline: true, minDate: "today", dateFormat: "Y-m-d", locale: "zh_tw",
+                enable: enabledDatesByAdmin,
+                onChange: (selectedDates, dateStr) => {
+                    bookingData.date = dateStr;
+                    fetchAndRenderSlots(dateStr);
+                },
+                onClick: (selectedDates, dateStr, instance) => {
+                  setTimeout(() => {
+                    const clickedElement = instance.selectedDateElem;
+                    if (clickedElement && clickedElement.classList.contains('flatpickr-disabled')) {
+                        const slotsPlaceholder = appContent.querySelector('#slots-placeholder');
+                        if (slotsPlaceholder) {
+                            slotsPlaceholder.textContent = '此日期未開放預約';
+                            slotsPlaceholder.style.display = 'block';
+                            appContent.querySelector('#booking-slots-container').innerHTML = '';
+                        }
                     }
+                  }, 10);
                 }
-              }, 10);
-            }
-        });
+            });
+        }
     }
 
     const userData = await fetchGameData();
@@ -978,11 +980,8 @@ async function initializeBookingPage(stepId = 'step-preference') {
 }
 
 function showBookingStep(stepId) {
-    // 【進階偵錯】我們來看看這個指令到底找到了多少個 .booking-step 元素
-    const steps = document.querySelectorAll('#booking-wizard-container .booking-step');
-    console.log(`[預約頁偵錯 B] showBookingStep 找到了 ${steps.length} 個 .booking-step 元素。`);
-
-    steps.forEach(step => {
+    // 【最終修正】將搜尋範圍從 document 限定在 appContent 之內，確保只操作可見頁面中的元素
+    appContent.querySelectorAll('#booking-wizard-container .booking-step').forEach(step => {
         step.classList.toggle('active', step.id === stepId);
     });
 }
