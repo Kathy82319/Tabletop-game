@@ -894,91 +894,98 @@ function renderGames() {
 // 場地預約頁 (從這裡開始取代)
 // =================================================================
 
-    async function initializeBookingPage(stepId = 'step-preference') {
-        // ---【偵錯日誌：步驟 A】---
-        console.log('[預約頁偵錯 A] 成功進入 initializeBookingPage 函式。');
-        
-        showBookingStep(stepId);
-        
-        // 【修正】所有 getElementById 和 querySelector 都從 appContent 開始搜尋
-        const viewMyBookingsBtn = appContent.querySelector('#view-my-bookings-btn');
-        if (viewMyBookingsBtn) {
-            viewMyBookingsBtn.onclick = () => navigateTo('page-my-bookings');
-        }
+// public/script.js
 
-        try {
-            const infoResponse = await fetch('/api/get-store-info');
-            if (!infoResponse.ok) throw new Error('無法載入店家設定');
-            const storeInfo = await infoResponse.json();
-            
-            appContent.querySelector('#booking-announcement-box').innerText = storeInfo.booking_announcement_text || '';
-            appContent.querySelector('#go-to-booking-step-btn').innerText = storeInfo.booking_button_text || '開始預約';
-            appContent.querySelector('#booking-promo-text').innerText = storeInfo.booking_promo_text || '';
-
-            const response = await fetch('/api/bookings-check?month-init=true');
-            const data = await response.json();
-            enabledDatesByAdmin = data.enabledDates || []; 
-        } catch (error) {
-            console.error("初始化預約頁面失敗:", error);
-        }
-        
-        const wizardContainer = appContent.querySelector('#booking-wizard-container');
-        if (wizardContainer && !wizardContainer.dataset.listenerAttached) {
-            wizardContainer.dataset.listenerAttached = 'true';
-            wizardContainer.addEventListener('click', (e) => {
-                if (e.target.closest('#go-to-booking-step-btn')) {
-                    navigateTo('page-booking', 'step-date-and-slots');
-                } else if (e.target.matches('#to-summary-btn')) {
-                    handleBookingNextStep();
-                } else if (e.target.matches('#confirm-booking-btn')) {
-                    handleBookingConfirmation(e.target);
-                }
-            });
-        }
-        
-        const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
-        if (datepickerContainer) {
-            flatpickr(datepickerContainer, {
-                inline: true, minDate: "today", dateFormat: "Y-m-d", locale: "zh_tw",
-                enable: enabledDatesByAdmin,
-                onChange: (selectedDates, dateStr) => {
-                    bookingData.date = dateStr;
-                    fetchAndRenderSlots(dateStr);
-                },
-                onClick: (selectedDates, dateStr, instance) => {
-                  setTimeout(() => {
-                    const clickedElement = instance.selectedDateElem;
-                    if (clickedElement && clickedElement.classList.contains('flatpickr-disabled')) {
-                        const slotsPlaceholder = appContent.querySelector('#slots-placeholder');
-                        if (slotsPlaceholder) {
-                            slotsPlaceholder.textContent = '此日期未開放預約';
-                            slotsPlaceholder.style.display = 'block';
-                            appContent.querySelector('#booking-slots-container').innerHTML = '';
-                        }
-                    }
-                  }, 10);
-                }
-            });
-        }
-
-        const userData = await fetchGameData();
-        if (userData) {
-            const nameInput = appContent.querySelector('#contact-name');
-            const phoneInput = appContent.querySelector('#contact-phone');
-            if(nameInput) nameInput.value = userData.real_name || '';
-            if(phoneInput) phoneInput.value = userData.phone || '';
-        }
-        
-        if (stepId === 'step-summary') {
-            renderSummary();
-        }
+async function initializeBookingPage(stepId = 'step-preference') {
+    showBookingStep(stepId);
+    
+    // 【最終修正】所有 DOM 查詢都從 appContent 開始，確保操作的是可見頁面
+    const viewMyBookingsBtn = appContent.querySelector('#view-my-bookings-btn');
+    if (viewMyBookingsBtn) {
+        viewMyBookingsBtn.onclick = () => navigateTo('page-my-bookings');
     }
-    function showBookingStep(stepId) {
-        // 【修正】將搜尋範圍從 document 改為 appContent，確保只操作可見頁面中的元素
-        appContent.querySelectorAll('#booking-wizard-container .booking-step').forEach(step => {
-            step.classList.toggle('active', step.id === stepId);
+
+    try {
+        const infoResponse = await fetch('/api/get-store-info');
+        if (!infoResponse.ok) throw new Error('無法載入店家設定');
+        const storeInfo = await infoResponse.json();
+        
+        appContent.querySelector('#booking-announcement-box').innerText = storeInfo.booking_announcement_text || '';
+        appContent.querySelector('#go-to-booking-step-btn').innerText = storeInfo.booking_button_text || '開始預約';
+        appContent.querySelector('#booking-promo-text').innerText = storeInfo.booking_promo_text || '';
+
+        const response = await fetch('/api/bookings-check?month-init=true');
+        const data = await response.json();
+        enabledDatesByAdmin = data.enabledDates || []; 
+    } catch (error) {
+        console.error("初始化預約頁面API失敗:", error);
+    }
+    
+    const wizardContainer = appContent.querySelector('#booking-wizard-container');
+    if (wizardContainer && !wizardContainer.dataset.listenerAttached) {
+        wizardContainer.dataset.listenerAttached = 'true';
+        wizardContainer.addEventListener('click', (e) => {
+            if (e.target.closest('#go-to-booking-step-btn')) {
+                navigateTo('page-booking', 'step-date-and-slots');
+            } else if (e.target.matches('#to-summary-btn')) {
+                handleBookingNextStep();
+            } else if (e.target.matches('#confirm-booking-btn')) {
+                handleBookingConfirmation(e.target);
+            }
         });
     }
+    
+    const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
+    if (datepickerContainer) {
+        if (enabledDatesByAdmin.length === 0) {
+            datepickerContainer.innerHTML = '<p style="text-align:center; color: var(--color-danger);">目前沒有開放預約的日期。</p>';
+            return;
+        }
+        flatpickr(datepickerContainer, {
+            inline: true, minDate: "today", dateFormat: "Y-m-d", locale: "zh_tw",
+            enable: enabledDatesByAdmin,
+            onChange: (selectedDates, dateStr) => {
+                bookingData.date = dateStr;
+                fetchAndRenderSlots(dateStr);
+            },
+            onClick: (selectedDates, dateStr, instance) => {
+              setTimeout(() => {
+                const clickedElement = instance.selectedDateElem;
+                if (clickedElement && clickedElement.classList.contains('flatpickr-disabled')) {
+                    const slotsPlaceholder = appContent.querySelector('#slots-placeholder');
+                    if (slotsPlaceholder) {
+                        slotsPlaceholder.textContent = '此日期未開放預約';
+                        slotsPlaceholder.style.display = 'block';
+                        appContent.querySelector('#booking-slots-container').innerHTML = '';
+                    }
+                }
+              }, 10);
+            }
+        });
+    }
+
+    const userData = await fetchGameData();
+    if (userData) {
+        const nameInput = appContent.querySelector('#contact-name');
+        const phoneInput = appContent.querySelector('#contact-phone');
+        if(nameInput) nameInput.value = userData.real_name || '';
+        if(phoneInput) phoneInput.value = userData.phone || '';
+    }
+    
+    if (stepId === 'step-summary') {
+        renderSummary();
+    }
+}
+
+function showBookingStep(stepId) {
+    // 【進階偵錯】我們來看看這個指令到底找到了多少個 .booking-step 元素
+    const steps = document.querySelectorAll('#booking-wizard-container .booking-step');
+    console.log(`[預約頁偵錯 B] showBookingStep 找到了 ${steps.length} 個 .booking-step 元素。`);
+
+    steps.forEach(step => {
+        step.classList.toggle('active', step.id === stepId);
+    });
+}
 
     // 新增這個函式
     function handleBookingNextStep() {
