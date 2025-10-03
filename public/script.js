@@ -911,27 +911,19 @@ function renderGames() {
 // =================================================================
 // 場地預約頁 (從這裡開始取代)
 // =================================================================
-    function showBookingStep(stepId) {
-        document.querySelectorAll('#booking-wizard-container .booking-step').forEach(step => {
-            step.classList.toggle('active', step.id === stepId);
-        });
-    }
-
     /**
      * 【重構】初始化預約頁面
      * @param {string} [initialStep='step-preference'] - 初始要顯示的步驟
      */
     async function initializeBookingPage(initialStep = 'step-preference') {
-        // 顯示指定的初始步驟
         showBookingStep(initialStep);
 
-        // --- 綁定非 wizard 內的按鈕 ---
         const viewMyBookingsBtn = document.getElementById('view-my-bookings-btn');
         if (viewMyBookingsBtn) {
             viewMyBookingsBtn.onclick = () => navigateTo('page-my-bookings');
         }
 
-        // --- 填充動態文字 (這部分不變) ---
+        // --- 【核心修正】確保這段獲取店家資訊的程式碼存在且完整 ---
         try {
             const infoResponse = await fetch('/api/get-store-info');
             if (!infoResponse.ok) throw new Error('無法載入店家設定');
@@ -947,33 +939,30 @@ function renderGames() {
 
             const response = await fetch('/api/bookings-check?month-init=true');
             const data = await response.json();
-            disabledDatesByAdmin = data.enabledDates || []; 
+            enabledDatesByAdmin = data.enabledDates || []; 
         } catch (error) {
             console.error("初始化預約頁面失敗:", error);
         }
         
-        // --- 【重構】為預約流程容器建立獨立且唯一的事件監聽 ---
         const wizardContainer = document.getElementById('booking-wizard-container');
         if (wizardContainer && !wizardContainer.dataset.listenerAttached) {
-            wizardContainer.dataset.listenerAttached = 'true'; // 避免重複綁定
+            wizardContainer.dataset.listenerAttached = 'true';
             wizardContainer.addEventListener('click', (e) => {
-                // 注意：這裡不再處理返回按鈕，因為已交給全域的 goBack 處理
                 if (e.target.closest('#go-to-booking-step-btn')) {
                     navigateTo('page-booking', 'step-date-and-slots');
                 } else if (e.target.matches('#to-summary-btn')) {
-                    handleBookingNextStep(); // 內部處理，成功後導航
+                    handleBookingNextStep();
                 } else if (e.target.matches('#confirm-booking-btn')) {
                     handleBookingConfirmation(e.target);
                 }
             });
         }
         
-        // --- Flatpickr 和自動填入資料邏輯不變 ---
         const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
         if (datepickerContainer) {
             flatpickr(datepickerContainer, {
                 inline: true, minDate: "today", dateFormat: "Y-m-d", locale: "zh_tw",
-                enable: disabledDatesByAdmin,
+                enable: enabledDatesByAdmin,
                 onChange: (selectedDates, dateStr) => {
                     bookingData.date = dateStr;
                     fetchAndRenderSlots(dateStr);
@@ -1003,6 +992,11 @@ function renderGames() {
         }
     }
 
+    function showBookingStep(stepId) {
+        document.querySelectorAll('#booking-wizard-container .booking-step').forEach(step => {
+            step.classList.toggle('active', step.id === stepId);
+        });
+    }
 
     // 新增這個函式
     function handleBookingNextStep() {

@@ -2736,30 +2736,33 @@ async function fetchStoreInfo() {
     } catch (error) { alert(`錯誤：${error.message}`); }
 }
 
-if(storeInfoForm) {
-    storeInfoForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = {
-            address: document.getElementById('info-address').value,
-            phone: document.getElementById('info-phone').value,
-            opening_hours: document.getElementById('info-hours').value,
-            description: document.getElementById('info-desc').value,
-            // 【** 修改部分 **】
-            booking_announcement_text: document.getElementById('info-booking-announcement').value,
-            booking_button_text: document.getElementById('info-booking-button').value,
-            booking_promo_text: document.getElementById('info-booking-promo').value
-        };
-        try {
-            const response = await fetch('/api/admin/update-store-info', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || '更新失敗');
-            alert('更新成功！');
-        } catch (error) { alert(`錯誤：${error.message}`); }
-    });
-}
+ if(storeInfoForm) {
+        storeInfoForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = {
+                address: document.getElementById('info-address').value,
+                phone: document.getElementById('info-phone').value,
+                opening_hours: document.getElementById('info-hours').value,
+                description: document.getElementById('info-desc').value,
+                // 【核心修正】在儲存時，一併打包預約頁面的文字
+                booking_announcement_text: document.getElementById('info-booking-announcement').value,
+                booking_button_text: document.getElementById('info-booking-button').value,
+                booking_promo_text: document.getElementById('info-booking-promo').value
+            };
+            try {
+                const response = await fetch('/api/admin/update-store-info', {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || '更新失敗');
+                alert('更新成功！');
+            } catch (error) { 
+                alert(`儲存店家資訊錯誤：${error.message}`); 
+            }
+        });
+    }
 
     // ---- 初始化 ----
     async function initialize() {
