@@ -238,6 +238,47 @@ function renderNews(filterCategory = 'ALL') {
         }
     }
 
+function initializeNewsDetailsPageFromHash(newsIdString) {
+    const newsId = parseInt(newsIdString, 10);
+    if (isNaN(newsId)) {
+        appContent.innerHTML = '<p>無效的新聞 ID。</p>';
+        return;
+    }
+
+    // 從 allNews 陣列中尋找對應的新聞
+    const newsItem = allNews.find(news => news.id === newsId);
+
+    if (newsItem) {
+        renderNewsDetails(newsItem);
+    } else {
+        // 如果在 allNews 中找不到，可能是直接透過 URL 進入
+        // 這裡可以選擇顯示錯誤，或再從後端 API 獲取一次
+        appContent.innerHTML = `<p>找不到 ID 為 ${newsId} 的新聞。</p>`;
+        console.warn(`在 allNews 快取中找不到 ID 為 ${newsId} 的新聞`);
+    }
+}
+
+/**
+ * 從 URL hash 中獲取 gameId，並初始化遊戲詳情頁面
+ * @param {string} gameIdString - 從 hash 傳入的遊戲 ID
+ */
+function initializeGameDetailsPageFromHash(gameIdString) {
+    const gameId = gameIdString; // game_id 在資料庫中可能是字串
+    if (!gameId) {
+        appContent.innerHTML = '<p>無效的遊戲 ID。</p>';
+        return;
+    }
+    
+    // 從 allGames 陣列中尋找對應的遊戲
+    const game = allGames.find(g => g.game_id == gameId);
+
+    if (game) {
+        renderGameDetails(game);
+    } else {
+        appContent.innerHTML = `<p>找不到 ID 為 ${gameId} 的遊戲。</p>`;
+        console.warn(`在 allGames 快取中找不到 ID 為 ${gameId} 的遊戲`);
+    }
+}    
 // =================================================================
 // LIFF 初始化 (更新版)
 // =================================================================
