@@ -652,17 +652,18 @@ async function initializeEditProfilePage() {
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || '儲存失敗');
             
-            gameData = {}; // 清空快取，確保下次進入時資料是新的
+            gameData = {}; // 清空快取
             statusMsg.textContent = '儲存成功！';
             statusMsg.style.color = 'green';
-            setTimeout(() => goBackPage(), 1500);
+            
+            // 【核心修正】將 goBackPage() 改為 history.back()
+            setTimeout(() => history.back(), 1500); 
 
         } catch (error) {
             statusMsg.textContent = `儲存失敗: ${error.message}`;
             statusMsg.style.color = 'red';
         }
     };
-}
     // =================================================================
     // 桌遊圖鑑頁
     // =================================================================
