@@ -29,19 +29,21 @@ document.addEventListener('DOMContentLoaded', () => {
     appContent.addEventListener('click', (event) => {
         const target = event.target;
 
-        // 統一處理所有 class 包含 'back-button' 或 'details-back-button' 的按鈕
+        // 統一處理所有返回按鈕
         if (target.closest('.details-back-button, .back-button')) {
             event.preventDefault();
             history.back(); // 觸發 popstate
             return;
         }
 
+        // 處理情報卡片點擊
         const newsCard = target.closest('.news-card');
         if (newsCard && newsCard.dataset.newsId) {
             navigateTo('page-news-details', newsCard.dataset.newsId);
             return;
         }
         
+        // 處理遊戲卡片點擊
         const gameCard = target.closest('.game-card');
         if (gameCard && gameCard.dataset.gameId) {
             navigateTo('page-game-details', gameCard.dataset.gameId);
@@ -70,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pageTemplate) {
             appContent.innerHTML = pageTemplate.innerHTML;
         } else {
+            // 如果找不到頁面，就顯示首頁
             appContent.innerHTML = pageTemplates.querySelector('#page-home').innerHTML;
             initializeHomePage();
             return;
@@ -110,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
             location.hash = newHash;
         }
     }
-
+    
     // 監聽瀏覽器的返回操作和 hash 變化
     window.addEventListener('popstate', handleNavigation);
     window.addEventListener('hashchange', handleNavigation);
@@ -234,8 +237,6 @@ function handleInitialRouting() {
     }
 }
 
-// 【步驟 2: 修改這個函式】
-// 使用 async/await 讓程式碼更清晰
     async function initializeLiff() {
         try {
             await liff.init({ liffId: myLiffId });
@@ -248,10 +249,11 @@ function handleInitialRouting() {
             
             // 首次進入時，如果沒有 hash，給定一個初始狀態
             if (!location.hash) {
+                // replaceState 不會創建新的歷史紀錄，只是替換當前狀態
                 history.replaceState({ page: 'page-home', data: null }, '', '#page-home');
             }
             
-            handleNavigation(); // 根據當前 hash (無論是初始還是重載) 渲染頁面
+            handleNavigation(); // 根據當前 hash 渲染頁面
 
         } catch (err) {
             console.error("LIFF 初始化或 Profile 獲取失敗", err);
@@ -260,7 +262,6 @@ function handleInitialRouting() {
             handleNavigation();
         }
     }
-    
     // =================================================================
     // 個人資料頁
     // =================================================================
@@ -283,10 +284,10 @@ async function initializeProfilePage() {
     }
     
     // 綁定按鈕事件
-    document.getElementById('edit-profile-btn').addEventListener('click', () => showPage('page-edit-profile'));
-    document.getElementById('my-bookings-btn').addEventListener('click', () => showPage('page-my-bookings'));
-    document.getElementById('my-exp-history-btn').addEventListener('click', () => showPage('page-my-exp-history'));
-    document.getElementById('rental-history-btn').addEventListener('click', () => showPage('page-rental-history'));
+        document.getElementById('edit-profile-btn').addEventListener('click', () => navigateTo('page-edit-profile'));
+        document.getElementById('my-bookings-btn').addEventListener('click', () => navigateTo('page-my-bookings'));
+        document.getElementById('my-exp-history-btn').addEventListener('click', () => navigateTo('page-my-exp-history'));
+        document.getElementById('rental-history-btn').addEventListener('click', () => navigateTo('page-rental-history'));
     
     // 2. 【核心修正】: 強制每次都重新 fetchGameData
     //    不再使用快取，確保資料永遠是最新
@@ -923,9 +924,9 @@ function renderGames() {
         // 【關鍵修正】為預約流程容器建立獨立且唯一的事件監聽器
         const wizardContainer = document.getElementById('booking-wizard-container');
         if (wizardContainer && !wizardContainer.dataset.listenerAttached) {
-            wizardContainer.dataset.listenerAttached = 'true'; // 標記已綁定
+            wizardContainer.dataset.listenerAttached = 'true'; // 標記已綁定，避免重複
             wizardContainer.addEventListener('click', (e) => {
-                // 注意：這裡不再需要處理返回按鈕，已由全域監聽器處理
+                // 注意：這裡不再處理返回按鈕，已由全域監聽器統一處理
                 if (e.target.closest('#go-to-booking-step-btn')) {
                     navigateTo('page-booking', 'step-date-and-slots');
                 } else if (e.target.matches('#to-summary-btn')) {
