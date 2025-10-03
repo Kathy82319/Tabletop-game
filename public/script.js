@@ -897,13 +897,14 @@ function renderGames() {
 // =================================================================
 // 場地預約頁 (從這裡開始取代)
 // =================================================================
-async function initializeBookingPage(stepId = 'step-preference') {
+async function initializeBookingPage(stepId) { 
+    const currentStep = stepId || 'step-preference'
     console.log(`[Booking偵錯 A] initializeBookingPage 開始執行，目標步驟: ${stepId}`);
 
     // 步驟 1: 顯示指定的步驟
     try {
-        showBookingStep(stepId);
-        console.log(`[Booking偵錯 B] showBookingStep('${stepId}') 執行完畢。`);
+        showBookingStep(currentStep);
+        console.log(`[Booking偵錯 B] showBookingStep('${currentStep}') 執行完畢。`);
     } catch (e) {
         console.error(`[Booking偵錯 B.1] showBookingStep 執行時出錯!`, e);
         return; // 如果這裡出錯，後續都不用執行了
