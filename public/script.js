@@ -1,38 +1,111 @@
-// public/script.js
+// public/script.js (重構修正最終版 - Part 1/2)
 
 document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 核心DOM元素與全域變數
     // =================================================================
-    const myLiffId = "2008076323-GN1e7naW";
+    const myLiffId = "2008076323-GN1e7naW"; // 請確認這是您的 LIFF ID
     let userProfile = null;
-    let gameData = {}; // 用於快取使用者遊戲資料
+    let gameData = {};
     const appContent = document.getElementById('app-content');
     const pageTemplates = document.getElementById('page-templates');
     const tabBar = document.getElementById('tab-bar');
 
+    // 業務邏輯變數
     const TOTAL_TABLES = 4;
     const PEOPLE_PER_TABLE = 4;
     const AVAILABLE_TIME_SLOTS = ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30'];
 
-    let myRentals = [];
+    // 狀態變數
     let allGames = [];
     let allNews = [];
     let activeFilters = { keyword: '', tag: null };
     let bookingData = {};
     let dailyAvailability = { limit: TOTAL_TABLES, booked: 0, available: TOTAL_TABLES };
-    let disabledDatesByAdmin = [];
+    let enabledDatesByAdmin = [];
 
     // =================================================================
-    // 全域事件監聽
+    // 頁面切換邏輯 (重構核心)
     // =================================================================
+
+    /**
+     * 核心導覽函式，唯一的頁面渲染入口
+     * 根據 URL hash (例如 #page-booking@step-date) 顯示對應的頁面和步驟
+     */
+    function handleNavigation() {
+        const hash = location.hash.substring(1) || 'page-home';
+        const [pageId, ...rest] = hash.split('@');
+        const data = rest.join('@'); // 取得 @ 後面的所有內容 (用於步驟或ID)
+
+        const pageTemplate = pageTemplates.querySelector(`#${pageId}`);
+        if (pageTemplate) {
+            appContent.innerHTML = pageTemplate.innerHTML;
+        } else {
+            // 如果找不到頁面，安全起見，強制顯示首頁
+            appContent.innerHTML = pageTemplates.querySelector('#page-home').innerHTML;
+            initializeHomePage(); // 確保首頁內容被初始化
+            return;
+        }
+
+        // 頁面初始化函式映射表
+        const pageInitializers = {
+            'page-home': initializeHomePage,
+            'page-games': initializeGamesPage,
+            'page-profile': initializeProfilePage,
+            'page-my-bookings': initializeMyBookingsPage,
+            'page-my-exp-history': initializeMyExpHistoryPage,
+            'page-rental-history': initializeRentalHistoryPage,
+            'page-booking': () => initializeBookingPage(data),
+            'page-info': initializeInfoPage,
+            'page-edit-profile': initializeEditProfilePage,
+            'page-news-details': () => initializeNewsDetailsPageFromHash(data),
+            'page-game-details': () => initializeGameDetailsPageFromHash(data),
+        };
+
+        // 執行對應的初始化函式
+        if (pageInitializers[pageId]) {
+            pageInitializers[pageId]();
+        }
+
+        // 更新 Tab Bar 的高亮狀態
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.target === pageId);
+        });
+    }
+
+    /**
+     * 導航函式，所有頁面跳轉都必須呼叫此函式
+     * @param {string} pageId - 目標頁面的 ID
+     * @param {string} [data] - (可選) 附加資料，例如步驟 ID 或項目 ID
+     */
+    function navigateTo(pageId, data = null) {
+        let newHash = pageId;
+        if (data) {
+            newHash += `@${data}`;
+        }
+        // 只有當 hash 真的改變時才賦值，避免不必要的重複觸發
+        if (location.hash !== `#${newHash}`) {
+            location.hash = newHash;
+        }
+    }
+
+    // 監聽瀏覽器的返回操作(popstate)和程式內部導覽(hashchange)
+    // 兩者都交給同一個核心函式處理，確保行為一致
+    window.addEventListener('popstate', handleNavigation);
+    window.addEventListener('hashchange', handleNavigation);
+
+    // =================================================================
+    // 全域事件監聽 (Event Listeners)
+    // =================================================================
+
+    // 使用事件委派，統一處理 appContent 內部的所有點擊事件，效能更好且能對應動態產生的元素
     appContent.addEventListener('click', (event) => {
         const target = event.target;
 
         // 統一處理所有返回按鈕
         if (target.closest('.details-back-button, .back-button')) {
             event.preventDefault();
-            history.back(); // 觸發 popstate
+            history.back(); // 只做這件事，剩下的交給 popstate 監聽器
             return;
         }
 
@@ -59,228 +132,94 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-
     // =================================================================
-    // 頁面切換邏輯 (重構)
+    // LIFF 初始化 (程式啟動點)
     // =================================================================
-    function handleNavigation() {
-        const hash = location.hash.substring(1) || 'page-home';
-        const [pageId, ...rest] = hash.split('@');
-        const data = rest.join('@');
-
-        const pageTemplate = pageTemplates.querySelector(`#${pageId}`);
-        if (pageTemplate) {
-            appContent.innerHTML = pageTemplate.innerHTML;
-        } else {
-            // 如果找不到頁面，就顯示首頁
-            appContent.innerHTML = pageTemplates.querySelector('#page-home').innerHTML;
-            initializeHomePage();
-            return;
-        }
-
-        const pageInitializers = {
-            'page-home': initializeHomePage,
-            'page-games': initializeGamesPage,
-            'page-profile': initializeProfilePage,
-            'page-my-bookings': initializeMyBookingsPage,
-            'page-my-exp-history': initializeMyExpHistoryPage,
-            'page-rental-history': initializeRentalHistoryPage,
-            'page-booking': () => initializeBookingPage(data),
-            'page-info': initializeInfoPage,
-            'page-edit-profile': initializeEditProfilePage,
-            'page-news-details': () => initializeNewsDetailsPageFromHash(data),
-            'page-game-details': () => initializeGameDetailsPageFromHash(data),
-        };
-
-        if (pageInitializers[pageId]) {
-            pageInitializers[pageId]();
-        }
-
-        document.querySelectorAll('.tab-button').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.target === pageId);
-        });
-    }
-
-    /**
-     * 用於切換頁面的函式，會更新 URL hash 並觸發導覽
-     */
-    function navigateTo(pageId, data = null) {
-        let newHash = pageId;
-        if (data) {
-            newHash += `@${data}`;
-        }
-        if (location.hash !== `#${newHash}`) {
-            location.hash = newHash;
-        }
-    }
-    
-    // 監聽瀏覽器的返回操作和 hash 變化
-    window.addEventListener('popstate', handleNavigation);
-    window.addEventListener('hashchange', handleNavigation);
-
-    
-    // =================================================================
-    // 首頁 (最新情報)
-    // =================================================================
-// public/script.js
-function renderNews(filterCategory = 'ALL') {
-    const container = document.getElementById('news-list-container');
-    if (!container) return;
-
-    const filteredNews = (filterCategory === 'ALL')
-        ? allNews
-        : allNews.filter(news => news.category === filterCategory);
-
-    if (filteredNews.length === 0) {
-        container.innerHTML = '<p>這個分類目前沒有消息。</p>';
-        return;
-    }
-
-    container.innerHTML = filteredNews.map(news => {
-        // 產生內文摘要，最多截取 50 個字
-        const snippet = news.content ? news.content.substring(0, 50) + '...' : '';
-        // 決定是否要顯示圖片
-        const imageHTML = news.image_url
-            ? `<div class="news-card-image-container">
-                   <img src="${news.image_url}" alt="${news.title}" class="news-card-image">
-               </div>`
-            : '';
-
-        return `
-        <div class="news-card" data-news-id="${news.id}">
-            <div class="news-card-header">
-                <span class="news-card-category">${news.category}</span>
-                <span class="news-card-date">${news.published_date}</span>
-            </div>
-            <div class="news-card-content">
-                <h3 class="news-card-title">${news.title}</h3>
-                ${imageHTML}
-                <p class="news-card-snippet">${snippet}</p>
-            </div>
-        </div>
-        `;
-    }).join('');
-}
-
-    function setupNewsFilters() {
-        const container = document.getElementById('news-filter-container');
-        if (!container) return;
-        const categories = ['ALL', ...new Set(allNews.map(news => news.category))];
-        
-        container.innerHTML = categories.map(cat => 
-            `<button class="news-filter-btn ${cat === 'ALL' ? 'active' : ''}" data-category="${cat}">${cat === 'ALL' ? '全部' : cat}</button>`
-        ).join('');
-        
-        container.querySelectorAll('.news-filter-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                container.querySelector('.active').classList.remove('active');
-                btn.classList.add('active');
-                renderNews(btn.dataset.category);
-            });
-        });
-    }
-
-    async function initializeHomePage() {
-        try {
-            const response = await fetch('/api/get-news');
-            if (!response.ok) throw new Error('無法獲取最新情報');
-            allNews = await response.json();
-            setupNewsFilters();
-            renderNews();
-        } catch (error) {
-            console.error(error);
-            const container = document.getElementById('news-list-container');
-            if(container) container.innerHTML = `<p style="color:red;">${error.message}</p>`;
-        }
-    }
-    
-    function renderNewsDetails(newsItem) {
-        document.getElementById('news-details-title').textContent = newsItem.title;
-        document.getElementById('news-details-category').textContent = newsItem.category;
-        document.getElementById('news-details-date').textContent = newsItem.published_date;
-        
-        const contentEl = document.getElementById('news-details-content');
-        contentEl.innerHTML = newsItem.content 
-            ? newsItem.content.replace(/\n/g, '<br>') 
-            : '<p style="color: #888;">此消息沒有提供詳細內容。</p>';
-
-        const imageEl = document.getElementById('news-details-image');
-        if (newsItem.image_url) {
-            imageEl.src = newsItem.image_url;
-            imageEl.alt = newsItem.title;
-            imageEl.style.display = 'block';
-        } else {
-            imageEl.style.display = 'none';
-        }
-    }
-
-// =================================================================
-// LIFF 初始化 (更新版)
-// =================================================================
-
     async function initializeLiff() {
         try {
             await liff.init({ liffId: myLiffId });
 
             if (!liff.isLoggedIn()) {
                 liff.login();
-                return; // 登入後會自動重載頁面，終止後續執行
+                return; // 登入後會自動重載，終止後續執行
             }
             userProfile = await liff.getProfile();
             
-            // 首次進入時，如果沒有 hash，給定一個初始狀態
+            // 首次進入時，如果 URL 沒有 hash，給定一個初始狀態
             if (!location.hash) {
                 // replaceState 不會創建新的歷史紀錄，只是替換當前狀態
-                history.replaceState({ page: 'page-home', data: null }, '', '#page-home');
+                history.replaceState({ page: 'page-home' }, '', '#page-home');
             }
             
-            handleNavigation(); // 【關鍵】根據當前 hash 渲染頁面
+            handleNavigation(); // 根據當前 hash 渲染頁面
 
         } catch (err) {
             console.error("LIFF 初始化或 Profile 獲取失敗", err);
             // 即使 LIFF 失敗，也嘗試渲染首頁
-            history.replaceState({ page: 'page-home', data: null }, '', '#page-home');
+            history.replaceState({ page: 'page-home' }, '', '#page-home');
             handleNavigation();
         }
     }
+
+    // =================================================================
+    // 各頁面初始化函式 (Page Initializers)
+    // =================================================================
+
+    async function initializeHomePage() {
+        try {
+            if (allNews.length === 0) {
+                const response = await fetch('/api/get-news');
+                if (!response.ok) throw new Error('無法獲取最新情報');
+                allNews = await response.json();
+            }
+            setupNewsFilters();
+            renderNews();
+        } catch (error) {
+            console.error(error);
+            const container = document.getElementById('news-list-container');
+            if (container) container.innerHTML = `<p style="color:red;">${error.message}</p>`;
+        }
+    }
+    
+    function initializeNewsDetailsPageFromHash(newsId) {
+        if (newsId && allNews.length > 0) {
+            const newsItem = allNews.find(n => n.id == newsId);
+            if (newsItem) {
+                renderNewsDetails(newsItem);
+            }
+        }
+    }  
     // =================================================================
     // 個人資料頁
     // =================================================================
-async function initializeProfilePage() {
-    if (!userProfile) return;
+        async function initializeProfilePage() {
+        if (!userProfile) return;
+        
+        const qrcodeElement = document.getElementById('qrcode');
+        if (qrcodeElement) {
+            qrcodeElement.innerHTML = '';
+            new QRCode(qrcodeElement, { text: userProfile.userId, width: 150, height: 150 });
+        }
 
-    // --- 【需求 2.2 修正開始】 ---
+        const profilePicture = document.getElementById('profile-picture');
+        if (profilePicture && userProfile.pictureUrl) {
+            profilePicture.src = userProfile.pictureUrl;
+        }
 
-    // 1. 將畫面元素先設定為讀取中狀態，確保每次進入頁面都會重置
-    const displayNameElement = document.getElementById('display-name');
-    if (displayNameElement) displayNameElement.textContent = '讀取中...';
-    
-    const profilePicture = document.getElementById('profile-picture');
-    if (userProfile.pictureUrl) profilePicture.src = userProfile.pictureUrl;
-
-    const qrcodeElement = document.getElementById('qrcode');
-    if(qrcodeElement) {
-        qrcodeElement.innerHTML = ''; // 清空舊的 QR Code
-        new QRCode(qrcodeElement, { text: userProfile.userId, width: 150, height: 150 });
+        document.getElementById('edit-profile-btn').onclick = () => navigateTo('page-edit-profile');
+        document.getElementById('my-bookings-btn').onclick = () => navigateTo('page-my-bookings');
+        document.getElementById('my-exp-history-btn').onclick = () => navigateTo('page-my-exp-history');
+        document.getElementById('rental-history-btn').onclick = () => navigateTo('page-rental-history');
+        
+        try {
+            const userData = await fetchGameData(true);
+            updateProfileDisplay(userData);
+        } catch (error) {
+            console.error("無法更新個人資料畫面:", error);
+            const displayNameElement = document.getElementById('display-name');
+            if (displayNameElement) displayNameElement.textContent = '資料載入失敗';
+        }
     }
-    
-    // 綁定按鈕事件
-        document.getElementById('edit-profile-btn').addEventListener('click', () => navigateTo('page-edit-profile'));
-        document.getElementById('my-bookings-btn').addEventListener('click', () => navigateTo('page-my-bookings'));
-        document.getElementById('my-exp-history-btn').addEventListener('click', () => navigateTo('page-my-exp-history'));
-        document.getElementById('rental-history-btn').addEventListener('click', () => navigateTo('page-rental-history'));
-    
-    // 2. 【核心修正】: 強制每次都重新 fetchGameData
-    //    不再使用快取，確保資料永遠是最新
-    try {
-        const userData = await fetchGameData(true); // 傳入 true 表示強制刷新
-        updateProfileDisplay(userData);
-    } catch (error) {
-        console.error("無法更新個人資料畫面:", error);
-        if (displayNameElement) displayNameElement.textContent = '資料載入失敗';
-    }
-    // --- 【需求 2.2 修正結束】 ---
-}
 
     // 【需求 2.2 修正】增加 forceRefresh 參數
     async function fetchGameData(forceRefresh = false) { 
@@ -503,149 +442,105 @@ async function initializeRentalHistoryPage() {
     // =================================================================
     // 編輯個人資料頁
     // =================================================================
-// public/script.js (initializeEditProfilePage 修正版)
-async function initializeEditProfilePage() {
-    // 步驟 1: 確保遊戲資料已載入
-    if (allGames.length === 0) {
-        try {
-            const res = await fetch('/api/get-boardgames');
-            if (!res.ok) throw new Error('無法獲取遊戲資料');
-            allGames = await res.json();
-        } catch (error) {
-            console.error('獲取遊戲標籤失敗:', error);
+    async function initializeEditProfilePage() {
+        if (allGames.length === 0) {
+            try {
+                const res = await fetch('/api/get-boardgames');
+                if (!res.ok) throw new Error('無法獲取遊戲資料');
+                allGames = await res.json();
+            } catch (error) { console.error('獲取遊戲標籤失敗:', error); }
         }
-    }
+        if (!userProfile) return;
 
-    if (!userProfile) return;
-
-    // 步驟 2: 填充基本資料 (保持不變)
-    document.getElementById('edit-profile-name').value = userProfile.displayName;
-    const userData = await fetchGameData();
-    if (!userData) return;
-    
-    document.getElementById('edit-profile-real-name').value = userData.real_name || '';
-    document.getElementById('edit-profile-nickname').value = userData.nickname || '';
-    document.getElementById('edit-profile-phone').value = userData.phone || '';
-    document.getElementById('edit-profile-email').value = userData.email || '';
-
-    // 步驟 3: 【核心修改】處理「偏好遊戲類型」的顯示邏輯
-    const gamesContainer = document.getElementById('preferred-games-container');
-    const otherContainer = document.getElementById('preferred-games-other-container');
-    const otherInput = document.getElementById('preferred-games-other-input');
-
-    if (gamesContainer && otherContainer && otherInput) {
-        // 從所有遊戲中提取出不重複的標籤列表
-        const allStandardTags = [...new Set(allGames.flatMap(g => (g.tags || '').split(',')).map(t => t.trim()).filter(Boolean))];
+        document.getElementById('edit-profile-name').value = userProfile.displayName;
+        const userData = await fetchGameData();
+        if (!userData) return;
         
-        // 獲取使用者已儲存的偏好，並轉換為 Set 以方便快速查找
-        const userTags = new Set((userData.preferred_games || '').split(',').map(tag => tag.trim()).filter(Boolean));
-        
-        // 找出使用者自訂的標籤 (不在標準標籤內的)
-        const userCustomTags = [...userTags].filter(tag => !allStandardTags.includes(tag));
+        document.getElementById('edit-profile-real-name').value = userData.real_name || '';
+        document.getElementById('edit-profile-nickname').value = userData.nickname || '';
+        document.getElementById('edit-profile-phone').value = userData.phone || '';
+        document.getElementById('edit-profile-email').value = userData.email || '';
 
-        // 渲染標準標籤按鈕
-        gamesContainer.innerHTML = allStandardTags.map(tag => {
-            const isActive = userTags.has(tag) ? 'active' : '';
-            return `<button type="button" class="preference-tag-btn ${isActive}" data-tag="${tag}">${tag}</button>`;
-        }).join('');
-        
-        // 新增「其他」按鈕
-        const otherBtn = document.createElement('button');
-        otherBtn.type = 'button';
-        otherBtn.className = 'preference-tag-btn';
-        otherBtn.textContent = '其他';
-        gamesContainer.appendChild(otherBtn);
+        const gamesContainer = document.getElementById('preferred-games-container');
+        const otherContainer = document.getElementById('preferred-games-other-container');
+        const otherInput = document.getElementById('preferred-games-other-input');
 
-        // 如果使用者有自訂標籤，則預設展開「其他」區塊並填入值
-        if (userCustomTags.length > 0) {
-            otherBtn.classList.add('active');
-            otherContainer.style.display = 'block';
-            otherInput.value = userCustomTags.join(', ');
-        } else {
-            otherContainer.style.display = 'none';
-        }
+        if (gamesContainer && otherContainer && otherInput) {
+            const allStandardTags = [...new Set(allGames.flatMap(g => (g.tags || '').split(',')).map(t => t.trim()).filter(Boolean))];
+            const userTags = new Set((userData.preferred_games || '').split(',').map(tag => tag.trim()).filter(Boolean));
+            const userCustomTags = [...userTags].filter(tag => !allStandardTags.includes(tag));
 
-        // 綁定所有標籤按鈕的點擊事件
-        gamesContainer.addEventListener('click', (e) => {
-            const target = e.target;
-            if (target.classList.contains('preference-tag-btn')) {
-                // 如果點擊的是「其他」按鈕
-                if (target === otherBtn) {
-                    const isNowActive = otherBtn.classList.toggle('active');
-                    otherContainer.style.display = isNowActive ? 'block' : 'none';
-                } else {
-                    // 點擊的是一般標籤按鈕
-                    target.classList.toggle('active');
+            gamesContainer.innerHTML = allStandardTags.map(tag => {
+                const isActive = userTags.has(tag) ? 'active' : '';
+                return `<button type="button" class="preference-tag-btn ${isActive}" data-tag="${tag}">${tag}</button>`;
+            }).join('');
+            
+            const otherBtn = document.createElement('button');
+            otherBtn.type = 'button';
+            otherBtn.className = 'preference-tag-btn';
+            otherBtn.textContent = '其他';
+            gamesContainer.appendChild(otherBtn);
+
+            if (userCustomTags.length > 0) {
+                otherBtn.classList.add('active');
+                otherContainer.style.display = 'block';
+                otherInput.value = userCustomTags.join(', ');
+            } else {
+                otherContainer.style.display = 'none';
+            }
+
+            gamesContainer.addEventListener('click', (e) => {
+                const target = e.target;
+                if (target.classList.contains('preference-tag-btn')) {
+                    if (target === otherBtn) {
+                        otherBtn.classList.toggle('active');
+                        otherContainer.style.display = otherBtn.classList.contains('active') ? 'block' : 'none';
+                    } else {
+                        target.classList.toggle('active');
+                    }
                 }
-            }
-        });
-        
-        // 為「其他」輸入框加上字數限制
-        otherInput.addEventListener('input', () => {
-            let value = otherInput.value;
-            let chineseCount = (value.match(/[\u4e00-\u9fa5]/g) || []).length;
-            let englishCount = (value.match(/[a-zA-Z]/g) || []).length;
-            
-            if (chineseCount > 10) {
-                value = Array.from(value).filter(char => /[\u4e00-\u9fa5]/.test(char)).slice(0, 10).join('');
-                otherInput.value = value;
-            }
-            if (englishCount > 30) {
-                 value = Array.from(value).filter(char => /[a-zA-Z]/.test(char)).slice(0, 30).join('');
-                 otherInput.value = value;
-            }
-        });
-    }
-
-    // 步驟 4: 修改表單提交邏輯
-    const form = document.getElementById('edit-profile-form');
-    form.onsubmit = async (event) => {
-        event.preventDefault();
-        const statusMsg = document.getElementById('edit-profile-form-status');
-        statusMsg.textContent = '儲存中...';
-
-        // 收集所有被選中的標準標籤
-        let selectedGames = Array.from(gamesContainer.querySelectorAll('.preference-tag-btn.active'))
-                                 .map(btn => btn.dataset.tag)
-                                 .filter(tag => tag); // 過濾掉 "其他" 按鈕的 undefined
-        
-        // 如果「其他」按鈕被選中，則收集自訂標籤
-        if (otherContainer.style.display === 'block' && otherInput.value.trim() !== '') {
-            const customTags = otherInput.value.trim().split(/[,，\s]+/).filter(Boolean);
-            selectedGames.push(...customTags);
-        }
-
-        const formData = {
-            userId: userProfile.userId,
-            realName: document.getElementById('edit-profile-real-name').value.trim(),
-            nickname: document.getElementById('edit-profile-nickname').value,
-            phone: document.getElementById('edit-profile-phone').value,
-            email: document.getElementById('edit-profile-email').value,
-            preferredGames: [...new Set(selectedGames)], // 使用 Set 去除重複項
-            displayName: userProfile.displayName,
-            pictureUrl: userProfile.pictureUrl || ''
-        };
-
-        try {
-            const response = await fetch('/api/update-user-profile', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData)
             });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || '儲存失敗');
-            
-            gameData = {}; // 清空快取
-            statusMsg.textContent = '儲存成功！';
-            statusMsg.style.color = 'green';
-            
-            // 【核心修正】將 goBackPage() 改為 history.back()
-            setTimeout(() => history.back(), 1500); 
-
-        } catch (error) {
-            statusMsg.textContent = `儲存失敗: ${error.message}`;
-            statusMsg.style.color = 'red';
         }
-    };
-}
+
+        const form = document.getElementById('edit-profile-form');
+        form.onsubmit = async (event) => {
+            event.preventDefault();
+            const statusMsg = document.getElementById('edit-profile-form-status');
+            statusMsg.textContent = '儲存中...';
+
+            let selectedGames = Array.from(gamesContainer.querySelectorAll('.preference-tag-btn.active')).map(btn => btn.dataset.tag).filter(tag => tag);
+            if (otherContainer.style.display === 'block' && otherInput.value.trim() !== '') {
+                const customTags = otherInput.value.trim().split(/[,，\s]+/).filter(Boolean);
+                selectedGames.push(...customTags);
+            }
+
+            const formData = {
+                userId: userProfile.userId,
+                realName: document.getElementById('edit-profile-real-name').value.trim(),
+                nickname: document.getElementById('edit-profile-nickname').value,
+                phone: document.getElementById('edit-profile-phone').value,
+                email: document.getElementById('edit-profile-email').value,
+                preferredGames: [...new Set(selectedGames)],
+                displayName: userProfile.displayName,
+                pictureUrl: userProfile.pictureUrl || ''
+            };
+
+            try {
+                const response = await fetch('/api/update-user-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || '儲存失敗');
+                
+                gameData = {}; // 清空快取
+                statusMsg.textContent = '儲存成功！';
+                statusMsg.style.color = 'green';
+                
+                setTimeout(() => history.back(), 1500);
+            } catch (error) {
+                statusMsg.textContent = `儲存失敗: ${error.message}`;
+                statusMsg.style.color = 'red';
+            }
+        };
+    }
     // =================================================================
     // 桌遊圖鑑頁
     // =================================================================
@@ -860,14 +755,33 @@ function renderGames() {
         }
         renderGames();
         populateFilters();
-        document.getElementById('keyword-search').addEventListener('input', e => { activeFilters.keyword = e.target.value; renderGames(); });
-        document.getElementById('clear-filters').addEventListener('click', () => {
-            activeFilters.keyword = '';
-            activeFilters.tag = null;
-            document.getElementById('keyword-search').value = '';
-            document.querySelectorAll('#tag-filter-container button').forEach(b => b.classList.remove('active'));
-            renderGames();
-        });
+        
+        const searchInput = document.getElementById('keyword-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', e => { 
+                activeFilters.keyword = e.target.value; 
+                renderGames(); 
+            });
+        }
+        const clearButton = document.getElementById('clear-filters');
+        if(clearButton) {
+            clearButton.addEventListener('click', () => {
+                activeFilters.keyword = '';
+                activeFilters.tag = null;
+                if(searchInput) searchInput.value = '';
+                document.querySelectorAll('#tag-filter-container button').forEach(b => b.classList.remove('active'));
+                renderGames();
+            });
+        }
+    }
+
+    function initializeGameDetailsPageFromHash(gameId) {
+        if (gameId && allGames.length > 0) {
+            const gameItem = allGames.find(g => g.game_id == gameId);
+            if (gameItem) {
+                renderGameDetails(gameItem);
+            }
+        }
     }
 
 // =================================================================
