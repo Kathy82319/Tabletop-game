@@ -767,7 +767,7 @@ async function initializeEditProfilePage() {
         }
         
         // 4. 處理介紹
-        appContent.querySelector('#game-intro-content').textContent = game.description || '暫無介紹。';
+        appContent.querySelector('#game-intro-content').innerHTML = (game.description || '暫無介紹。').replace(/\n/g, '<br>');
         
         // 5. 處理補充說明
         const supplementarySection = appContent.querySelector('#game-supplementary-section');
