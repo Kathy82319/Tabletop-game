@@ -218,25 +218,6 @@ function renderNews(filterCategory = 'ALL') {
 // LIFF 初始化 (更新版)
 // =================================================================
 
-// 【步驟 1: 新增這個函式】
-// 這個函式專門用來決定 LIFF 載入後要顯示哪個頁面
-function handleInitialRouting() {
-    const hash = window.location.hash; // 獲取網址中 # 後面的部分
-
-    // 如果 hash 存在且對應到某個頁面 (例如 #page-profile)
-    // 我們就把 # 拿掉，得到 page-profile
-    const pageId = hash ? hash.substring(1) : 'page-home';
-
-    // 檢查這個 pageId 是否真的存在於我們的 HTML 樣板中
-    const templateExists = document.getElementById(pageId);
-
-    if (templateExists) {
-        showPage(pageId); // 如果存在，就顯示對應頁面
-    } else {
-        showPage('page-home'); // 如果不存在或沒有 hash，就顯示首頁
-    }
-}
-
     async function initializeLiff() {
         try {
             await liff.init({ liffId: myLiffId });
@@ -253,7 +234,7 @@ function handleInitialRouting() {
                 history.replaceState({ page: 'page-home', data: null }, '', '#page-home');
             }
             
-            handleNavigation(); // 根據當前 hash 渲染頁面
+            handleNavigation(); // 【關鍵】根據當前 hash 渲染頁面
 
         } catch (err) {
             console.error("LIFF 初始化或 Profile 獲取失敗", err);
