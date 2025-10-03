@@ -63,64 +63,68 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 頁面切換邏輯 (重構)
     // =================================================================
-// public/script.js
 
-    function handleNavigation() {
-        // ---【偵錯日誌：步驟 1】---
-        // 檢查導航函式是否被觸發，以及目標頁面ID是否正確
-        const hash = location.hash.substring(1) || 'page-home';
-        console.log(`[導航偵錯 1] handleNavigation 觸發，目標 hash: #${hash}`);
-        
-        const [pageId, ...rest] = hash.split('@');
-        const data = rest.join('@');
-
-        // ---【偵錯日誌：步驟 2】---
-        // 檢查是否能在 #page-templates 中找到對應的 HTML 模板
-        const pageTemplate = pageTemplates.querySelector(`#${pageId}`);
-        console.log(`[導航偵錯 2] 正在尋找模板 #${pageId}... 找到了嗎?`, !!pageTemplate);
-
-        if (pageTemplate) {
-            // ---【偵錯日誌：步驟 3】---
-            // 檢查是否即將把 HTML 寫入主內容區
-            console.log('[導航偵錯 3] 準備將模板注入到 appContent...');
-            appContent.innerHTML = pageTemplate.innerHTML;
-            console.log('[導航偵錯 4] HTML 注入完成。');
-        } else {
-            console.error(`[導航錯誤] 找不到 ID 為 #${pageId} 的頁面模板！將強制導向首頁。`);
-            appContent.innerHTML = pageTemplates.querySelector('#page-home').innerHTML;
-            initializeHomePage();
-            return;
-        }
-
-        // 頁面初始化函式映射表
-        const pageInitializers = {
-            'page-home': initializeHomePage,
-            'page-games': initializeGamesPage,
-            'page-profile': initializeProfilePage,
-            'page-my-bookings': initializeMyBookingsPage,
-            'page-my-exp-history': initializeMyExpHistoryPage,
-            'page-rental-history': initializeRentalHistoryPage,
-            'page-booking': () => initializeBookingPage(data),
-            'page-info': initializeInfoPage,
-            'page-edit-profile': initializeEditProfilePage,
-            'page-news-details': () => initializeNewsDetailsPageFromHash(data),
-            'page-game-details': () => initializeGameDetailsPageFromHash(data),
-        };
-
-        // ---【偵錯日誌：步驟 5】---
-        // 檢查是否即將呼叫對應頁面的初始化函式
-        if (pageInitializers[pageId]) {
-            console.log(`[導航偵錯 5] 準備呼叫頁面初始化函式: ${pageId}`);
-            pageInitializers[pageId]();
-        } else {
-            console.warn(`[導航警告] 頁面 ${pageId} 沒有對應的初始化函式。`);
-        }
-
-        // 更新 Tab Bar 的高亮狀態
-        document.querySelectorAll('.tab-button').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.target === pageId);
-        });
+function handleNavigation() {
+    const hash = location.hash.substring(1) || 'page-home';
+    console.log(`[導航偵錯 1] handleNavigation 觸發，目標 hash: #${hash}`);
+    
+    // 【修正】增加一個檢查，避免在 navigateTo 內部觸發時，不小心重新渲染頁面
+    if (appContent.dataset.currentPage === hash) {
+        console.log(`[導航偵錯] 頁面 ${hash} 已是當前頁面，中止重複渲染。`);
+        return;
     }
+    appContent.dataset.currentPage = hash;
+
+    const [pageId, ...rest] = hash.split('@');
+    const data = rest.join('@');
+
+    const pageTemplate = pageTemplates.querySelector(`#${pageId}`);
+    console.log(`[導航偵錯 2] 正在尋找模板 #${pageId}... 找到了嗎?`, !!pageTemplate);
+
+    if (pageTemplate) {
+        console.log('[導航偵錯 3] 準備將模板注入到 appContent...');
+        appContent.innerHTML = pageTemplate.innerHTML;
+        console.log('[導航偵錯 4] HTML 注入完成。');
+    } else {
+        console.error(`[導航錯誤] 找不到 ID 為 #${pageId} 的頁面模板！將強制導向首頁。`);
+        appContent.innerHTML = pageTemplates.querySelector('#page-home').innerHTML;
+        initializeHomePage();
+        return;
+    }
+
+    const pageInitializers = {
+        'page-home': initializeHomePage,
+        'page-games': initializeGamesPage,
+        'page-profile': initializeProfilePage,
+        'page-my-bookings': initializeMyBookingsPage,
+        'page-my-exp-history': initializeMyExpHistoryPage,
+        'page-rental-history': initializeRentalHistoryPage,
+        'page-booking': () => initializeBookingPage(data),
+        'page-info': initializeInfoPage,
+        'page-edit-profile': initializeEditProfilePage,
+        'page-news-details': () => initializeNewsDetailsPageFromHash(data),
+        'page-game-details': () => initializeGameDetailsPageFromHash(data),
+    };
+
+    if (pageInitializers[pageId]) {
+        console.log(`[導航偵錯 5] 準備呼叫頁面初始化函式: ${pageId}`);
+        // 使用 try-catch 包裹，確保即使初始化函式內部出錯，我們也能捕捉到
+        try {
+            pageInitializers[pageId]();
+            console.log(`[導航偵錯 6] 頁面初始化函式 ${pageId} 執行完畢。`);
+        } catch (e) {
+            console.error(`[導航錯誤] 初始化函式 ${pageId} 執行時發生致命錯誤:`, e);
+            appContent.innerHTML = `<p style="color:red; text-align:center; padding: 20px;">頁面載入時發生錯誤，請檢查主控台(F12)的詳細訊息。</p>`;
+        }
+    } else {
+        console.warn(`[導航警告] 頁面 ${pageId} 沒有對應的初始化函式。`);
+    }
+
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.target === pageId);
+    });
+}
+
     /**
      * 用於切換頁面的函式，會更新 URL hash 並觸發導覽
      */
@@ -893,35 +897,55 @@ function renderGames() {
 // =================================================================
 // 場地預約頁 (從這裡開始取代)
 // =================================================================
-// public/script.js
-
-// (找到舊的 initializeBookingPage 函式並用下面的版本完整替換它)
-
 async function initializeBookingPage(stepId = 'step-preference') {
-    showBookingStep(stepId);
-    
-    // 【最終修正】所有 DOM 查詢都從 appContent 開始，確保操作的是可見頁面
+    console.log(`[Booking偵錯 A] initializeBookingPage 開始執行，目標步驟: ${stepId}`);
+
+    // 步驟 1: 顯示指定的步驟
+    try {
+        showBookingStep(stepId);
+        console.log(`[Booking偵錯 B] showBookingStep('${stepId}') 執行完畢。`);
+    } catch (e) {
+        console.error(`[Booking偵錯 B.1] showBookingStep 執行時出錯!`, e);
+        return; // 如果這裡出錯，後續都不用執行了
+    }
+
+    // 步驟 2: 綁定 "查看我的預約" 按鈕
     const viewMyBookingsBtn = appContent.querySelector('#view-my-bookings-btn');
     if (viewMyBookingsBtn) {
         viewMyBookingsBtn.onclick = () => navigateTo('page-my-bookings');
+        console.log(`[Booking偵錯 C] '#view-my-bookings-btn' 按鈕事件綁定成功。`);
+    } else {
+        console.warn(`[Booking偵錯 C.1] 警告：在 appContent 中找不到 '#view-my-bookings-btn' 按鈕。`);
     }
 
+    // 步驟 3: 進行 API 呼叫並填充初始畫面內容
     try {
+        console.log('[Booking偵錯 D] 準備 fetch /api/get-store-info');
         const infoResponse = await fetch('/api/get-store-info');
-        if (!infoResponse.ok) throw new Error('無法載入店家設定');
+        if (!infoResponse.ok) throw new Error(`無法載入店家設定 (狀態: ${infoResponse.status})`);
         const storeInfo = await infoResponse.json();
-        
+        console.log('[Booking偵錯 E] 成功取得店家資訊，準備更新DOM...');
+
         appContent.querySelector('#booking-announcement-box').innerText = storeInfo.booking_announcement_text || '';
         appContent.querySelector('#go-to-booking-step-btn').innerText = storeInfo.booking_button_text || '開始預約';
         appContent.querySelector('#booking-promo-text').innerText = storeInfo.booking_promo_text || '';
+        console.log('[Booking偵錯 F] 成功更新公告、按鈕文字。');
 
+        console.log('[Booking偵錯 G] 準備 fetch /api/bookings-check?month-init=true');
         const response = await fetch('/api/bookings-check?month-init=true');
+        if (!response.ok) throw new Error(`無法載入可預約日期 (狀態: ${response.status})`);
         const data = await response.json();
-        enabledDatesByAdmin = data.enabledDates || []; 
+        enabledDatesByAdmin = data.enabledDates || [];
+        console.log('[Booking偵錯 H] 成功取得可預約日期設定。');
+
     } catch (error) {
-        console.error("初始化預約頁面API失敗:", error);
+        console.error("[Booking偵錯 I] 初始化預約頁面API失敗:", error);
+        // 如果 API 失敗，在畫面上顯示錯誤訊息
+        appContent.innerHTML = `<p style="color:red; text-align:center; padding: 20px;">無法載入預約設定，請稍後再試。<br>錯誤詳情: ${error.message}</p>`;
+        return; // 中斷後續執行
     }
     
+    // 步驟 4: 綁定主要的 wizard 容器事件
     const wizardContainer = appContent.querySelector('#booking-wizard-container');
     if (wizardContainer && !wizardContainer.dataset.listenerAttached) {
         wizardContainer.dataset.listenerAttached = 'true';
@@ -934,13 +958,20 @@ async function initializeBookingPage(stepId = 'step-preference') {
                 handleBookingConfirmation(e.target);
             }
         });
+        console.log(`[Booking偵錯 J] '#booking-wizard-container' 事件綁定成功。`);
+    } else if (wizardContainer) {
+        console.log(`[Booking偵錯 J.1] '#booking-wizard-container' 事件已綁定過，跳過。`);
+    } else {
+        console.error(`[Booking偵錯 J.2] 致命錯誤：找不到 '#booking-wizard-container'！`);
     }
     
+    // 步驟 5: 初始化日期選擇器 (Flatpickr)
     const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
     if (datepickerContainer) {
-        // 如果後台沒有設定任何可預約日期，則顯示提示訊息
+        console.log(`[Booking偵錯 K] 找到日期選擇器容器，準備初始化 Flatpickr。`);
         if (enabledDatesByAdmin.length === 0) {
             datepickerContainer.innerHTML = '<p style="text-align:center; color: var(--color-danger);">目前沒有開放預約的日期。</p>';
+            console.log(`[Booking偵錯 K.1] 因無可用日期，顯示提示訊息。`);
         } else {
             flatpickr(datepickerContainer, {
                 inline: true, minDate: "today", dateFormat: "Y-m-d", locale: "zh_tw",
@@ -963,20 +994,29 @@ async function initializeBookingPage(stepId = 'step-preference') {
                   }, 10);
                 }
             });
+            console.log(`[Booking偵錯 K.2] Flatpickr 初始化完畢。`);
         }
     }
 
+    // 步驟 6: 預填使用者資料
+    console.log(`[Booking偵錯 L] 準備獲取使用者資料預填表單...`);
     const userData = await fetchGameData();
     if (userData) {
         const nameInput = appContent.querySelector('#contact-name');
         const phoneInput = appContent.querySelector('#contact-phone');
         if(nameInput) nameInput.value = userData.real_name || '';
         if(phoneInput) phoneInput.value = userData.phone || '';
+        console.log(`[Booking偵錯 M] 使用者資料預填完畢。`);
+    } else {
+        console.warn(`[Booking偵錯 M.1] 警告：未獲取到使用者資料。`);
     }
     
+    // 步驟 7: 如果是 summary 步驟，渲染摘要
     if (stepId === 'step-summary') {
+        console.log(`[Booking偵錯 N] 正在渲染預約摘要...`);
         renderSummary();
     }
+    console.log(`[Booking偵錯 Z] initializeBookingPage 執行流程結束。`);
 }
 
 function showBookingStep(stepId) {
