@@ -63,21 +63,36 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 頁面切換邏輯 (重構)
     // =================================================================
+// public/script.js
+
     function handleNavigation() {
+        // ---【偵錯日誌：步驟 1】---
+        // 檢查導航函式是否被觸發，以及目標頁面ID是否正確
         const hash = location.hash.substring(1) || 'page-home';
+        console.log(`[導航偵錯 1] handleNavigation 觸發，目標 hash: #${hash}`);
+        
         const [pageId, ...rest] = hash.split('@');
         const data = rest.join('@');
 
+        // ---【偵錯日誌：步驟 2】---
+        // 檢查是否能在 #page-templates 中找到對應的 HTML 模板
         const pageTemplate = pageTemplates.querySelector(`#${pageId}`);
+        console.log(`[導航偵錯 2] 正在尋找模板 #${pageId}... 找到了嗎?`, !!pageTemplate);
+
         if (pageTemplate) {
+            // ---【偵錯日誌：步驟 3】---
+            // 檢查是否即將把 HTML 寫入主內容區
+            console.log('[導航偵錯 3] 準備將模板注入到 appContent...');
             appContent.innerHTML = pageTemplate.innerHTML;
+            console.log('[導航偵錯 4] HTML 注入完成。');
         } else {
-            // 如果找不到頁面，就顯示首頁
+            console.error(`[導航錯誤] 找不到 ID 為 #${pageId} 的頁面模板！將強制導向首頁。`);
             appContent.innerHTML = pageTemplates.querySelector('#page-home').innerHTML;
             initializeHomePage();
             return;
         }
 
+        // 頁面初始化函式映射表
         const pageInitializers = {
             'page-home': initializeHomePage,
             'page-games': initializeGamesPage,
@@ -92,15 +107,20 @@ document.addEventListener('DOMContentLoaded', () => {
             'page-game-details': () => initializeGameDetailsPageFromHash(data),
         };
 
+        // ---【偵錯日誌：步驟 5】---
+        // 檢查是否即將呼叫對應頁面的初始化函式
         if (pageInitializers[pageId]) {
+            console.log(`[導航偵錯 5] 準備呼叫頁面初始化函式: ${pageId}`);
             pageInitializers[pageId]();
+        } else {
+            console.warn(`[導航警告] 頁面 ${pageId} 沒有對應的初始化函式。`);
         }
 
+        // 更新 Tab Bar 的高亮狀態
         document.querySelectorAll('.tab-button').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.target === pageId);
         });
     }
-
     /**
      * 用於切換頁面的函式，會更新 URL hash 並觸發導覽
      */
@@ -878,6 +898,8 @@ function renderGames() {
      * @param {string} [initialStep='step-preference'] - 初始要顯示的步驟
      */
     async function initializeBookingPage(stepId = 'step-preference') {
+        // ---【偵錯日誌：步驟 A】---
+        console.log('[預約頁偵錯 A] 成功進入 initializeBookingPage 函式。');
         // 顯示對應的步驟
         showBookingStep(stepId);
         
