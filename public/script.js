@@ -1,5 +1,3 @@
-// public/script.js
-
 document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // 核心DOM元素與全域變數
@@ -843,7 +841,7 @@ function renderGames() {
     }
 
 // =================================================================
-// 場地預約頁 (從這裡開始取代)
+// 場地預約頁
 // =================================================================
 async function initializeBookingPage(stepId) { 
     const currentStep = stepId || 'step-preference'
@@ -939,7 +937,6 @@ function showBookingStep(stepId) {
     });
 }
 
-    // 新增這個函式
     function handleBookingNextStep() {
         const peopleInput = document.getElementById('booking-people');
         const nameInput = document.getElementById('contact-name');
@@ -1068,7 +1065,7 @@ async function handleBookingConfirmation(confirmBtn) {
             <button id="booking-done-btn" class="cta-button">返回預約首頁</button>`;
         showBookingStep('step-result');
 
-        appContent.querySelector('#booking-done-btn').addEventListener('click', () => navigateTo('page-booking')); // 建議使用 navigateTo
+        appContent.querySelector('#booking-done-btn').addEventListener('click', () => navigateTo('page-booking')); 
 
     } catch (error) {
         alert(`預約失敗：${error.message}`);
