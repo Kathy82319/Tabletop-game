@@ -63,8 +63,7 @@ export async function onRequest(context) {
         rentPrice, deposit, lateFeePerDay 
     } = body;
 
-    // --- 【新增的驗證區塊】 ---
-    const errors = [];
+   const errors = [];
     if (!userId || typeof userId !== 'string') errors.push('必須選擇一位有效的會員。');
     if (!gameIds || !Array.isArray(gameIds) || gameIds.length === 0) errors.push('必須至少選擇一款租借的遊戲。');
     if (!dueDate || !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) errors.push('無效的歸還日期格式。');
@@ -82,7 +81,6 @@ export async function onRequest(context) {
     if (errors.length > 0) {
         return new Response(JSON.stringify({ error: errors.join(' ') }), { status: 400 });
     }
-    // --- 【驗證區塊結束】 ---
 
     const db = context.env.DB;
     const allGameNames = [];
@@ -116,6 +114,22 @@ export async function onRequest(context) {
             createdRentalIds.push(result.results[0].rental_id);
         }
     });
+
+    // 1. 定義 syncPromises 變數，它會是一個包含多個 Promise 的陣列
+    const syncPromises = createdRentalIds.map(async (rentalId) => {
+        // 從資料庫撈出剛剛建立的完整租借紀錄
+        const newRentalRecord = await db.prepare('SELECT * FROM Rentals WHERE rental_id = ?').bind(rentalId).first();
+        if (newRentalRecord) {
+            // 呼叫 addRowToSheet，這個函式會回傳一個 Promise
+            return addRowToSheet(context.env, '桌遊租借者', newRentalRecord);
+        }
+    });
+    context.waitUntil(
+        Promise.all(syncPromises).catch(err => {
+            // 在背景紀錄同步錯誤，但不會影響給前端的回應
+            console.error("背景同步租借紀錄至 Google Sheet 失敗:", err);
+        })
+    );    
 
     const rentalDateStr = new Date().toISOString().split('T')[0];
     const rentalDuration = Math.round((new Date(dueDate) - new Date(rentalDateStr)) / (1000 * 60 * 60 * 24));
