@@ -66,10 +66,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function handleNavigation() {
     const hash = location.hash.substring(1) || 'page-home';
-
+    console.log(`[導航偵錯 1] handleNavigation 觸發，目標 hash: #${hash}`);
     
     // 【修正】增加一個檢查，避免在 navigateTo 內部觸發時，不小心重新渲染頁面
     if (appContent.dataset.currentPage === hash) {
+        console.log(`[導航偵錯] 頁面 ${hash} 已是當前頁面，中止重複渲染。`);
         return;
     }
     appContent.dataset.currentPage = hash;
@@ -78,9 +79,12 @@ function handleNavigation() {
     const data = rest.join('@');
 
     const pageTemplate = pageTemplates.querySelector(`#${pageId}`);
+    console.log(`[導航偵錯 2] 正在尋找模板 #${pageId}... 找到了嗎?`, !!pageTemplate);
 
     if (pageTemplate) {
+        console.log('[導航偵錯 3] 準備將模板注入到 appContent...');
         appContent.innerHTML = pageTemplate.innerHTML;
+        console.log('[導航偵錯 4] HTML 注入完成。');
     } else {
         console.error(`[導航錯誤] 找不到 ID 為 #${pageId} 的頁面模板！將強制導向首頁。`);
         appContent.innerHTML = pageTemplates.querySelector('#page-home').innerHTML;
@@ -102,12 +106,28 @@ function handleNavigation() {
         'page-game-details': () => initializeGameDetailsPageFromHash(data),
     };
 
+    if (pageInitializers[pageId]) {
+        console.log(`[導航偵錯 5] 準備呼叫頁面初始化函式: ${pageId}`);
+        // 使用 try-catch 包裹，確保即使初始化函式內部出錯，我們也能捕捉到
+        try {
+            pageInitializers[pageId]();
+            console.log(`[導航偵錯 6] 頁面初始化函式 ${pageId} 執行完畢。`);
+        } catch (e) {
+            console.error(`[導航錯誤] 初始化函式 ${pageId} 執行時發生致命錯誤:`, e);
+            appContent.innerHTML = `<p style="color:red; text-align:center; padding: 20px;">頁面載入時發生錯誤，請檢查主控台(F12)的詳細訊息。</p>`;
+        }
+    } else {
+        console.warn(`[導航警告] 頁面 ${pageId} 沒有對應的初始化函式。`);
+    }
+
     document.querySelectorAll('.tab-button').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.target === pageId);
     });
 }
 
-
+    /**
+     * 用於切換頁面的函式，會更新 URL hash 並觸發導覽
+     */
     function navigateTo(pageId, data = null) {
         let newHash = pageId;
         if (data) {
@@ -118,6 +138,7 @@ function handleNavigation() {
         }
     }
     
+    // 監聽瀏覽器的返回操作和 hash 變化
     window.addEventListener('popstate', handleNavigation);
     window.addEventListener('hashchange', handleNavigation);
 
@@ -230,15 +251,19 @@ function initializeNewsDetailsPageFromHash(newsIdString) {
     if (newsItem) {
         renderNewsDetails(newsItem);
     } else {
-
+        // 如果在 allNews 中找不到，可能是直接透過 URL 進入
+        // 這裡可以選擇顯示錯誤，或再從後端 API 獲取一次
         appContent.innerHTML = `<p>找不到 ID 為 ${newsId} 的新聞。</p>`;
         console.warn(`在 allNews 快取中找不到 ID 為 ${newsId} 的新聞`);
     }
 }
 
-
+/**
+ * 從 URL hash 中獲取 gameId，並初始化遊戲詳情頁面
+ * @param {string} gameIdString - 從 hash 傳入的遊戲 ID
+ */
 function initializeGameDetailsPageFromHash(gameIdString) {
-    const gameId = gameIdString; 
+    const gameId = gameIdString; // game_id 在資料庫中可能是字串
     if (!gameId) {
         appContent.innerHTML = '<p>無效的遊戲 ID。</p>';
         return;
@@ -264,15 +289,17 @@ function initializeGameDetailsPageFromHash(gameIdString) {
 
             if (!liff.isLoggedIn()) {
                 liff.login();
-                return; 
+                return; // 登入後會自動重載頁面，終止後續執行
             }
             userProfile = await liff.getProfile();
             
+            // 首次進入時，如果沒有 hash，給定一個初始狀態
             if (!location.hash) {
+                // replaceState 不會創建新的歷史紀錄，只是替換當前狀態
                 history.replaceState({ page: 'page-home', data: null }, '', '#page-home');
             }
             
-            handleNavigation();
+            handleNavigation(); // 【關鍵】根據當前 hash 渲染頁面
 
         } catch (err) {
             console.error("LIFF 初始化或 Profile 獲取失敗", err);
@@ -287,6 +314,9 @@ function initializeGameDetailsPageFromHash(gameIdString) {
 async function initializeProfilePage() {
     if (!userProfile) return;
 
+    // --- 【需求 2.2 修正開始】 ---
+
+    // 1. 將畫面元素先設定為讀取中狀態，確保每次進入頁面都會重置
     const displayNameElement = document.getElementById('display-name');
     if (displayNameElement) displayNameElement.textContent = '讀取中...';
     
@@ -295,24 +325,29 @@ async function initializeProfilePage() {
 
     const qrcodeElement = document.getElementById('qrcode');
     if(qrcodeElement) {
-        qrcodeElement.innerHTML = ''; 
+        qrcodeElement.innerHTML = ''; // 清空舊的 QR Code
         new QRCode(qrcodeElement, { text: userProfile.userId, width: 150, height: 150 });
     }
     
+    // 綁定按鈕事件
         document.getElementById('edit-profile-btn').addEventListener('click', () => navigateTo('page-edit-profile'));
         document.getElementById('my-bookings-btn').addEventListener('click', () => navigateTo('page-my-bookings'));
         document.getElementById('my-exp-history-btn').addEventListener('click', () => navigateTo('page-my-exp-history'));
         document.getElementById('rental-history-btn').addEventListener('click', () => navigateTo('page-rental-history'));
-
+    
+    // 2. 【核心修正】: 強制每次都重新 fetchGameData
+    //    不再使用快取，確保資料永遠是最新
     try {
-        const userData = await fetchGameData(true); 
+        const userData = await fetchGameData(true); // 傳入 true 表示強制刷新
         updateProfileDisplay(userData);
     } catch (error) {
         console.error("無法更新個人資料畫面:", error);
         if (displayNameElement) displayNameElement.textContent = '資料載入失敗';
     }
+    // --- 【需求 2.2 修正結束】 ---
 }
 
+    // 【需求 2.2 修正】增加 forceRefresh 參數
     async function fetchGameData(forceRefresh = false) { 
         if (!forceRefresh && gameData && gameData.user_id) return gameData;
         try {
@@ -323,6 +358,8 @@ async function initializeProfilePage() {
             });
             if (!response.ok) throw new Error('無法取得會員遊戲資料');
             gameData = await response.json();
+            
+            // updateProfileDisplay(gameData); // 這行可以移除，因為 initializeProfilePage 會呼叫
             return gameData;
         } catch (error) {
             console.error('呼叫會員 API 失敗:', error);
@@ -331,6 +368,9 @@ async function initializeProfilePage() {
         }
     }
 
+// public/script.js
+
+// (替換掉舊的 updateProfileDisplay 函式)
 function updateProfileDisplay(data) {
     if (!data) return;
     document.getElementById('display-name').textContent = data.nickname || userProfile.displayName;
@@ -338,19 +378,20 @@ function updateProfileDisplay(data) {
     document.getElementById('user-level').textContent = data.level;
     document.getElementById('user-exp').textContent = `${data.current_exp} / 10`;
 
-
+    // 改為選取新的 <p> 元素
     const perkLine = document.getElementById('user-perk-line');
     const perkSpan = document.getElementById('user-perk');
     
+    // 確保元素都存在，再根據資料決定是否顯示
     if (perkLine && perkSpan && data.perk && data.class !== '無') {
         perkSpan.textContent = data.perk;
-        perkLine.style.display = 'block'; 
+        perkLine.style.display = 'block'; // 顯示整行 <p>
     } else if (perkLine) {
-        perkLine.style.display = 'none'; 
+        perkLine.style.display = 'none'; // 隱藏整行 <p>
     }
 }
 
-
+// REPLACE THIS FUNCTION
 async function initializeMyBookingsPage() {
     if (!userProfile) return;
 
@@ -362,6 +403,7 @@ async function initializeMyBookingsPage() {
 
     currentContainer.innerHTML = '<p>正在查詢您的預約紀錄...</p>';
 
+    // 渲染函式，用於顯示預約列表
     const renderBookings = (bookings, container, isPast = false) => {
         if (bookings.length === 0) {
             container.innerHTML = `<p>${isPast ? '沒有過往的預約紀錄。' : '您目前沒有即將到來的預約。'}</p>`;
@@ -378,11 +420,13 @@ async function initializeMyBookingsPage() {
     };
 
     try {
+        // 預設載入目前的預約
         const currentResponse = await fetch(`/api/my-bookings?userId=${userProfile.userId}&filter=current`);
         if (!currentResponse.ok) throw new Error('查詢預約失敗');
         const currentBookings = await currentResponse.json();
         renderBookings(currentBookings, currentContainer);
 
+        // 綁定按鈕事件
         toggleBtn.addEventListener('click', async () => {
             const isHidden = pastContainer.style.display === 'none';
             if (isHidden) {
@@ -439,6 +483,9 @@ async function initializeMyBookingsPage() {
         }
     }
 
+// public/script.js
+
+// REPLACE THIS FUNCTION
 async function initializeRentalHistoryPage() {
     if (!userProfile) return;
 
@@ -450,6 +497,7 @@ async function initializeRentalHistoryPage() {
 
     currentContainer.innerHTML = '<p>正在查詢您目前的租借...</p>';
 
+    // 渲染函式，用於顯示租借列表
     const renderRentals = (rentals, container, isPast = false) => {
         if (rentals.length === 0) {
             container.innerHTML = `<p>${isPast ? '沒有過往的租借紀錄。' : '您目前沒有租借中的遊戲。'}</p>`;
@@ -485,12 +533,13 @@ async function initializeRentalHistoryPage() {
     };
 
     try {
-
+        // 預設載入目前的租借
         const currentResponse = await fetch(`/api/my-rental-history?userId=${userProfile.userId}&filter=current`);
         if (!currentResponse.ok) throw new Error('查詢租借紀錄失敗');
         const currentRentals = await currentResponse.json();
         renderRentals(currentRentals, currentContainer);
 
+        // 綁定按鈕事件
         toggleBtn.addEventListener('click', async () => {
             const isHidden = pastContainer.style.display === 'none';
             if (isHidden) {
@@ -519,7 +568,9 @@ async function initializeRentalHistoryPage() {
     // =================================================================
     // 編輯個人資料頁
     // =================================================================
+// public/script.js (initializeEditProfilePage 修正版)
 async function initializeEditProfilePage() {
+    // 步驟 1: 確保遊戲資料已載入
     if (allGames.length === 0) {
         try {
             const res = await fetch('/api/get-boardgames');
@@ -531,6 +582,8 @@ async function initializeEditProfilePage() {
     }
 
     if (!userProfile) return;
+
+    // 步驟 2: 填充基本資料 (保持不變)
     document.getElementById('edit-profile-name').value = userProfile.displayName;
     const userData = await fetchGameData();
     if (!userData) return;
@@ -540,29 +593,35 @@ async function initializeEditProfilePage() {
     document.getElementById('edit-profile-phone').value = userData.phone || '';
     document.getElementById('edit-profile-email').value = userData.email || '';
 
+    // 步驟 3: 【核心修改】處理「偏好遊戲類型」的顯示邏輯
     const gamesContainer = document.getElementById('preferred-games-container');
     const otherContainer = document.getElementById('preferred-games-other-container');
     const otherInput = document.getElementById('preferred-games-other-input');
 
     if (gamesContainer && otherContainer && otherInput) {
+        // 從所有遊戲中提取出不重複的標籤列表
         const allStandardTags = [...new Set(allGames.flatMap(g => (g.tags || '').split(',')).map(t => t.trim()).filter(Boolean))];
+        
+        // 獲取使用者已儲存的偏好，並轉換為 Set 以方便快速查找
         const userTags = new Set((userData.preferred_games || '').split(',').map(tag => tag.trim()).filter(Boolean));
+        
+        // 找出使用者自訂的標籤 (不在標準標籤內的)
         const userCustomTags = [...userTags].filter(tag => !allStandardTags.includes(tag));
 
-
+        // 渲染標準標籤按鈕
         gamesContainer.innerHTML = allStandardTags.map(tag => {
             const isActive = userTags.has(tag) ? 'active' : '';
             return `<button type="button" class="preference-tag-btn ${isActive}" data-tag="${tag}">${tag}</button>`;
         }).join('');
         
-
+        // 新增「其他」按鈕
         const otherBtn = document.createElement('button');
         otherBtn.type = 'button';
         otherBtn.className = 'preference-tag-btn';
         otherBtn.textContent = '其他';
         gamesContainer.appendChild(otherBtn);
 
-
+        // 如果使用者有自訂標籤，則預設展開「其他」區塊並填入值
         if (userCustomTags.length > 0) {
             otherBtn.classList.add('active');
             otherContainer.style.display = 'block';
@@ -571,18 +630,22 @@ async function initializeEditProfilePage() {
             otherContainer.style.display = 'none';
         }
 
+        // 綁定所有標籤按鈕的點擊事件
         gamesContainer.addEventListener('click', (e) => {
             const target = e.target;
             if (target.classList.contains('preference-tag-btn')) {
+                // 如果點擊的是「其他」按鈕
                 if (target === otherBtn) {
                     const isNowActive = otherBtn.classList.toggle('active');
                     otherContainer.style.display = isNowActive ? 'block' : 'none';
                 } else {
+                    // 點擊的是一般標籤按鈕
                     target.classList.toggle('active');
                 }
             }
         });
         
+        // 為「其他」輸入框加上字數限制
         otherInput.addEventListener('input', () => {
             let value = otherInput.value;
             let chineseCount = (value.match(/[\u4e00-\u9fa5]/g) || []).length;
@@ -599,17 +662,19 @@ async function initializeEditProfilePage() {
         });
     }
 
+    // 步驟 4: 修改表單提交邏輯
     const form = document.getElementById('edit-profile-form');
     form.onsubmit = async (event) => {
         event.preventDefault();
         const statusMsg = document.getElementById('edit-profile-form-status');
         statusMsg.textContent = '儲存中...';
 
-
+        // 收集所有被選中的標準標籤
         let selectedGames = Array.from(gamesContainer.querySelectorAll('.preference-tag-btn.active'))
                                  .map(btn => btn.dataset.tag)
-                                 .filter(tag => tag);
-
+                                 .filter(tag => tag); // 過濾掉 "其他" 按鈕的 undefined
+        
+        // 如果「其他」按鈕被選中，則收集自訂標籤
         if (otherContainer.style.display === 'block' && otherInput.value.trim() !== '') {
             const customTags = otherInput.value.trim().split(/[,，\s]+/).filter(Boolean);
             selectedGames.push(...customTags);
@@ -621,7 +686,7 @@ async function initializeEditProfilePage() {
             nickname: document.getElementById('edit-profile-nickname').value,
             phone: document.getElementById('edit-profile-phone').value,
             email: document.getElementById('edit-profile-email').value,
-            preferredGames: [...new Set(selectedGames)],
+            preferredGames: [...new Set(selectedGames)], // 使用 Set 去除重複項
             displayName: userProfile.displayName,
             pictureUrl: userProfile.pictureUrl || ''
         };
@@ -633,9 +698,11 @@ async function initializeEditProfilePage() {
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || '儲存失敗');
             
-            gameData = {}; 
+            gameData = {}; // 清空快取
             statusMsg.textContent = '儲存成功！';
             statusMsg.style.color = 'green';
+            
+            // 【核心修正】將 goBackPage() 改為 history.back()
             setTimeout(() => history.back(), 1500); 
 
         } catch (error) {
@@ -654,7 +721,7 @@ async function initializeEditProfilePage() {
         '困難': 3,
         '專家': 4
     };
-    const level = levels[difficulty] || 2;
+    const level = levels[difficulty] || 2; // 如果找不到對應的難度，預設為2顆星
     const totalStars = 4;
     let stars = '';
     for (let i = 0; i < totalStars; i++) {
@@ -664,6 +731,7 @@ async function initializeEditProfilePage() {
     }
 
     function renderGameDetails(game) {
+        // 1. 處理圖片
         const mainImage = appContent.querySelector('.details-image-main');
         const thumbnailsContainer = appContent.querySelector('.details-image-thumbnails');
         
@@ -683,10 +751,12 @@ async function initializeEditProfilePage() {
             }
         });
 
+        // 2. 處理核心資訊
         appContent.querySelector('.details-title').textContent = game.name;
         appContent.querySelector('#game-players').textContent = `${game.min_players} - ${game.max_players} 人`;
         appContent.querySelector('#game-difficulty').textContent = difficultyToStars(game.difficulty);
 
+        // 3. 處理標籤
         const tagsContainer = appContent.querySelector('#game-tags-container');
         const tags = (game.tags || '').split(',').map(t => t.trim()).filter(Boolean);
         if (tags.length > 0) {
@@ -870,34 +940,51 @@ function renderGames() {
 // =================================================================
 async function initializeBookingPage(stepId) { 
     const currentStep = stepId || 'step-preference'
+    console.log(`[Booking偵錯 A] initializeBookingPage 開始執行，目標步驟: ${stepId}`);
+
+    // 步驟 1: 顯示指定的步驟
     try {
         showBookingStep(currentStep);
-    } 
+        console.log(`[Booking偵錯 B] showBookingStep('${currentStep}') 執行完畢。`);
+    } catch (e) {
+        console.error(`[Booking偵錯 B.1] showBookingStep 執行時出錯!`, e);
+        return; // 如果這裡出錯，後續都不用執行了
+    }
 
+    // 步驟 2: 綁定 "查看我的預約" 按鈕
     const viewMyBookingsBtn = appContent.querySelector('#view-my-bookings-btn');
     if (viewMyBookingsBtn) {
         viewMyBookingsBtn.onclick = () => navigateTo('page-my-bookings');
-    } 
+        console.log(`[Booking偵錯 C] '#view-my-bookings-btn' 按鈕事件綁定成功。`);
+    } else {
+        console.warn(`[Booking偵錯 C.1] 警告：在 appContent 中找不到 '#view-my-bookings-btn' 按鈕。`);
+    }
 
+    // 步驟 3: 進行 API 呼叫並填充初始畫面內容
     try {
+        console.log('[Booking偵錯 D] 準備 fetch /api/get-store-info');
         const infoResponse = await fetch('/api/get-store-info');
         if (!infoResponse.ok) throw new Error(`無法載入店家設定 (狀態: ${infoResponse.status})`);
         const storeInfo = await infoResponse.json();
+        console.log('[Booking偵錯 E] 成功取得店家資訊，準備更新DOM...');
 
         appContent.querySelector('#booking-announcement-box').innerText = storeInfo.booking_announcement_text || '';
         appContent.querySelector('#go-to-booking-step-btn').innerText = storeInfo.booking_button_text || '開始預約';
         appContent.querySelector('#booking-promo-text').innerText = storeInfo.booking_promo_text || '';
+        console.log('[Booking偵錯 F] 成功更新公告、按鈕文字。');
 
+        console.log('[Booking偵錯 G] 準備 fetch /api/bookings-check?month-init=true');
         const response = await fetch('/api/bookings-check?month-init=true');
         if (!response.ok) throw new Error(`無法載入可預約日期 (狀態: ${response.status})`);
         const data = await response.json();
         enabledDatesByAdmin = data.enabledDates || [];
- 
+        console.log('[Booking偵錯 H] 成功取得可預約日期設定。');
 
     } catch (error) {
         console.error("[Booking偵錯 I] 初始化預約頁面API失敗:", error);
+        // 如果 API 失敗，在畫面上顯示錯誤訊息
         appContent.innerHTML = `<p style="color:red; text-align:center; padding: 20px;">無法載入預約設定，請稍後再試。<br>錯誤詳情: ${error.message}</p>`;
-        return; 
+        return; // 中斷後續執行
     }
     
     // 步驟 4: 綁定主要的 wizard 容器事件
@@ -913,13 +1000,20 @@ async function initializeBookingPage(stepId) {
                 handleBookingConfirmation(e.target);
             }
         });
-    } 
+        console.log(`[Booking偵錯 J] '#booking-wizard-container' 事件綁定成功。`);
+    } else if (wizardContainer) {
+        console.log(`[Booking偵錯 J.1] '#booking-wizard-container' 事件已綁定過，跳過。`);
+    } else {
+        console.error(`[Booking偵錯 J.2] 致命錯誤：找不到 '#booking-wizard-container'！`);
+    }
     
     // 步驟 5: 初始化日期選擇器 (Flatpickr)
     const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
     if (datepickerContainer) {
+        console.log(`[Booking偵錯 K] 找到日期選擇器容器，準備初始化 Flatpickr。`);
         if (enabledDatesByAdmin.length === 0) {
             datepickerContainer.innerHTML = '<p style="text-align:center; color: var(--color-danger);">目前沒有開放預約的日期。</p>';
+            console.log(`[Booking偵錯 K.1] 因無可用日期，顯示提示訊息。`);
         } else {
             flatpickr(datepickerContainer, {
                 inline: true, minDate: "today", dateFormat: "Y-m-d", locale: "zh_tw",
@@ -942,26 +1036,33 @@ async function initializeBookingPage(stepId) {
                   }, 10);
                 }
             });
+            console.log(`[Booking偵錯 K.2] Flatpickr 初始化完畢。`);
         }
     }
 
-
+    // 步驟 6: 預填使用者資料
+    console.log(`[Booking偵錯 L] 準備獲取使用者資料預填表單...`);
     const userData = await fetchGameData();
     if (userData) {
         const nameInput = appContent.querySelector('#contact-name');
         const phoneInput = appContent.querySelector('#contact-phone');
         if(nameInput) nameInput.value = userData.real_name || '';
         if(phoneInput) phoneInput.value = userData.phone || '';
+        console.log(`[Booking偵錯 M] 使用者資料預填完畢。`);
     } else {
         console.warn(`[Booking偵錯 M.1] 警告：未獲取到使用者資料。`);
     }
-
+    
+    // 步驟 7: 如果是 summary 步驟，渲染摘要
     if (stepId === 'step-summary') {
+        console.log(`[Booking偵錯 N] 正在渲染預約摘要...`);
         renderSummary();
     }
+    console.log(`[Booking偵錯 Z] initializeBookingPage 執行流程結束。`);
 }
 
 function showBookingStep(stepId) {
+    // 【最終修正】將搜尋範圍從 document 限定在 appContent 之內，確保只操作可見頁面中的元素
     appContent.querySelectorAll('#booking-wizard-container .booking-step').forEach(step => {
         step.classList.toggle('active', step.id === stepId);
     });
