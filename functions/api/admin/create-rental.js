@@ -150,7 +150,12 @@ export async function onRequest(context) {
                     `4. 逾期歸還，每逾期一天將從押金扣除 ${lateFeeNum} 元。\n\n` +
                     `如上面資訊沒有問題，請回覆「ok」並視為同意租借規則。\n`+
                     `感謝您的預約！`;
-
+    const syncPromises = createdRentalIds.map(async (rentalId) => {
+        const newRentalRecord = await db.prepare('SELECT * FROM Rentals WHERE rental_id = ?').bind(rentalId).first();
+        if (newRentalRecord) {
+            return addRowToSheet(context.env, '桌遊租借者', newRentalRecord);
+        }
+    });
     context.waitUntil(Promise.all(syncPromises).catch(err => {
         // 在背景紀錄錯誤，但不會影響主請求的回應
         console.error("背景同步租借紀錄至 Google Sheet 失敗:", err);

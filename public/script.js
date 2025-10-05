@@ -350,7 +350,7 @@ function updateProfileDisplay(data) {
     }
 }
 
-// REPLACE THIS FUNCTION
+
 async function initializeMyBookingsPage() {
     if (!userProfile) return;
 
@@ -362,7 +362,6 @@ async function initializeMyBookingsPage() {
 
     currentContainer.innerHTML = '<p>正在查詢您的預約紀錄...</p>';
 
-    // 渲染函式，用於顯示預約列表
     const renderBookings = (bookings, container, isPast = false) => {
         if (bookings.length === 0) {
             container.innerHTML = `<p>${isPast ? '沒有過往的預約紀錄。' : '您目前沒有即將到來的預約。'}</p>`;
@@ -379,13 +378,11 @@ async function initializeMyBookingsPage() {
     };
 
     try {
-        // 預設載入目前的預約
         const currentResponse = await fetch(`/api/my-bookings?userId=${userProfile.userId}&filter=current`);
         if (!currentResponse.ok) throw new Error('查詢預約失敗');
         const currentBookings = await currentResponse.json();
         renderBookings(currentBookings, currentContainer);
 
-        // 綁定按鈕事件
         toggleBtn.addEventListener('click', async () => {
             const isHidden = pastContainer.style.display === 'none';
             if (isHidden) {
@@ -442,9 +439,6 @@ async function initializeMyBookingsPage() {
         }
     }
 
-// public/script.js
-
-// REPLACE THIS FUNCTION
 async function initializeRentalHistoryPage() {
     if (!userProfile) return;
 
@@ -456,7 +450,6 @@ async function initializeRentalHistoryPage() {
 
     currentContainer.innerHTML = '<p>正在查詢您目前的租借...</p>';
 
-    // 渲染函式，用於顯示租借列表
     const renderRentals = (rentals, container, isPast = false) => {
         if (rentals.length === 0) {
             container.innerHTML = `<p>${isPast ? '沒有過往的租借紀錄。' : '您目前沒有租借中的遊戲。'}</p>`;
@@ -492,13 +485,12 @@ async function initializeRentalHistoryPage() {
     };
 
     try {
-        // 預設載入目前的租借
+
         const currentResponse = await fetch(`/api/my-rental-history?userId=${userProfile.userId}&filter=current`);
         if (!currentResponse.ok) throw new Error('查詢租借紀錄失敗');
         const currentRentals = await currentResponse.json();
         renderRentals(currentRentals, currentContainer);
 
-        // 綁定按鈕事件
         toggleBtn.addEventListener('click', async () => {
             const isHidden = pastContainer.style.display === 'none';
             if (isHidden) {
@@ -527,9 +519,7 @@ async function initializeRentalHistoryPage() {
     // =================================================================
     // 編輯個人資料頁
     // =================================================================
-// public/script.js (initializeEditProfilePage 修正版)
 async function initializeEditProfilePage() {
-    // 步驟 1: 確保遊戲資料已載入
     if (allGames.length === 0) {
         try {
             const res = await fetch('/api/get-boardgames');
@@ -541,8 +531,6 @@ async function initializeEditProfilePage() {
     }
 
     if (!userProfile) return;
-
-    // 步驟 2: 填充基本資料 (保持不變)
     document.getElementById('edit-profile-name').value = userProfile.displayName;
     const userData = await fetchGameData();
     if (!userData) return;
@@ -552,35 +540,29 @@ async function initializeEditProfilePage() {
     document.getElementById('edit-profile-phone').value = userData.phone || '';
     document.getElementById('edit-profile-email').value = userData.email || '';
 
-    // 步驟 3: 【核心修改】處理「偏好遊戲類型」的顯示邏輯
     const gamesContainer = document.getElementById('preferred-games-container');
     const otherContainer = document.getElementById('preferred-games-other-container');
     const otherInput = document.getElementById('preferred-games-other-input');
 
     if (gamesContainer && otherContainer && otherInput) {
-        // 從所有遊戲中提取出不重複的標籤列表
         const allStandardTags = [...new Set(allGames.flatMap(g => (g.tags || '').split(',')).map(t => t.trim()).filter(Boolean))];
-        
-        // 獲取使用者已儲存的偏好，並轉換為 Set 以方便快速查找
         const userTags = new Set((userData.preferred_games || '').split(',').map(tag => tag.trim()).filter(Boolean));
-        
-        // 找出使用者自訂的標籤 (不在標準標籤內的)
         const userCustomTags = [...userTags].filter(tag => !allStandardTags.includes(tag));
 
-        // 渲染標準標籤按鈕
+
         gamesContainer.innerHTML = allStandardTags.map(tag => {
             const isActive = userTags.has(tag) ? 'active' : '';
             return `<button type="button" class="preference-tag-btn ${isActive}" data-tag="${tag}">${tag}</button>`;
         }).join('');
         
-        // 新增「其他」按鈕
+
         const otherBtn = document.createElement('button');
         otherBtn.type = 'button';
         otherBtn.className = 'preference-tag-btn';
         otherBtn.textContent = '其他';
         gamesContainer.appendChild(otherBtn);
 
-        // 如果使用者有自訂標籤，則預設展開「其他」區塊並填入值
+
         if (userCustomTags.length > 0) {
             otherBtn.classList.add('active');
             otherContainer.style.display = 'block';
@@ -589,22 +571,18 @@ async function initializeEditProfilePage() {
             otherContainer.style.display = 'none';
         }
 
-        // 綁定所有標籤按鈕的點擊事件
         gamesContainer.addEventListener('click', (e) => {
             const target = e.target;
             if (target.classList.contains('preference-tag-btn')) {
-                // 如果點擊的是「其他」按鈕
                 if (target === otherBtn) {
                     const isNowActive = otherBtn.classList.toggle('active');
                     otherContainer.style.display = isNowActive ? 'block' : 'none';
                 } else {
-                    // 點擊的是一般標籤按鈕
                     target.classList.toggle('active');
                 }
             }
         });
         
-        // 為「其他」輸入框加上字數限制
         otherInput.addEventListener('input', () => {
             let value = otherInput.value;
             let chineseCount = (value.match(/[\u4e00-\u9fa5]/g) || []).length;
@@ -621,19 +599,17 @@ async function initializeEditProfilePage() {
         });
     }
 
-    // 步驟 4: 修改表單提交邏輯
     const form = document.getElementById('edit-profile-form');
     form.onsubmit = async (event) => {
         event.preventDefault();
         const statusMsg = document.getElementById('edit-profile-form-status');
         statusMsg.textContent = '儲存中...';
 
-        // 收集所有被選中的標準標籤
+
         let selectedGames = Array.from(gamesContainer.querySelectorAll('.preference-tag-btn.active'))
                                  .map(btn => btn.dataset.tag)
-                                 .filter(tag => tag); // 過濾掉 "其他" 按鈕的 undefined
-        
-        // 如果「其他」按鈕被選中，則收集自訂標籤
+                                 .filter(tag => tag);
+
         if (otherContainer.style.display === 'block' && otherInput.value.trim() !== '') {
             const customTags = otherInput.value.trim().split(/[,，\s]+/).filter(Boolean);
             selectedGames.push(...customTags);
@@ -645,7 +621,7 @@ async function initializeEditProfilePage() {
             nickname: document.getElementById('edit-profile-nickname').value,
             phone: document.getElementById('edit-profile-phone').value,
             email: document.getElementById('edit-profile-email').value,
-            preferredGames: [...new Set(selectedGames)], // 使用 Set 去除重複項
+            preferredGames: [...new Set(selectedGames)],
             displayName: userProfile.displayName,
             pictureUrl: userProfile.pictureUrl || ''
         };
@@ -657,11 +633,9 @@ async function initializeEditProfilePage() {
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || '儲存失敗');
             
-            gameData = {}; // 清空快取
+            gameData = {}; 
             statusMsg.textContent = '儲存成功！';
             statusMsg.style.color = 'green';
-            
-            // 【核心修正】將 goBackPage() 改為 history.back()
             setTimeout(() => history.back(), 1500); 
 
         } catch (error) {
@@ -680,7 +654,7 @@ async function initializeEditProfilePage() {
         '困難': 3,
         '專家': 4
     };
-    const level = levels[difficulty] || 2; // 如果找不到對應的難度，預設為2顆星
+    const level = levels[difficulty] || 2;
     const totalStars = 4;
     let stars = '';
     for (let i = 0; i < totalStars; i++) {
@@ -690,7 +664,6 @@ async function initializeEditProfilePage() {
     }
 
     function renderGameDetails(game) {
-        // 1. 處理圖片
         const mainImage = appContent.querySelector('.details-image-main');
         const thumbnailsContainer = appContent.querySelector('.details-image-thumbnails');
         
@@ -710,12 +683,10 @@ async function initializeEditProfilePage() {
             }
         });
 
-        // 2. 處理核心資訊
         appContent.querySelector('.details-title').textContent = game.name;
         appContent.querySelector('#game-players').textContent = `${game.min_players} - ${game.max_players} 人`;
         appContent.querySelector('#game-difficulty').textContent = difficultyToStars(game.difficulty);
 
-        // 3. 處理標籤
         const tagsContainer = appContent.querySelector('#game-tags-container');
         const tags = (game.tags || '').split(',').map(t => t.trim()).filter(Boolean);
         if (tags.length > 0) {
