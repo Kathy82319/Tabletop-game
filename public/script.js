@@ -263,7 +263,7 @@ function initializeGameDetailsPageFromHash(gameIdString) {
                 history.replaceState({ page: 'page-home', data: null }, '', '#page-home');
             }
             
-            handleNavigation(); /
+            handleNavigation(); 
 
         } catch (err) {
             console.error("LIFF 初始化或 Profile 獲取失敗", err);
