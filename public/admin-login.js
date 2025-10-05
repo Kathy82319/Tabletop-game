@@ -1895,7 +1895,7 @@ async function openCreateRentalModal(gameId) {
     document.getElementById('rental-late-fee').value = game ? (game.late_fee_per_day || 50) : 50;
 
     const today = new Date();
-    today.setDate(today.getDate() + 3);
+    today.setDate(today.getDate() + 2);
     document.getElementById('rental-due-date').value = today.toISOString().split('T')[0];
 
     if(createRentalModal) createRentalModal.style.display = 'flex';
