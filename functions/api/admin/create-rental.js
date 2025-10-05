@@ -114,25 +114,9 @@ export async function onRequest(context) {
             createdRentalIds.push(result.results[0].rental_id);
         }
     });
-
-    // 1. 定義 syncPromises 變數，它會是一個包含多個 Promise 的陣列
-    const syncPromises = createdRentalIds.map(async (rentalId) => {
-        // 從資料庫撈出剛剛建立的完整租借紀錄
-        const newRentalRecord = await db.prepare('SELECT * FROM Rentals WHERE rental_id = ?').bind(rentalId).first();
-        if (newRentalRecord) {
-            // 呼叫 addRowToSheet，這個函式會回傳一個 Promise
-            return addRowToSheet(context.env, '桌遊租借者', newRentalRecord);
-        }
-    });
-    context.waitUntil(
-        Promise.all(syncPromises).catch(err => {
-            // 在背景紀錄同步錯誤，但不會影響給前端的回應
-            console.error("背景同步租借紀錄至 Google Sheet 失敗:", err);
-        })
-    );    
-
+    // --- 【第一部分修正：補上 LINE 訊息的 message 變數】 ---
     const rentalDateStr = new Date().toISOString().split('T')[0];
-    const rentalDuration = Math.round((new Date(dueDate) - new Date(rentalDateStr)) / (1000 * 60 * 60 * 24));
+    const rentalDuration = Math.round((new Date(dueDate) - new Date(rentalDateStr)) / (1000 * 60 * 60 * 24)) + 1; // +1 才包含當天
 
     const message = `🎉 租借資訊確認\n\n` +
                     `姓名：${name}\n` +
@@ -150,17 +134,31 @@ export async function onRequest(context) {
                     `4. 逾期歸還，每逾期一天將從押金扣除 ${lateFeeNum} 元。\n\n` +
                     `如上面資訊沒有問題，請回覆「ok」並視為同意租借規則。\n`+
                     `感謝您的預約！`;
+
+    // --- 【第二部分修正：在 waitUntil 中加入發送訊息的任務】 ---
     const syncPromises = createdRentalIds.map(async (rentalId) => {
         const newRentalRecord = await db.prepare('SELECT * FROM Rentals WHERE rental_id = ?').bind(rentalId).first();
         if (newRentalRecord) {
             return addRowToSheet(context.env, '桌遊租借者', newRentalRecord);
         }
     });
-    context.waitUntil(Promise.all(syncPromises).catch(err => {
-        // 在背景紀錄錯誤，但不會影響主請求的回應
-        console.error("背景同步租借紀錄至 Google Sheet 失敗:", err);
-    }));
 
+    // 新增發送訊息的 Promise
+    const sendMessagePromise = fetch(new URL('/api/send-message', context.request.url), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, message }),
+    });
+    
+    // 將發送訊息和同步 Sheet 的任務一起放進 Promise.all
+    syncPromises.push(sendMessagePromise);
+
+    context.waitUntil(
+        Promise.all(syncPromises).catch(err => {
+            console.error("背景任務 (租借建立) 失敗:", err);
+        })
+    );
+    
     return new Response(JSON.stringify({ success: true, message: '租借紀錄已建立，庫存已更新！' }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' },
