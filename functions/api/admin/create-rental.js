@@ -137,7 +137,10 @@ export async function onRequest(context) {
                     `如上面資訊沒有問題，請回覆「ok」並視為同意租借規則。\n`+
                     `感謝您的預約！`;
 
-    context.waitUntil(/* ... 您的背景同步邏輯 ... */);
+    context.waitUntil(Promise.all(syncPromises).catch(err => {
+        // 在背景紀錄錯誤，但不會影響主請求的回應
+        console.error("背景同步租借紀錄至 Google Sheet 失敗:", err);
+    }));
 
     return new Response(JSON.stringify({ success: true, message: '租借紀錄已建立，庫存已更新！' }), {
       status: 201,
