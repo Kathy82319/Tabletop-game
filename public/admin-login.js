@@ -1574,6 +1574,32 @@ if(editGameModal) {
 // =================================================================
 // 桌遊租借模組
 // =================================================================
+
+function updateRentalPriceFields() {
+    const rentPriceInput = document.getElementById('rental-rent-price');
+    const depositInput = document.getElementById('rental-deposit');
+    const lateFeeInput = document.getElementById('rental-late-fee');
+
+    if (!rentPriceInput || !depositInput || !lateFeeInput) return;
+
+    if (selectedRentalGames.length === 0) {
+        rentPriceInput.value = 0;
+        depositInput.value = 0;
+        lateFeeInput.value = 50; // 恢復預設值
+    } else {
+        const totalRent = selectedRentalGames.reduce((sum, game) => sum + (Number(game.rent_price) || 0), 0);
+        const totalDeposit = selectedRentalGames.reduce((sum, game) => sum + (Number(game.deposit) || 0), 0);
+        
+        // 逾期費通常以最後一個加入的遊戲為準，或取最大值
+        const lastGame = selectedRentalGames[selectedRentalGames.length - 1];
+        const lateFee = lastGame ? (lastGame.late_fee_per_day || 50) : 50;
+
+        rentPriceInput.value = totalRent;
+        depositInput.value = totalDeposit;
+        lateFeeInput.value = lateFee;
+    }
+}
+
 async function applyRentalFiltersAndRender() {
     if (!rentalSearchInput) return;
     const keyword = rentalSearchInput.value.toLowerCase().trim();
@@ -1858,6 +1884,8 @@ if (editRentalForm) {
     });
 }
 
+// public/admin-login.js
+
 async function openCreateRentalModal(gameId) {
     const statusDiv = document.getElementById('rental-modal-status');
     if(statusDiv) statusDiv.textContent = ''; 
@@ -1879,6 +1907,7 @@ async function openCreateRentalModal(gameId) {
     selectedRentalUser = null;
     selectedRentalGames = []; 
 
+    // 【核心修正】確保我們是從最新的 allGames 陣列中找到遊戲
     const game = allGames.find(g => g.game_id == gameId);
     if (game) {
         selectedRentalGames.push(game); 
@@ -1889,13 +1918,11 @@ async function openCreateRentalModal(gameId) {
     const userSelect = document.getElementById('rental-user-select');
     if(userSelect) userSelect.style.display = 'none';
 
-    // 【修改處】自動帶入預設金額
-    document.getElementById('rental-rent-price').value = game ? (game.rent_price || 0) : 0;
-    document.getElementById('rental-deposit').value = game ? (game.deposit || 0) : 0;
-    document.getElementById('rental-late-fee').value = game ? (game.late_fee_per_day || 50) : 50;
+    // 【核心修正】呼叫新的函式來設定金額
+    updateRentalPriceFields();
 
     const today = new Date();
-    today.setDate(today.getDate() + 2);
+    today.setDate(today.getDate() + 2); // 維持包含當日共三天的邏輯
     document.getElementById('rental-due-date').value = today.toISOString().split('T')[0];
 
     if(createRentalModal) createRentalModal.style.display = 'flex';
@@ -1924,12 +1951,14 @@ function updateSelectedGamesDisplay() {
         removeBtn.onclick = () => {
             selectedRentalGames = selectedRentalGames.filter(g => g.game_id !== game.game_id);
             updateSelectedGamesDisplay();
+            updateRentalPriceFields(); // 【核心修正】在這裡也呼叫價格更新函式
         };
         
         chip.appendChild(removeBtn);
         container.insertBefore(chip, searchInput); 
     });
 }
+
 
 if(createRentalModal) {
     const rentalUserSearch = document.getElementById('rental-user-search');
@@ -1996,25 +2025,26 @@ if(createRentalModal) {
                 !selectedRentalGames.some(sg => sg.game_id === game.game_id)
             );
 
-            gameSearchResults.innerHTML = '';
-            if (filteredGames.length > 0) {
-                filteredGames.slice(0, 5).forEach(game => {
-                    const li = document.createElement('li');
-                    li.textContent = `${game.name} (庫存: ${game.for_rent_stock})`;
-                    li.onclick = () => {
-                        selectedRentalGames.push(game);
-                        updateSelectedGamesDisplay();
-                        gameSearchInput.value = '';
-                        gameSearchResults.style.display = 'none';
-                    };
-                    gameSearchResults.appendChild(li);
-                });
-                gameSearchResults.style.display = 'block';
-            } else {
-                gameSearchResults.style.display = 'none';
-            }
-        });
-    }
+        gameSearchResults.innerHTML = '';
+        if (filteredGames.length > 0) {
+            filteredGames.slice(0, 5).forEach(game => {
+                const li = document.createElement('li');
+                li.textContent = `${game.name} (庫存: ${game.for_rent_stock})`;
+                li.onclick = () => {
+                    selectedRentalGames.push(game);
+                    updateSelectedGamesDisplay();
+                    updateRentalPriceFields(); // 【核心修正】當透過搜尋加入遊戲時，也要更新價格
+                    gameSearchInput.value = '';
+                    gameSearchResults.style.display = 'none';
+                };
+                gameSearchResults.appendChild(li);
+            });
+            gameSearchResults.style.display = 'block';
+        } else {
+            gameSearchResults.style.display = 'none';
+        }
+    });
+}
 
 if (createRentalForm) {
     createRentalForm.addEventListener('submit', async (e) => {
