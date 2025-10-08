@@ -114,19 +114,15 @@ export async function onRequest(context) {
             createdRentalIds.push(result.results[0].rental_id);
         }
     });
-    // --- 【第一部分修正：補上 LINE 訊息的 message 變數】 ---
+    // 1. 再次建立 message 變數
     const rentalDateStr = new Date().toISOString().split('T')[0];
-    const rentalDuration = Math.round((new Date(dueDate) - new Date(rentalDateStr)) / (1000 * 60 * 60 * 24)) + 1; // +1 才包含當天
-
+    const rentalDuration = Math.round((new Date(dueDate) - new Date(rentalDateStr)) / (1000 * 60 * 60 * 24)) + 1;
     const message = `🎉 租借資訊確認\n\n` +
-                    `姓名：${name}\n` +
-                    `電話：${phone}\n` +
-                    `日期：${rentalDateStr}\n` +
-                    `租借時間：${rentalDuration}天\n` +
+                    `姓名：${name}\n電話：${phone}\n` +
+                    `日期：${rentalDateStr}\n租借時間：${rentalDuration}天\n` +
                     `歸還日期：${dueDate}\n` +
                     `租借遊戲：\n- ${allGameNames.join('\n- ')}\n\n` +
-                    `本次租金：$${rentPriceNum}\n` +
-                    `收取押金：$${depositNum}\n\n` +
+                    `本次租金：$${rentPriceNum}\n收取押金：$${depositNum}\n\n` +
                     `租借規則：\n` +
                     `1. 收取遊戲押金，於歸還桌遊、確認內容物無誤後退還。\n` +
                     `2. 內容物需現場清點，若歸還時有缺少或損毀，將不退還押金。\n` +
@@ -135,29 +131,51 @@ export async function onRequest(context) {
                     `如上面資訊沒有問題，請回覆「ok」並視為同意租借規則。\n`+
                     `感謝您的預約！`;
 
-    // --- 【第二部分修正：在 waitUntil 中加入發送訊息的任務】 ---
-    const syncPromises = createdRentalIds.map(async (rentalId) => {
-        const newRentalRecord = await db.prepare('SELECT * FROM Rentals WHERE rental_id = ?').bind(rentalId).first();
-        if (newRentalRecord) {
-            return addRowToSheet(context.env, '桌遊租借者', newRentalRecord);
-        }
+    // 2. 準備所有背景任務
+    const backgroundTasks = [];
+
+    // Google Sheet 同步任務
+    createdRentalIds.forEach(async (rentalId) => {
+        const sheetSyncPromise = db.prepare('SELECT * FROM Rentals WHERE rental_id = ?').bind(rentalId).first()
+            .then(newRentalRecord => {
+                if (newRentalRecord) {
+                    return addRowToSheet(context.env, '桌遊租借者', newRentalRecord);
+                }
+            });
+        backgroundTasks.push(sheetSyncPromise);
     });
 
-    // 新增發送訊息的 Promise
-    const sendMessagePromise = fetch(new URL('/api/send-message', context.request.url), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, message }),
-    });
-    
-    // 將發送訊息和同步 Sheet 的任務一起放進 Promise.all
-    syncPromises.push(sendMessagePromise);
+    // 3. 【新增】在發送前，再次檢查 userId 和 message 是否有效
+    if (userId && message) {
+        console.log(`[背景任務] 準備發送 LINE 訊息給 User ID: ${userId.substring(0, 10)}...`);
+        const sendMessagePromise = fetch(new URL('/api/send-message', context.request.url), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, message }),
+        }).then(async response => {
+            if (!response.ok) {
+                const errText = await response.text();
+                // 主動拋出錯誤，讓下方的 catch 可以捕捉到
+                throw new Error(`內部 API 呼叫 /api/send-message 失敗: ${errText}`);
+            }
+            console.log('[背景任務] 內部 API /api/send-message 呼叫成功。');
+            return response.json();
+        });
+        backgroundTasks.push(sendMessagePromise);
+    } else {
+        // 如果 userId 或 message 無效，則在後台日誌中留下記錄
+        console.error(`[背景任務] 因缺少 userId 或 message，已跳過發送 LINE 訊息的步驟。`);
+    }
 
+    // 4. 將所有任務交給 waitUntil 執行
     context.waitUntil(
-        Promise.all(syncPromises).catch(err => {
-            console.error("背景任務 (租借建立) 失敗:", err);
+        Promise.all(backgroundTasks).catch(err => {
+            // 現在，任何一個背景任務失敗，都會在這裡被記錄下來
+            console.error("【背景任務執行失敗】", err);
         })
     );
+    
+    // --- 【修正結束】 ---
     
     return new Response(JSON.stringify({ success: true, message: '租借紀錄已建立，庫存已更新！' }), {
       status: 201,
