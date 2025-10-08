@@ -1887,27 +1887,15 @@ if (editRentalForm) {
 // public/admin-login.js
 
 async function openCreateRentalModal(gameId) {
+    // 【核心修正】將原本的 if (allUsers.length === 0) { ... } 整個區塊移除
+    // 因為 allUsers 現在已經被預先載入了，不再需要這個檢查
     const statusDiv = document.getElementById('rental-modal-status');
     if(statusDiv) statusDiv.textContent = ''; 
-
-    if (allUsers.length === 0) {
-        if(statusDiv) statusDiv.textContent = '正在載入會員列表，請稍候...';
-        try {
-            await fetchAllUsers();
-            if(statusDiv) statusDiv.textContent = '會員列表載入完成！';
-            setTimeout(() => { if(statusDiv) statusDiv.textContent = ''; }, 2000);
-        } catch (error) {
-            alert('會員列表載入失敗，無法建立租借紀錄。');
-            if(statusDiv) statusDiv.textContent = '';
-            return;
-        }
-    }
 
     if (createRentalForm) createRentalForm.reset();
     selectedRentalUser = null;
     selectedRentalGames = []; 
 
-    // 【核心修正】確保我們是從最新的 allGames 陣列中找到遊戲
     const game = allGames.find(g => g.game_id == gameId);
     if (game) {
         selectedRentalGames.push(game); 
@@ -1918,11 +1906,10 @@ async function openCreateRentalModal(gameId) {
     const userSelect = document.getElementById('rental-user-select');
     if(userSelect) userSelect.style.display = 'none';
 
-    // 【核心修正】呼叫新的函式來設定金額
     updateRentalPriceFields();
 
     const today = new Date();
-    today.setDate(today.getDate() + 2); // 維持包含當日共三天的邏輯
+    today.setDate(today.getDate() + 2);
     document.getElementById('rental-due-date').value = today.toISOString().split('T')[0];
 
     if(createRentalModal) createRentalModal.style.display = 'flex';
@@ -2804,12 +2791,13 @@ async function fetchStoreInfo() {
             console.error('初始化職業設定失敗:', error);
             alert(`警告：無法從 Google Sheet 獲取職業設定。`);
         }
-        // 【修改點 5】我們不再在這裡呼叫 showPage
     }
 
-    // 【修改點 6】使用 await 等待 initialize() 完成所有非同步任務
-    await initialize();
-    await fetchAllUsers();
+    // 【核心修正】在主面板初始化時，就預先載入所有需要的資料
+    await initialize();    // 等待職業設定
+    await fetchAllUsers(); // ★ 新增：預先載入所有使用者資料
+    
+    // 最後才顯示儀表板
     showPage('dashboard'); 
     }
 });
