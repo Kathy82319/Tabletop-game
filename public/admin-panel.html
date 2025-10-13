@@ -349,11 +349,12 @@
             </div>
             <div class="filter-bar">
                 <input type="text" id="game-search-input" placeholder="依桌遊名稱搜尋..." style="flex-grow: 1; padding: 8px;">
-                <div id="inventory-stock-filter" class="filter-group">
-                    <button class="active" data-filter="all">全部庫存</button>
-                    <button data-filter="in_stock">有庫存</button>
-                    <button data-filter="out_of_stock">無庫存</button>
-                </div>
+    <div class="filter-group">
+        <button id="download-csv-template-btn" class="action-btn" style="background-color: var(--info-color); margin-right: 10px;">下載 CSV 模板</button>
+        <label for="csv-upload-input" class="action-btn" style="background-color: var(--success-color); cursor: pointer; margin-right: 10px;">從 CSV 匯入</label>
+        <input type="file" id="csv-upload-input" accept=".csv" style="display: none;">
+        <button id="add-game-btn" class="action-btn btn-save">新增單筆桌遊</button>
+    </div>
                 <div id="inventory-visibility-filter" class="filter-group">
                     <button class="active" data-filter="all">全部狀態</button>
                     <button data-filter="visible">已上架</button>
@@ -361,17 +362,18 @@
                 </div>
             </div>
             <table>
-                <thead>
-                    <tr>
-                        <th style="width: 50px;">順序</th>
-                        <th>遊戲 (ID / 標籤)</th>
-                        <th>總庫存</th>
-                        <th>租借庫存</th>
-                        <th>售價 / 租金</th>
-                        <th>上架</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
+<thead>
+    <tr>
+        <th style="width: 40px;"><input type="checkbox" id="select-all-products"></th>
+        <th style="width: 50px;">順序</th>
+        <th>遊戲 (ID / 標籤)</th>
+        <th>總庫存</th>
+        <th>租借庫存</th>
+        <th>售價 / 租金</th>
+        <th>上架</th>
+        <th>操作</th>
+    </tr>
+</thead>
                 <tbody id="game-list-tbody"></tbody>
             </table>
         </div>
@@ -587,7 +589,19 @@
             <div id="scan-status-container" style="margin-top: 15px; text-align: center;"></div>
         </div>
     </main>
-    
+  
+</main> <div id="batch-actions-toolbar" class="batch-actions-toolbar">
+    <span id="batch-selected-count">已選取 0 項</span>
+    <div class="filter-group">
+        <button id="batch-publish-btn" class="action-btn" style="background-color: var(--success-color);">上架</button>
+        <button id="batch-unpublish-btn" class="action-btn" style="background-color: var(--secondary-color);">下架</button>
+        <button id="batch-set-rent-price-btn" class="action-btn" style="background-color: var(--info-color);">設定租金</button>
+        <button id="batch-delete-btn" class="action-btn" style="background-color: var(--danger-color);">刪除</button>
+    </div>
+</div>
+<div id="booking-settings-modal" class="modal-overlay"> ```    
+
+
 <div id="booking-settings-modal" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">
