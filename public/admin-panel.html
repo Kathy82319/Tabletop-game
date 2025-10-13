@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>店務管理系統</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">   
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <style>
 
 /* --- 行事曆樣式 --- */
@@ -319,7 +320,6 @@
         <div id="page-users" class="page">
             <div class="page-header">
                 <h2>顧客總表</h2>
-                <button id="sync-d1-to-sheet-btn" class="action-btn" style="background-color: var(--success-color);">同步至 Google Sheet</button>
             </div>
             <input type="text" id="user-search-input" placeholder="依 LINE 名稱或暱稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
             <table>
@@ -333,7 +333,6 @@
 <div id="page-inventory" class="page">
             <div class="page-header">
                 <h2>庫存管理</h2>
-                <button id="sync-games-btn" class="action-btn" style="background-color: #28a745;">同步至資料庫</button>
             </div>
             <div class="filter-bar">
                 <input type="text" id="game-search-input" placeholder="依桌遊名稱搜尋..." style="flex-grow: 1; padding: 8px;">
@@ -454,7 +453,6 @@
         <div>
             <button id="switch-to-calendar-view-btn" class="action-btn" style="background-color: var(--info-color); margin-right: 10px;">切換至行事曆</button>
             <button id="create-booking-btn" class="action-btn btn-save" style="margin-right: 10px;">手動建立預約</button>
-            <button id="full-sync-bookings-btn" class="action-btn" style="background-color: #17a2b8; margin-right: 10px;">手動同步至 Sheet</button>
             <button id="manage-booking-dates-btn" class="action-btn" style="background-color: #ffc107; color: #000;">管理公休日</button>
         </div>
     </div>
@@ -935,9 +933,28 @@
         </form>
     </div>
 </div>
-    <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
+
+<div id="confirmation-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3 id="confirmation-title">請確認</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <p id="confirmation-message" style="margin: 20px 0;"></p>
+        <div class="form-actions">
+            <button type="button" id="confirmation-cancel-btn" class="action-btn btn-cancel">取消</button>
+            <button type="button" id="confirmation-confirm-btn" class="action-btn btn-save">確定</button>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-    <script src="/admin-login.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script type="module" src="/admin/app.js"></script>
+
+
 </body>
 </html>
