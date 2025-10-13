@@ -21,7 +21,8 @@ export const api = {
     
     // Dashboard
     getDashboardStats: () => request('/api/admin/dashboard-stats'),
-    
+    getActivities: () => request('/api/admin/activities'),
+    markActivityAsRead: (activity_id) => request('/api/admin/activities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ activity_id }) }),    
     // Users
     getUsers: () => request('/api/get-users'),
     getUserDetails: (userId) => request(`/api/admin/user-details?userId=${userId}`),

@@ -301,6 +301,19 @@
                 <h2>今日狀態總覽</h2>
             </div>
             <div id="dashboard-grid" class="dashboard-grid">
+
+ <div id="activity-feed-section" style="margin-top: 2rem;">
+    <h2 class="page-header" style="justify-content: flex-start; gap: 1rem; align-items: center;">
+        <span>最新動態</span>
+        <span id="activity-count-badge" style="font-size: 0.9rem; background-color: var(--primary-color); color: white; padding: 4px 10px; border-radius: 12px; display: none;"></span>
+    </h2>
+    <div id="activity-feed-container" style="max-height: 400px; overflow-y: auto; background-color: var(--color-sidebar-bg); padding: 1rem; border-radius: var(--border-radius); box-shadow: var(--box-shadow);">
+        <p>正在載入動態...</p>
+    </div>
+</div>               
+
+
+                
                 <div class="stat-card" data-target="bookings">
                     <h3>今日預約總人數</h3>
                     <p id="stat-today-guests" class="stat-value">讀取中...</p>
