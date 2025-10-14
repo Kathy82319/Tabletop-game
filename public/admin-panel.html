@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>店務管理系統</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">   
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <style>
 
 /* --- 行事曆樣式 --- */
@@ -990,5 +992,18 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <script type="module" src="admin/app.js"></script>
-</body>
+    <div id="confirmation-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>請確認</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <p id="confirmation-message" style="margin: 20px 0; line-height: 1.6;">這是確認訊息。</p>
+            <div class="form-actions">
+                <button type="button" id="confirmation-cancel-btn" class="action-btn btn-cancel">取消</button>
+                <button type="button" id="confirmation-confirm-btn" class="action-btn btn-save">確認</button>
+            </div>
+        </div>
+    </div>
+    </body>
 </html>
