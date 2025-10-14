@@ -271,9 +271,14 @@ async function handleEditRentalFormSubmit(event) {
  * 這個函式將由 app.js 在啟動時呼叫
  */
 export function initializeCreateRentalModalEventListeners() {
+    console.log("初始化租借視窗的事件監聽器..."); // [除錯日誌 1]
+
     createRentalModal = document.getElementById('create-rental-modal');
     createRentalForm = document.getElementById('create-rental-form');
-    if (!createRentalModal || !createRentalForm) return;
+    if (!createRentalModal || !createRentalForm) {
+        console.error("找不到 create-rental-modal 或 create-rental-form 元素！");
+        return;
+    }
 
     const gameSearchInput = document.getElementById('rental-game-search');
     const gameSearchResults = document.getElementById('game-search-results');
@@ -286,17 +291,40 @@ export function initializeCreateRentalModalEventListeners() {
             gameSearchResults.style.display = 'none';
             return;
         }
-        // 確保 allGames 有資料
-        if (allGames.length === 0) return;
+        if (allGames.length === 0) {
+            console.warn("遊戲搜尋時 allGames 是空的，無法顯示結果。");
+            return;
+        }
         const results = allGames.filter(g => g.name.toLowerCase().includes(term) && g.for_rent_stock > 0);
         gameSearchResults.innerHTML = results.map(g => `<li data-game-id="${g.game_id}">${g.name} (庫存: ${g.for_rent_stock})</li>`).join('');
         gameSearchResults.style.display = results.length > 0 ? 'block' : 'none';
     });
 
-    gameSearchResults.addEventListener('click', (e) => {
+    gameSearchResults.addEventListener('click', async (e) => {
+        console.log("偵測到遊戲搜尋結果點擊。"); // [除錯日誌 2]
         if (e.target.tagName === 'LI') {
-            const game = allGames.find(g => g.game_id === e.target.dataset.gameId);
-            if (game) addGameToSelection(game);
+            // [防禦性程式碼] 如果 allGames 是空的，再試一次
+            if (allGames.length === 0) {
+                console.warn("點擊遊戲時 allGames 是空的，正在嘗試重新獲取...");
+                try {
+                    allGames = await api.getProducts();
+                } catch (err) {
+                    ui.toast.error('無法獲取遊戲列表！');
+                    return;
+                }
+            }
+            
+            const gameId = e.target.dataset.gameId;
+            console.log("點擊的遊戲 ID:", gameId); // [除錯日誌 3]
+            const game = allGames.find(g => g.game_id === gameId);
+            
+            if (game) {
+                console.log("成功找到遊戲物件:", game); // [除錯日誌 4]
+                addGameToSelection(game);
+            } else {
+                console.error("錯誤：在 allGames 陣列中找不到 ID 為 " + gameId + " 的遊戲。");
+                ui.toast.error("找不到該遊戲的詳細資料，請重試。");
+            }
         }
     });
 
