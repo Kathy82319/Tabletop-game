@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "include": [
+    "/api/*"
+  ],
+  "exclude": [
+    "/admin/*",
+    "/script.js",
+    "/style.css",
+    "/*.html"
+  ]
+}
