@@ -1,6 +1,5 @@
-// public/admin/app.js (完整更新版)
+// public/admin/app.js (已更新)
 import { ui } from './ui.js';
-// 【關鍵修改】從 rentalManagement 模組中引入初始化函式
 import { initializeCreateRentalModalEventListeners } from './modules/rentalManagement.js';
 
 const App = {
@@ -13,9 +12,7 @@ const App = {
         'rentals': './modules/rentalManagement.js',
         'bookings': './modules/bookingManagement.js',
         'exp-history': './modules/expHistory.js',
-        'news': './modules/newsManagement.js', 
         'news': './modules/newsManagement.js',
-        'drafts': './modules/draftsManagement.js',
         'drafts': './modules/draftsManagement.js',
         'store-info': './modules/storeInfo.js',
         'scan': './modules/scanAndPoint.js',
@@ -60,7 +57,6 @@ const App = {
 
         ui.initSharedEventListeners();
         
-        // 【關鍵修改】在應用程式啟動時，就為建立租借視窗綁定好所有事件
         initializeCreateRentalModalEventListeners();
         
         window.addEventListener('hashchange', () => this.handleRouteChange());

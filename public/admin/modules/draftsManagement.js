@@ -39,8 +39,9 @@ function openEditDraftModal(draftId = null) {
     const modal = document.getElementById('edit-draft-modal');
     const form = document.getElementById('edit-draft-form');
     const modalTitle = document.getElementById('modal-draft-title');
+    const deleteBtn = document.getElementById('delete-draft-btn'); // 新增刪除按鈕變數
 
-    if (!modal || !form || !modalTitle) return;
+    if (!modal || !form || !modalTitle || !deleteBtn) return;
 
     form.reset();
     form.querySelector('#edit-draft-id').value = '';
@@ -55,8 +56,13 @@ function openEditDraftModal(draftId = null) {
         form.querySelector('#edit-draft-id').value = draft.draft_id;
         form.querySelector('#edit-draft-title').value = draft.title;
         form.querySelector('#edit-draft-content').value = draft.content;
+        
+        // 控制刪除按鈕的顯示
+        deleteBtn.style.display = 'inline-block';
+        deleteBtn.dataset.draftId = draftId;
     } else {
         modalTitle.textContent = '新增訊息草稿';
+        deleteBtn.style.display = 'none'; // 新增時隱藏
     }
 
     ui.showModal('#edit-draft-modal');
@@ -100,6 +106,26 @@ async function handleDraftFormSubmit(event) {
 }
 
 /**
+ * 處理刪除草稿的事件
+ */
+async function handleDeleteDraft() {
+    const draftId = parseInt(this.dataset.draftId, 10);
+    if (!draftId) return;
+
+    const confirmed = await ui.confirm('您確定要永久刪除這份草稿嗎？');
+    if (!confirmed) return;
+
+    try {
+        await api.deleteMessageDraft(draftId);
+        ui.toast.success('草稿已刪除！');
+        ui.hideModal('#edit-draft-modal');
+        await init();
+    } catch (error) {
+        ui.toast.error(`刪除失敗: ${error.message}`);
+    }
+}
+
+/**
  * 綁定此頁面所有需要一次性設定的事件監聽器
  */
 function setupEventListeners() {
@@ -117,6 +143,7 @@ function setupEventListeners() {
     });
 
     document.getElementById('edit-draft-form').addEventListener('submit', handleDraftFormSubmit);
+    document.getElementById('delete-draft-btn').addEventListener('click', handleDeleteDraft); // 綁定刪除事件
 
     page.dataset.initialized = 'true';
 }

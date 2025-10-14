@@ -876,29 +876,30 @@
         </div>
     </div>
     
-    <div id="edit-draft-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modal-draft-title">編輯訊息草稿</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <form id="edit-draft-form">
-                <input type="hidden" id="edit-draft-id">
-                <div class="form-group">
-                    <label for="edit-draft-title">草稿標題</label>
-                    <input type="text" id="edit-draft-title" required placeholder="方便您辨識的標題，不會傳送給顧客">
-                </div>
-                <div class="form-group">
-                    <label for="edit-draft-content">訊息內容</label>
-                    <textarea id="edit-draft-content" rows="6" required placeholder="這是將會傳送給顧客的實際內容"></textarea>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="action-btn btn-cancel">取消</button>
-                    <button type="submit" class="action-btn btn-save">儲存草稿</button>
-                </div>
-            </form>
+<div id="edit-draft-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-draft-title">編輯訊息草稿</h3>
+            <button class="modal-close">&times;</button>
         </div>
+        <form id="edit-draft-form">
+            <input type="hidden" id="edit-draft-id">
+            <div class="form-group">
+                <label for="edit-draft-title">草稿標題</label>
+                <input type="text" id="edit-draft-title" required placeholder="方便您辨識的標題，不會傳送給顧客">
+            </div>
+            <div class="form-group">
+                <label for="edit-draft-content">訊息內容</label>
+                <textarea id="edit-draft-content" rows="6" required placeholder="這是將會傳送給顧客的實際內容"></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="button" id="delete-draft-btn" class="action-btn" style="display: none; background-color: var(--danger-color); float: left;">刪除</button>
+                <button type="button" class="action-btn btn-cancel">取消</button>
+                <button type="submit" class="action-btn btn-save">儲存草稿</button>
+            </div>
+        </form>
     </div>
+</div>
 
 <div id="edit-rental-modal" class="modal-overlay">
     <div class="modal-content">
