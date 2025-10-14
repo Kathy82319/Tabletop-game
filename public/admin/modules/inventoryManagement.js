@@ -6,6 +6,7 @@ import { ui } from '../ui.js';
 let sortableGames = null;
 let allGamesData = [];
 let selectedGameIds = new Set();
+let context = null; // 用來儲存從 app.js 傳入的 context
 
 // DOM 元素變數宣告 (在此處宣告，在 init 中賦值)
 let gameListTbody, gameSearchInput, editGameModal, editGameForm,
@@ -252,7 +253,7 @@ async function handleEditGameFormSubmit(e) {
  */
 function setupEventListeners() {
     const pageElement = document.getElementById('page-inventory');
-    if (!pageElement || pageElement.dataset.initialized === 'true') return;
+    if (pageElement.dataset.initialized) return;
 
     gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
 
@@ -270,17 +271,19 @@ function setupEventListeners() {
 
     selectAllGamesCheckbox.addEventListener('change', (e) => {
         const isChecked = e.target.checked;
-        const allVisibleCheckboxes = gameListTbody.querySelectorAll('input[type="checkbox"]');
-        
-        allVisibleCheckboxes.forEach(checkbox => {
-            const gameId = checkbox.dataset.gameId;
-            checkbox.checked = isChecked;
-            if (isChecked) {
-                selectedGameIds.add(gameId);
-                checkbox.closest('tr').classList.add('table-row-selected');
-            } else {
-                selectedGameIds.delete(gameId);
-                checkbox.closest('tr').classList.remove('table-row-selected');
+        const allVisibleRows = Array.from(gameListTbody.querySelectorAll('tr'));
+        allVisibleRows.forEach(row => {
+            const checkbox = row.querySelector('input[type="checkbox"]');
+            if (checkbox) {
+                const gameId = checkbox.dataset.gameId;
+                checkbox.checked = isChecked;
+                if (isChecked) {
+                    selectedGameIds.add(gameId);
+                    row.classList.add('table-row-selected');
+                } else {
+                    selectedGameIds.delete(gameId);
+                    row.classList.remove('table-row-selected');
+                }
             }
         });
         updateBatchToolbarVisibility();
@@ -290,7 +293,6 @@ function setupEventListeners() {
         const target = e.target;
         const row = target.closest('tr');
         if (!row) return;
-
         const gameId = row.dataset.gameId;
 
         if (target.matches('input[type="checkbox"]')) {
@@ -302,48 +304,42 @@ function setupEventListeners() {
                 row.classList.remove('table-row-selected');
             }
             updateBatchToolbarVisibility();
-        }
-
-        if (target.classList.contains('btn-edit-game')) {
-            openEditGameModal(target.dataset.gameid);
+        } else if (target.classList.contains('btn-edit-game')) {
+            openEditGameModal(gameId);
         } else if (target.classList.contains('btn-rent')) {
-            console.log("出借功能待實現", target.dataset.gameid);
-            ui.toast.info("出借功能將在後續模組中串接。");
+            // 【關鍵點】呼叫從 context 傳入的函式，取代舊的 console.log
+            if (context && context.openCreateRentalModal) {
+                context.openCreateRentalModal(gameId);
+            }
         }
     });
     
     batchActionsToolbar.addEventListener('click', async (e) => {
         const selectedIdsArray = [...selectedGameIds];
         if (selectedIdsArray.length === 0) return;
-
         const targetId = e.target.id;
         let actionPromise;
         let confirmMessage;
 
-        if (targetId === 'batch-publish-btn') {
-            actionPromise = () => api.batchUpdateGames(selectedIdsArray, true);
-        } else if (targetId === 'batch-unpublish-btn') {
-            actionPromise = () => api.batchUpdateGames(selectedIdsArray, false);
-        } else if (targetId === 'batch-delete-btn') {
+        if (targetId === 'batch-publish-btn') actionPromise = () => api.batchUpdateGames(selectedIdsArray, true);
+        else if (targetId === 'batch-unpublish-btn') actionPromise = () => api.batchUpdateGames(selectedIdsArray, false);
+        else if (targetId === 'batch-delete-btn') {
             confirmMessage = `確定要永久刪除這 ${selectedIdsArray.length} 個項目嗎？此操作無法復原。`;
             actionPromise = () => api.batchDeleteGames(selectedIdsArray);
-        } else {
-            return;
-        }
+        } else return;
 
         if (confirmMessage && !await ui.confirm(confirmMessage)) return;
 
         try {
             const result = await actionPromise();
             ui.toast.success(result.message || '操作成功！');
-            await init();
+            await init(context);
         } catch (error) {
             ui.toast.error(`操作失敗: ${error.message}`);
         }
     });
 
     editGameForm.addEventListener('submit', handleEditGameFormSubmit);
-
     pageElement.dataset.initialized = 'true';
 }
 
@@ -351,7 +347,8 @@ function setupEventListeners() {
  * 【★★ 核心 ★★】
  * 模組的進入點函式
  */
-export const init = async () => {
+export const init = async (ctx) => {
+    context = ctx; // 儲存 context
     const pageElement = document.getElementById('page-inventory');
     if (!pageElement) return;
     
@@ -367,8 +364,7 @@ export const init = async () => {
     editGameForm = document.getElementById('edit-game-form');
 
     if (!gameListTbody) return;
-
-    gameListTbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">正在載入庫存資料...</td></tr>';
+    gameListTbody.innerHTML = '<tr><td colspan="8">正在載入庫存資料...</td></tr>';
     selectedGameIds.clear();
 
     try {
@@ -379,6 +375,6 @@ export const init = async () => {
         updateBatchToolbarVisibility();
     } catch (error) {
         console.error('獲取庫存列表失敗:', error);
-        gameListTbody.innerHTML = `<tr><td colspan="8" style="color: red; text-align: center;">讀取失敗: ${error.message}</td></tr>`;
+        gameListTbody.innerHTML = `<tr><td colspan="8">${error.message}</td></tr>`;
     }
 };
