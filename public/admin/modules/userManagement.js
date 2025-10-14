@@ -46,6 +46,74 @@ function handleUserSearch() {
     renderUserList(filteredUsers);
 }
 
+// 開啟編輯使用者彈窗
+function openEditUserModal(userId) {
+    const user = allUsers.find(u => u.user_id === userId);
+    if (!user) {
+        return ui.toast.error('找不到該使用者！');
+    }
+
+    const modal = document.getElementById('edit-user-modal');
+    if (!modal) return;
+
+    // 填充表單的預設值
+    modal.querySelector('#edit-user-id').value = user.user_id;
+    modal.querySelector('#modal-user-title').textContent = `編輯：${user.line_display_name}`;
+    modal.querySelector('#edit-level-input').value = user.level || 1;
+    modal.querySelector('#edit-exp-input').value = user.current_exp || 0;
+    modal.querySelector('#edit-class-select').value = user.class || '無';
+    modal.querySelector('#edit-tag-select').value = user.tag || '';
+    
+    // 注意： notes 和 perk 欄位可能在 user 物件中不存在，需要從 user details API 獲取
+    // 這裡我們先做基礎的填充，CRM 步驟再強化
+    const profileData = allUsers.find(u => u.user_id === userId);
+    modal.querySelector('#edit-notes-textarea').value = profileData.notes || '';
+    modal.querySelector('#edit-perk-select').value = profileData.perk || '無特殊優惠';
+
+
+    ui.showModal('#edit-user-modal');
+}
+
+// 處理編輯使用者表單提交
+async function handleEditUserFormSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const userId = form.querySelector('#edit-user-id').value;
+    const button = form.querySelector('button[type="submit"]');
+
+    const updatedData = {
+        userId: userId,
+        level: parseInt(form.querySelector('#edit-level-input').value, 10),
+        current_exp: parseInt(form.querySelector('#edit-exp-input').value, 10),
+        user_class: form.querySelector('#edit-class-select').value,
+        tag: form.querySelector('#edit-tag-select').value,
+        perk: form.querySelector('#edit-perk-select').value,
+        notes: form.querySelector('#edit-notes-textarea').value,
+    };
+
+    button.textContent = '儲存中...';
+    button.disabled = true;
+
+    try {
+        await api.updateUserDetails(updatedData);
+        ui.toast.success('使用者資料更新成功！');
+
+        // 更新前端快取的資料
+        const userIndex = allUsers.findIndex(u => u.user_id === userId);
+        if (userIndex !== -1) {
+            allUsers[userIndex] = { ...allUsers[userIndex], ...updatedData };
+        }
+        
+        renderUserList(allUsers); // 重新渲染列表
+        ui.hideModal('#edit-user-modal');
+    } catch (error) {
+        ui.toast.error(`更新失敗：${error.message}`);
+    } finally {
+        button.textContent = '儲存';
+        button.disabled = false;
+    }
+}
+
 // 輔助函式：渲染 CRM 彈窗中的歷史紀錄表格
 function renderHistoryTable(items, columns, headers) {
     if (!items || items.length === 0) {
@@ -209,15 +277,20 @@ function setupEventListeners() {
         if (!row || !row.dataset.userId) return;
         const userId = row.dataset.userId;
 
-        // 如果是點擊編輯按鈕，就執行舊的編輯邏輯 (我們暫時保留)
+        // 【修改點】啟用編輯按鈕的功能
         if (target.classList.contains('btn-edit-user')) {
-            // openEditUserModal(userId); // 暫時註解，因為此功能尚未遷移
-            ui.toast.info('「編輯」功能將在後續步驟中遷移過來。');
+            openEditUserModal(userId);
         } else {
-            // 否則就是點擊整列，開啟 CRM 彈窗
+            // 點擊整列，開啟 CRM 彈窗 (後續步驟實作)
             openUserDetailsModal(userId);
         }
     });
+    
+    // 【新增】為編輯表單綁定提交事件
+    const editUserForm = document.getElementById('edit-user-form');
+    if (editUserForm) {
+        editUserForm.addEventListener('submit', handleEditUserFormSubmit);
+    }
 
     page.dataset.initialized = 'true';
 }
