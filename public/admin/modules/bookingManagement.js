@@ -98,7 +98,10 @@ function setupEventListeners() {
     // 列表操作按鈕
     bookingListTbody.addEventListener('click', async e => {
         const target = e.target;
-        const bookingId = target.dataset.bookingId;
+        // 【關鍵修正】將從 data-* 屬性取得的字串 ID 轉換為數字
+        const bookingId = parseInt(target.dataset.bookingId, 10);
+        
+        // 如果 bookingId 無法被轉換成有效的數字 (例如 NaN)，就直接返回
         if (!bookingId) return;
 
         if (target.classList.contains('btn-check-in')) {
@@ -138,7 +141,6 @@ function setupEventListeners() {
 
     pageElement.dataset.initialized = 'true';
 }
-
 
 /**
  * 模組初始化函式
