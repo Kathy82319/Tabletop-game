@@ -1,69 +1,4 @@
 // functions/api/add-exp.js
-import { GoogleSpreadsheet } from 'google-spreadsheet';
-import * as jose from 'jose';
-
-// ** START: 關鍵修正 - 複製 updateRowInSheet 函式過來 **
-// 我們需要這個函式來更新使用者列表
-async function getAccessToken(env) {
-    const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY } = env;
-    if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) throw new Error('缺少 Google 服務帳號的環境變數。');
-    const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
-    const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets' })
-      .setProtectedHeader({ alg: 'RS256', typ: 'JWT' }).setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
-      .setAudience('https://oauth2.googleapis.com/token').setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
-      .setIssuedAt().setExpirationTime('1h').sign(privateKey);
-    const body = `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`;
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body, });
-    const tokenData = await tokenResponse.json();
-    if (!tokenResponse.ok) throw new Error(`從 Google 取得 access token 失敗: ${tokenData.error_description || tokenData.error}`);
-    return tokenData.access_token;
-}
-
-async function updateRowInSheet(env, sheetName, matchColumn, matchValue, updateData) {
-    const { GOOGLE_SHEET_ID } = env;
-    if (!GOOGLE_SHEET_ID) throw new Error('缺少 GOOGLE_SHEET_ID 環境變數。');
-    const accessToken = await getAccessToken(env);
-    const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
-    const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
-    await doc.loadInfo();
-    const sheet = doc.sheetsByTitle[sheetName];
-    if (!sheet) throw new Error(`在 Google Sheets 中找不到名為 "${sheetName}" 的工作表。`);
-    await sheet.loadCells();
-    const rows = await sheet.getRows();
-    const rowToUpdate = rows.find(row => row.get(matchColumn) == matchValue);
-    if (rowToUpdate) {
-        rowToUpdate.assign(updateData);
-        await rowToUpdate.save();
-    }
-}
-// ** END: 關鍵修正 **
-
-async function syncSingleExpToSheet(env, expData) {
-    // 這個函式保持不變，繼續用來記錄歷史
-    try {
-        console.log('背景任務：開始同步單筆經驗值紀錄...');
-        const { GOOGLE_SHEET_ID, EXP_HISTORY_SHEET_NAME } = env;
-        if (!EXP_HISTORY_SHEET_NAME) {
-            throw new Error('背景同步(Exp)失敗：缺少 EXP_HISTORY_SHEET_NAME 環境變數。');
-        }
-        const accessToken = await getAccessToken(env);
-        const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
-        const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
-        await doc.loadInfo();
-        const sheet = doc.sheetsByTitle[EXP_HISTORY_SHEET_NAME];
-        if (!sheet) throw new Error(`背景同步(Exp)：找不到名為 "${EXP_HISTORY_SHEET_NAME}" 的工作表。`);
-        await sheet.addRow({
-            user_id: expData.userId,
-            exp_added: expData.expValue, 
-            reason: expData.reason,
-            staff_id: null,
-            created_at: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
-        });
-        console.log('背景任務：單筆經驗值紀錄同步成功！');
-    } catch (error) {
-        console.error('背景同步單筆經驗值失敗:', error);
-    }
-}
 
 export async function onRequest(context) {
   try {
@@ -72,7 +7,7 @@ export async function onRequest(context) {
     }
     const { userId, expValue, reason } = await context.request.json();
 
-    // --- 【新增的驗證區塊】 ---
+    // --- 【驗證區塊】 ---
     if (!userId || typeof userId !== 'string') {
         return new Response(JSON.stringify({ error: '無效的使用者 ID。' }), { status: 400 });
     }
@@ -102,17 +37,6 @@ export async function onRequest(context) {
       db.prepare('UPDATE Users SET level = ?, current_exp = ? WHERE user_id = ?').bind(currentLevel, currentExp, userId),
       db.prepare('INSERT INTO ExpHistory (user_id, exp_added, reason) VALUES (?, ?, ?)').bind(userId, exp, reason)
     ]);
-    
-    context.waitUntil(syncSingleExpToSheet(context.env, { userId, expValue: exp, reason }));
-    
-    const userDataToSync = {
-        level: currentLevel,
-        current_exp: currentExp
-    };
-    context.waitUntil(
-        updateRowInSheet(context.env, context.env.USERS_SHEET_NAME, 'user_id', userId, userDataToSync)
-        .catch(err => console.error(`背景同步更新使用者列表失敗 (User: ${userId}):`, err))
-    );
     
     return new Response(JSON.stringify({ 
         success: true, 

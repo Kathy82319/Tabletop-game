@@ -1,70 +1,9 @@
 // functions/api/admin/create-rental.js
-import { GoogleSpreadsheet } from 'google-spreadsheet';
-import * as jose from 'jose';
-
-// ** Google Sheets 工具函式 **
-async function getAccessToken(env) {
-    const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY } = env;
-    if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) throw new Error('缺少 Google 服務帳號的環境變數。');
-    
-    const privateKey = await jose.importPKCS8(GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), 'RS256');
-    
-    const jwt = await new jose.SignJWT({ scope: 'https://www.googleapis.com/auth/spreadsheets' })
-      .setProtectedHeader({ alg: 'RS256', typ: 'JWT' }).setIssuer(GOOGLE_SERVICE_ACCOUNT_EMAIL)
-      .setAudience('https://oauth2.googleapis.com/token').setSubject(GOOGLE_SERVICE_ACCOUNT_EMAIL)
-      .setIssuedAt().setExpirationTime('1h').sign(privateKey);
-
-    // 【核心修正】改為手動建立請求 Body，避免 URLSearchParams 的潛在問題
-    const grantType = 'urn:ietf:params:oauth:grant-type:jwt-bearer';
-    const body = `grant_type=${encodeURIComponent(grantType)}&assertion=${encodeURIComponent(jwt)}`;
-
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body,
-    });
-    // 【修正結束】
-
-    const tokenData = await tokenResponse.json();
-    if (!tokenResponse.ok) throw new Error(`從 Google 取得 access token 失敗: ${tokenData.error_description || tokenData.error}`);
-    return tokenData.access_token;
-}
-
-async function addRowToSheet(env, sheetName, rowData) {
-    const { GOOGLE_SHEET_ID } = env;
-    if (!GOOGLE_SHEET_ID) throw new Error('缺少 GOOGLE_SHEET_ID 環境變數。');
-    const accessToken = await getAccessToken(env);
-    const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
-    const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
-    await doc.loadInfo();
-    const sheet = doc.sheetsByTitle[sheetName];
-    if (!sheet) throw new Error(`在 Google Sheets 中找不到名為 "${sheetName}" 的工作表。`);
-    await sheet.addRow(rowData);
-}
-
-async function updateRowInSheet(env, sheetName, matchColumn, matchValue, updateData) {
-    const { GOOGLE_SHEET_ID } = env;
-    if (!GOOGLE_SHEET_ID) throw new Error('缺少 GOOGLE_SHEET_ID 環境變數。');
-    const accessToken = await getAccessToken(env);
-    const simpleAuth = { getRequestHeaders: () => ({ 'Authorization': `Bearer ${accessToken}` }) };
-    const doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, simpleAuth);
-    await doc.loadInfo();
-    const sheet = doc.sheetsByTitle[sheetName];
-    if (!sheet) throw new Error(`在 Google Sheets 中找不到名為 "${sheetName}" 的工作表。`);
-    const rows = await sheet.getRows();
-    const rowToUpdate = rows.find(row => row.get(matchColumn) == matchValue);
-    if (rowToUpdate) {
-        rowToUpdate.assign(updateData);
-        await rowToUpdate.save();
-    } else {
-        console.warn(`在工作表 "${sheetName}" 中找不到 ${matchColumn} 為 "${matchValue}" 的資料列，無法更新。`);
-    }
-}
 
 export async function onRequest(context) {
   try {
     if (context.request.method !== 'POST') {
-      return new Response('Invalid request method.', { status: 405 });
+      return new Response(JSON.stringify({ error: '無效的請求方法' }), { status: 405 });
     }
 
     const body = await context.request.json();
@@ -73,12 +12,14 @@ export async function onRequest(context) {
         rentPrice, deposit, lateFeePerDay 
     } = body;
 
-   const errors = [];
-    if (!userId || typeof userId !== 'string') errors.push('必須選擇一位有效的會員。');
+    // --- 【核心修改：放寬驗證規則】 ---
+    const errors = [];
+    // userId 現在可以是 null (代表散客)，所以只有當它有值時才驗證格式
+    if (userId && typeof userId !== 'string') errors.push('無效的會員 ID 格式。');
     if (!gameIds || !Array.isArray(gameIds) || gameIds.length === 0) errors.push('必須至少選擇一款租借的遊戲。');
     if (!dueDate || !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) errors.push('無效的歸還日期格式。');
     if (!name || typeof name !== 'string' || name.trim().length === 0 || name.length > 50) errors.push('租借人姓名為必填，且長度不可超過 50 字。');
-    if (!phone || !/^\d{10}$/.test(phone)) errors.push('請輸入有效的 10 碼手機號碼。');
+    // 電話的驗證已移除
 
     const rentPriceNum = Number(rentPrice);
     const depositNum = Number(deposit);
@@ -95,7 +36,6 @@ export async function onRequest(context) {
     const db = context.env.DB;
     const allGameNames = [];
     const dbOperations = [];
-    let createdRentalIds = [];
     
     for (const gameId of gameIds) {
         const game = await db.prepare('SELECT name, for_rent_stock FROM BoardGames WHERE game_id = ?').bind(gameId).first();
@@ -106,25 +46,24 @@ export async function onRequest(context) {
 
         const insertStmt = db.prepare(
             `INSERT INTO Rentals (user_id, game_id, due_date, name, phone, rent_price, deposit, late_fee_per_day) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING rental_id`
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
         );
         
         dbOperations.push(insertStmt.bind(
-            userId, gameId, dueDate, name, phone, rentPriceNum, depositNum, lateFeeNum
+            // 如果 userId 是 "null" 或空字串，就存入真正的 NULL
+            userId || null, 
+            gameId, dueDate, name, 
+            phone || null, // 電話也一樣
+            rentPriceNum, depositNum, lateFeeNum
         ));
         
         const updateStmt = db.prepare('UPDATE BoardGames SET for_rent_stock = for_rent_stock - 1 WHERE game_id = ?');
         dbOperations.push(updateStmt.bind(gameId));
     }
     
-    const results = await db.batch(dbOperations);
+    await db.batch(dbOperations);
     
-    results.forEach(result => {
-        if (result.results && result.results.length > 0 && result.results[0].rental_id) {
-            createdRentalIds.push(result.results[0].rental_id);
-        }
-    });
-    // 1. 再次建立 message 變數
+    // 準備要傳送給顧客的 LINE 訊息
     const rentalDateStr = new Date().toISOString().split('T')[0];
     const rentalDuration = Math.round((new Date(dueDate) - new Date(rentalDateStr)) / (1000 * 60 * 60 * 24)) + 1;
     const message = `🎉 租借資訊確認\n\n` +
@@ -141,51 +80,16 @@ export async function onRequest(context) {
                     `如上面資訊沒有問題，請回覆「ok」並視為同意租借規則。\n`+
                     `感謝您的預約！`;
 
-    // 2. 準備所有背景任務
-    const backgroundTasks = [];
-
-    // Google Sheet 同步任務
-    createdRentalIds.forEach(async (rentalId) => {
-        const sheetSyncPromise = db.prepare('SELECT * FROM Rentals WHERE rental_id = ?').bind(rentalId).first()
-            .then(newRentalRecord => {
-                if (newRentalRecord) {
-                    return addRowToSheet(context.env, '桌遊租借者', newRentalRecord);
-                }
-            });
-        backgroundTasks.push(sheetSyncPromise);
-    });
-
-    // 3. 【新增】在發送前，再次檢查 userId 和 message 是否有效
+    // 背景發送 LINE 訊息
     if (userId && message) {
-        console.log(`[背景任務] 準備發送 LINE 訊息給 User ID: ${userId.substring(0, 10)}...`);
-        const sendMessagePromise = fetch(new URL('/api/send-message', context.request.url), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, message }),
-        }).then(async response => {
-            if (!response.ok) {
-                const errText = await response.text();
-                // 主動拋出錯誤，讓下方的 catch 可以捕捉到
-                throw new Error(`內部 API 呼叫 /api/send-message 失敗: ${errText}`);
-            }
-            console.log('[背景任務] 內部 API /api/send-message 呼叫成功。');
-            return response.json();
-        });
-        backgroundTasks.push(sendMessagePromise);
-    } else {
-        // 如果 userId 或 message 無效，則在後台日誌中留下記錄
-        console.error(`[背景任務] 因缺少 userId 或 message，已跳過發送 LINE 訊息的步驟。`);
+        context.waitUntil(
+            fetch(new URL('/api/send-message', context.request.url), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, message }),
+            }).catch(err => console.error("背景發送 LINE 訊息失敗:", err))
+        );
     }
-
-    // 4. 將所有任務交給 waitUntil 執行
-    context.waitUntil(
-        Promise.all(backgroundTasks).catch(err => {
-            // 現在，任何一個背景任務失敗，都會在這裡被記錄下來
-            console.error("【背景任務執行失敗】", err);
-        })
-    );
-    
-    // --- 【修正結束】 ---
     
     return new Response(JSON.stringify({ success: true, message: '租借紀錄已建立，庫存已更新！' }), {
       status: 201,

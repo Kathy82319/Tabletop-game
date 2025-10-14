@@ -18,7 +18,7 @@ export async function onRequest(context) {
         } = body;
 
         // 後端驗證，userId 現在是可選的
-        if (!bookingDate || !timeSlot || !contactName || !contactPhone || !numOfPeople) {
+        if (!bookingDate || !timeSlot || !contactName || !numOfPeople) {
             return new Response(JSON.stringify({ error: '除了會員外，所有必填欄位皆不可為空' }), { status: 400 });
         }
 
