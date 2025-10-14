@@ -1,6 +1,7 @@
 // public/admin/app.js
 
 import { ui } from './ui.js';
+import { hideBatchToolbar } from './modules/inventoryManagement.js';
 
 const App = {
     router: {
@@ -18,7 +19,7 @@ const App = {
 
     async handleRouteChange() {
         const pageId = window.location.hash.substring(1) || 'dashboard';
-        
+        hideBatchToolbar(); // 切換頁面時，先隱藏批次工具列
         ui.setActiveNav(pageId);
         ui.showPage(pageId);
 
