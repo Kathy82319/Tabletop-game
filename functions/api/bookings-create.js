@@ -18,7 +18,8 @@ export async function onRequest(context) {
     await db.batch([
         db.prepare('INSERT INTO Bookings (user_id, contact_name, contact_phone, booking_date, time_slot, num_of_people, tables_occupied, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
           .bind(userId, contactName, contactPhone, bookingDate, timeSlot, numOfPeople, tablesNeeded, 'confirmed'),
-        db.prepare('INSERT INTO Activities (message) VALUES (?)').bind(activityMessage)
+        // 【修正】確保 Activities 插入包含 is_read 欄位
+        db.prepare('INSERT INTO Activities (message, is_read) VALUES (?, 0)').bind(activityMessage)
     ]);
     
     const message = `🎉 預約成功！\n\n` + `姓名：${contactName}\n電話：${contactPhone}\n` + `日期：${bookingDate}\n時段：${timeSlot}\n` + `人數：${numOfPeople} 人 \n\n` + `感謝您的預約，我們到時見！`;

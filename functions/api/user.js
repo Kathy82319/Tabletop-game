@@ -27,11 +27,12 @@ export async function onRequest(context) {
       
       // 新增動態到 Activities 表
       const activityMessage = `新會員加入: ${newUser.line_display_name}`;
-      await db.batch([
-          db.prepare('INSERT INTO Users (user_id, line_display_name, line_picture_url, real_name, class, level, current_exp, perk) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-            .bind(newUser.user_id, newUser.line_display_name, newUser.line_picture_url, newUser.real_name, newUser.class, newUser.level, newUser.current_exp, newUser.perk),
-          db.prepare('INSERT INTO Activities (message) VALUES (?)').bind(activityMessage)
-      ]);
+    await db.batch([
+        db.prepare('INSERT INTO Users (user_id, line_display_name, line_picture_url, real_name, class, level, current_exp, perk) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+          .bind(newUser.user_id, newUser.line_display_name, newUser.line_picture_url, newUser.real_name, newUser.class, newUser.level, newUser.current_exp, newUser.perk),
+        // 【修正】確保 Activities 插入包含 is_read 欄位
+        db.prepare('INSERT INTO Activities (message, is_read) VALUES (?, 0)').bind(activityMessage)
+    ]);
       
       return new Response(JSON.stringify({ ...newUser, expToNextLevel }), { status: 201, headers: { 'Content-Type': 'application/json' } });
     }
