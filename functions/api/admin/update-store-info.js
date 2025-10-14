@@ -52,8 +52,16 @@ export async function onRequest(context) {
     // ALTER TABLE StoreInfo ADD COLUMN booking_button_text TEXT;
     await stmt.bind(
         address, phone, opening_hours, description,
-        booking_announcement_text, booking_button_text, booking_promo_text
+        booking_announcement_text, booking_button_text, booking_promo_text, booking_notify_user_id,booking_notify_user_id 
     ).run();
+
+    // 【新增驗證】通知 ID 是可選的，但不能太長
+    if (booking_notify_user_id && booking_notify_user_id.length > 50) errors.push('通知使用者 ID 過長。');
+
+    if (errors.length > 0) {
+        return new Response(JSON.stringify({ error: errors.join(' ') }), { status: 400 });
+    }
+    // --- 【驗證區塊結束】 ---
 
     return new Response(JSON.stringify({ success: true, message: '成功更新店家資訊！' }), {
       status: 200, headers: { 'Content-Type': 'application/json' },
