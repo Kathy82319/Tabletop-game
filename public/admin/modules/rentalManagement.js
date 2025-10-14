@@ -1,22 +1,17 @@
-// public/admin/modules/rentalManagement.js
+// public/admin/modules/rentalManagement.js (最新修正版)
 import { api } from '../api.js';
 import { ui } from '../ui.js';
 
-// 模組內部狀態
 let allRentals = [];
-let allDrafts = []; // 用於管理租借紀錄時發送訊息
-let allGames = []; // 快取所有遊戲資料，用於搜尋
-let selectedRentalGames = new Map(); // 用於建立租借時儲存已選遊戲
+let allDrafts = [];
+let allGames = [];
+let selectedRentalGames = new Map();
 
 let rentalListTbody, rentalSearchInput, rentalStatusFilter,
     editRentalModal, editRentalForm, sortDueDateBtn,
     createRentalModal, createRentalForm;
 
-/**
- * 根據狀態給予不同的 CSS Class
- * @param {string} status - 租借狀態 (rented, overdue, returned)
- * @returns {string} 對應的 class 名稱
- */
+// (此處省略了 getStatusClass, renderRentalList, applyFiltersAndRender 等函式，它們維持原樣)
 function getStatusClass(status) {
     switch (status) {
         case 'overdue': return 'status-overdue';
@@ -26,17 +21,62 @@ function getStatusClass(status) {
         default: return '';
     }
 }
+function renderRentalList(rentals) {
+    if (!rentalListTbody) return;
+    rentalListTbody.innerHTML = '';
+    if (rentals.length === 0) {
+        rentalListTbody.innerHTML = '<tr><td colspan="6">找不到符合條件的租借紀錄。</td></tr>';
+        return;
+    }
+    rentals.forEach(rental => {
+        const row = rentalListTbody.insertRow();
+        const statusText = {
+            'rented': '租借中',
+            'overdue': '已逾期',
+            'due_today': '今日到期',
+            'returned': '已歸還'
+        }[rental.derived_status] || rental.status;
+        const displayName = rental.nickname || rental.line_display_name || '散客';
+        const subInfo = rental.user_id ? `<div class="sub-info">${rental.user_id}</div>` : '';
+        const lateFeeText = rental.calculated_late_fee > 0 ? `<div class="sub-info" style="color: var(--danger-color);">逾期費用: $${rental.calculated_late_fee}</div>` : '';
+        
+        row.innerHTML = `
+            <td><span class="status-badge ${getStatusClass(rental.derived_status)}">${statusText}</span>${lateFeeText}</td>
+            <td>${rental.game_name || '遊戲資料遺失'}</td>
+            <td class="compound-cell"><div class="main-info">${displayName}</div>${subInfo}</td>
+            <td>${rental.due_date}</td>
+            <td>${rental.return_date || '尚未歸還'}</td>
+            <td class="actions-cell">
+                <button class="action-btn btn-return-rental" data-rental-id="${rental.rental_id}" style="background-color: var(--success-color);" ${rental.status === 'returned' ? 'disabled' : ''}>歸還</button>
+                <button class="action-btn btn-manage-rental" data-rental-id="${rental.rental_id}" style="background-color: var(--info-color);">管理</button>
+            </td>
+        `;
+    });
+}
+function applyFiltersAndRender() {
+    const searchTerm = rentalSearchInput.value.toLowerCase().trim();
+    const statusFilter = rentalStatusFilter.querySelector('.active').dataset.filter;
+    let filteredRentals = allRentals;
+    if (statusFilter !== 'all') {
+        filteredRentals = allRentals.filter(r => r.derived_status === statusFilter);
+    }
+    if (searchTerm) {
+        filteredRentals = filteredRentals.filter(r =>
+            (r.game_name || '').toLowerCase().includes(searchTerm) ||
+            (r.nickname || '').toLowerCase().includes(searchTerm) ||
+            (r.line_display_name || '').toLowerCase().includes(searchTerm)
+        );
+    }
+    renderRentalList(filteredRentals);
+}
 
+// --- 建立租借相關功能 ---
 
-// public/admin/modules/rentalManagement.js
-
-// 【關鍵點】對外暴露的函式，用於開啟建立租借視窗
 export async function openCreateRentalModal(initialGameId) {
-    // 【核心修改】將 DOM 元素獲取移到函式內部
     createRentalModal = document.getElementById('create-rental-modal');
     createRentalForm = document.getElementById('create-rental-form');
     if (!createRentalModal || !createRentalForm) {
-        return ui.toast.error("找不到建立租借視窗的 HTML 元素！");
+        return ui.toast.error("HTML 結構錯誤：找不到 create-rental-modal。");
     }
 
     if (allGames.length === 0) {
@@ -50,13 +90,10 @@ export async function openCreateRentalModal(initialGameId) {
     createRentalForm.reset();
     createRentalForm.querySelector('#rental-user-id').value = '';
     selectedRentalGames.clear();
-    // 清理舊的已選遊戲標籤
+    
     const container = document.getElementById('rental-games-container');
-    container.querySelectorAll('.selected-game-tag').forEach(tag => tag.remove());
-    if (!container.querySelector('#rental-game-search')) {
-        container.innerHTML += '<input type="text" id="rental-game-search" placeholder="輸入遊戲名稱搜尋...">';
-    }
-
+    container.innerHTML = ''; // 清空已選遊戲
+    
     document.getElementById('game-search-results').style.display = 'none';
     document.getElementById('user-search-results').style.display = 'none';
     
@@ -74,8 +111,6 @@ export async function openCreateRentalModal(initialGameId) {
     ui.showModal('#create-rental-modal');
 }
 
-
-// 【關鍵點】新增的輔助函式 (addGameToSelection, updateRentalPrice, handleCreateRentalFormSubmit)
 function addGameToSelection(game) {
     if (selectedRentalGames.has(game.game_id)) {
         ui.toast.info(`《${game.name}》已在租借清單中。`);
@@ -83,17 +118,15 @@ function addGameToSelection(game) {
     }
     selectedRentalGames.set(game.game_id, game);
     const container = document.getElementById('rental-games-container');
-    const searchInput = document.getElementById('rental-game-search');
     const tag = document.createElement('div');
     tag.className = 'selected-game-tag';
     tag.dataset.gameId = game.game_id;
     tag.innerHTML = `<span>${game.name}</span><button type="button" class="remove-game-btn">&times;</button>`;
-    container.insertBefore(tag, searchInput);
-    searchInput.value = '';
+    container.appendChild(tag);
+    document.getElementById('rental-game-search').value = '';
     document.getElementById('game-search-results').style.display = 'none';
     updateRentalPrice();
 }
-
 
 function updateRentalPrice() {
     let totalRent = 0, totalDeposit = 0, maxLateFee = 50;
@@ -308,7 +341,7 @@ function setupEventListeners() {
             rentalStatusFilter.querySelector('.active')?.classList.remove('active');
             e.target.classList.add('active');
             const status = e.target.dataset.filter;
-            init(status); // 傳入狀態以重新從 API 獲取資料
+            init(status);
         }
     });
 
@@ -321,7 +354,7 @@ function setupEventListeners() {
                 try {
                     await api.updateRentalStatus(rentalId, 'returned');
                     ui.toast.success('狀態已更新為「已歸還」！');
-                    init(); // 重新載入
+                    await init(rentalStatusFilter.querySelector('.active').dataset.filter);
                 } catch (error) {
                     ui.toast.error(`操作失敗: ${error.message}`);
                 }
@@ -332,8 +365,7 @@ function setupEventListeners() {
         }
     });
     
-    // --- 【關鍵點】建立租借視窗的事件監聽 ---
-    // --- 【核心修改：新的建立租借視窗事件監聽】 ---
+    // --- 建立租借視窗的事件監聽 ---
     const gameSearchInput = document.getElementById('rental-game-search');
     const gameSearchResults = document.getElementById('game-search-results');
     
@@ -369,7 +401,6 @@ function setupEventListeners() {
 
     userSearchInput.addEventListener('input', async (e) => {
         const searchTerm = e.target.value.trim();
-        // 清空選擇，讓使用者可以手動輸入變成散客
         createRentalForm.querySelector('#rental-user-id').value = '';
         
         if (searchTerm.length < 1) {
@@ -383,21 +414,14 @@ function setupEventListeners() {
         } catch (error) { console.error('搜尋使用者失敗', error); }
     });
     
-    // 點擊搜尋結果
     userSearchResults.addEventListener('click', (e) => {
         if (e.target.tagName === 'LI') {
             const target = e.target;
-            const userId = target.dataset.userId;
-            const name = target.dataset.name;
-            const phone = target.dataset.phone;
-
-            // 填入資料
-            createRentalForm.querySelector('#rental-user-id').value = userId;
-            createRentalForm.querySelector('#rental-user-search').value = name; // 讓搜尋框也顯示選定的人名
-            createRentalForm.querySelector('#rental-contact-name').value = name;
-            createRentalForm.querySelector('#rental-contact-phone').value = phone;
-
-            userSearchResults.style.display = 'none'; // 隱藏結果列表
+            createRentalForm.querySelector('#rental-user-id').value = target.dataset.userId;
+            createRentalForm.querySelector('#rental-user-search').value = ''; // 清空搜尋框
+            createRentalForm.querySelector('#rental-contact-name').value = target.dataset.name;
+            createRentalForm.querySelector('#rental-contact-phone').value = target.dataset.phone;
+            userSearchResults.style.display = 'none';
         }
     });
 
@@ -408,7 +432,6 @@ function setupEventListeners() {
 }
 
 export const init = async (status = 'all') => {
-    // ... (init 函式中的 DOM 元素獲取和錯誤處理不變) ...
     const page = document.getElementById('page-rentals');
     rentalListTbody = page.querySelector('#rental-list-tbody');
     rentalSearchInput = page.querySelector('#rental-search-input');
@@ -416,8 +439,8 @@ export const init = async (status = 'all') => {
     sortDueDateBtn = page.querySelector('#sort-due-date');
     editRentalModal = document.getElementById('edit-rental-modal');
     editRentalForm = document.getElementById('edit-rental-form');
-    createRentalModal = document.getElementById('create-rental-modal');
-    createRentalForm = document.getElementById('create-rental-form');
+    // 注意：createRentalModal 和 createRentalForm 改在 openCreateRentalModal 函式內部獲取
+
     if (!rentalListTbody) return;
     rentalListTbody.innerHTML = '<tr><td colspan="6">正在載入租借紀錄...</td></tr>';
     try {
