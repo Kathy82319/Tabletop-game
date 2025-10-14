@@ -172,7 +172,7 @@ function setupEventListeners() {
     document.getElementById('product-search-input')?.addEventListener('input', applyFiltersAndRender);
 
     // 批次操作
-    const tbody = document.getElementById('product-list-tbody');
+    const tbody = document.getElementById('game-list-tbody');
     tbody?.addEventListener('change', e => {
         if (e.target.classList.contains('product-checkbox')) {
             updateBatchToolbarState();
@@ -194,7 +194,7 @@ function setupEventListeners() {
 }
 
 export const init = async () => {
-    const tbody = document.getElementById('product-list-tbody');
+    const tbody = document.getElementById('game-list-tbody');
     if (!tbody) return;
     tbody.innerHTML = `<tr><td colspan="8" style="text-align: center;">正在載入桌遊資料...</td></tr>`;
 
