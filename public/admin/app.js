@@ -1,8 +1,9 @@
 // public/admin/app.js (完整更新版)
 import { ui } from './ui.js';
+// 【關鍵修改】從 rentalManagement 模組中引入初始化函式
+import { initializeCreateRentalModalEventListeners } from './modules/rentalManagement.js';
 
 const App = {
-    // 模組的實例快取
     modules: {},
 
     router: {
@@ -10,7 +11,6 @@ const App = {
         'users': './modules/userManagement.js',
         'inventory': './modules/inventoryManagement.js',
         'rentals': './modules/rentalManagement.js',
-        'bookings': './modules/bookingManagement.js',
         'bookings': './modules/bookingManagement.js',
         'exp-history': './modules/expHistory.js',
         'news': './modules/newsManagement.js',
@@ -34,17 +34,15 @@ const App = {
                 const pageModule = this.modules[pageId];
 
                 if (pageModule.init) {
-                    // 【關鍵點】建立一個 context 物件，用於模組間通訊
                     const context = {
                         openCreateRentalModal: (gameId) => {
                             if (this.modules.rentals && this.modules.rentals.openCreateRentalModal) {
                                 this.modules.rentals.openCreateRentalModal(gameId);
                             } else {
-                                ui.toast.error("無法開啟租借視窗，請先切換到租借管理頁面一次。");
+                                ui.toast.error("租借模組載入失敗，無法開啟視窗。");
                             }
                         }
                     };
-                    // 將 context 傳遞給 init 函式
                     await pageModule.init(context);
                 }
             } catch (error) {
@@ -60,6 +58,9 @@ const App = {
 
         ui.initSharedEventListeners();
         
+        // 【關鍵修改】在應用程式啟動時，就為建立租借視窗綁定好所有事件
+        initializeCreateRentalModalEventListeners();
+        
         window.addEventListener('hashchange', () => this.handleRouteChange());
         
         document.querySelector('.nav-tabs').addEventListener('click', (event) => {
@@ -72,7 +73,6 @@ const App = {
             }
         });
         
-        // 預先載入租借模組，確保 openCreateRentalModal 函式可用
         import('./modules/rentalManagement.js').then(module => {
             this.modules.rentals = module;
         });
