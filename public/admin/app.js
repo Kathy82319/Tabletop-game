@@ -7,7 +7,7 @@ const App = {
         'dashboard': './modules/dashboard.js',
         'users': './modules/userManagement.js',
         'inventory': './modules/inventoryManagement.js',
-        'rentals': './modules/rentalManagement.js',
+        'rentals': './modules/rentalManagement.js', 
         'bookings': './modules/bookingManagement.js',
         'exp-history': './modules/expHistory.js',
         'news': './modules/newsManagement.js',
