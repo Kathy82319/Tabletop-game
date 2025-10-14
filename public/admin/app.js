@@ -13,6 +13,7 @@ const App = {
         'rentals': './modules/rentalManagement.js',
         'bookings': './modules/bookingManagement.js',
         'exp-history': './modules/expHistory.js',
+        'news': './modules/newsManagement.js', 
         'news': './modules/newsManagement.js',
         'drafts': './modules/draftsManagement.js',
         'store-info': './modules/storeInfo.js',
