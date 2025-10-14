@@ -1,5 +1,4 @@
 // functions/api/bookings-create.js
-
 export async function onRequest(context) {
   try {
     if (context.request.method !== 'POST') {
@@ -12,16 +11,15 @@ export async function onRequest(context) {
 
     const PEOPLE_PER_TABLE = 4;
     const tablesNeeded = Math.ceil(numOfPeople / PEOPLE_PER_TABLE);
-
     const db = context.env.DB;
     
-    // 這裡我們簡化邏輯，暫時不檢查每日上限，因為該功能依賴 Google Sheet
-    // 未來若有需要在 D1 中實作此功能，可再加入
+    const activityMessage = `收到新的預約: ${contactName} 預約了 ${bookingDate} ${timeSlot}，共 ${numOfPeople} 人。`;
 
-    const insertStmt = db.prepare(
-      'INSERT INTO Bookings (user_id, contact_name, contact_phone, booking_date, time_slot, num_of_people, tables_occupied, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-    );
-    await insertStmt.bind(userId, contactName, contactPhone, bookingDate, timeSlot, numOfPeople, tablesNeeded, 'confirmed').run();
+    await db.batch([
+        db.prepare('INSERT INTO Bookings (user_id, contact_name, contact_phone, booking_date, time_slot, num_of_people, tables_occupied, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+          .bind(userId, contactName, contactPhone, bookingDate, timeSlot, numOfPeople, tablesNeeded, 'confirmed'),
+        db.prepare('INSERT INTO Activities (message) VALUES (?)').bind(activityMessage)
+    ]);
     
     const message = `🎉 預約成功！\n\n` + `姓名：${contactName}\n電話：${contactPhone}\n` + `日期：${bookingDate}\n時段：${timeSlot}\n` + `人數：${numOfPeople} 人 \n\n` + `感謝您的預約，我們到時見！`;
 

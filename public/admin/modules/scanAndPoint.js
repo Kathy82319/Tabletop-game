@@ -108,7 +108,39 @@ function setupEventListeners() {
 
     document.getElementById('submit-exp-btn').addEventListener('click', handleSubmitExp);
     document.getElementById('rescan-btn').addEventListener('click', startScanner);
-    
+    // 【新增】手動搜尋會員的事件監聽
+    const userSearchInput = document.getElementById('scan-user-search');
+    const userSearchResults = document.getElementById('scan-user-search-results');
+    const userIdDisplay = document.getElementById('user-id-display');
+
+    userSearchInput.addEventListener('input', async () => {
+        const searchTerm = userSearchInput.value.trim();
+        if (searchTerm.length < 1) {
+            userSearchResults.style.display = 'none';
+            return;
+        }
+        try {
+            const users = await api.searchUsers(searchTerm);
+            userSearchResults.innerHTML = users.map(u => 
+                `<li data-user-id="${u.user_id}">${u.nickname || u.line_display_name} (${u.user_id})</li>`
+            ).join('');
+            userSearchResults.style.display = users.length > 0 ? 'block' : 'none';
+        } catch (error) {
+            console.error('搜尋使用者失敗', error);
+        }
+    });
+
+    userSearchResults.addEventListener('click', (e) => {
+        if (e.target.tagName === 'LI') {
+            stopScanner(); // 停止掃描器
+            userIdDisplay.value = e.target.dataset.userId; // 帶入 User ID
+            userSearchInput.value = e.target.textContent; // 讓輸入框顯示選中的人名
+            document.getElementById('qr-reader').style.display = 'none'; // 隱藏掃描區域
+            document.getElementById('scan-result').style.display = 'block'; // 顯示結果區域
+            userSearchResults.style.display = 'none'; // 隱藏搜尋結果
+        }
+    });
+        
     page.dataset.initialized = 'true';
 }
 

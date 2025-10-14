@@ -296,6 +296,26 @@
         #batch-actions-toolbar button {
             margin-right: 8px;
         }
+            /* 【新增】日曆上取消按鈕的樣式 */
+    .calendar-cancel-btn {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: rgba(255, 255, 255, 0.7);
+        color: var(--danger-color);
+        border: none;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        font-size: 12px;
+        line-height: 18px;
+        text-align: center;
+        cursor: pointer;
+        display: none; /* 預設隱藏 */
+    }
+    .calendar-booking:hover .calendar-cancel-btn {
+        display: block; /* 滑鼠移上去時顯示 */
+    }
     </style>
 </head>
 <body>
@@ -318,11 +338,14 @@
     
 <main class="main-content">
         <div id="page-dashboard" class="page active">
-            <div class="page-header">
-                
-                <h2>今日狀態總覽</h2>
+        <div class="page-header">
+            <h2>今日狀態總覽</h2>
             </div>
-            <div id="dashboard-grid" class="dashboard-grid">
+        <div id="dashboard-grid" class="dashboard-grid">
+            <div class="stat-card" data-target="bookings">...</div>
+            <div class="stat-card" data-target="rentals-rented">...</div>
+            <div class="stat-card" data-target="rentals-due-today">...</div>
+        </div>
 
 <div id="activity-feed-section" style="margin-top: 2rem;">
     <h2 class="page-header" style="justify-content: flex-start; gap: 1rem; align-items: center;">
@@ -602,25 +625,36 @@
             </form>
         </div>
 
-        <div id="page-scan" class="page">
-            <div class="page-header"><h2>掃碼加點</h2></div>
-            <div id="scan-container">
-                <div id="qr-reader" style="width: 100%; max-width: 500px; margin: 0 auto;"></div>
-                <div id="scan-result" style="display: none; max-width: 500px; margin: 0 auto;">
-                    <div class="form-group">
-                        <label for="user-id-display">掃描結果 (使用者 ID):</label>
-                        <input type="text" id="user-id-display" readonly style="background-color: #e9ecef; cursor: not-allowed;">
-                    </div>
+    <div id="page-scan" class="page">
+        <div class="page-header"><h2>掃碼加點</h2></div>
+        <div id="scan-container">
+            <div id="qr-reader" style="width: 100%; max-width: 500px; margin: 0 auto;"></div>
+            <div id="scan-result" style="display: none; max-width: 500px; margin: 0 auto;">
+                <div class="form-group">
+                    <label for="scan-user-search">搜尋會員 (姓名/暱稱/ID)</label>
+                    <input type="text" id="scan-user-search" placeholder="或手動搜尋會員...">
+                    <ul id="scan-user-search-results" style="display: none; border: 1px solid #ccc; list-style: none; padding: 0; margin-top: 5px; max-height: 150px; overflow-y: auto; cursor: pointer; z-index: 10;"></ul>
+                </div>
+                <div class="form-group">
+                    <label for="user-id-display">目標使用者 ID:</label>
+                    <input type="text" id="user-id-display" readonly style="background-color: #e9ecef; cursor: not-allowed;">
                 </div>
             </div>
-            <div class="form-group"><label for="reason-select">點數名稱 (原因):</label><select id="reason-select"><option value="消費回饋">消費回饋</option><option value="活動獎勵">活動獎勵</option><option value="新手獎勵">新手獎勵</option><option value="other">其他 (請手動輸入)</option></select><input type="text" id="custom-reason-input" placeholder="請輸入自訂原因" style="display: none; margin-top: 10px;"></div>
-            <div class="form-group"><label for="exp-input">經驗值點數:</label><input type="number" id="exp-input" placeholder="請輸入要新增的經驗值" min="1"></div>
-            <button id="submit-exp-btn" class="action-btn btn-save" style="width: 100%; padding: 12px; font-size: 1rem;">確認新增</button>
-            <button id="rescan-btn" class="action-btn btn-cancel" style="width: 100%; padding: 12px; font-size: 1rem; margin-top: 10px;">重新掃描</button>
-            <div id="scan-status-container" style="margin-top: 15px; text-align: center;"></div>
+        </div>
         </div>
     </main>
-    
+
+<div id="booking-details-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h3 id="booking-details-title">訂位詳細資訊</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div id="booking-details-content">
+            </div>
+    </div>
+</div>    
+
 <div id="booking-settings-modal" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">

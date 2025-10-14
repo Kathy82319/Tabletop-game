@@ -21,7 +21,6 @@ async function loadAndRenderActivities() {
     if (!container || !badge) return;
 
     try {
-        // 注意：我們還沒有建立這個 API，下一步會建立
         const activities = await api.getActivities(); 
 
         if (activities && activities.length > 0) {
@@ -39,7 +38,6 @@ async function loadAndRenderActivities() {
                 </div>
             `).join('');
 
-            // 為核取方塊綁定事件
             container.querySelectorAll('.mark-activity-read').forEach(checkbox => {
                 checkbox.addEventListener('change', async (e) => {
                     const item = e.target.closest('.activity-item');
@@ -47,7 +45,6 @@ async function loadAndRenderActivities() {
                     if (e.target.checked) {
                         try {
                             e.target.disabled = true;
-                            // 注意：我們還沒有建立這個 API，下一步會建立
                             await api.markActivityAsRead(activityId); 
                             item.style.opacity = '0.3';
                             ui.toast.success('已標示為已讀');
@@ -59,7 +56,6 @@ async function loadAndRenderActivities() {
                     }
                 });
             });
-
         } else {
             badge.style.display = 'none';
             container.innerHTML = '<p style="text-align: center; color: var(--text-light);">沒有未讀的動態消息</p>';
@@ -103,8 +99,8 @@ export const init = async () => {
     try {
         const stats = await api.getDashboardStats();
         renderStats(stats);
+        await loadAndRenderActivities(); // 確保動態在數據之後載入
         setupEventListeners();
-        await loadAndRenderActivities();
     } catch (error) {
         console.error('獲取儀表板數據失敗:', error);
         if (guestsEl) {

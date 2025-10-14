@@ -1,5 +1,4 @@
 // functions/api/user.js
-
 export async function onRequest(context) {
   try {
     if (context.request.method !== 'POST') {
@@ -15,34 +14,24 @@ export async function onRequest(context) {
     const expToNextLevel = 10;
 
     if (user) {
-      // 如果使用者已存在，就更新他們最新的 LINE 名稱和頭像
-      const stmt = db.prepare(
-        'UPDATE Users SET line_display_name = ?, line_picture_url = ? WHERE user_id = ?'
-      );
+      const stmt = db.prepare('UPDATE Users SET line_display_name = ?, line_picture_url = ? WHERE user_id = ?');
       await stmt.bind(displayName, pictureUrl, userId).run();
-      
-      // 重新獲取一次完整的 user 資料回傳給前端
       user = await db.prepare('SELECT * FROM Users WHERE user_id = ?').bind(userId).first();
-
       return new Response(JSON.stringify({ ...user, expToNextLevel }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
     } else {
-      // 建立新使用者
       const newUser = {
-        user_id: userId, 
-        line_display_name: displayName || '未提供名稱',
-        line_picture_url: pictureUrl || '',
-        real_name: '',
-        class: '無', 
-        level: 1, 
-        current_exp: 0, 
-        tag: null, 
-        perk: '無特殊優惠'
+        user_id: userId, line_display_name: displayName || '未提供名稱', line_picture_url: pictureUrl || '',
+        real_name: '', class: '無', level: 1, current_exp: 0, tag: null, perk: '無特殊優惠'
       };
       
-      await db.prepare(
-        'INSERT INTO Users (user_id, line_display_name, line_picture_url, real_name, class, level, current_exp, perk) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-      ).bind(newUser.user_id, newUser.line_display_name, newUser.line_picture_url, newUser.real_name, newUser.class, newUser.level, newUser.current_exp, newUser.perk).run();
+      // 新增動態到 Activities 表
+      const activityMessage = `新會員加入: ${newUser.line_display_name}`;
+      await db.batch([
+          db.prepare('INSERT INTO Users (user_id, line_display_name, line_picture_url, real_name, class, level, current_exp, perk) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+            .bind(newUser.user_id, newUser.line_display_name, newUser.line_picture_url, newUser.real_name, newUser.class, newUser.level, newUser.current_exp, newUser.perk),
+          db.prepare('INSERT INTO Activities (message) VALUES (?)').bind(activityMessage)
+      ]);
       
       return new Response(JSON.stringify({ ...newUser, expToNextLevel }), { status: 201, headers: { 'Content-Type': 'application/json' } });
     }
