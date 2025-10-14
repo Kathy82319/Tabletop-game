@@ -3,18 +3,20 @@ import { api } from '../api.js';
 import { ui } from '../ui.js';
 
 // 模組內部狀態
-let allBookings = []; // 用於列表視圖
-let calendarBookings = []; // 用於行事曆視圖
+let allBookings = [];
+let calendarBookings = [];
 let currentView = 'list';
 let currentCalendarDate = new Date();
+const AVAILABLE_TIME_SLOTS = ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30'];
+
 
 // DOM 元素
 let pageElement, bookingListTbody, calendarViewContainer, listViewContainer,
-    calendarGrid, calendarMonthYear, createBookingBtn, manageDatesBtn;
+    calendarGrid, calendarMonthYear, createBookingBtn, manageDatesBtn,
+    createBookingModal, createBookingForm;
 
 /**
  * 渲染預約列表
- * @param {Array} bookings 要顯示的預約資料
  */
 function renderBookingList(bookings) {
     if (!bookingListTbody) return;
@@ -50,7 +52,6 @@ function renderBookingList(bookings) {
 
 /**
  * 載入並顯示列表資料
- * @param {string} statusFilter 狀態篩選器
  */
 async function loadAndRenderList(statusFilter = 'today') {
     if (!bookingListTbody) return;
@@ -64,74 +65,50 @@ async function loadAndRenderList(statusFilter = 'today') {
 }
 
 
-// --- 【新增】行事曆相關功能 ---
+// --- 行事曆相關功能 ---
 
-/**
- * 渲染行事曆
- * @param {Date} date - 要顯示的月份所在的日期物件
- */
 function renderCalendar(date) {
     if (!calendarGrid || !calendarMonthYear) return;
 
     calendarMonthYear.textContent = `${date.getFullYear()} 年 ${date.getMonth() + 1} 月`;
-
     const year = date.getFullYear();
     const month = date.getMonth();
-
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
-    const startDayOfWeek = firstDay.getDay(); // 0 for Sunday, 1 for Monday...
+    const startDayOfWeek = firstDay.getDay();
 
     calendarGrid.innerHTML = '';
-
-    // Add weekday headers
     ['日', '一', '二', '三', '四', '五', '六'].forEach(day => {
         calendarGrid.innerHTML += `<div class="calendar-weekday">${day}</div>`;
     });
-
-    // Add empty cells for days before the 1st
     for (let i = 0; i < startDayOfWeek; i++) {
         calendarGrid.innerHTML += `<div class="calendar-day day-other-month"></div>`;
     }
-
-    // Add day cells for the current month
     for (let day = 1; day <= daysInMonth; day++) {
         const dayCell = document.createElement('div');
         dayCell.className = 'calendar-day';
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        
         dayCell.innerHTML = `<div class="day-number">${day}</div>`;
-        
-        // Find bookings for this day
         const dayBookings = calendarBookings.filter(b => b.booking_date === dateStr);
         dayBookings.sort((a,b) => a.time_slot.localeCompare(b.time_slot));
-
         dayBookings.forEach(booking => {
             let statusClass = '';
             if (booking.status === 'checked-in') statusClass = 'status-checked-in';
             if (booking.status === 'cancelled') statusClass = 'status-cancelled';
-
             const bookingEl = document.createElement('div');
             bookingEl.className = `calendar-booking ${statusClass}`;
-            bookingEl.innerHTML = `
-                <div class="calendar-booking-info">${booking.time_slot} ${booking.contact_name} (${booking.num_of_people})</div>
-            `;
-            // 這裡可以未來再加入報到/取消按鈕
+            bookingEl.innerHTML = `<div class="calendar-booking-info">${booking.time_slot} ${booking.contact_name} (${booking.num_of_people})</div>`;
             dayCell.appendChild(bookingEl);
         });
         calendarGrid.appendChild(dayCell);
     }
 }
 
-/**
- * 載入所有未來預約並渲染行事曆
- */
 async function loadAndRenderCalendar() {
     if (!calendarGrid) return;
     calendarGrid.innerHTML = '<p>正在載入預約資料...</p>';
     try {
-        // 使用 'all_upcoming' 篩選器來獲取所有未來的預約
         calendarBookings = await api.getBookings('all_upcoming');
         renderCalendar(currentCalendarDate);
     } catch (error) {
@@ -139,13 +116,79 @@ async function loadAndRenderCalendar() {
     }
 }
 
-/**
- * 切換月份
- * @param {number} direction -1 for previous month, 1 for next month
- */
 function changeMonth(direction) {
     currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
     renderCalendar(currentCalendarDate);
+}
+
+
+// --- 【新增】手動建立預約相關功能 ---
+
+/**
+ * 開啟並初始化手動建立預約的視窗
+ */
+function openCreateBookingModal() {
+    if (!createBookingModal || !createBookingForm) return;
+
+    createBookingForm.reset();
+    createBookingForm.querySelector('#booking-user-id').value = '';
+    
+    // 初始化日期選擇器
+    flatpickr("#booking-date-input", {
+        dateFormat: "Y-m-d",
+        minDate: "today",
+        defaultDate: new Date()
+    });
+
+    // 填充時間選項
+    const slotSelect = createBookingForm.querySelector('#booking-slot-select');
+    slotSelect.innerHTML = AVAILABLE_TIME_SLOTS.map(slot => `<option>${slot}</option>`).join('');
+    
+    ui.showModal('#create-booking-modal');
+}
+
+/**
+ * 處理手動建立預約的表單提交
+ */
+async function handleCreateBookingFormSubmit(event) {
+    event.preventDefault();
+    const button = createBookingForm.querySelector('button[type="submit"]');
+
+    const phone = createBookingForm.querySelector('#booking-phone-input').value.trim();
+    if (!phone) {
+        const confirmed = await ui.confirm('聯絡電話為空，確定要繼續建立預約嗎？');
+        if (!confirmed) return;
+    }
+
+    const data = {
+        userId: createBookingForm.querySelector('#booking-user-id').value || null,
+        bookingDate: createBookingForm.querySelector('#booking-date-input').value,
+        timeSlot: createBookingForm.querySelector('#booking-slot-select').value,
+        contactName: createBookingForm.querySelector('#booking-name-input').value.trim(),
+        contactPhone: phone,
+        numOfPeople: createBookingForm.querySelector('#booking-people-input').value,
+        item: createBookingForm.querySelector('#booking-item-input').value.trim(),
+    };
+
+    button.disabled = true;
+    button.textContent = '建立中...';
+    try {
+        const result = await api.createBooking(data);
+        ui.toast.success(result.message || '預約已建立！');
+        ui.hideModal('#create-booking-modal');
+        // 根據目前視圖刷新
+        if (currentView === 'list') {
+            const activeFilter = pageElement.querySelector('#booking-status-filter .active').dataset.filter;
+            loadAndRenderList(activeFilter);
+        } else {
+            loadAndRenderCalendar();
+        }
+    } catch (error) {
+        ui.toast.error(`建立失敗: ${error.message}`);
+    } finally {
+        button.disabled = false;
+        button.textContent = '確認建立';
+    }
 }
 
 
@@ -157,7 +200,6 @@ function switchView(view) {
     if (view === 'calendar') {
         listViewContainer.style.display = 'none';
         calendarViewContainer.style.display = 'block';
-        // 【修正】呼叫行事曆載入函式
         loadAndRenderCalendar();
     } else {
         calendarViewContainer.style.display = 'none';
@@ -186,7 +228,6 @@ function setupEventListeners() {
     bookingListTbody.addEventListener('click', async e => {
         const target = e.target;
         const bookingId = parseInt(target.dataset.bookingId, 10);
-        
         if (!bookingId) return;
 
         if (target.classList.contains('btn-check-in')) {
@@ -224,10 +265,42 @@ function setupEventListeners() {
         }
     });
 
-    // 【新增】行事曆月份切換按鈕
+    // 行事曆月份切換按鈕
     pageElement.querySelector('#calendar-prev-month-btn').addEventListener('click', () => changeMonth(-1));
     pageElement.querySelector('#calendar-next-month-btn').addEventListener('click', () => changeMonth(1));
 
+    // --- 【新增】手動預約相關事件 ---
+    createBookingBtn.addEventListener('click', openCreateBookingModal);
+
+    const userSearchInput = document.getElementById('booking-user-search');
+    const userSearchResults = document.getElementById('booking-user-search-results');
+
+    userSearchInput.addEventListener('input', async (e) => {
+        const searchTerm = e.target.value.trim();
+        createBookingForm.querySelector('#booking-user-id').value = ''; // 清空已選會員
+        if (searchTerm.length < 1) {
+            userSearchResults.style.display = 'none';
+            return;
+        }
+        try {
+            const users = await api.searchUsers(searchTerm);
+            userSearchResults.innerHTML = users.map(u => `<li data-user-id="${u.user_id}" data-name="${u.nickname || u.line_display_name}" data-phone="${u.phone || ''}">${u.nickname || u.line_display_name} (${u.user_id})</li>`).join('');
+            userSearchResults.style.display = users.length > 0 ? 'block' : 'none';
+        } catch (error) { console.error('搜尋使用者失敗', error); }
+    });
+
+    userSearchResults.addEventListener('click', (e) => {
+        if (e.target.tagName === 'LI') {
+            const target = e.target;
+            createBookingForm.querySelector('#booking-user-id').value = target.dataset.userId;
+            userSearchInput.value = target.dataset.name; // 更新搜尋框文字
+            createBookingForm.querySelector('#booking-name-input').value = target.dataset.name;
+            createBookingForm.querySelector('#booking-phone-input').value = target.dataset.phone;
+            userSearchResults.style.display = 'none';
+        }
+    });
+
+    createBookingForm.addEventListener('submit', handleCreateBookingFormSubmit);
 
     pageElement.dataset.initialized = 'true';
 }
@@ -245,9 +318,10 @@ export const init = async () => {
     calendarMonthYear = pageElement.querySelector('#calendar-month-year');
     createBookingBtn = pageElement.querySelector('#create-booking-btn');
     manageDatesBtn = pageElement.querySelector('#manage-booking-dates-btn');
+    createBookingModal = document.getElementById('create-booking-modal');
+    createBookingForm = document.getElementById('create-booking-form');
     
     if(!pageElement) return;
-
 
     switchView('list');
     setupEventListeners();

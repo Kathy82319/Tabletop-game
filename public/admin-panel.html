@@ -352,7 +352,6 @@
         <div id="page-users" class="page">
             <div class="page-header">
                 <h2>顧客總表</h2>
-                <button id="sync-d1-to-sheet-btn" class="action-btn" style="background-color: var(--success-color);">同步至 Google Sheet</button>
             </div>
             <input type="text" id="user-search-input" placeholder="依 LINE 名稱或暱稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
             <table>
@@ -500,7 +499,6 @@
         <div>
             <button id="switch-to-calendar-view-btn" class="action-btn" style="background-color: var(--info-color); margin-right: 10px;">切換至行事曆</button>
             <button id="create-booking-btn" class="action-btn btn-save" style="margin-right: 10px;">手動建立預約</button>
-            <button id="full-sync-bookings-btn" class="action-btn" style="background-color: #17a2b8; margin-right: 10px;">手動同步至 Sheet</button>
             <button id="manage-booking-dates-btn" class="action-btn" style="background-color: #ffc107; color: #000;">管理公休日</button>
         </div>
     </div>
@@ -952,8 +950,9 @@
         <form id="create-booking-form">
             <div class="form-group">
                 <label for="booking-user-search">搜尋預約會員 (姓名/暱稱/ID)</label>
-                <input type="text" id="booking-user-search" placeholder="輸入關鍵字搜尋...">
-                <select id="booking-user-select" style="margin-top: 10px; display: none;"></select>
+                <input type="text" id="booking-user-search" placeholder="輸入關鍵字搜尋，或留空以散客身分預約">
+                <ul id="booking-user-search-results" style="display: none; border: 1px solid #ccc; list-style: none; padding: 0; margin-top: 5px; max-height: 150px; overflow-y: auto; cursor: pointer;"></ul>
+                <input type="hidden" id="booking-user-id">
             </div>
             <hr style="border-color: var(--border-color); margin: 20px 0;">
             <div class="sub-grid">
@@ -973,7 +972,7 @@
                 </div>
                  <div class="form-group">
                     <label for="booking-phone-input">聯絡電話</label>
-                    <input type="tel" id="booking-phone-input" required>
+                    <input type="tel" id="booking-phone-input">
                 </div>
             </div>
              <div class="sub-grid">
@@ -993,6 +992,7 @@
         </form>
     </div>
 </div>
+
     <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
