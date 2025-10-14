@@ -248,7 +248,7 @@ export const init = async () => {
     
     if(!pageElement) return;
 
-    // 預設顯示列表檢視
+
     switchView('list');
     setupEventListeners();
 };
