@@ -26,7 +26,7 @@ export async function onRequest(context) {
     `;
 
     const queryParams = [];
-    if (statusFilter && statusFilter !== 'overdue' && statusFilter !== 'due_today') {
+    if (statusFilter && statusFilter !== 'all' && statusFilter !== 'overdue' && statusFilter !== 'due_today') {
         query += " WHERE r.status = ?";
         queryParams.push(statusFilter);
     } else if (statusFilter === 'due_today') {
