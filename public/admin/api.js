@@ -32,11 +32,14 @@ export const api = {
 
 // Inventory (Boardgames)
 getProducts: () => request('/api/get-boardgames'),
-updateProductOrder: (orderedGameIds) => request('/api/admin/update-boardgame-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderedGameIds }) }),
+createGame: (data) => request('/api/admin/create-boardgame', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
 updateProductDetails: (data) => request('/api/admin/update-boardgame-details', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+updateProductOrder: (orderedGameIds) => request('/api/admin/update-boardgame-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderedGameIds }) }),
 batchUpdateGames: (gameIds, isVisible) => request('/api/admin/batch-update-games', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gameIds, isVisible }) }),
 batchSetRentPrice: (gameIds, rentPrice) => request('/api/admin/batch-set-rent-price', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gameIds, rentPrice }) }),
-batchDeleteGames: (gameIds) => request('/api/admin/batch-delete-games', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gameIds }) }),    
+batchDeleteGames: (gameIds) => request('/api/admin/batch-delete-games', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gameIds }) }),
+bulkCreateGames: (data) => request('/api/admin/bulk-create-games', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+ 
     // Rentals
     getAllRentals: (status = 'all') => request(`/api/admin/get-all-rentals?status=${status}`),
     createRental: (data) => request('/api/admin/create-rental', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
