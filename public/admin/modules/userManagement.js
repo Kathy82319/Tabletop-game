@@ -61,15 +61,51 @@ function openEditUserModal(userId) {
     modal.querySelector('#modal-user-title').textContent = `編輯：${user.line_display_name}`;
     modal.querySelector('#edit-level-input').value = user.level || 1;
     modal.querySelector('#edit-exp-input').value = user.current_exp || 0;
-    modal.querySelector('#edit-class-select').value = user.class || '無';
-    modal.querySelector('#edit-tag-select').value = user.tag || '';
+    modal.querySelector('#edit-notes-textarea').value = user.notes || '';
     
-    // 注意： notes 和 perk 欄位可能在 user 物件中不存在，需要從 user details API 獲取
-    // 這裡我們先做基礎的填充，CRM 步驟再強化
-    const profileData = allUsers.find(u => u.user_id === userId);
-    modal.querySelector('#edit-notes-textarea').value = profileData.notes || '';
-    modal.querySelector('#edit-perk-select').value = profileData.perk || '無特殊優惠';
+    // --- 【核心修改點 1：動態填充下拉選單】 ---
+    const classSelect = modal.querySelector('#edit-class-select');
+    const classOtherInput = modal.querySelector('#edit-class-other-input');
+    const perkSelect = modal.querySelector('#edit-perk-select');
+    const perkOtherInput = modal.querySelector('#edit-perk-other-input');
+    
+    // 從所有使用者資料中，建立不重複的職業與福利清單
+    const uniqueClasses = ['無', ...new Set(allUsers.map(u => u.class).filter(c => c && c !== '無'))];
+    const uniquePerks = ['無特殊優惠', ...new Set(allUsers.map(u => u.perk).filter(p => p && p !== '無特殊優惠'))];
 
+    // 輔助函式：用來產生下拉選單選項
+    const populateDropdown = (selectEl, otherInputEl, options, currentValue) => {
+        selectEl.innerHTML = ''; // 清空舊選項
+        options.forEach(opt => selectEl.add(new Option(opt, opt)));
+        selectEl.add(new Option('其他 (自訂)', 'other'));
+
+        // 判斷目前使用者的值是否存在於標準選項中
+        if (options.includes(currentValue)) {
+            selectEl.value = currentValue;
+            otherInputEl.style.display = 'none';
+            otherInputEl.value = '';
+        } else {
+            selectEl.value = 'other'; // 如果是自訂的值，就選 "其他"
+            otherInputEl.style.display = 'block';
+            otherInputEl.value = currentValue || '';
+        }
+
+        // 監聽下拉選單變化，決定是否顯示 "其他" 輸入框
+        selectEl.onchange = () => {
+            if (selectEl.value === 'other') {
+                otherInputEl.style.display = 'block';
+                otherInputEl.focus();
+            } else {
+                otherInputEl.style.display = 'none';
+            }
+        };
+    };
+    
+    populateDropdown(classSelect, classOtherInput, uniqueClasses, user.class);
+    populateDropdown(perkSelect, perkOtherInput, uniquePerks, user.perk);
+    
+    // 填充標籤
+    modal.querySelector('#edit-tag-select').value = user.tag || '';
 
     ui.showModal('#edit-user-modal');
 }
@@ -81,14 +117,27 @@ async function handleEditUserFormSubmit(event) {
     const userId = form.querySelector('#edit-user-id').value;
     const button = form.querySelector('button[type="submit"]');
 
+    // --- 【核心修改點 2：從表單獲取正確的值】 ---
+    const classSelect = form.querySelector('#edit-class-select');
+    let finalClass = classSelect.value;
+    if (finalClass === 'other') {
+        finalClass = form.querySelector('#edit-class-other-input').value.trim() || '無';
+    }
+    
+    const perkSelect = form.querySelector('#edit-perk-select');
+    let finalPerk = perkSelect.value;
+    if (finalPerk === 'other') {
+        finalPerk = form.querySelector('#edit-perk-other-input').value.trim() || '無特殊優惠';
+    }
+
     const updatedData = {
         userId: userId,
         level: parseInt(form.querySelector('#edit-level-input').value, 10),
         current_exp: parseInt(form.querySelector('#edit-exp-input').value, 10),
-        user_class: form.querySelector('#edit-class-select').value,
+        user_class: finalClass,
         tag: form.querySelector('#edit-tag-select').value,
-        perk: form.querySelector('#edit-perk-select').value,
-        notes: form.querySelector('#edit-notes-textarea').value,
+        perk: finalPerk,
+        notes: form.querySelector('#edit-notes-textarea').value.trim(),
     };
 
     button.textContent = '儲存中...';
@@ -101,10 +150,14 @@ async function handleEditUserFormSubmit(event) {
         // 更新前端快取的資料
         const userIndex = allUsers.findIndex(u => u.user_id === userId);
         if (userIndex !== -1) {
+            // 合併舊資料與新資料
             allUsers[userIndex] = { ...allUsers[userIndex], ...updatedData };
         }
         
-        renderUserList(allUsers); // 重新渲染列表
+        // 為了讓自訂的 class/perk 能即時出現在其他人的下拉選單中，我們直接重新請求最新資料
+        allUsers = await api.getUsers();
+        
+        handleUserSearch(); // 使用 handleUserSearch 來重新渲染，以保留搜尋結果
         ui.hideModal('#edit-user-modal');
     } catch (error) {
         ui.toast.error(`更新失敗：${error.message}`);
@@ -114,7 +167,8 @@ async function handleEditUserFormSubmit(event) {
     }
 }
 
-// 輔助函式：渲染 CRM 彈窗中的歷史紀錄表格
+
+// (此處省略了 renderHistoryTable, loadAndBindMessageDrafts, renderUserDetails, openUserDetailsModal 等函式，它們維持原樣)
 function renderHistoryTable(items, columns, headers) {
     if (!items || items.length === 0) {
         const p = document.createElement('p');
@@ -141,7 +195,6 @@ function renderHistoryTable(items, columns, headers) {
     return table;
 }
 
-// 載入並綁定訊息草稿至 CRM 彈窗
 async function loadAndBindMessageDrafts(userId) {
     const select = document.querySelector('#user-details-modal #message-draft-select');
     const content = document.querySelector('#user-details-modal #direct-message-content');
@@ -179,7 +232,6 @@ async function loadAndBindMessageDrafts(userId) {
     };
 }
 
-// 渲染 CRM 彈窗的完整內容
 function renderUserDetails(data) {
     const contentContainer = document.querySelector('#user-details-modal #user-details-content');
     if (!contentContainer) return;
@@ -245,7 +297,6 @@ function renderUserDetails(data) {
     loadAndBindMessageDrafts(profile.user_id);
 }
 
-// 開啟 CRM 彈窗
 async function openUserDetailsModal(userId) {
     const contentContainer = document.querySelector('#user-details-modal #user-details-content');
     if (!contentContainer) return;
@@ -262,6 +313,7 @@ async function openUserDetailsModal(userId) {
     }
 }
 
+
 // 綁定所有事件監聽器
 function setupEventListeners() {
     const page = document.getElementById('page-users');
@@ -277,7 +329,6 @@ function setupEventListeners() {
         if (!row || !row.dataset.userId) return;
         const userId = row.dataset.userId;
 
-        // 【修改點】啟用編輯按鈕的功能
         if (target.classList.contains('btn-edit-user')) {
             openEditUserModal(userId);
         } else {
@@ -286,7 +337,6 @@ function setupEventListeners() {
         }
     });
     
-    // 【新增】為編輯表單綁定提交事件
     const editUserForm = document.getElementById('edit-user-form');
     if (editUserForm) {
         editUserForm.addEventListener('submit', handleEditUserFormSubmit);
