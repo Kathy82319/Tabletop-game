@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>店務管理系統</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">   
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <style>
 
 /* --- 行事曆樣式 --- */
@@ -273,6 +272,31 @@
             padding-top: 20px; /* 增加上方間距 */
             border-top: 1px solid var(--border-color); /* 加上分隔線 */
         }
+        /* --- 【新增】批次管理工具列樣式 --- */
+        #batch-toolbar {
+            display: none; /* 預設隱藏 */
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        #batch-toolbar.visible {
+            display: flex; /* 當有 .visible class 時顯示 */
+        }
+        #batch-toolbar span {
+            font-weight: bold;
+        }
+        #batch-toolbar .batch-actions button {
+            margin-right: 0.5rem;
+            background-color: white;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
     </style>
 </head>
 <body>
@@ -301,19 +325,6 @@
                 <h2>今日狀態總覽</h2>
             </div>
             <div id="dashboard-grid" class="dashboard-grid">
-
- <div id="activity-feed-section" style="margin-top: 2rem;">
-    <h2 class="page-header" style="justify-content: flex-start; gap: 1rem; align-items: center;">
-        <span>最新動態</span>
-        <span id="activity-count-badge" style="font-size: 0.9rem; background-color: var(--primary-color); color: white; padding: 4px 10px; border-radius: 12px; display: none;"></span>
-    </h2>
-    <div id="activity-feed-container" style="max-height: 400px; overflow-y: auto; background-color: var(--color-sidebar-bg); padding: 1rem; border-radius: var(--border-radius); box-shadow: var(--box-shadow);">
-        <p>正在載入動態...</p>
-    </div>
-</div>               
-
-
-                
                 <div class="stat-card" data-target="bookings">
                     <h3>今日預約總人數</h3>
                     <p id="stat-today-guests" class="stat-value">讀取中...</p>
@@ -333,6 +344,7 @@
         <div id="page-users" class="page">
             <div class="page-header">
                 <h2>顧客總表</h2>
+                <button id="sync-d1-to-sheet-btn" class="action-btn" style="background-color: var(--success-color);">同步至 Google Sheet</button>
             </div>
             <input type="text" id="user-search-input" placeholder="依 LINE 名稱或暱稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
             <table>
@@ -346,35 +358,45 @@
 <div id="page-inventory" class="page">
             <div class="page-header">
                 <h2>庫存管理</h2>
+                <div>
+                    <button id="add-game-btn" class="action-btn btn-save" style="margin-right: 10px;">新增遊戲</button>
+                    <button id="sync-games-btn" class="action-btn" style="background-color: #28a745;">同步至資料庫</button>
+                </div>
             </div>
             <div class="filter-bar">
                 <input type="text" id="game-search-input" placeholder="依桌遊名稱搜尋..." style="flex-grow: 1; padding: 8px;">
-    <div class="filter-group">
-        <button id="download-csv-template-btn" class="action-btn" style="background-color: var(--info-color); margin-right: 10px;">下載 CSV 模板</button>
-        <label for="csv-upload-input" class="action-btn" style="background-color: var(--success-color); cursor: pointer; margin-right: 10px;">從 CSV 匯入</label>
-        <input type="file" id="csv-upload-input" accept=".csv" style="display: none;">
-        <button id="add-game-btn" class="action-btn btn-save">新增單筆桌遊</button>
-    </div>
+                <div id="inventory-stock-filter" class="filter-group">
+                    <button class="active" data-filter="all">全部庫存</button>
+                    <button data-filter="in_stock">有庫存</button>
+                    <button data-filter="out_of_stock">無庫存</button>
+                </div>
                 <div id="inventory-visibility-filter" class="filter-group">
                     <button class="active" data-filter="all">全部狀態</button>
                     <button data-filter="visible">已上架</button>
                     <button data-filter="hidden">未上架</button>
                 </div>
             </div>
+            <div id="batch-toolbar">
+                <span id="batch-count">已選取 0 個項目</span>
+                <div class="batch-actions">
+                    <button id="batch-visible-btn" class="action-btn">批次上架</button>
+                    <button id="batch-hidden-btn" class="action-btn">批次下架</button>
+                    <button id="batch-export-csv-btn" class="action-btn">匯出 CSV</button>
+                </div>
+            </div>
             <table>
-<thead>
-    <tr>
-        <th style="width: 40px;"><input type="checkbox" id="select-all-products"></th>
-        <th style="width: 50px;">順序</th>
-        <th>遊戲 (ID / 標籤)</th>
-        <th>總庫存</th>
-        <th>租借庫存</th>
-        <th>售價 / 租金</th>
-        <th>上架</th>
-        <th>操作</th>
-    </tr>
-</thead>
-            
+                <thead>
+                    <tr>
+                        <th style="width: 20px;"><input type="checkbox" id="select-all-games"></th>
+                        <th style="width: 50px;">順序</th>
+                        <th>遊戲 (ID / 標籤)</th>
+                        <th>總庫存</th>
+                        <th>租借庫存</th>
+                        <th>售價 / 租金</th>
+                        <th>上架</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
                 <tbody id="game-list-tbody"></tbody>
             </table>
         </div>
@@ -469,6 +491,7 @@
         <div>
             <button id="switch-to-calendar-view-btn" class="action-btn" style="background-color: var(--info-color); margin-right: 10px;">切換至行事曆</button>
             <button id="create-booking-btn" class="action-btn btn-save" style="margin-right: 10px;">手動建立預約</button>
+            <button id="full-sync-bookings-btn" class="action-btn" style="background-color: #17a2b8; margin-right: 10px;">手動同步至 Sheet</button>
             <button id="manage-booking-dates-btn" class="action-btn" style="background-color: #ffc107; color: #000;">管理公休日</button>
         </div>
     </div>
@@ -589,20 +612,8 @@
             <button id="rescan-btn" class="action-btn btn-cancel" style="width: 100%; padding: 12px; font-size: 1rem; margin-top: 10px;">重新掃描</button>
             <div id="scan-status-container" style="margin-top: 15px; text-align: center;"></div>
         </div>
-
-
     </main>
     
-<div id="batch-actions-toolbar" class="batch-actions-toolbar">
-    <span id="batch-selected-count">已選取 0 項</span>
-    <div class="filter-group">
-        <button id="batch-publish-btn" class="action-btn" style="background-color: var(--success-color);">上架</button>
-        <button id="batch-unpublish-btn" class="action-btn" style="background-color: var(--secondary-color);">下架</button>
-        <button id="batch-set-rent-price-btn" class="action-btn" style="background-color: var(--info-color);">設定租金</button>
-        <button id="batch-delete-btn" class="action-btn" style="background-color: var(--danger-color);">刪除</button>
-    </div>
-</div>
-
 <div id="booking-settings-modal" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">
@@ -619,17 +630,15 @@
 </div>
 
 <div id="user-details-modal" class="modal-overlay">
-    <div class="modal-content" style="max-width: 800px;">
-        <div class="modal-header">
-            <h3 id="user-details-title">顧客資料</h3>
-            <button class="modal-close">&times;</button>
-        </div>
-        <div id="user-details-content" class="modal-body" style="padding-top: 15px;">
-            <p>正在載入資料...</p>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="user-details-title">顧客資料</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div id="user-details-content">
+                </div>
         </div>
     </div>
-</div>
-
     <div id="edit-user-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -963,28 +972,9 @@
         </form>
     </div>
 </div>
-
-<div id="confirmation-modal" class="modal-overlay">
-    <div class="modal-content" style="max-width: 400px;">
-        <div class="modal-header">
-            <h3 id="confirmation-title">請確認</h3>
-            <button class="modal-close">&times;</button>
-        </div>
-        <p id="confirmation-message" style="margin: 20px 0;"></p>
-        <div class="form-actions">
-            <button type="button" id="confirmation-cancel-btn" class="action-btn btn-cancel">取消</button>
-            <button type="button" id="confirmation-confirm-btn" class="action-btn btn-save">確定</button>
-        </div>
-    </div>
-</div>
-
-
-<script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-    <script type="module" src="/admin/app.js"></script>
-
-
+    <script type="module" src="admin/app.js"></script>
 </body>
 </html>

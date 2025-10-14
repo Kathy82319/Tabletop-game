@@ -1,9 +1,132 @@
-// public/admin/modules/inventoryManagement.js
-import { api } from '../api.js';
-import { ui } from '../ui.js';
+import { fetchAllGames, renderGameList, allGames } from '../api.js';
+import { showModal, hideModal } from '../ui.js';
 
-let allGames = [];
-let sortableGames = null;
+// --- DOM 元素 ---
+const page = document.getElementById('page-inventory');
+const gameListTbody = page.querySelector('#game-list-tbody');
+const batchToolbar = page.querySelector('#batch-toolbar');
+const batchCount = page.querySelector('#batch-count');
+const selectAllGames = page.querySelector('#select-all-games');
+
+// --- 事件監聽 ---
+export function initInventoryManagement() {
+    // 監聽整個表格的點擊事件，有效處理 checkbox 的變化
+    gameListTbody.addEventListener('change', (e) => {
+        if (e.target.type === 'checkbox') {
+            updateBatchToolbar();
+        }
+    });
+
+    // 全選 checkbox 的功能
+    selectAllGames.addEventListener('change', () => {
+        const isChecked = selectAllGames.checked;
+        gameListTbody.querySelectorAll('.game-checkbox').forEach(checkbox => {
+            checkbox.checked = isChecked;
+        });
+        updateBatchToolbar();
+    });
+
+    // 批次操作按鈕的事件綁定
+    batchToolbar.addEventListener('click', async (e) => {
+        const action = e.target.id;
+        const selectedIds = getSelectedGameIds();
+
+        if (selectedIds.length === 0) {
+            alert('請至少選擇一個項目');
+            return;
+        }
+
+        let isVisible;
+        if (action === 'batch-visible-btn') {
+            isVisible = true;
+        } else if (action === 'batch-hidden-btn') {
+            isVisible = false;
+        } else if (action === 'batch-export-csv-btn') {
+            exportToCSV(selectedIds);
+            return; // 匯出功能不需要後續的 API 呼叫
+        } else {
+            return; // 如果點擊的不是按鈕，則不執行任何操作
+        }
+
+        if (confirm(`確定要將 ${selectedIds.length} 個遊戲批次更新為「${isVisible ? '上架' : '下架'}」嗎？`)) {
+            try {
+                // 這裡可以呼叫一個新的批次更新 API
+                // const response = await api.batchUpdateGamesVisibility(selectedIds, isVisible);
+                // alert('批次更新成功！');
+                // await fetchAllGames(); // 重新載入資料
+                
+                // 暫時用 alert 提示功能
+                alert(`功能開發中：將 ${selectedIds.length} 個遊戲的狀態更新為 ${isVisible}`);
+
+            } catch (error) {
+                console.error('批次更新失敗:', error);
+                alert(`批次更新失敗: ${error.message}`);
+            }
+        }
+    });
+}
+
+// --- 功能函式 ---
+
+// 更新工具列的顯示狀態和計數
+function updateBatchToolbar() {
+    const selectedCheckboxes = gameListTbody.querySelectorAll('.game-checkbox:checked');
+    const count = selectedCheckboxes.length;
+
+    if (count > 0) {
+        batchCount.textContent = `已選取 ${count} 個項目`;
+        batchToolbar.classList.add('visible');
+    } else {
+        batchToolbar.classList.remove('visible');
+    }
+
+    // 更新全選 checkbox 的狀態
+    const totalCheckboxes = gameListTbody.querySelectorAll('.game-checkbox').length;
+    selectAllGames.checked = totalCheckboxes > 0 && count === totalCheckboxes;
+}
+
+// 獲取所有被選中的遊戲 ID
+function getSelectedGameIds() {
+    return Array.from(gameListTbody.querySelectorAll('.game-checkbox:checked'))
+                .map(cb => cb.closest('tr').dataset.gameId);
+}
+
+// 匯出 CSV 的功能
+function exportToCSV(selectedIds) {
+    const gamesToExport = allGames.filter(game => selectedIds.includes(game.game_id));
+    if (gamesToExport.length === 0) {
+        alert('沒有可匯出的資料');
+        return;
+    }
+
+    // 定義 CSV 標頭
+    const headers = ['game_id', 'name', 'tags', 'total_stock', 'for_rent_stock', 'sale_price', 'rent_price', 'is_visible'];
+    let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+
+    // 轉換資料為 CSV 格式
+    gamesToExport.forEach(game => {
+        const row = headers.map(header => {
+            let value = game[header];
+            // 處理布林值和可能含有逗號的字串
+            if (typeof value === 'boolean') {
+                value = value ? 'TRUE' : 'FALSE';
+            } else if (typeof value === 'string' && value.includes(',')) {
+                value = `"${value}"`; // 用引號包起來
+            }
+            return value;
+        });
+        csvContent += row.join(",") + "\n";
+    });
+
+    // 建立並觸發下載
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "inventory_export.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 
 function renderGameList(games) {
     const tbody = document.getElementById('game-list-tbody');
