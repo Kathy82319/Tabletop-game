@@ -310,7 +310,7 @@ export function initializeCreateRentalModalEventListeners() {
             }
             
             const gameId = e.target.dataset.gameId;
-            // 【關鍵修正】使用 == 進行比較，忽略字串和數字的型別差異
+    
             const game = allGames.find(g => g.game_id == gameId);
             
             if (game) {
@@ -359,8 +359,8 @@ export function initializeCreateRentalModalEventListeners() {
 
     createRentalForm.addEventListener('submit', handleCreateRentalFormSubmit);
 }
-
-
+ 
+  
 /**
  * 綁定此頁面所有需要一次性設定的事件監聽器
  */
