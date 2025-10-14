@@ -183,26 +183,6 @@ async function handleCreateRentalFormSubmit(event) {
 }
 
 /**
- * 根據目前的篩選和排序條件，重新渲染列表
- */
-function applyFiltersAndRender() {
-    const searchTerm = rentalSearchInput.value.toLowerCase().trim();
-    const statusFilter = rentalStatusFilter.querySelector('.active').dataset.filter;
-    let filteredRentals = allRentals;
-    if (statusFilter !== 'all') {
-        filteredRentals = allRentals.filter(r => r.derived_status === statusFilter);
-    }
-    if (searchTerm) {
-        filteredRentals = filteredRentals.filter(r =>
-            (r.game_name || '').toLowerCase().includes(searchTerm) ||
-            (r.nickname || '').toLowerCase().includes(searchTerm) ||
-            (r.line_display_name || '').toLowerCase().includes(searchTerm)
-        );
-    }
-    renderRentalList(filteredRentals);
-}
-
-/**
  * 開啟並填充管理租借紀錄的彈出視窗
  * @param {number} rentalId - 租借紀錄 ID
  */
