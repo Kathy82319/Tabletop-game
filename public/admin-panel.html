@@ -8,107 +8,119 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <style>
-
-/* --- 行事曆樣式 --- */
-.calendar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    background-color: white;
-    border-radius: 8px 8px 0 0;
-    border: 1px solid var(--border-color);
-    border-bottom: none;
-}
-.calendar-header h3 { margin: 0; font-size: 1.2rem; }
-.calendar-header button { background: none; border: 1px solid var(--border-color); border-radius: 50%; width: 30px; height: 30px; cursor: pointer; }
-
-#calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    border: 1px solid var(--border-color);
-    background-color: white;
-}
-.calendar-day, .calendar-weekday {
-    border-right: 1px solid var(--border-color);
-    border-top: 1px solid var(--border-color);
-    padding: 8px;
-}
-.calendar-day:nth-child(7n) { border-right: none; }
-.calendar-weekday {
-    font-weight: bold;
-    text-align: center;
-    background-color: var(--light-gray);
-}
-.calendar-day {
-    min-height: 120px;
-    display: flex;
-    flex-direction: column;
-}
-.day-number { font-weight: bold; }
-.day-other-month .day-number { color: #ccc; }
-.calendar-booking {
-    font-size: 0.8rem;
-    padding: 5px;
-    margin-top: 5px;
-    border-radius: 4px;
-    background-color: var(--info-color);
-    color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 5px;
-    transition: background-color 0.3s, opacity 0.3s; /* 新增過渡效果 */
-}
-/* 【新增】已報到狀態的樣式 */
-.calendar-booking.status-checked-in {
-    background-color: var(--secondary-color); /* 灰色 */
-    opacity: 0.7;
-}
-
-/* 【新增】已取消狀態的樣式 */
-.calendar-booking.status-cancelled {
-    background-color: var(--danger-color); /* 紅色 */
-    opacity: 0.6;
-    text-decoration: line-through; /* 加上刪除線 */
-}
-
-.calendar-booking-info {
-    flex-grow: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.calendar-booking-actions button {
-    /* 【新增】日曆上小按鈕的樣式 */
-    padding: 2px 5px;
-    font-size: 0.7rem;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    color: #333;
-}
-
-.calendar-booking-actions .btn-check-in {
-    background-color: var(--success-color);
-    color: white;
-}
-.calendar-booking-actions .btn-cancel-booking {
-    background-color: var(--danger-color);
-    color: white;
-}
-
-            /* 【新增這一段】響應式 CRM 樣式 */
-    @media (max-width: 768px) {
-        .details-grid {
-            grid-template-columns: 1fr; /* 在手機上，從左右兩欄變成垂直單欄 */
+        /* --- 【新增】租借視窗中已選遊戲標籤的樣式 --- */
+        .selected-game-tag {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
         }
-        .profile-summary {
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 1rem;
+        .remove-game-btn {
+            background: none;
+            border: none;
+            color: white;
+            margin-left: 8px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            line-height: 1;
+            padding: 0;
         }
-    }
+        /* --- 行事曆樣式 --- */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: white;
+            border-radius: 8px 8px 0 0;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+        }
+        .calendar-header h3 { margin: 0; font-size: 1.2rem; }
+        .calendar-header button { background: none; border: 1px solid var(--border-color); border-radius: 50%; width: 30px; height: 30px; cursor: pointer; }
+
+        #calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            border: 1px solid var(--border-color);
+            background-color: white;
+        }
+        .calendar-day, .calendar-weekday {
+            border-right: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-color);
+            padding: 8px;
+        }
+        .calendar-day:nth-child(7n) { border-right: none; }
+        .calendar-weekday {
+            font-weight: bold;
+            text-align: center;
+            background-color: var(--light-gray);
+        }
+        .calendar-day {
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+        }
+        .day-number { font-weight: bold; }
+        .day-other-month .day-number { color: #ccc; }
+        .calendar-booking {
+            font-size: 0.8rem;
+            padding: 5px;
+            margin-top: 5px;
+            border-radius: 4px;
+            background-color: var(--info-color);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 5px;
+            transition: background-color 0.3s, opacity 0.3s; /* 新增過渡效果 */
+        }
+        .calendar-booking.status-checked-in {
+            background-color: var(--secondary-color);
+            opacity: 0.7;
+        }
+        .calendar-booking.status-cancelled {
+            background-color: var(--danger-color);
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+        .calendar-booking-info {
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .calendar-booking-actions button {
+            padding: 2px 5px;
+            font-size: 0.7rem;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            color: #333;
+        }
+        .calendar-booking-actions .btn-check-in {
+            background-color: var(--success-color);
+            color: white;
+        }
+        .calendar-booking-actions .btn-cancel-booking {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        @media (max-width: 768px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+            .profile-summary {
+                border-bottom: 1px solid var(--border-color);
+                padding-bottom: 1rem;
+            }
+        }
         :root {
             --primary-color: #007bff; --secondary-color: #6c757d; --danger-color: #dc3545;
             --success-color: #28a745; --warning-color: #ffc107; --info-color: #17a2b8;
@@ -136,7 +148,6 @@
         .action-btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; border: none; border-radius: 5px; cursor: pointer; color: white; }
         .btn-edit { background-color: var(--warning-color); color: #212529; }
         .btn-sync { background-color: var(--info-color); }
-
         .filter-bar { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; align-items: center; }
         .filter-group { display: flex; gap: 0.5rem; }
         .filter-group button { padding: 0.4rem 0.8rem; font-size: 0.8rem; border: 1px solid var(--border-color); background-color: white; border-radius: 5px; cursor: pointer; }
@@ -154,51 +165,46 @@
         .form-actions { margin-top: 20px; text-align: right; }
         .btn-save { background-color: var(--primary-color); }
         .btn-cancel { background-color: var(--secondary-color); }
-
-        /* Dashboard Styles */
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
         .stat-card { background-color: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .stat-card h3 { margin-top: 0; color: var(--text-light); font-size: 1rem; }
         .stat-card .stat-value { font-size: 2.5rem; font-weight: bold; color: var(--primary-color); }
         .stat-card .stat-subtext { color: var(--text-light); font-size: 0.9rem; margin-top: 5px;}
-
-    /* CRM Modal Styles (優化空間版本) */
         #user-details-modal .modal-content {
             max-width: 800px;
         }
         .details-grid {
             display: grid;
             grid-template-columns: 1fr 2fr;
-            gap: 1rem; /* 縮小網格間距 */
+            gap: 1rem;
         }
         .profile-summary {
             text-align: left;
-            word-break: break-all; /* 避免長字串撐開版面 */
+            word-break: break-all;
         }
         .profile-summary img {
-            width: 80px; /* 縮小頭像 */
+            width: 80px;
             height: 80px;
             border-radius: 50%;
-            margin-bottom: 0.5rem; /* 縮小頭像下方間距 */
+            margin-bottom: 0.5rem;
             display: block;
             background-color: #f0f0f0;
             border: 1px solid var(--border-color);
         }
         .profile-summary h4 { margin: 0.2rem 0; }
         .profile-summary p {
-            margin: 0.15rem 0; /* 大幅縮小文字行間距 */
-            font-size: 0.8rem; /* 稍微縮小字體 */
+            margin: 0.15rem 0;
+            font-size: 0.8rem;
             color: var(--text-light);
         }
         .profile-summary hr { margin: 0.5rem 0; }
-
         .details-tabs {
             display: flex;
             border-bottom: 1px solid var(--border-color);
-            margin-bottom: 0.5rem; /* 縮小頁籤下方間距 */
+            margin-bottom: 0.5rem;
         }
         .details-tab {
-            padding: 0.5rem 0.8rem; /* 縮小頁籤上下內距 */
+            padding: 0.5rem 0.8rem;
             cursor: pointer;
         }
         .details-tab.active {
@@ -208,31 +214,24 @@
         .details-tab-content { display: none; }
         .details-tab-content.active {
             display: block;
-            max-height: 220px; /* 設定一個最大高度，內容超長時內部會產生捲軸 */
+            max-height: 220px;
             overflow-y: auto;
         }
         #user-details-modal table { font-size: 0.8rem; }
-        #user-details-modal th, #user-details-modal td { padding: 0.4rem; } /* 縮小表格內距 */
-
+        #user-details-modal th, #user-details-modal td { padding: 0.4rem; }
         .message-sender {
-            margin-top: 1rem; /* 縮小訊息發送區上方間距 */
+            margin-top: 1rem;
             border-top: 1px solid var(--border-color);
-            padding-top: 1rem; /* 縮小訊息發送區上方內距 */
+            padding-top: 1rem;
         }
-
-
-        /* 【** 庫存管理頁樣式 **】 */
         .draggable-row { cursor: default; }
         .drag-handle-cell { text-align: left !important; }
         .drag-handle { cursor: move; display: inline-block; width: 20px; font-size: 1.2rem; color: #999; margin-right: 5px; }
-
-        /* 【** 編輯遊戲視窗專用 RWD 樣式 **】 */
         #edit-game-modal .modal-content { max-width: 800px; }
         .edit-game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .grid-span-2 { grid-column: span 2; }
         .sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .sub-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
-
         @media (max-width: 768px) {
             .details-grid, .edit-game-grid, .sub-grid, .sub-grid-3 {
                 grid-template-columns: 1fr;
@@ -240,43 +239,35 @@
             .grid-span-2 { grid-column: span 1; }
             .profile-summary { border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; }
         }
-                .modal-content {
+        .modal-content {
             background: white; padding: 25px; border-radius: 8px;
             width: 90%; max-width: 600px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             display: flex; flex-direction: column;
             max-height: 90vh;
         }
-
-        /* 【** 步驟 1: 讓表單填滿可用空間 **】 */
-        /* 我們需要讓 form 元素也成為 flex 容器的一部分 */
         #edit-game-form {
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* 確保內容不會溢出 form */
-            flex-grow: 1; /* 讓 form 填滿 modal-content 的剩餘空間 */
+            overflow: hidden;
+            flex-grow: 1;
         }
-        
         .modal-body {
-            overflow-y: auto; /* 讓內容區塊可以垂直滾動 */
-            padding-right: 15px; /* 增加一點右邊距，避免滾動條太貼近內容 */
+            overflow-y: auto;
+            padding-right: 15px;
         }
-        
         .modal-header, .form-actions {
-            flex-shrink: 0; /* 確保頭部和腳部不會被壓縮 */
+            flex-shrink: 0;
         }
-
-        /* 【** 步驟 2: (可選，但建議) 幫按鈕區塊加上分隔線 **】 */
         .form-actions {
             margin-top: 20px;
             text-align: right;
             flex-shrink: 0;
-            padding-top: 20px; /* 增加上方間距 */
-            border-top: 1px solid var(--border-color); /* 加上分隔線 */
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
         }
-        /* --- 【新增】批次管理工具列樣式 --- */
         #batch-toolbar {
-            display: none; /* 預設隱藏 */
+            display: none;
             padding: 1rem;
             margin-bottom: 1rem;
             background-color: var(--primary-color);
@@ -288,7 +279,7 @@
             flex-wrap: wrap;
         }
         #batch-toolbar.visible {
-            display: flex; /* 當有 .visible class 時顯示 */
+            display: flex;
         }
         #batch-toolbar span {
             font-weight: bold;
@@ -299,19 +290,15 @@
             color: var(--primary-color);
             border: 1px solid var(--primary-color);
         }
-/* --- 【新增】批次選取功能樣式 --- */
-.table-row-selected {
-    background-color: #fffbe6 !important; /* 淡黃色背景表示已選取 */
-}
-
-#batch-actions-toolbar button {
-    margin-right: 8px;
-}
-
+        .table-row-selected {
+            background-color: #fffbe6 !important;
+        }
+        #batch-actions-toolbar button {
+            margin-right: 8px;
+        }
     </style>
 </head>
 <body>
-
     <div id="admin-panel" style="display: none;">
         <header class="header">
             <h1>店務管理系統</h1>

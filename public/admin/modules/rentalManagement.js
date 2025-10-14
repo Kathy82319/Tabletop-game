@@ -11,7 +11,6 @@ let rentalListTbody, rentalSearchInput, rentalStatusFilter,
     editRentalModal, editRentalForm, sortDueDateBtn,
     createRentalModal, createRentalForm;
 
-// (此處省略了 getStatusClass, renderRentalList, applyFiltersAndRender 等函式，它們維持原樣)
 function getStatusClass(status) {
     switch (status) {
         case 'overdue': return 'status-overdue';
