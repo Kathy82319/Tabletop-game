@@ -3,8 +3,9 @@ import { api } from '../api.js';
 import { ui } from '../ui.js';
 
 // 模組內部狀態
-let allBookings = [];
-let currentView = 'list'; // 'list' or 'calendar'
+let allBookings = []; // 用於列表視圖
+let calendarBookings = []; // 用於行事曆視圖
+let currentView = 'list';
 let currentCalendarDate = new Date();
 
 // DOM 元素
@@ -55,13 +56,98 @@ async function loadAndRenderList(statusFilter = 'today') {
     if (!bookingListTbody) return;
     bookingListTbody.innerHTML = '<tr><td colspan="5">正在載入預約資料...</td></tr>';
     try {
-        const bookings = await api.getBookings(statusFilter);
-        allBookings = bookings;
-        renderBookingList(bookings);
+        allBookings = await api.getBookings(statusFilter);
+        renderBookingList(allBookings);
     } catch (error) {
         bookingListTbody.innerHTML = `<tr><td colspan="5" style="color:red;">載入失敗: ${error.message}</td></tr>`;
     }
 }
+
+
+// --- 【新增】行事曆相關功能 ---
+
+/**
+ * 渲染行事曆
+ * @param {Date} date - 要顯示的月份所在的日期物件
+ */
+function renderCalendar(date) {
+    if (!calendarGrid || !calendarMonthYear) return;
+
+    calendarMonthYear.textContent = `${date.getFullYear()} 年 ${date.getMonth() + 1} 月`;
+
+    const year = date.getFullYear();
+    const month = date.getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDayOfWeek = firstDay.getDay(); // 0 for Sunday, 1 for Monday...
+
+    calendarGrid.innerHTML = '';
+
+    // Add weekday headers
+    ['日', '一', '二', '三', '四', '五', '六'].forEach(day => {
+        calendarGrid.innerHTML += `<div class="calendar-weekday">${day}</div>`;
+    });
+
+    // Add empty cells for days before the 1st
+    for (let i = 0; i < startDayOfWeek; i++) {
+        calendarGrid.innerHTML += `<div class="calendar-day day-other-month"></div>`;
+    }
+
+    // Add day cells for the current month
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayCell = document.createElement('div');
+        dayCell.className = 'calendar-day';
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        dayCell.innerHTML = `<div class="day-number">${day}</div>`;
+        
+        // Find bookings for this day
+        const dayBookings = calendarBookings.filter(b => b.booking_date === dateStr);
+        dayBookings.sort((a,b) => a.time_slot.localeCompare(b.time_slot));
+
+        dayBookings.forEach(booking => {
+            let statusClass = '';
+            if (booking.status === 'checked-in') statusClass = 'status-checked-in';
+            if (booking.status === 'cancelled') statusClass = 'status-cancelled';
+
+            const bookingEl = document.createElement('div');
+            bookingEl.className = `calendar-booking ${statusClass}`;
+            bookingEl.innerHTML = `
+                <div class="calendar-booking-info">${booking.time_slot} ${booking.contact_name} (${booking.num_of_people})</div>
+            `;
+            // 這裡可以未來再加入報到/取消按鈕
+            dayCell.appendChild(bookingEl);
+        });
+        calendarGrid.appendChild(dayCell);
+    }
+}
+
+/**
+ * 載入所有未來預約並渲染行事曆
+ */
+async function loadAndRenderCalendar() {
+    if (!calendarGrid) return;
+    calendarGrid.innerHTML = '<p>正在載入預約資料...</p>';
+    try {
+        // 使用 'all_upcoming' 篩選器來獲取所有未來的預約
+        calendarBookings = await api.getBookings('all_upcoming');
+        renderCalendar(currentCalendarDate);
+    } catch (error) {
+        calendarGrid.innerHTML = `<p style="color:red;">載入行事曆失敗: ${error.message}</p>`;
+    }
+}
+
+/**
+ * 切換月份
+ * @param {number} direction -1 for previous month, 1 for next month
+ */
+function changeMonth(direction) {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+    renderCalendar(currentCalendarDate);
+}
+
 
 /**
  * 切換檢視模式 (列表/行事曆)
@@ -71,7 +157,8 @@ function switchView(view) {
     if (view === 'calendar') {
         listViewContainer.style.display = 'none';
         calendarViewContainer.style.display = 'block';
-        // 載入當月行事曆資料
+        // 【修正】呼叫行事曆載入函式
+        loadAndRenderCalendar();
     } else {
         calendarViewContainer.style.display = 'none';
         listViewContainer.style.display = 'block';
@@ -98,17 +185,15 @@ function setupEventListeners() {
     // 列表操作按鈕
     bookingListTbody.addEventListener('click', async e => {
         const target = e.target;
-        // 【關鍵修正】將從 data-* 屬性取得的字串 ID 轉換為數字
         const bookingId = parseInt(target.dataset.bookingId, 10);
         
-        // 如果 bookingId 無法被轉換成有效的數字 (例如 NaN)，就直接返回
         if (!bookingId) return;
 
         if (target.classList.contains('btn-check-in')) {
             try {
                 await api.updateBookingStatus(bookingId, 'checked-in');
                 ui.toast.success('已更新為「已報到」');
-                target.disabled = true; // 直接禁用按鈕避免重複點擊
+                target.disabled = true;
             } catch (error) {
                 ui.toast.error(`操作失敗: ${error.message}`);
             }
@@ -118,7 +203,7 @@ function setupEventListeners() {
                 try {
                     await api.updateBookingStatus(bookingId, 'cancelled');
                     ui.toast.success('預約已取消');
-                    target.closest('tr').style.opacity = '0.5'; // 視覺上立即反饋
+                    target.closest('tr').style.opacity = '0.5';
                     target.disabled = true;
                 } catch (error) {
                     ui.toast.error(`操作失敗: ${error.message}`);
@@ -139,8 +224,14 @@ function setupEventListeners() {
         }
     });
 
+    // 【新增】行事曆月份切換按鈕
+    pageElement.querySelector('#calendar-prev-month-btn').addEventListener('click', () => changeMonth(-1));
+    pageElement.querySelector('#calendar-next-month-btn').addEventListener('click', () => changeMonth(1));
+
+
     pageElement.dataset.initialized = 'true';
 }
+
 
 /**
  * 模組初始化函式
