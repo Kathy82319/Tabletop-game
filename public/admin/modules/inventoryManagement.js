@@ -7,14 +7,13 @@ let sortableGames = null;
 let allGamesData = [];
 let selectedGameIds = new Set();
 
-// DOM 元素
+// DOM 元素變數宣告 (在此處宣告，在 init 中賦值)
 let gameListTbody, gameSearchInput, editGameModal, editGameForm,
     inventoryStockFilter, inventoryVisibilityFilter,
     batchActionsToolbar, selectAllGamesCheckbox, batchSelectionCount;
 
-// (此處省略了 renderGameList, applyGameFiltersAndRender 等函式，它們維持原樣)
-// ... 您檔案中原本的 renderGameList, applyGameFiltersAndRender, initializeGameDragAndDrop, openEditGameModal, handleEditGameFormSubmit 等函式都保留 ...
-
+// (此處省略了 renderGameList, updateBatchToolbarVisibility 等函式，它們維持原樣)
+// ... 您檔案中原本的 renderGameList, updateBatchToolbarVisibility, initializeGameDragAndDrop, openEditGameModal, handleEditGameFormSubmit 等函式都保留 ...
 function updateBatchToolbarVisibility() {
     if (!batchActionsToolbar || !batchSelectionCount || !selectAllGamesCheckbox) return;
 
@@ -115,6 +114,9 @@ function renderGameList(games) {
 
 function applyGameFiltersAndRender() {
     if (!allGamesData) return;
+
+    // 確保 DOM 元素已初始化
+    if (!gameSearchInput || !inventoryStockFilter || !inventoryVisibilityFilter) return;
 
     const searchTerm = gameSearchInput.value.toLowerCase().trim();
     let filteredGames = searchTerm
@@ -245,26 +247,12 @@ async function handleEditGameFormSubmit(e) {
     }
 }
 
-
 /**
  * 綁定一次性的事件監聽器
  */
 function setupEventListeners() {
     const pageElement = document.getElementById('page-inventory');
     if (!pageElement || pageElement.dataset.initialized === 'true') return;
-
-    // 獲取此頁面需要的所有 DOM 元素
-    gameListTbody = pageElement.querySelector('#game-list-tbody');
-    gameSearchInput = pageElement.querySelector('#game-search-input');
-    inventoryStockFilter = pageElement.querySelector('#inventory-stock-filter');
-    inventoryVisibilityFilter = pageElement.querySelector('#inventory-visibility-filter');
-    batchActionsToolbar = pageElement.querySelector('#batch-actions-toolbar');
-    selectAllGamesCheckbox = pageElement.querySelector('#select-all-games-checkbox');
-    batchSelectionCount = pageElement.querySelector('#batch-selection-count');
-    
-    // 獲取全域的 DOM 元素
-    editGameModal = document.getElementById('edit-game-modal');
-    editGameForm = document.getElementById('edit-game-form');
 
     gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
 
@@ -319,7 +307,6 @@ function setupEventListeners() {
         if (target.classList.contains('btn-edit-game')) {
             openEditGameModal(target.dataset.gameid);
         } else if (target.classList.contains('btn-rent')) {
-            // 這個功能需要從主 App 傳入回呼函式
             console.log("出借功能待實現", target.dataset.gameid);
             ui.toast.info("出借功能將在後續模組中串接。");
         }
@@ -349,7 +336,6 @@ function setupEventListeners() {
         try {
             const result = await actionPromise();
             ui.toast.success(result.message || '操作成功！');
-            // 操作成功後，重新載入資料
             await init();
         } catch (error) {
             ui.toast.error(`操作失敗: ${error.message}`);
@@ -366,20 +352,33 @@ function setupEventListeners() {
  * 模組的進入點函式
  */
 export const init = async () => {
-    const tbody = document.getElementById('game-list-tbody');
-    if (!tbody) return;
+    const pageElement = document.getElementById('page-inventory');
+    if (!pageElement) return;
+    
+    // ** 修正點：將 DOM 元素獲取移到最前面 **
+    gameListTbody = pageElement.querySelector('#game-list-tbody');
+    gameSearchInput = pageElement.querySelector('#game-search-input');
+    inventoryStockFilter = pageElement.querySelector('#inventory-stock-filter');
+    inventoryVisibilityFilter = pageElement.querySelector('#inventory-visibility-filter');
+    batchActionsToolbar = pageElement.querySelector('#batch-actions-toolbar');
+    selectAllGamesCheckbox = pageElement.querySelector('#select-all-games-checkbox');
+    batchSelectionCount = pageElement.querySelector('#batch-selection-count');
+    editGameModal = document.getElementById('edit-game-modal');
+    editGameForm = document.getElementById('edit-game-form');
 
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">正在載入庫存資料...</td></tr>';
-    selectedGameIds.clear(); // 確保每次初始化時清空選取
+    if (!gameListTbody) return;
+
+    gameListTbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">正在載入庫存資料...</td></tr>';
+    selectedGameIds.clear();
 
     try {
-        allGamesData = await api.getProducts(); // 從 API 獲取資料
-        applyGameFiltersAndRender(); // 渲染畫面
-        setupEventListeners(); // 綁定事件
-        initializeGameDragAndDrop(); // 初始化拖曳功能
-        updateBatchToolbarVisibility(); // 更新工具列狀態
+        allGamesData = await api.getProducts();
+        applyGameFiltersAndRender();
+        setupEventListeners();
+        initializeGameDragAndDrop();
+        updateBatchToolbarVisibility();
     } catch (error) {
         console.error('獲取庫存列表失敗:', error);
-        tbody.innerHTML = `<tr><td colspan="8" style="color: red; text-align: center;">讀取失敗: ${error.message}</td></tr>`;
+        gameListTbody.innerHTML = `<tr><td colspan="8" style="color: red; text-align: center;">讀取失敗: ${error.message}</td></tr>`;
     }
 };
