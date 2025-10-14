@@ -622,23 +622,47 @@
             </form>
         </div>
 
-    <div id="page-scan" class="page">
-        <div class="page-header"><h2>掃碼加點</h2></div>
-        <div id="scan-container">
-            <div id="qr-reader" style="width: 100%; max-width: 500px; margin: 0 auto;"></div>
-            <div id="scan-result" style="display: none; max-width: 500px; margin: 0 auto;">
-                <div class="form-group">
-                    <label for="scan-user-search">搜尋會員 (姓名/暱稱/ID)</label>
-                    <input type="text" id="scan-user-search" placeholder="或手動搜尋會員...">
-                    <ul id="scan-user-search-results" style="display: none; border: 1px solid #ccc; list-style: none; padding: 0; margin-top: 5px; max-height: 150px; overflow-y: auto; cursor: pointer; z-index: 10;"></ul>
-                </div>
-                <div class="form-group">
-                    <label for="user-id-display">目標使用者 ID:</label>
-                    <input type="text" id="user-id-display" readonly style="background-color: #e9ecef; cursor: not-allowed;">
-                </div>
+<div id="page-scan" class="page">
+    <div class="page-header"><h2>掃碼加點</h2></div>
+    <div id="scan-container">
+        <div id="qr-reader" style="width: 100%; max-width: 500px; margin: 0 auto;"></div>
+        <div id="scan-result" style="display: none; max-width: 500px; margin: 0 auto;">
+            
+            <div class="form-group">
+                <label for="scan-user-search">搜尋會員 (姓名/暱稱/ID)</label>
+                <input type="text" id="scan-user-search" placeholder="或手動搜尋會員...">
+                <ul id="scan-user-search-results" style="display: none; border: 1px solid #ccc; list-style: none; padding: 0; margin-top: 5px; max-height: 150px; overflow-y: auto; cursor: pointer; z-index: 10;"></ul>
             </div>
-        </div>
-        </div>
+            
+            <div class="form-group">
+                <label for="user-id-display">目標使用者 ID:</label>
+                <input type="text" id="user-id-display" readonly style="background-color: #e9ecef; cursor: not-allowed;">
+            </div>
+            
+            <div class="form-group">
+                <label for="reason-select">新增原因</label>
+                <select id="reason-select">
+                    <option value="消費回饋">消費回饋 (預設)</option>
+                    <option value="參與活動">參與活動</option>
+                    <option value="其他">其他 (自訂)</option>
+                </select>
+                <input type="text" id="custom-reason-input" placeholder="請輸入自訂原因" style="display: none; margin-top: 10px;">
+            </div>
+            
+            <div class="form-group">
+                <label for="exp-input">經驗值點數</label>
+                <input type="number" id="exp-input" value="10" min="1" max="1000" required>
+            </div>
+            
+            <div id="scan-status-container" style="color: red; margin-bottom: 10px;"></div>
+
+            <div class="form-actions" style="display: flex; justify-content: space-between; margin-top: 20px;">
+                <button id="rescan-btn" type="button" class="action-btn btn-cancel" style="flex-grow: 1; margin-right: 10px;">重新掃描/手動輸入</button>
+                <button id="submit-exp-btn" type="button" class="action-btn btn-save" style="flex-grow: 1;">確認新增</button>
+            </div>
+            </div>
+    </div>
+</div>
     </main>
 
 <div id="booking-details-modal" class="modal-overlay">
