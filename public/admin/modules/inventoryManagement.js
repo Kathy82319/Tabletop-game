@@ -1,313 +1,223 @@
-import { fetchAllGames, allGames } from '../api.js';
-import { showModal, hideModal } from '../ui.js';
+// public/modules/inventoryManagement.js
 
-// --- DOM 元素 ---
-const page = document.getElementById('page-inventory');
-const gameListTbody = page.querySelector('#game-list-tbody');
-const batchToolbar = page.querySelector('#batch-toolbar');
-const batchCount = page.querySelector('#batch-count');
-const selectAllGames = page.querySelector('#select-all-games');
+// 模組內部狀態，用於管理 Sortable.js 實例
+let sortableGames = null;
+let allGamesData = []; // 儲存從主腳本傳入的遊戲資料
 
-// --- 事件監聽 ---
-export function initInventoryManagement() {
-    // 監聽整個表格的點擊事件，有效處理 checkbox 的變化
-    gameListTbody.addEventListener('change', (e) => {
-        if (e.target.type === 'checkbox') {
-            updateBatchToolbar();
-        }
-    });
+// DOM 元素（在初始化時獲取）
+let gameListTbody, gameSearchInput, editGameModal, editGameForm, syncGamesBtn,
+    inventoryStockFilter, inventoryVisibilityFilter;
 
-    // 全選 checkbox 的功能
-    selectAllGames.addEventListener('change', () => {
-        const isChecked = selectAllGames.checked;
-        gameListTbody.querySelectorAll('.game-checkbox').forEach(checkbox => {
-            checkbox.checked = isChecked;
-        });
-        updateBatchToolbar();
-    });
+// 從主腳本傳入的函式
+let openCreateRentalModalCallback;
 
-    // 批次操作按鈕的事件綁定
-    batchToolbar.addEventListener('click', async (e) => {
-        const action = e.target.id;
-        const selectedIds = getSelectedGameIds();
-
-        if (selectedIds.length === 0) {
-            alert('請至少選擇一個項目');
-            return;
-        }
-
-        let isVisible;
-        if (action === 'batch-visible-btn') {
-            isVisible = true;
-        } else if (action === 'batch-hidden-btn') {
-            isVisible = false;
-        } else if (action === 'batch-export-csv-btn') {
-            exportToCSV(selectedIds);
-            return; // 匯出功能不需要後續的 API 呼叫
-        } else {
-            return; // 如果點擊的不是按鈕，則不執行任何操作
-        }
-
-        if (confirm(`確定要將 ${selectedIds.length} 個遊戲批次更新為「${isVisible ? '上架' : '下架'}」嗎？`)) {
-            try {
-                // 這裡可以呼叫一個新的批次更新 API
-                // const response = await api.batchUpdateGamesVisibility(selectedIds, isVisible);
-                // alert('批次更新成功！');
-                // await fetchAllGames(); // 重新載入資料
-                
-                // 暫時用 alert 提示功能
-                alert(`功能開發中：將 ${selectedIds.length} 個遊戲的狀態更新為 ${isVisible}`);
-
-            } catch (error) {
-                console.error('批次更新失敗:', error);
-                alert(`批次更新失敗: ${error.message}`);
-            }
-        }
-    });
-}
-
-// --- 功能函式 ---
-
-// 更新工具列的顯示狀態和計數
-function updateBatchToolbar() {
-    const selectedCheckboxes = gameListTbody.querySelectorAll('.game-checkbox:checked');
-    const count = selectedCheckboxes.length;
-
-    if (count > 0) {
-        batchCount.textContent = `已選取 ${count} 個項目`;
-        batchToolbar.classList.add('visible');
-    } else {
-        batchToolbar.classList.remove('visible');
-    }
-
-    // 更新全選 checkbox 的狀態
-    const totalCheckboxes = gameListTbody.querySelectorAll('.game-checkbox').length;
-    selectAllGames.checked = totalCheckboxes > 0 && count === totalCheckboxes;
-}
-
-// 獲取所有被選中的遊戲 ID
-function getSelectedGameIds() {
-    return Array.from(gameListTbody.querySelectorAll('.game-checkbox:checked'))
-                .map(cb => cb.closest('tr').dataset.gameId);
-}
-
-// 匯出 CSV 的功能
-function exportToCSV(selectedIds) {
-    const gamesToExport = allGames.filter(game => selectedIds.includes(game.game_id));
-    if (gamesToExport.length === 0) {
-        alert('沒有可匯出的資料');
-        return;
-    }
-
-    // 定義 CSV 標頭
-    const headers = ['game_id', 'name', 'tags', 'total_stock', 'for_rent_stock', 'sale_price', 'rent_price', 'is_visible'];
-    let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
-
-    // 轉換資料為 CSV 格式
-    gamesToExport.forEach(game => {
-        const row = headers.map(header => {
-            let value = game[header];
-            // 處理布林值和可能含有逗號的字串
-            if (typeof value === 'boolean') {
-                value = value ? 'TRUE' : 'FALSE';
-            } else if (typeof value === 'string' && value.includes(',')) {
-                value = `"${value}"`; // 用引號包起來
-            }
-            return value;
-        });
-        csvContent += row.join(",") + "\n";
-    });
-
-    // 建立並觸發下載
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "inventory_export.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
+/**
+ * 渲染遊戲列表到表格中
+ * @param {Array} games - 要渲染的遊戲物件陣列
+ */
 function renderGameList(games) {
-    const tbody = document.getElementById('game-list-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+    if (!gameListTbody) return;
+    gameListTbody.innerHTML = ''; // 清空現有內容
+
     games.forEach(game => {
-        const row = tbody.insertRow();
+        const row = gameListTbody.insertRow();
         row.className = 'draggable-row';
         row.dataset.gameId = game.game_id;
+
         const isVisible = game.is_visible === 1;
-        row.innerHTML = `
-            <td><input type="checkbox" class="product-checkbox" data-game-id="${game.game_id}"></td>
-            <td class="drag-handle-cell"><span class="drag-handle">⠿</span> ${game.display_order || 'N/A'}</td>
-            <td class="compound-cell" style="text-align: left;">
-                <div class="main-info">${game.name}</div>
-                <div class="sub-info">ID: ${game.game_id}</div>
-            </td>
-            <td>${game.total_stock}</td>
-            <td>${game.for_rent_stock}</td>
-            <td class="compound-cell">
-                <div class="main-info">$${game.sale_price}</div>
-                <div class="sub-info">租金: $${game.rent_price}</div>
-            </td>
-            <td><label class="switch"><input type="checkbox" class="visibility-toggle" data-game-id="${game.game_id}" ${isVisible ? 'checked' : ''}><span class="slider"></span></label></td>
-            <td class="actions-cell">
-                <button class="action-btn btn-edit-game" data-gameid="${game.game_id}" style="background-color: var(--warning-color); color: #000;">編輯</button>
-            </td>
-        `;
+
+        // 建立儲存格
+        const cellOrder = row.insertCell();
+        const cellGame = row.insertCell();
+        const cellTotalStock = row.insertCell();
+        const cellRentStock = row.insertCell();
+        const cellPrice = row.insertCell();
+        const cellVisible = row.insertCell();
+        const cellActions = row.insertCell();
+
+        // 填充 [順序] 儲存格
+        cellOrder.className = 'drag-handle-cell';
+        const handleSpan = document.createElement('span');
+        handleSpan.className = 'drag-handle';
+        handleSpan.textContent = '⠿'; // 拖曳圖示
+        cellOrder.appendChild(handleSpan);
+        cellOrder.append(document.createTextNode(game.display_order || 'N/A'));
+
+        // 填充 [遊戲] 儲存格
+        cellGame.className = 'compound-cell';
+        cellGame.style.textAlign = 'left';
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'main-info';
+        nameDiv.textContent = game.name;
+        const idDiv = document.createElement('div');
+        idDiv.className = 'sub-info';
+        idDiv.textContent = `ID: ${game.game_id}`;
+        const tagsDiv = document.createElement('div');
+        tagsDiv.className = 'sub-info';
+        tagsDiv.style.marginTop = '5px';
+        (game.tags || '').split(',').map(t => t.trim()).filter(Boolean).forEach(tag => {
+            const tagSpan = document.createElement('span');
+            tagSpan.style.cssText = 'background:#eee; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px;';
+            tagSpan.textContent = tag;
+            tagsDiv.appendChild(tagSpan);
+        });
+        cellGame.appendChild(nameDiv);
+        cellGame.appendChild(idDiv);
+        cellGame.appendChild(tagsDiv);
+
+        // 填充其他儲存格
+        cellTotalStock.textContent = game.total_stock;
+        cellRentStock.textContent = game.for_rent_stock;
+
+        cellPrice.className = 'compound-cell';
+        const saleDiv = document.createElement('div');
+        saleDiv.className = 'main-info';
+        saleDiv.textContent = `$${game.sale_price}`;
+        const rentDiv = document.createElement('div');
+        rentDiv.className = 'sub-info';
+        rentDiv.textContent = `租金: $${game.rent_price}`;
+        cellPrice.appendChild(saleDiv);
+        cellPrice.appendChild(rentDiv);
+
+        cellVisible.textContent = isVisible ? '是' : '否';
+
+        // 填充 [操作] 儲存格
+        cellActions.className = 'actions-cell';
+        const actionContainer = document.createElement('div');
+        actionContainer.style.cssText = 'display: flex; gap: 5px; justify-content: center;';
+        const rentBtn = document.createElement('button');
+        rentBtn.className = 'action-btn btn-rent';
+        rentBtn.dataset.gameid = game.game_id;
+        rentBtn.style.backgroundColor = '#007bff';
+        rentBtn.textContent = '出借';
+        const editBtn = document.createElement('button');
+        editBtn.className = 'action-btn btn-edit-game';
+        editBtn.dataset.gameid = game.game_id;
+        editBtn.style.cssText = 'background-color: #ffc107; color: #000;';
+        editBtn.textContent = '編輯';
+        actionContainer.appendChild(rentBtn);
+        actionContainer.appendChild(editBtn);
+        cellActions.appendChild(actionContainer);
     });
 }
 
-function applyFiltersAndRender() {
-    const searchInput = document.getElementById('game-search-input');
-    if (!searchInput) return;
-    const searchTerm = searchInput.value.toLowerCase().trim();
-    let filtered = searchTerm ? allGames.filter(g => (g.name || '').toLowerCase().includes(searchTerm)) : [...allGames];
-    const visibilityFilter = document.querySelector('#inventory-visibility-filter .active')?.dataset.filter;
-    if (visibilityFilter === 'visible') filtered = filtered.filter(g => g.is_visible === 1);
-    else if (visibilityFilter === 'hidden') filtered = filtered.filter(g => g.is_visible !== 1);
-    const stockFilter = document.querySelector('#inventory-stock-filter .active')?.dataset.filter;
-    if (stockFilter === 'in_stock') filtered = filtered.filter(g => Number(g.for_rent_stock) > 0);
-    else if (stockFilter === 'out_of_stock') filtered = filtered.filter(g => Number(g.for_rent_stock) <= 0);
-    renderGameList(filtered);
+/**
+ * 根據目前的篩選條件過濾並重新渲染遊戲列表
+ */
+function applyGameFiltersAndRender() {
+    if (!allGamesData) return;
+
+    const searchTerm = gameSearchInput.value.toLowerCase().trim();
+    let filteredGames = searchTerm
+        ? allGamesData.filter(game => (game.name || '').toLowerCase().includes(searchTerm))
+        : [...allGamesData];
+
+    const stockFilterEl = inventoryStockFilter.querySelector('.active');
+    if (stockFilterEl) {
+        const stockFilter = stockFilterEl.dataset.filter;
+        if (stockFilter === 'in_stock') {
+            filteredGames = filteredGames.filter(game => Number(game.for_rent_stock) > 0);
+        } else if (stockFilter === 'out_of_stock') {
+            filteredGames = filteredGames.filter(game => Number(game.for_rent_stock) <= 0);
+        }
+    }
+
+    const visibilityFilterEl = inventoryVisibilityFilter.querySelector('.active');
+    if(visibilityFilterEl) {
+        const visibilityFilter = visibilityFilterEl.dataset.filter;
+        if (visibilityFilter === 'visible') {
+            filteredGames = filteredGames.filter(game => game.is_visible === 1);
+        } else if (visibilityFilter === 'hidden') {
+            filteredGames = filteredGames.filter(game => game.is_visible !== 1);
+        }
+    }
+    
+    renderGameList(filteredGames);
 }
 
-function initializeDragAndDrop() {
-    const tbody = document.getElementById('game-list-tbody');
-    if (sortableGames) sortableGames.destroy();
-    if (tbody) {
-        sortableGames = new Sortable(tbody, {
-            animation: 150, handle: '.drag-handle',
-            onEnd: async () => {
-                const orderedIds = Array.from(tbody.children).map(row => row.dataset.gameId);
+/**
+ * 初始化列表的拖曳排序功能
+ */
+function initializeGameDragAndDrop() {
+    if (sortableGames) {
+        sortableGames.destroy(); // 如果已存在，先銷毀舊的實例
+    }
+    if (gameListTbody) {
+        sortableGames = new Sortable(gameListTbody, {
+            animation: 150,
+            handle: '.drag-handle', // 指定拖曳的控制項
+            onEnd: async (evt) => {
+                const orderedIds = Array.from(gameListTbody.children).map(row => row.dataset.gameId);
+                
+                // 重新排序前端的資料陣列以維持同步
+                allGamesData.sort((a, b) => orderedIds.indexOf(a.game_id) - orderedIds.indexOf(b.game_id));
+                applyGameFiltersAndRender();
+
                 try {
-                    await api.updateProductOrder(orderedIds);
-                    ui.toast.success('順序儲存成功！');
-                    await init();
-                } catch (error) { ui.toast.error(error.message); await init(); }
+                    // 呼叫後端 API 來儲存新的順序
+                    const response = await fetch('/api/admin/update-boardgame-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orderedGameIds: orderedIds })
+                    });
+                    if (!response.ok) {
+                        throw new Error('儲存順序失敗，請刷新頁面重試。');
+                    }
+                    // 成功後可以考慮重新獲取所有遊戲資料，或者信任前端的排序
+                } catch (error) {
+                    alert(error.message);
+                    // 如果失敗，最好重新獲取一次資料以恢復到伺服器狀態
+                    // await fetchAllGames(); // 這需要從主腳本傳入 fetch 函式
+                }
             }
         });
     }
 }
 
-function updateBatchToolbarState() {
-    const toolbar = document.getElementById('batch-actions-toolbar');
-    const countSpan = document.getElementById('batch-selected-count');
-    const selected = document.querySelectorAll('.product-checkbox:checked');
-    if (toolbar && countSpan) {
-        toolbar.classList.toggle('visible', selected.length > 0);
-        countSpan.textContent = `已選取 ${selected.length} 項`;
-    }
+/**
+ * 開啟編輯遊戲的彈出視窗
+ * @param {string} gameId - 要編輯的遊戲 ID
+ */
+function openEditGameModal(gameId) {
+    const game = allGamesData.find(g => g.game_id == gameId);
+    if (!game) return alert('找不到遊戲資料');
+
+    editGameForm.reset();
+    document.getElementById('modal-game-title').textContent = `編輯：${game.name}`;
+    
+    // 填充表單
+    document.getElementById('edit-game-id').value = game.game_id;
+    document.getElementById('edit-game-id-display').value = game.game_id;
+    document.getElementById('edit-game-name').value = game.name;
+    document.getElementById('edit-game-tags').value = game.tags || '';
+    document.getElementById('edit-game-image').value = game.image_url || '';
+    document.getElementById('edit-game-image-2').value = game.image_url_2 || '';
+    document.getElementById('edit-game-image-3').value = game.image_url_3 || '';
+    document.getElementById('edit-game-desc').value = game.description || '';
+    document.getElementById('edit-min-players').value = game.min_players || 1;
+    document.getElementById('edit-max-players').value = game.max_players || 1;
+    document.getElementById('edit-difficulty').value = game.difficulty || '普通';
+    document.getElementById('edit-total-stock').value = game.total_stock || 0;
+    document.getElementById('edit-for-rent-stock').value = game.for_rent_stock || 0;
+    document.getElementById('edit-sale-price').value = game.sale_price || 0;
+    document.getElementById('edit-rent-price').value = game.rent_price || 0;
+    document.getElementById('edit-deposit').value = game.deposit || 0;
+    document.getElementById('edit-late-fee').value = game.late_fee_per_day || 50;
+    document.getElementById('edit-is-visible').checked = game.is_visible === 1;
+    document.getElementById('edit-supplementary-info').value = game.supplementary_info || '';
+    
+    editGameModal.style.display = 'flex';
 }
 
-function updateSelectAllCheckboxState() {
-    const selectAll = document.getElementById('select-all-products');
-    const allCb = document.querySelectorAll('.product-checkbox');
-    if (!selectAll || allCb.length === 0) return;
-    const allChecked = Array.from(allCb).every(cb => cb.checked);
-    const someChecked = Array.from(allCb).some(cb => cb.checked);
-    selectAll.checked = allChecked;
-    selectAll.indeterminate = !allChecked && someChecked;
-}
-
-async function handleBatchUpdateVisibility(isVisible) {
-    const selectedIds = Array.from(document.querySelectorAll('.product-checkbox:checked')).map(cb => cb.dataset.gameId);
-    if (selectedIds.length === 0) return ui.toast.error('請至少選取一個項目！');
-    try {
-        await api.batchUpdateGames(selectedIds, isVisible);
-        ui.toast.success(`成功更新 ${selectedIds.length} 個項目！`);
-        await init();
-    } catch (error) { ui.toast.error(`錯誤：${error.message}`); }
-}
-
-async function handleBatchSetRentPrice() {
-    const selectedIds = Array.from(document.querySelectorAll('.product-checkbox:checked')).map(cb => cb.dataset.gameId);
-    if (selectedIds.length === 0) return ui.toast.error('請至少選取一個項目！');
-    const price = prompt('請輸入要為所有選取項目設定的「租金」金額：');
-    if (price === null) return;
-    if (price.trim() === '' || isNaN(Number(price)) || Number(price) < 0) return ui.toast.error('請輸入有效的非負數金額。');
-    const confirmed = await ui.confirm(`確定要將 ${selectedIds.length} 個項目的租金設定為「$${price}」嗎？`);
-    if (!confirmed) return;
-    try {
-        await api.batchSetRentPrice(selectedIds, price);
-        ui.toast.success(`成功更新 ${selectedIds.length} 個項目！`);
-        await init();
-    } catch (error) { ui.toast.error(`錯誤：${error.message}`); }
-}
-
-async function handleBatchDelete() {
-    const selectedIds = Array.from(document.querySelectorAll('.product-checkbox:checked')).map(cb => cb.dataset.gameId);
-    if (selectedIds.length === 0) return ui.toast.error('請至少選取一個項目！');
-    const confirmed = await ui.confirm(`確定要刪除選取的 ${selectedIds.length} 個項目嗎？此操作無法復原。`);
-    if (!confirmed) return;
-    try {
-        await api.batchDeleteGames(selectedIds);
-        ui.toast.success('刪除成功！');
-        await init();
-    } catch (error) { ui.toast.error(`錯誤：${error.message}`); }
-}
-
-// --- CSV 功能 ---
-function handleDownloadCsvTemplate() {
-    const headers = ["遊戲ID", "遊戲名稱", "遊戲介紹", "圖片網址1", "圖片網址2", "圖片網址3", "標籤(逗號分隔)", "最少人數", "最多人數", "難度", "總庫存", "可租借庫存", "售價", "租金", "押金", "每日逾期費", "是否上架(TRUE/FALSE)", "補充說明"];
-    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + headers.join(",");
-    const link = Object.assign(document.createElement("a"), { href: encodeURI(csvContent), download: "games_template.csv" });
-    document.body.appendChild(link).click();
-    document.body.removeChild(link);
-}
-
-function handleCsvUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        const text = e.target.result;
-        const lines = text.split(/\r\n|\n/).filter(line => line.trim() !== '');
-        if (lines.length < 2) return ui.toast.error('CSV 檔案中沒有可匯入的資料。');
-        const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-        const data = lines.slice(1).map(line => {
-            const values = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g).map(v => v.trim().replace(/"/g, ''));
-            return headers.reduce((obj, header, index) => ({ ...obj, [header]: values[index] || "" }), {});
-        });
-        const confirmed = await ui.confirm(`您準備從 CSV 檔案匯入/更新 ${data.length} 筆資料，確定嗎？\n(如果提供遊戲ID，將會更新現有資料)`);
-        if (!confirmed) { event.target.value = ''; return; }
-        try {
-            const result = await api.bulkCreateGames({ games: data });
-            ui.toast.success(result.message || '匯入成功！');
-            await init();
-        } catch (error) { ui.toast.error(`匯入失敗：${error.message}`); }
-         finally { event.target.value = ''; }
-    };
-    reader.readAsText(file, 'UTF-8');
-}
-
-// --- 新增/編輯 Modal ---
-function openEditGameModal(game = null) {
-    const form = document.getElementById('edit-game-form');
-    if (!form) return;
-    form.reset();
-    document.getElementById('modal-game-title').textContent = game ? `編輯：${game.name}` : '新增桌遊';
-
-    const fields = ['game-id', 'game-name', 'game-tags', 'game-image', 'game-image-2', 'game-image-3', 'game-desc', 'min-players', 'max-players', 'difficulty', 'total-stock', 'for-rent-stock', 'sale-price', 'rent-price', 'deposit', 'late-fee', 'is-visible', 'supplementary-info'];
-    fields.forEach(f => {
-        const el = document.getElementById(`edit-${f}`);
-        if(el) {
-            const key = f.replace(/-/g, '_');
-            if(el.type === 'checkbox') el.checked = game ? !!game[key] : false;
-            else el.value = game ? game[key] || '' : '';
-        }
-    });
-    document.getElementById('edit-game-id-display').value = game ? game.game_id : '(自動產生)';
-
-    ui.showModal('#edit-game-modal');
-}
-
-async function handleFormSubmit(e) {
+/**
+ * 處理編輯遊戲表單的提交
+ * @param {Event} e - 表單提交事件
+ */
+async function handleEditGameFormSubmit(e) {
     e.preventDefault();
-    const gameId = document.getElementById('edit-game-id').value;
-    const isCreating = !gameId;
-    const formData = {
-        gameId: gameId || undefined,
+            
+    const updatedData = {
+        gameId: document.getElementById('edit-game-id').value,
         name: document.getElementById('edit-game-name').value,
         tags: document.getElementById('edit-game-tags').value,
         image_url: document.getElementById('edit-game-image').value,
@@ -326,96 +236,131 @@ async function handleFormSubmit(e) {
         is_visible: document.getElementById('edit-is-visible').checked,
         supplementary_info: document.getElementById('edit-supplementary-info').value
     };
+
     try {
-        if (isCreating) await api.createGame(formData);
-        else await api.updateProductDetails(formData);
-        ui.hideModal('#edit-game-modal');
-        await init();
-        ui.toast.success('儲存成功！');
-    } catch (error) { ui.toast.error(`儲存失敗：${error.message}`); }
+        const response = await fetch('/api/admin/update-boardgame-details', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedData)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || '更新失敗');
+        
+        // 更新前端的資料狀態
+        const gameIndex = allGamesData.findIndex(g => g.game_id === updatedData.gameId);
+        if (gameIndex !== -1) {
+            allGamesData[gameIndex] = { 
+                ...allGamesData[gameIndex], 
+                ...updatedData,
+                is_visible: updatedData.is_visible ? 1 : 0 // 將布林值轉回 1 或 0
+            };
+        }
+        
+        applyGameFiltersAndRender();
+        editGameModal.style.display = 'none';
+        alert('更新成功！');
+    } catch (error) {
+        alert(`錯誤：${error.message}`);
+    }
 }
 
-function setupEventListeners() {
-    const page = document.getElementById('page-inventory');
-    if (!page || page.dataset.initialized) return;
 
-    page.addEventListener('click', e => {
-        if (e.target.id === 'add-game-btn') openEditGameModal();
-        else if (e.target.closest('.btn-edit-game')) {
-            const game = allGames.find(g => g.game_id === e.target.closest('.btn-edit-game').dataset.gameid);
-            if(game) openEditGameModal(game);
-        } else if (e.target.id === 'download-csv-template-btn') handleDownloadCsvTemplate();
-    });
+/**
+ * 初始化庫存管理頁面，綁定所有事件監聽器
+ * @param {HTMLElement} pageElement - "庫存管理" 頁面的主容器元素
+ * @param {Array} games - 從主腳本傳入的完整遊戲資料陣列
+ * @param {Function} openCreateRentalModal - 從主腳本傳入的、用於打開建立租借視窗的函式
+ */
+export function initializeInventoryPage(pageElement, games, openCreateRentalModal) {
+    // 儲存資料和回呼函式
+    allGamesData = games;
+    openCreateRentalModalCallback = openCreateRentalModal;
 
-    ['inventory-stock-filter', 'inventory-visibility-filter'].forEach(id => {
-        document.getElementById(id)?.addEventListener('click', e => {
-            if (e.target.tagName === 'BUTTON') {
-                e.currentTarget.querySelector('.active')?.classList.remove('active');
-                e.target.classList.add('active');
-                applyFiltersAndRender();
-            }
-        });
-    });
+    // 獲取此頁面需要的所有 DOM 元素
+    gameListTbody = pageElement.querySelector('#game-list-tbody');
+    gameSearchInput = pageElement.querySelector('#game-search-input');
+    inventoryStockFilter = pageElement.querySelector('#inventory-stock-filter');
+    inventoryVisibilityFilter = pageElement.querySelector('#inventory-visibility-filter');
+    
+    // 獲取全域的 DOM 元素 (Modal, Form 等)
+    syncGamesBtn = document.getElementById('sync-games-btn');
+    editGameModal = document.getElementById('edit-game-modal');
+    editGameForm = document.getElementById('edit-game-form');
 
-    document.getElementById('game-search-input')?.addEventListener('input', applyFiltersAndRender);
-    document.getElementById('csv-upload-input')?.addEventListener('change', handleCsvUpload);
-    document.getElementById('edit-game-form')?.addEventListener('submit', handleFormSubmit);
+    // 初始渲染
+    applyGameFiltersAndRender();
+    initializeGameDragAndDrop();
 
-    const tbody = document.getElementById('game-list-tbody');
-    tbody?.addEventListener('change', e => {
-        if (e.target.classList.contains('product-checkbox')) {
-            updateBatchToolbarState();
-            updateSelectAllCheckboxState();
-        } else if (e.target.classList.contains('visibility-toggle')) {
-            // 單筆上架/下架的即時更新邏輯
-            const gameId = e.target.dataset.gameId;
-            const isVisible = e.target.checked;
-            api.batchUpdateGames([gameId], isVisible)
-               .then(() => {
-                    const game = allGames.find(g => g.game_id === gameId);
-                    if(game) game.is_visible = isVisible ? 1 : 0;
-               })
-               .catch(err => ui.toast.error(err.message));
+    // --- 綁定事件監聽器 ---
+
+    // 搜尋框
+    gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
+    
+    // 庫存篩選按鈕群組
+    inventoryStockFilter.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            inventoryStockFilter.querySelector('.active')?.classList.remove('active');
+            e.target.classList.add('active');
+            applyGameFiltersAndRender();
         }
     });
 
-    document.getElementById('select-all-products')?.addEventListener('change', e => {
-        document.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = e.target.checked);
-        updateBatchToolbarState();
+    // 上架狀態篩選按鈕群組
+    inventoryVisibilityFilter.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            inventoryVisibilityFilter.querySelector('.active')?.classList.remove('active');
+            e.target.classList.add('active');
+            applyGameFiltersAndRender();
+        }
     });
 
-    document.getElementById('batch-publish-btn')?.addEventListener('click', () => handleBatchUpdateVisibility(true));
-    document.getElementById('batch-unpublish-btn')?.addEventListener('click', () => handleBatchUpdateVisibility(false));
-    document.getElementById('batch-set-rent-price-btn')?.addEventListener('click', handleBatchSetRentPrice);
-    document.getElementById('batch-delete-btn')?.addEventListener('click', handleBatchDelete);
+    // 同步按鈕
+    syncGamesBtn.addEventListener('click', async () => {
+        if (!confirm('確定要從 Google Sheet 同步所有桌遊資料到資料庫嗎？\n\n這將會用 Sheet 上的資料覆蓋現有資料。')) return;
 
-    page.dataset.initialized = 'true';
-}
-
-export const init = async () => {
-    const tbody = document.getElementById('game-list-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center;">正在載入桌遊資料...</td></tr>`;
-
-    document.querySelectorAll('.nav-tabs a').forEach(link => {
-        link.addEventListener('click', () => {
-            if(window.location.hash !== '#inventory') {
-                const toolbar = document.getElementById('batch-actions-toolbar');
-                if(toolbar) toolbar.classList.remove('visible');
+        try {
+            syncGamesBtn.textContent = '同步中...';
+            syncGamesBtn.disabled = true;
+            const response = await fetch('/api/admin/sync-boardgames-from-sheet', { method: 'POST' });
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.details || '同步失敗');
             }
-        });
+            alert(result.message || '同步成功！');
+            // 同步成功後，需要通知主腳本重新獲取資料
+            // 這裡我們直接修改 allGamesData，但更好的做法是透過回呼函式
+            // const newGames = await fetch('/api/get-boardgames').then(res => res.json());
+            // allGamesData = newGames;
+            // applyGameFiltersAndRender();
+            window.location.reload(); // 最簡單的方式是直接重整頁面
+        } catch (error) {
+            alert(`錯誤：${error.message}`);
+        } finally {
+            syncGamesBtn.textContent = '同步至資料庫';
+            syncGamesBtn.disabled = false;
+        }
     });
 
-    try {
-        allGames = await api.getProducts();
-        allGames.sort((a,b) => (a.display_order || 999) - (b.display_order || 999));
-        applyFiltersAndRender();
-        initializeDragAndDrop();
-        setupEventListeners();
-        updateBatchToolbarState();
-        updateSelectAllCheckboxState();
-    } catch (error) {
-        console.error('初始化庫存頁失敗:', error);
-        tbody.innerHTML = `<tr><td colspan="8" style="color: red; text-align:center;">讀取失敗: ${error.message}</td></tr>`;
-    }
-};
+    // 遊戲列表事件代理 (處理 "編輯" 和 "出借" 按鈕)
+    gameListTbody.addEventListener('click', (e) => {
+        const target = e.target;
+        const gameId = target.dataset.gameid; 
+        if (!gameId) return;
+
+        if (target.classList.contains('btn-edit-game')) {
+            openEditGameModal(gameId);
+        } else if (target.classList.contains('btn-rent')) {
+            // 呼叫從主腳本傳入的回呼函式
+            if(openCreateRentalModalCallback) {
+                openCreateRentalModalCallback(gameId);
+            }
+        }
+    });
+
+    // 編輯遊戲 Modal 的關閉按鈕
+    editGameModal.querySelector('.modal-close').addEventListener('click', () => editGameModal.style.display = 'none');
+    editGameModal.querySelector('.btn-cancel').addEventListener('click', () => editGameModal.style.display = 'none');
+
+    // 編輯遊戲表單提交
+    editGameForm.addEventListener('submit', handleEditGameFormSubmit);
+}

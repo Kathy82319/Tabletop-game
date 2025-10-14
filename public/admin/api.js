@@ -14,7 +14,21 @@ async function request(url, options = {}) {
         throw error;
     }
 }
+export async function fetchAllGames() {
+    const response = await fetch('/api/get-boardgames');
+    if (!response.ok) {
+        throw new Error('無法獲取桌遊列表');
+    }
+    return await response.json();
+}
 
+export async function fetchAllUsers() {
+    const response = await fetch('/api/get-users');
+    if (!response.ok) {
+        throw new Error('無法獲取使用者列表');
+    }
+    return await response.json();
+}
 export const api = {
     // Auth
     checkAuthStatus: () => request('/api/admin/auth/status'),
