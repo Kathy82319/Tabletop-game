@@ -12,12 +12,14 @@ export async function onRequest(context) {
         rentPrice, deposit, lateFeePerDay 
     } = body;
 
+    // --- 【核心修改：放寬驗證規則】 ---
     const errors = [];
-    if (!userId || typeof userId !== 'string') errors.push('必須選擇一位有效的會員。');
+    // userId 現在可以是 null (代表散客)，所以只有當它有值時才驗證格式
+    if (userId && typeof userId !== 'string') errors.push('無效的會員 ID 格式。');
     if (!gameIds || !Array.isArray(gameIds) || gameIds.length === 0) errors.push('必須至少選擇一款租借的遊戲。');
     if (!dueDate || !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) errors.push('無效的歸還日期格式。');
     if (!name || typeof name !== 'string' || name.trim().length === 0 || name.length > 50) errors.push('租借人姓名為必填，且長度不可超過 50 字。');
-    if (!phone || !/^\d{10}$/.test(phone)) errors.push('請輸入有效的 10 碼手機號碼。');
+    // 電話的驗證已移除
 
     const rentPriceNum = Number(rentPrice);
     const depositNum = Number(deposit);
@@ -48,7 +50,11 @@ export async function onRequest(context) {
         );
         
         dbOperations.push(insertStmt.bind(
-            userId, gameId, dueDate, name, phone, rentPriceNum, depositNum, lateFeeNum
+            // 如果 userId 是 "null" 或空字串，就存入真正的 NULL
+            userId || null, 
+            gameId, dueDate, name, 
+            phone || null, // 電話也一樣
+            rentPriceNum, depositNum, lateFeeNum
         ));
         
         const updateStmt = db.prepare('UPDATE BoardGames SET for_rent_stock = for_rent_stock - 1 WHERE game_id = ?');
