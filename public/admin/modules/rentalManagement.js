@@ -183,40 +183,6 @@ async function handleCreateRentalFormSubmit(event) {
 }
 
 /**
- * 渲染租借列表到表格中
- * @param {Array} rentals - 要渲染的租借物件陣列
- */
-function renderRentalList(rentals) {
-    if (!rentalListTbody) return;
-    rentalListTbody.innerHTML = '';
-    if (rentals.length === 0) {
-        rentalListTbody.innerHTML = '<tr><td colspan="6">找不到符合條件的租借紀錄。</td></tr>';
-        return;
-    }
-    rentals.forEach(rental => {
-        const row = rentalListTbody.insertRow();
-        const statusText = {
-            'rented': '租借中',
-            'overdue': '已逾期',
-            'due_today': '今日到期',
-            'returned': '已歸還'
-        }[rental.derived_status] || rental.status;
-        const lateFeeText = rental.calculated_late_fee > 0 ? `<div class="sub-info" style="color: var(--danger-color);">逾期費用: $${rental.calculated_late_fee}</div>` : '';
-        row.innerHTML = `
-            <td><span class="status-badge ${getStatusClass(rental.derived_status)}">${statusText}</span>${lateFeeText}</td>
-            <td>${rental.game_name || '遊戲資料遺失'}</td>
-            <td class="compound-cell"><div class="main-info">${rental.nickname || rental.line_display_name}</div><div class="sub-info">${rental.user_id}</div></td>
-            <td>${rental.due_date}</td>
-            <td>${rental.return_date || '尚未歸還'}</td>
-            <td class="actions-cell">
-                <button class="action-btn btn-return-rental" data-rental-id="${rental.rental_id}" ${rental.status === 'returned' ? 'disabled' : ''}>歸還</button>
-                <button class="action-btn btn-manage-rental" data-rental-id="${rental.rental_id}">管理</button>
-            </td>
-        `;
-    });
-}
-
-/**
  * 根據目前的篩選和排序條件，重新渲染列表
  */
 function applyFiltersAndRender() {
