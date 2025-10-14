@@ -32,6 +32,13 @@ function getStatusClass(status) {
 
 // 【關鍵點】對外暴露的函式，用於開啟建立租借視窗
 export async function openCreateRentalModal(initialGameId) {
+    // 【核心修改】將 DOM 元素獲取移到函式內部
+    createRentalModal = document.getElementById('create-rental-modal');
+    createRentalForm = document.getElementById('create-rental-form');
+    if (!createRentalModal || !createRentalForm) {
+        return ui.toast.error("找不到建立租借視窗的 HTML 元素！");
+    }
+
     if (allGames.length === 0) {
         try {
             allGames = await api.getProducts();
@@ -41,9 +48,15 @@ export async function openCreateRentalModal(initialGameId) {
     }
     
     createRentalForm.reset();
-    createRentalForm.querySelector('#rental-user-id').value = ''; // 清空隱藏的 userId
+    createRentalForm.querySelector('#rental-user-id').value = '';
     selectedRentalGames.clear();
-    document.getElementById('rental-games-container').innerHTML = '<input type="text" id="rental-game-search" placeholder="輸入遊戲名稱搜尋...">';
+    // 清理舊的已選遊戲標籤
+    const container = document.getElementById('rental-games-container');
+    container.querySelectorAll('.selected-game-tag').forEach(tag => tag.remove());
+    if (!container.querySelector('#rental-game-search')) {
+        container.innerHTML += '<input type="text" id="rental-game-search" placeholder="輸入遊戲名稱搜尋...">';
+    }
+
     document.getElementById('game-search-results').style.display = 'none';
     document.getElementById('user-search-results').style.display = 'none';
     

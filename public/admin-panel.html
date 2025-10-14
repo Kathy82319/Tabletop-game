@@ -723,54 +723,66 @@
         </div>
     </div>
 
-    <div id="create-rental-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>建立租借紀錄</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div id="rental-modal-status" style="text-align: center; color: var(--primary-color); min-height: 20px; margin-bottom: 15px;"></div>
-            <form id="create-rental-form">
-                <input type="hidden" id="rental-game-id">
-                <div class="form-group">
-                    <label>租借品項 (可多選)</label>
-                    <div id="rental-games-container">
-                        <input type="text" id="rental-game-search" placeholder="輸入遊戲名稱搜尋...">
-                    </div>
-                    <ul id="game-search-results" style="display: none;"></ul>
-                </div>
-                <div class="form-group">
-                    <label for="rental-user-search">搜尋租借會員 (LINE 名稱或 ID)</label>
-                    <input type="text" id="rental-user-search" placeholder="請至少輸入 2 個字元...">
-                    <select id="rental-user-select" style="margin-top: 10px; display: none;"></select>
-                </div>
-                <div class="form-group">
-                    <label for="rental-contact-name">租借人姓名</label>
-                    <input type="text" id="rental-contact-name" required>
-                </div>
-                <div class="form-group">
-                    <label for="rental-contact-phone">聯絡電話</label>
-                    <input type="tel" id="rental-contact-phone" required maxlength="10">
-                </div>
-                <div class="form-group">
-                    <label for="rental-due-date">歸還日期</label>
-                    <input type="text" id="rental-due-date" required>
-                </div>
-                <div class="form-group" style="display:none;">
-                    <label for="rental-deposit">押金</label>
-                    <input type="number" id="rental-deposit" value="0">
-                </div>
-                <div class="form-group" style="display:none;">
-                    <label for="rental-late-fee">每日逾期費用</label>
-                    <input type="number" id="rental-late-fee" value="50">
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="action-btn btn-cancel">取消</button>
-                    <button type="submit" class="action-btn btn-save">確認租借</button>
-                </div>
-            </form>
+<div id="create-rental-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>建立租借紀錄</h3>
+            <button class="modal-close">&times;</button>
         </div>
+        <form id="create-rental-form">
+            <input type="hidden" id="rental-user-id">
+            
+            <div class="form-group">
+                <label for="rental-user-search">搜尋租借會員 (姓名/暱稱/ID)</label>
+                <input type="text" id="rental-user-search" placeholder="輸入關鍵字搜尋會員，或直接填寫下方姓名登記為散客">
+                <ul id="user-search-results" style="display: none; border: 1px solid #ccc; list-style: none; padding: 0; max-height: 150px; overflow-y: auto;"></ul>
+            </div>
+            
+            <div class="form-group">
+                <label>租借品項 (可多選)</label>
+                <div id="rental-games-container">
+                    <input type="text" id="rental-game-search" placeholder="輸入遊戲名稱搜尋...">
+                </div>
+                <ul id="game-search-results" style="display: none; border: 1px solid #ccc; list-style: none; padding: 0; max-height: 150px; overflow-y: auto;"></ul>
+            </div>
+            
+            <div class="form-group">
+                <label for="rental-contact-name">租借人姓名</label>
+                <input type="text" id="rental-contact-name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="rental-contact-phone">聯絡電話 (選填)</label>
+                <input type="tel" id="rental-contact-phone" maxlength="10">
+            </div>
+            
+            <div class="form-group">
+                <label for="rental-due-date">歸還日期</label>
+                <input type="text" id="rental-due-date" required>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label for="rental-rent-price">租金</label>
+                    <input type="number" id="rental-rent-price" value="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="rental-deposit">押金</label>
+                    <input type="number" id="rental-deposit" value="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="rental-late-fee">每日逾期費</label>
+                    <input type="number" id="rental-late-fee" value="50" min="0">
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="action-btn btn-cancel">取消</button>
+                <button type="submit" class="action-btn btn-save">確認租借</button>
+            </div>
+        </form>
     </div>
+</div>
  
        <div id="cancel-booking-modal" class="modal-overlay">
         <div class="modal-content">
