@@ -1,3 +1,5 @@
+
+/*
 document.addEventListener('DOMContentLoaded', async () => {
     // --- 登入畫面相關元素 ---
     const loginContainer = document.getElementById('login-container');
@@ -1244,7 +1246,7 @@ function renderUserDetails(data) {
         };
     }
 
-/*
+
 // =================================================================
 // 庫存管理模組
 // =================================================================
@@ -1569,7 +1571,7 @@ if(editGameModal) {
         });
     }
 }
-*/
+
 
 // =================================================================
 // 桌遊租借模組
@@ -2801,4 +2803,4 @@ async function fetchStoreInfo() {
     showPage('dashboard'); 
     }
 });
- 
+ */
