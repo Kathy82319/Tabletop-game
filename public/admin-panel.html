@@ -297,6 +297,15 @@
             color: var(--primary-color);
             border: 1px solid var(--primary-color);
         }
+/* --- 【新增】批次選取功能樣式 --- */
+.table-row-selected {
+    background-color: #fffbe6 !important; /* 淡黃色背景表示已選取 */
+}
+
+#batch-actions-toolbar button {
+    margin-right: 8px;
+}
+
     </style>
 </head>
 <body>
@@ -325,7 +334,7 @@
                 <h2>今日狀態總覽</h2>
             </div>
             <div id="dashboard-grid" class="dashboard-grid">
-                
+
 <div id="activity-feed-section" style="margin-top: 2rem;">
     <h2 class="page-header" style="justify-content: flex-start; gap: 1rem; align-items: center;">
         <span>最新動態</span>
@@ -366,50 +375,46 @@
         </div>
 
 <div id="page-inventory" class="page">
-            <div class="page-header">
-                <h2>庫存管理</h2>
-                <div>
-                    <button id="add-game-btn" class="action-btn btn-save" style="margin-right: 10px;">新增遊戲</button>
-                    <button id="sync-games-btn" class="action-btn" style="background-color: #28a745;">同步至資料庫</button>
-                </div>
-            </div>
-            <div class="filter-bar">
-                <input type="text" id="game-search-input" placeholder="依桌遊名稱搜尋..." style="flex-grow: 1; padding: 8px;">
-                <div id="inventory-stock-filter" class="filter-group">
-                    <button class="active" data-filter="all">全部庫存</button>
-                    <button data-filter="in_stock">有庫存</button>
-                    <button data-filter="out_of_stock">無庫存</button>
-                </div>
-                <div id="inventory-visibility-filter" class="filter-group">
-                    <button class="active" data-filter="all">全部狀態</button>
-                    <button data-filter="visible">已上架</button>
-                    <button data-filter="hidden">未上架</button>
-                </div>
-            </div>
-            <div id="batch-toolbar">
-                <span id="batch-count">已選取 0 個項目</span>
-                <div class="batch-actions">
-                    <button id="batch-visible-btn" class="action-btn">批次上架</button>
-                    <button id="batch-hidden-btn" class="action-btn">批次下架</button>
-                    <button id="batch-export-csv-btn" class="action-btn">匯出 CSV</button>
-                </div>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 20px;"><input type="checkbox" id="select-all-games"></th>
-                        <th style="width: 50px;">順序</th>
-                        <th>遊戲 (ID / 標籤)</th>
-                        <th>總庫存</th>
-                        <th>租借庫存</th>
-                        <th>售價 / 租金</th>
-                        <th>上架</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="game-list-tbody"></tbody>
-            </table>
+    <div class="page-header">
+        <h2>庫存管理</h2>
+        <button id="sync-games-btn" class="action-btn" style="background-color: #28a745;">同步至資料庫</button>
+    </div>
+    <div class="filter-bar">
+        <input type="text" id="game-search-input" placeholder="依桌遊名稱搜尋..." style="flex-grow: 1; padding: 8px;">
+        <div id="inventory-stock-filter" class="filter-group">
+            <button class="active" data-filter="all">全部庫存</button>
+            <button data-filter="in_stock">有庫存</button>
+            <button data-filter="out_of_stock">無庫存</button>
         </div>
+        <div id="inventory-visibility-filter" class="filter-group">
+            <button class="active" data-filter="all">全部狀態</button>
+            <button data-filter="visible">已上架</button>
+            <button data-filter="hidden">未上架</button>
+        </div>
+    </div>
+
+    <div id="batch-actions-toolbar" style="display: none; background-color: #e9ecef; padding: 10px; margin-bottom: 1rem; border-radius: 8px;">
+        <span id="batch-selection-count" style="margin-right: 15px; font-weight: bold;"></span>
+        <button id="batch-publish-btn" class="action-btn" style="background-color: var(--success-color);">批次上架</button>
+        <button id="batch-unpublish-btn" class="action-btn" style="background-color: var(--secondary-color);">批次下架</button>
+        <button id="batch-delete-btn" class="action-btn" style="background-color: var(--danger-color);">批次刪除 (危險)</button>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 20px;"><input type="checkbox" id="select-all-games-checkbox"></th>
+                <th style="width: 50px;">順序</th>
+                <th>遊戲 (ID / 標籤)</th>
+                <th>總庫存</th>
+                <th>租借庫存</th>
+                <th>售價 / 租金</th>
+                <th>上架</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="game-list-tbody"></tbody>
+    </table>
+</div>
 
         <div id="page-rentals" class="page">
             <div class="page-header">
