@@ -1,22 +1,20 @@
-// public/modules/inventoryManagement.js
+// public/admin/modules/inventoryManagement.js
+import { api } from '../api.js';
+import { ui } from '../ui.js';
 
-// 模組內部狀態，用於管理 Sortable.js 實例和選取的項目
+// 模組內部狀態
 let sortableGames = null;
-let allGamesData = []; // 儲存從主腳本傳入的遊戲資料
-let selectedGameIds = new Set(); // 儲存被選取的 game_id
+let allGamesData = [];
+let selectedGameIds = new Set();
 
-// DOM 元素（在初始化時獲取）
-let gameListTbody, gameSearchInput, editGameModal, editGameForm, syncGamesBtn,
+// DOM 元素
+let gameListTbody, gameSearchInput, editGameModal, editGameForm,
     inventoryStockFilter, inventoryVisibilityFilter,
     batchActionsToolbar, selectAllGamesCheckbox, batchSelectionCount;
 
-// 從主腳本傳入的回呼函式
-let openCreateRentalModalCallback;
-let fetchAllGamesCallback; // 用於同步後重新載入資料
+// (此處省略了 renderGameList, applyGameFiltersAndRender 等函式，它們維持原樣)
+// ... 您檔案中原本的 renderGameList, applyGameFiltersAndRender, initializeGameDragAndDrop, openEditGameModal, handleEditGameFormSubmit 等函式都保留 ...
 
-/**
- * 更新批次操作工具列的可見度與計數
- */
 function updateBatchToolbarVisibility() {
     if (!batchActionsToolbar || !batchSelectionCount || !selectAllGamesCheckbox) return;
 
@@ -27,33 +25,25 @@ function updateBatchToolbarVisibility() {
     } else {
         batchActionsToolbar.style.display = 'none';
     }
-    // 更新「全選」checkbox 的狀態
-    // 只有當頁面上有項目時才檢查
     const totalVisibleRows = gameListTbody.rows.length;
     selectAllGamesCheckbox.checked = totalVisibleRows > 0 && selectedCount === totalVisibleRows;
 }
 
-/**
- * 渲染遊戲列表到表格中
- * @param {Array} games - 要渲染的遊戲物件陣列
- */
 function renderGameList(games) {
     if (!gameListTbody) return;
-    gameListTbody.innerHTML = ''; // 清空現有內容
+    gameListTbody.innerHTML = '';
 
     games.forEach(game => {
         const row = gameListTbody.insertRow();
         row.className = 'draggable-row';
         row.dataset.gameId = game.game_id;
         
-        // 如果此 gameId 在選取集合中，就加上高亮 class
         if (selectedGameIds.has(game.game_id)) {
             row.classList.add('table-row-selected');
         }
         
         const isVisible = game.is_visible === 1;
 
-        // 建立儲存格
         const cellCheckbox = row.insertCell();
         const cellOrder = row.insertCell();
         const cellGame = row.insertCell();
@@ -63,14 +53,12 @@ function renderGameList(games) {
         const cellVisible = row.insertCell();
         const cellActions = row.insertCell();
 
-        // 填充 [Checkbox] 儲存格
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.dataset.gameId = game.game_id;
         checkbox.checked = selectedGameIds.has(game.game_id);
         cellCheckbox.appendChild(checkbox);
 
-        // 填充 [順序] 儲存格
         cellOrder.className = 'drag-handle-cell';
         const handleSpan = document.createElement('span');
         handleSpan.className = 'drag-handle';
@@ -78,10 +66,9 @@ function renderGameList(games) {
         cellOrder.appendChild(handleSpan);
         cellOrder.append(document.createTextNode(game.display_order || 'N/A'));
 
-        // 填充 [遊戲] 儲存格
         cellGame.className = 'compound-cell';
         cellGame.style.textAlign = 'left';
-        // ... (此部分與您之前的版本相同)
+        
         const nameDiv = document.createElement('div');
         nameDiv.className = 'main-info';
         nameDiv.textContent = game.name;
@@ -101,7 +88,6 @@ function renderGameList(games) {
         cellGame.appendChild(idDiv);
         cellGame.appendChild(tagsDiv);
 
-        // 填充其他儲存格
         cellTotalStock.textContent = game.total_stock;
         cellRentStock.textContent = game.for_rent_stock;
 
@@ -117,7 +103,6 @@ function renderGameList(games) {
 
         cellVisible.textContent = isVisible ? '是' : '否';
 
-        // 填充 [操作] 儲存格
         cellActions.className = 'actions-cell';
         cellActions.innerHTML = `
             <div style="display: flex; gap: 5px; justify-content: center;">
@@ -128,9 +113,6 @@ function renderGameList(games) {
     });
 }
 
-/**
- * 根據目前的篩選條件過濾並重新渲染遊戲列表
- */
 function applyGameFiltersAndRender() {
     if (!allGamesData) return;
 
@@ -160,60 +142,42 @@ function applyGameFiltersAndRender() {
     }
     
     renderGameList(filteredGames);
-    updateBatchToolbarVisibility(); // 篩選後也要更新工具列狀態
+    updateBatchToolbarVisibility();
 }
 
-/**
- * 初始化列表的拖曳排序功能
- */
 function initializeGameDragAndDrop() {
     if (sortableGames) {
-        sortableGames.destroy(); // 如果已存在，先銷毀舊的實例
+        sortableGames.destroy();
     }
     if (gameListTbody) {
         sortableGames = new Sortable(gameListTbody, {
             animation: 150,
-            handle: '.drag-handle', // 指定拖曳的控制項
+            handle: '.drag-handle',
             onEnd: async (evt) => {
                 const orderedIds = Array.from(gameListTbody.children).map(row => row.dataset.gameId);
                 
-                // 重新排序前端的資料陣列以維持同步
                 allGamesData.sort((a, b) => orderedIds.indexOf(a.game_id) - orderedIds.indexOf(b.game_id));
                 applyGameFiltersAndRender();
 
                 try {
-                    // 呼叫後端 API 來儲存新的順序
-                    const response = await fetch('/api/admin/update-boardgame-order', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ orderedGameIds: orderedIds })
-                    });
-                    if (!response.ok) {
-                        throw new Error('儲存順序失敗，請刷新頁面重試。');
-                    }
-                    // 成功後可以考慮重新獲取所有遊戲資料，或者信任前端的排序
+                    await api.updateProductOrder(orderedIds);
                 } catch (error) {
-                    alert(error.message);
-                    // 如果失敗，最好重新獲取一次資料以恢復到伺服器狀態
-                    // await fetchAllGames(); // 這需要從主腳本傳入 fetch 函式
+                    ui.toast.error(`儲存順序失敗: ${error.message}`);
+                    // 重新載入以恢復
+                    init();
                 }
             }
         });
     }
 }
 
-/**
- * 開啟編輯遊戲的彈出視窗
- * @param {string} gameId - 要編輯的遊戲 ID
- */
 function openEditGameModal(gameId) {
     const game = allGamesData.find(g => g.game_id == gameId);
-    if (!game) return alert('找不到遊戲資料');
+    if (!game) return ui.toast.error('找不到遊戲資料');
 
     editGameForm.reset();
     document.getElementById('modal-game-title').textContent = `編輯：${game.name}`;
     
-    // 填充表單
     document.getElementById('edit-game-id').value = game.game_id;
     document.getElementById('edit-game-id-display').value = game.game_id;
     document.getElementById('edit-game-name').value = game.name;
@@ -234,13 +198,9 @@ function openEditGameModal(gameId) {
     document.getElementById('edit-is-visible').checked = game.is_visible === 1;
     document.getElementById('edit-supplementary-info').value = game.supplementary_info || '';
     
-    editGameModal.style.display = 'flex';
+    ui.showModal('#edit-game-modal');
 }
 
-/**
- * 處理編輯遊戲表單的提交
- * @param {Event} e - 表單提交事件
- */
 async function handleEditGameFormSubmit(e) {
     e.preventDefault();
             
@@ -266,46 +226,34 @@ async function handleEditGameFormSubmit(e) {
     };
 
     try {
-        const response = await fetch('/api/admin/update-boardgame-details', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedData)
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || '更新失敗');
+        await api.updateProductDetails(updatedData);
         
-        // 更新前端的資料狀態
         const gameIndex = allGamesData.findIndex(g => g.game_id === updatedData.gameId);
         if (gameIndex !== -1) {
             allGamesData[gameIndex] = { 
                 ...allGamesData[gameIndex], 
                 ...updatedData,
-                is_visible: updatedData.is_visible ? 1 : 0 // 將布林值轉回 1 或 0
+                is_visible: updatedData.is_visible ? 1 : 0
             };
         }
         
         applyGameFiltersAndRender();
-        editGameModal.style.display = 'none';
-        alert('更新成功！');
+        ui.hideModal('#edit-game-modal');
+        ui.toast.success('更新成功！');
     } catch (error) {
-        alert(`錯誤：${error.message}`);
+        ui.toast.error(`錯誤：${error.message}`);
     }
 }
 
 
 /**
- * 初始化庫存管理頁面，綁定所有事件監聽器
- * @param {HTMLElement} pageElement - "庫存管理" 頁面的主容器元素
- * @param {Array} games - 從主腳本傳入的完整遊戲資料陣列
- * @param {Function} openCreateRentalModal - 從主腳本傳入的、用於打開建立租借視窗的函式
+ * 綁定一次性的事件監聽器
  */
-export function initializeInventoryPage(pageElement, games, callbacks) {
-    // 1. 儲存資料和回呼函式
-    allGamesData = games;
-    openCreateRentalModalCallback = callbacks.openCreateRentalModal;
-    fetchAllGamesCallback = callbacks.fetchAllGames;
+function setupEventListeners() {
+    const pageElement = document.getElementById('page-inventory');
+    if (!pageElement || pageElement.dataset.initialized === 'true') return;
 
-    // 2. 獲取此頁面需要的所有 DOM 元素
+    // 獲取此頁面需要的所有 DOM 元素
     gameListTbody = pageElement.querySelector('#game-list-tbody');
     gameSearchInput = pageElement.querySelector('#game-search-input');
     inventoryStockFilter = pageElement.querySelector('#inventory-stock-filter');
@@ -315,94 +263,123 @@ export function initializeInventoryPage(pageElement, games, callbacks) {
     batchSelectionCount = pageElement.querySelector('#batch-selection-count');
     
     // 獲取全域的 DOM 元素
-    syncGamesBtn = document.getElementById('sync-games-btn');
     editGameModal = document.getElementById('edit-game-modal');
     editGameForm = document.getElementById('edit-game-form');
 
-    // 3. 初始渲染與設定
-    selectedGameIds.clear(); // 每次切換到此頁面時，都清空選取狀態
-    applyGameFiltersAndRender();
-    initializeGameDragAndDrop();
+    gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
 
-    // 4. 綁定事件監聽器 (只綁定一次)
-    if (!pageElement.dataset.initialized) {
-        pageElement.dataset.initialized = 'true';
+    const setupFilterGroup = (filterContainer) => {
+        filterContainer.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                filterContainer.querySelector('.active')?.classList.remove('active');
+                e.target.classList.add('active');
+                applyGameFiltersAndRender();
+            }
+        });
+    };
+    setupFilterGroup(inventoryStockFilter);
+    setupFilterGroup(inventoryVisibilityFilter);
 
-        gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
-        inventoryStockFilter.addEventListener('click', (e) => { /* ... */ });
-        inventoryVisibilityFilter.addEventListener('click', (e) => { /* ... */ });
-        syncGamesBtn.addEventListener('click', async () => { /* ... */ });
+    selectAllGamesCheckbox.addEventListener('change', (e) => {
+        const isChecked = e.target.checked;
+        const allVisibleCheckboxes = gameListTbody.querySelectorAll('input[type="checkbox"]');
+        
+        allVisibleCheckboxes.forEach(checkbox => {
+            const gameId = checkbox.dataset.gameId;
+            checkbox.checked = isChecked;
+            if (isChecked) {
+                selectedGameIds.add(gameId);
+                checkbox.closest('tr').classList.add('table-row-selected');
+            } else {
+                selectedGameIds.delete(gameId);
+                checkbox.closest('tr').classList.remove('table-row-selected');
+            }
+        });
+        updateBatchToolbarVisibility();
+    });
 
-        // 全選 Checkbox
-        selectAllGamesCheckbox.addEventListener('change', (e) => {
-            const isChecked = e.target.checked;
-            const allVisibleCheckboxes = gameListTbody.querySelectorAll('input[type="checkbox"]');
-            
-            allVisibleCheckboxes.forEach(checkbox => {
-                const gameId = checkbox.dataset.gameId;
-                checkbox.checked = isChecked; // 同步 checkbox 狀態
-                if (isChecked) {
-                    selectedGameIds.add(gameId);
-                    checkbox.closest('tr').classList.add('table-row-selected');
-                } else {
-                    selectedGameIds.delete(gameId);
-                    checkbox.closest('tr').classList.remove('table-row-selected');
-                }
-            });
+    gameListTbody.addEventListener('click', (e) => {
+        const target = e.target;
+        const row = target.closest('tr');
+        if (!row) return;
+
+        const gameId = row.dataset.gameId;
+
+        if (target.matches('input[type="checkbox"]')) {
+            if (target.checked) {
+                selectedGameIds.add(gameId);
+                row.classList.add('table-row-selected');
+            } else {
+                selectedGameIds.delete(gameId);
+                row.classList.remove('table-row-selected');
+            }
             updateBatchToolbarVisibility();
-        });
-
-        // 表格事件代理
-        gameListTbody.addEventListener('click', (e) => {
-            const target = e.target;
-            const row = target.closest('tr');
-            if (!row) return;
-
-            const gameId = row.dataset.gameId;
-
-            // 處理 checkbox 點擊
-            if (target.matches('input[type="checkbox"]')) {
-                if (target.checked) {
-                    selectedGameIds.add(gameId);
-                    row.classList.add('table-row-selected');
-                } else {
-                    selectedGameIds.delete(gameId);
-                    row.classList.remove('table-row-selected');
-                }
-                updateBatchToolbarVisibility();
-            }
-
-            // 處理按鈕點擊
-            if (target.classList.contains('btn-edit-game')) {
-                openEditGameModal(target.dataset.gameid);
-            } else if (target.classList.contains('btn-rent')) {
-                if(openCreateRentalModalCallback) openCreateRentalModalCallback(target.dataset.gameid);
-            }
-        });
-        
-        // 工具列按鈕事件
-        if (batchActionsToolbar) {
-            batchActionsToolbar.addEventListener('click', (e) => {
-                const selectedIdsArray = [...selectedGameIds];
-                if (selectedIdsArray.length === 0) return;
-    
-                if (e.target.id === 'batch-publish-btn') {
-                    alert(`準備批次上架 ${selectedIdsArray.length} 個項目`);
-                }
-                if (e.target.id === 'batch-unpublish-btn') {
-                    alert(`準備批次下架 ${selectedIdsArray.length} 個項目`);
-                }
-                if (e.target.id === 'batch-delete-btn') {
-                    if(confirm(`確定要刪除這 ${selectedIdsArray.length} 個項目嗎？`)) {
-                        alert(`準備批次刪除 ${selectedIdsArray.length} 個項目`);
-                    }
-                }
-            });
         }
-        
-        // Modal 相關事件
-        editGameModal.querySelector('.modal-close').addEventListener('click', () => editGameModal.style.display = 'none');
-        editGameModal.querySelector('.btn-cancel').addEventListener('click', () => editGameModal.style.display = 'none');
-        // editGameForm.addEventListener('submit', handleEditGameFormSubmit);
-    }
+
+        if (target.classList.contains('btn-edit-game')) {
+            openEditGameModal(target.dataset.gameid);
+        } else if (target.classList.contains('btn-rent')) {
+            // 這個功能需要從主 App 傳入回呼函式
+            console.log("出借功能待實現", target.dataset.gameid);
+            ui.toast.info("出借功能將在後續模組中串接。");
+        }
+    });
+    
+    batchActionsToolbar.addEventListener('click', async (e) => {
+        const selectedIdsArray = [...selectedGameIds];
+        if (selectedIdsArray.length === 0) return;
+
+        const targetId = e.target.id;
+        let actionPromise;
+        let confirmMessage;
+
+        if (targetId === 'batch-publish-btn') {
+            actionPromise = () => api.batchUpdateGames(selectedIdsArray, true);
+        } else if (targetId === 'batch-unpublish-btn') {
+            actionPromise = () => api.batchUpdateGames(selectedIdsArray, false);
+        } else if (targetId === 'batch-delete-btn') {
+            confirmMessage = `確定要永久刪除這 ${selectedIdsArray.length} 個項目嗎？此操作無法復原。`;
+            actionPromise = () => api.batchDeleteGames(selectedIdsArray);
+        } else {
+            return;
+        }
+
+        if (confirmMessage && !await ui.confirm(confirmMessage)) return;
+
+        try {
+            const result = await actionPromise();
+            ui.toast.success(result.message || '操作成功！');
+            // 操作成功後，重新載入資料
+            await init();
+        } catch (error) {
+            ui.toast.error(`操作失敗: ${error.message}`);
+        }
+    });
+
+    editGameForm.addEventListener('submit', handleEditGameFormSubmit);
+
+    pageElement.dataset.initialized = 'true';
 }
+
+/**
+ * 【★★ 核心 ★★】
+ * 模組的進入點函式
+ */
+export const init = async () => {
+    const tbody = document.getElementById('game-list-tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">正在載入庫存資料...</td></tr>';
+    selectedGameIds.clear(); // 確保每次初始化時清空選取
+
+    try {
+        allGamesData = await api.getProducts(); // 從 API 獲取資料
+        applyGameFiltersAndRender(); // 渲染畫面
+        setupEventListeners(); // 綁定事件
+        initializeGameDragAndDrop(); // 初始化拖曳功能
+        updateBatchToolbarVisibility(); // 更新工具列狀態
+    } catch (error) {
+        console.error('獲取庫存列表失敗:', error);
+        tbody.innerHTML = `<tr><td colspan="8" style="color: red; text-align: center;">讀取失敗: ${error.message}</td></tr>`;
+    }
+};
