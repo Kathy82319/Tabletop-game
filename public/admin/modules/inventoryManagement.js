@@ -1,4 +1,4 @@
-import { fetchAllGames, renderGameList, allGames } from '../api.js';
+import { fetchAllGames, allGames } from '../api.js';
 import { showModal, hideModal } from '../ui.js';
 
 // --- DOM 元素 ---
