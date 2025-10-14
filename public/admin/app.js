@@ -16,6 +16,7 @@ const App = {
         'news': './modules/newsManagement.js', 
         'news': './modules/newsManagement.js',
         'drafts': './modules/draftsManagement.js',
+        'drafts': './modules/draftsManagement.js',
         'store-info': './modules/storeInfo.js',
         'scan': './modules/scanAndPoint.js',
     },
