@@ -320,18 +320,25 @@
     .calendar-booking:hover .calendar-cancel-btn {
         display: block; /* 滑鼠移上去時顯示 */
     }
-.crm-notes-section h4 { /* 讓標題和內容間距更明確 */
-    margin-bottom: 0.5rem;
+.crm-notes-section {
+    margin-bottom: 1rem;
+    padding: 0.8rem;
+    background-color: #fffbe6;
+    border-radius: 6px;
+    border: 1px solid #ffe58f;
+    max-height: 5em;
+    overflow-y: auto;
+    /* 您之前可能嘗試加入的 display: flex 等規則可以保留或移除 */
+    align-self: start; /* 【新增這一行】 */
 }
 
+/* 確保 p 標籤沒有奇怪的上邊距 */
 .crm-notes-section p {
-    white-space: pre-wrap; /* 保留換行 */
-    margin: 0;             /* 移除預設邊距 */
-    text-align: left;      /* 水平靠左 */
-    vertical-align: top;   /* 【新增】嘗試垂直靠上 */
-    line-height: 1.6;      /* 調整行高讓文字更易讀 */
+    white-space: pre-wrap;
+    margin: 0; /* 確保上下邊距為 0 */
+    text-align: left;
+    line-height: 1.6;
 }
-
     </style>
 </head>
 <body>
