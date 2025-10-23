@@ -18,7 +18,7 @@ function renderUserList(users) {
         const displayName = user.nickname ? `${user.line_display_name} (${user.nickname})` : user.line_display_name;
 
         // 【修改 1】調整條件：檢查 user.level > 1
-        const needsPerk = user.level > 2 && user.level > (user.perk_claimed_level || 0);
+        const needsPerk = user.level > 1 && user.level > (user.perk_claimed_level || 0);
         const levelDisplay = needsPerk ? `${user.level} ⭐` : user.level;
 
         // 【修改 2】動態產生操作欄位的按鈕 HTML
