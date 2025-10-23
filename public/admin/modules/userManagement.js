@@ -18,7 +18,7 @@ function renderUserList(users) {
         const displayName = user.nickname ? `${user.line_display_name} (${user.nickname})` : user.line_display_name;
 
         // 【修改 1】調整條件：檢查 user.level > 1
-        const needsPerk = user.level > 1 && user.level > (user.perk_claimed_level || 0);
+        const needsPerk = user.level > 2 && user.level > (user.perk_claimed_level || 0);
         const levelDisplay = needsPerk ? `${user.level} ⭐` : user.level;
 
         // 【修改 2】動態產生操作欄位的按鈕 HTML
@@ -166,7 +166,6 @@ contentContainer.innerHTML = `
                 <p><strong>標籤:</strong> ${profile.tag}</p>
             </div>
             <div class="profile-details">
-                {/* 移除了 perkAlertHTML 和 claimPerkButtonHTML */}
                 ${profile.notes ? `<div class="crm-notes-section" style="margin-bottom: 1rem; padding: 0.8rem; background-color: #fffbe6; border-radius: 6px; border: 1px solid #ffe58f; max-height: 5em; overflow-y: auto;"><h4>顧客備註</h4><p style="white-space: pre-wrap; margin: 0; text-align: left;">${profile.notes}</p></div>` : ''}
                 <div class="details-tabs">
                     <button class="details-tab active" data-target="tab-bookings">預約紀錄</button>
