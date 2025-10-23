@@ -21,7 +21,8 @@ function populateStoreInfoForm(info) {
     storeInfoForm.querySelector('#info-booking-announcement').value = info.booking_announcement_text || '';
     storeInfoForm.querySelector('#info-booking-button').value = info.booking_button_text || '';
     storeInfoForm.querySelector('#info-booking-promo').value = info.booking_promo_text || '';
-    storeInfoForm.querySelector('#info-notify-user-id').value = info.booking_notify_user_id || '';
+    
+    // 【修正】已移除對 info-notify-user-id 的操作
 }
 
 /**
@@ -40,7 +41,7 @@ async function handleFormSubmit(event) {
         booking_announcement_text: storeInfoForm.querySelector('#info-booking-announcement').value,
         booking_button_text: storeInfoForm.querySelector('#info-booking-button').value,
         booking_promo_text: storeInfoForm.querySelector('#info-booking-promo').value,
-        booking_notify_user_id: storeInfoForm.querySelector('#info-notify-user-id').value, // 【新增】
+        // 【修正】已移除 booking_notify_user_id
     };
 
     button.textContent = '儲存中...';
