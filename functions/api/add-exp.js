@@ -21,7 +21,6 @@ export async function onRequest(context) {
     // --- 【驗證區塊結束】 ---
 
     const db = context.env.DB;
-    // 【修改 1】查詢時加入 perk_claimed_level 和 nickname/line_display_name
     const userStmt = db.prepare('SELECT level, current_exp, perk_claimed_level, nickname, line_display_name FROM Users WHERE user_id = ?');
     let user = await userStmt.bind(userId).first();
     if (!user) {
@@ -29,8 +28,8 @@ export async function onRequest(context) {
     }
 
     // --- 等級計算邏輯 (不變) ---
-    let originalLevel = user.level; // 記下原始等級
-    let perkClaimedLevel = user.perk_claimed_level || 0; // 取得已領取福利等級
+    let originalLevel = user.level;
+    let perkClaimedLevel = user.perk_claimed_level || 0;
     let currentLevel = user.level;
     let currentExp = user.current_exp + exp;
     const requiredExp = 10;
@@ -41,28 +40,22 @@ export async function onRequest(context) {
     // --- 等級計算結束 ---
 
     const operations = [];
-
-    // 1. 更新使用者等級和經驗值
     operations.push(
       db.prepare('UPDATE Users SET level = ?, current_exp = ? WHERE user_id = ?').bind(currentLevel, currentExp, userId)
     );
-
-    // 2. 新增經驗值歷史紀錄
     operations.push(
       db.prepare('INSERT INTO ExpHistory (user_id, exp_added, reason) VALUES (?, ?, ?)').bind(userId, exp, reason)
     );
 
-    // 【修改 2】檢查是否升級且未領取福利，如果是，則新增 Activity 通知
-    if (currentLevel > originalLevel && currentLevel > perkClaimedLevel) {
-        const userName = user.nickname || user.line_display_name || userId.substring(0, 6); // 取得用戶名稱顯示用
+    // 【修改】調整條件：只有升級到 2 級或以上，且該等級福利未領取時才通知
+    if (currentLevel > originalLevel && currentLevel > 1 && currentLevel > perkClaimedLevel) {
+        const userName = user.nickname || user.line_display_name || userId.substring(0, 6);
         const activityMessage = `${userName} 已升級至 LV ${currentLevel}！請記得提供升級福利。`;
         operations.push(
-            // 插入未讀 (0) 的活動通知
             db.prepare('INSERT INTO Activities (message, is_read) VALUES (?, 0)').bind(activityMessage)
         );
     }
 
-    // --- 批次執行所有資料庫操作 ---
     await db.batch(operations);
 
     return new Response(JSON.stringify({
