@@ -185,7 +185,24 @@
         .profile-details {
              /* 【新增】確保 profile-details 容器內容從頂部開始對齊 */
              align-content: flex-start; 
-        }        
+        } 
+.crm-notes-section {
+    margin-top: 0; /* 確保沒有上邊距推擠 */
+    /* ... other crm-notes-section styles ... */
+    align-self: start; /* 保留之前的嘗試 */
+}
+
+.crm-notes-section h4 {
+    margin-top: 0; /* 確保標題也沒有上邊距 */
+     /* ... other h4 styles ... */
+}
+
+.crm-notes-section p {
+    margin-top: 0; /* 再次確保 p 也沒有上邊距 */
+     /* ... other p styles ... */
+}        
+        
+
         .profile-summary img {
             width: 80px;
             height: 80px;

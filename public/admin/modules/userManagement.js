@@ -166,7 +166,8 @@ contentContainer.innerHTML = `
                 <p><strong>標籤:</strong> ${profile.tag}</p>
             </div>
             <div class="profile-details">
-                ${profile.notes ? `<div class="crm-notes-section" style="margin-bottom: 1rem; padding: 0.8rem; background-color: #fffbe6; border-radius: 6px; border: 1px solid #ffe58f; max-height: 5em; overflow-y: auto;"><h4>顧客備註</h4><p style="white-space: pre-wrap; margin: 0; margin-top: 0; text-align: left;">${profile.notes}</p></div>` : ''}
+                ${profile.notes ? `<div class="crm-notes-section" style="margin-bottom: 1rem; padding: 0.8rem; background-color: #fffbe6; border-radius: 6px; border: 1px solid #ffe58f; max-height: 5em; overflow-y: auto;">
+                    <h4>顧客備註</h4><p style="white-space: pre-wrap; margin: 0; text-align: left;">${profile.notes}</p></div>` : ''}
                 <div class="details-tabs">
                     <button class="details-tab active" data-target="tab-bookings">預約紀錄</button>
                     <button class="details-tab" data-target="tab-rentals">租借紀錄</button>
