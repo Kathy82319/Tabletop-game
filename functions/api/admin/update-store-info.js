@@ -7,10 +7,12 @@ export async function onRequest(context) {
     }
 
     const body = await context.request.json();
-    // 【** 修改點 1: 重新命名欄位，並移除 booking_notice_text **】
+    
+    // 【** 修正點 1: 取得所有 8 個欄位 **】
     const { 
         address, phone, opening_hours, description,
-        booking_announcement_text, booking_button_text, booking_promo_text 
+        booking_announcement_text, booking_button_text, booking_promo_text,
+        booking_notify_user_id // <-- 加上這個
     } = body;
 
     // --- 【驗證區塊】 ---
@@ -27,11 +29,16 @@ export async function onRequest(context) {
     if (!description || typeof description !== 'string' || description.trim().length === 0 || description.length > 2000) {
         errors.push('公會介紹為必填，且長度不可超過 2000 字。');
     }
-    // 【** 修改點 2: 更新驗證邏輯 **】
+    // 【** 驗證邏輯不變 **】
     if (!booking_announcement_text || booking_announcement_text.length > 500) errors.push('預約頁公告不可為空，且長度不可超過 500 字。');
     if (!booking_button_text || booking_button_text.length > 100) errors.push('預約按鈕文字不可為空，且長度不可超過 100 字。');
     if (!booking_promo_text || booking_promo_text.length > 200) errors.push('優惠文字不可為空，且長度不可超過 200 字。');
 
+    // 【** 修正點 2: 將 booking_notify_user_id 的驗證移到資料庫操作前 **】
+    // 它是可選的 (可以是空字串)，但如果
+    if (booking_notify_user_id && (typeof booking_notify_user_id !== 'string' || booking_notify_user_id.length > 50)) {
+        errors.push('通知使用者 ID 過長 (最多 50 字)。');
+    }
 
     if (errors.length > 0) {
         return new Response(JSON.stringify({ error: errors.join(' ') }), { status: 400 });
@@ -40,28 +47,21 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
-    // 【** 修改點 3: 更新 SQL 指令 **】
+    // 【** 修正點 3: SQL 指令加入 booking_notify_user_id 欄位 (共 8 個 ?) **】
     const stmt = db.prepare(
       `UPDATE StoreInfo SET 
          address = ?, phone = ?, opening_hours = ?, description = ?,
-         booking_announcement_text = ?, booking_button_text = ?, booking_promo_text = ?
+         booking_announcement_text = ?, booking_button_text = ?, booking_promo_text = ?,
+         booking_notify_user_id = ?
        WHERE id = 1`
     );
-    // 注意：我們需要確保資料庫有這些新欄位，如果沒有，需要手動 ALTER TABLE
-    // ALTER TABLE StoreInfo ADD COLUMN booking_announcement_text TEXT;
-    // ALTER TABLE StoreInfo ADD COLUMN booking_button_text TEXT;
+
+    // 【** 修正點 4: bind 8 個對應的變數 **】
     await stmt.bind(
         address, phone, opening_hours, description,
-        booking_announcement_text, booking_button_text, booking_promo_text, booking_notify_user_id,booking_notify_user_id 
+        booking_announcement_text, booking_button_text, booking_promo_text,
+        booking_notify_user_id || null // 如果是空字串，存入 NULL
     ).run();
-
-    // 【新增驗證】通知 ID 是可選的，但不能太長
-    if (booking_notify_user_id && booking_notify_user_id.length > 50) errors.push('通知使用者 ID 過長。');
-
-    if (errors.length > 0) {
-        return new Response(JSON.stringify({ error: errors.join(' ') }), { status: 400 });
-    }
-    // --- 【驗證區塊結束】 ---
 
     return new Response(JSON.stringify({ success: true, message: '成功更新店家資訊！' }), {
       status: 200, headers: { 'Content-Type': 'application/json' },
@@ -69,6 +69,6 @@ export async function onRequest(context) {
 
   } catch (error) {
     console.error('Error in update-store-info API:', error);
-    return new Response(JSON.stringify({ error: '更新店家資訊失敗。' }), { status: 500 });
+    return new Response(JSON.stringify({ error: '更新店家資訊失敗。', details: error.message }), { status: 500 });
   }
 }
