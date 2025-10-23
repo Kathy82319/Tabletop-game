@@ -99,7 +99,7 @@ async function handleSubmitExp() {
     if (reason === 'other') {
         reason = customReasonInput.value.trim();
     }
-    const expValue = parseInt(expInput.value, 10);
+    const expValue = parseInt(expInput.value, 2);
 
     if (!reason) {
         return ui.toast.error('請選擇或輸入原因！');
@@ -117,7 +117,7 @@ async function handleSubmitExp() {
         const result = await api.addPoints({ userId, expValue, reason });
         ui.toast.success(result.message || '成功新增經驗值！');
         // 重置表單
-        expInput.value = '2'; // 修正：重置 exp 值為 10
+        expInput.value = '2'; // 修正：重置 exp 值為 2
         customReasonInput.value = '';
         reasonSelect.value = '消費回饋';
         customReasonInput.style.display = 'none';
