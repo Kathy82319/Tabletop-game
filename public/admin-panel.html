@@ -320,25 +320,6 @@
     .calendar-booking:hover .calendar-cancel-btn {
         display: block; /* 滑鼠移上去時顯示 */
     }
-.crm-notes-section {
-    margin-bottom: 1rem;
-    padding: 0.8rem;
-    background-color: #fffbe6;
-    border-radius: 6px;
-    border: 1px solid #ffe58f;
-    max-height: 5em;
-    overflow-y: auto;
-    /* 您之前可能嘗試加入的 display: flex 等規則可以保留或移除 */
-    align-self: start; /* 【新增這一行】 */
-}
-
-/* 確保 p 標籤沒有奇怪的上邊距 */
-.crm-notes-section p {
-    white-space: pre-wrap;
-    margin: 0; /* 確保上下邊距為 0 */
-    text-align: left;
-    line-height: 1.6;
-}
     </style>
 </head>
 <body>
@@ -770,7 +751,7 @@
                 </div>
 <div class="form-group">
     <label for="edit-notes-textarea">備註</label>
-    <textarea id="edit-notes-textarea" rows="1" placeholder="記錄客人的特殊事項..."></textarea>
+    <textarea id="edit-notes-textarea" rows="4" placeholder="記錄客人的特殊事項..."></textarea>
 </div>                
                 <div class="form-actions">
                     <button type="button" class="action-btn btn-cancel">取消</button>
