@@ -1,7 +1,14 @@
 // functions/api/admin/create-boardgame.js
-import { customAlphabet } from 'nanoid';
 
-const generateGameId = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 10);
+// 【修正】移除 nanoid import，改用內建函式
+const generateGameId = () => {
+  const alphabet = '0123456789abcdefghijklmnopqrstuvwxyz';
+  let id = '';
+  for (let i = 0; i < 10; i++) {
+    id += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+  }
+  return id;
+};
 
 export async function onRequest(context) {
     try {
@@ -18,7 +25,7 @@ export async function onRequest(context) {
 
         const db = context.env.DB;
 
-        const newGameId = generateGameId();
+        const newGameId = generateGameId(); // <-- 使用新的內建函式
         const for_sale_stock = (Number(body.total_stock) || 0) - (Number(body.for_rent_stock) || 0);
 
         const stmt = db.prepare(
