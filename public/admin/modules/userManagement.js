@@ -37,7 +37,7 @@ function renderUserList(users) {
             <td>${user.current_exp} / 10</td>
             <td>${user.class || '無'}</td>
             <td><span class="tag-display">${user.tag || '無'}</span></td>
-            <td class="actions-cell">${actionsHTML}</td> {/* 使用動態產生的 HTML */}
+            <td class="actions-cell">${actionsHTML}</td> 
         `;
 
         // 背景色標示 (可選，條件同上)
@@ -152,11 +152,47 @@ function renderUserDetails(data) {
     const { profile, bookings, rentals, exp_history } = data; const displayName = profile.nickname || profile.line_display_name;
     document.querySelector('#user-details-modal #user-details-title').textContent = displayName;
     // 【調整條件】
-    const needsPerk = profile.level > 1 && profile.level > (profile.perk_claimed_level || 0);
-    const perkAlertHTML = needsPerk ? `<div style="padding: 10px; background-color: rgba(255, 193, 7, 0.2); border: 1px solid var(--warning-color); border-radius: 6px; margin-bottom: 1rem; text-align: center;"><p style="margin: 0; font-weight: bold; color: var(--warning-color);">⚠️ 升級福利待領取 (LV ${profile.level})！</p></div>` : '';
-    const claimPerkButtonHTML = needsPerk ? `<button id="claim-perk-btn" class="action-btn" data-userid="${profile.user_id}" style="background-color: var(--success-color); margin-top: 5px;">✅ 確認已給予福利</button>` : '';
-    contentContainer.innerHTML = `
-        <div class="details-grid"> <div class="profile-summary"> <img src="/api/admin/get-avatar?userId=${profile.user_id}" alt="Avatar"> <h4>${displayName}</h4> <p><strong>姓名:</strong> ${profile.real_name || '未設定'}</p> <p><strong>電話:</strong> ${profile.phone || '未設定'}</p> <p><strong>Email:</strong> ${profile.email || '未設定'}</p> <hr> <p><strong>等級:</strong> ${profile.level} (${profile.current_exp}/10 EXP)</p> <p><strong>職業:</strong> ${profile.class}</p> <p><strong>標籤:</strong> ${profile.tag}</p> </div> <div class="profile-details"> ${perkAlertHTML} ${claimPerkButtonHTML} ${profile.notes ? `<div class="crm-notes-section" style="margin-bottom: 1rem; padding: 0.8rem; background-color: #fffbe6; border-radius: 6px; border: 1px solid #ffe58f; max-height: 5em; overflow-y: auto;"><h4>顧客備註</h4><p style="white-space: pre-wrap; margin: 0; text-align: left;">${profile.notes}</p></div>` : ''} <div class="details-tabs"> <button class="details-tab active" data-target="tab-bookings">預約紀錄</button> <button class="details-tab" data-target="tab-rentals">租借紀錄</button> <button class="details-tab" data-target="tab-exp">經驗值紀錄</button> </div> <div class="details-tab-content active" id="tab-bookings"></div> <div class="details-tab-content" id="tab-rentals"></div> <div class="details-tab-content" id="tab-exp"></div> </div> </div> <div class="message-sender"> <h4>發送 LINE 訊息</h4> <div class="form-group"> <label for="message-draft-select">選擇訊息草稿</label> <select id="message-draft-select"></select> </div> <div class="form-group"> <label for="direct-message-content">訊息內容</label> <textarea id="direct-message-content" rows="4"></textarea> </div> <div class="form-actions"> <button id="send-direct-message-btn" class="action-btn btn-save">確認發送</button> </div> </div>`;
+contentContainer.innerHTML = `
+        <div class="details-grid">
+            <div class="profile-summary">
+                <img src="/api/admin/get-avatar?userId=${profile.user_id}" alt="Avatar">
+                <h4>${displayName}</h4>
+                <p><strong>姓名:</strong> ${profile.real_name || '未設定'}</p>
+                <p><strong>電話:</strong> ${profile.phone || '未設定'}</p>
+                <p><strong>Email:</strong> ${profile.email || '未設定'}</p>
+                <hr>
+                <p><strong>等級:</strong> ${profile.level} (${profile.current_exp}/10 EXP)</p>
+                <p><strong>職業:</strong> ${profile.class}</p>
+                <p><strong>標籤:</strong> ${profile.tag}</p>
+            </div>
+            <div class="profile-details">
+                {/* 移除了 perkAlertHTML 和 claimPerkButtonHTML */}
+                ${profile.notes ? `<div class="crm-notes-section" style="margin-bottom: 1rem; padding: 0.8rem; background-color: #fffbe6; border-radius: 6px; border: 1px solid #ffe58f; max-height: 5em; overflow-y: auto;"><h4>顧客備註</h4><p style="white-space: pre-wrap; margin: 0; text-align: left;">${profile.notes}</p></div>` : ''}
+                <div class="details-tabs">
+                    <button class="details-tab active" data-target="tab-bookings">預約紀錄</button>
+                    <button class="details-tab" data-target="tab-rentals">租借紀錄</button>
+                    <button class="details-tab" data-target="tab-exp">經驗值紀錄</button>
+                </div>
+                <div class="details-tab-content active" id="tab-bookings"></div>
+                <div class="details-tab-content" id="tab-rentals"></div>
+                <div class="details-tab-content" id="tab-exp"></div>
+            </div>
+        </div>
+        <div class="message-sender">
+            <h4>發送 LINE 訊息</h4>
+            <div class="form-group">
+                <label for="message-draft-select">選擇訊息草稿</label>
+                <select id="message-draft-select"></select>
+            </div>
+            <div class="form-group">
+                <label for="direct-message-content">訊息內容</label>
+                <textarea id="direct-message-content" rows="4"></textarea>
+            </div>
+            <div class="form-actions">
+                <button id="send-direct-message-btn" class="action-btn btn-save">確認發送</button>
+            </div>
+        </div>
+    `;
     contentContainer.querySelector('#tab-bookings').appendChild(renderHistoryTable(bookings, ['booking_date', 'num_of_people', 'status_text'], { booking_date: '預約日', num_of_people: '人數', status_text: '狀態' }));
     contentContainer.querySelector('#tab-rentals').appendChild(renderHistoryTable(rentals, ['rental_date', 'game_name', 'status'], { rental_date: '租借日', game_name: '遊戲', status: '狀態' }));
     contentContainer.querySelector('#tab-exp').appendChild(renderHistoryTable(exp_history, ['created_at', 'reason', 'exp_added'], { created_at: '日期', reason: '原因', exp_added: '經驗' }));
@@ -199,16 +235,6 @@ function setupEventListeners() {
     });
     const editUserForm = document.getElementById('edit-user-form'); if (editUserForm) editUserForm.addEventListener('submit', handleEditUserFormSubmit);
     const userDetailsModal = document.getElementById('user-details-modal');
-    if (userDetailsModal) {
-        userDetailsModal.addEventListener('click', async (event) => {
-            if (event.target.id === 'claim-perk-btn') { // Modal 內的按鈕 ID
-                const button = event.target; const userId = button.dataset.userid; if (!userId) return;
-                const confirmed = await ui.confirm('您確定已經給予該顧客升級福利了嗎？'); if (!confirmed) return;
-                button.textContent = '處理中...'; button.disabled = true;
-                try { await api.claimPerk(userId); ui.toast.success('狀態更新成功！'); await init(); openUserDetailsModal(userId); } catch (error) { ui.toast.error(`更新失敗: ${error.message}`); button.textContent = '✅ 確認已給予福利'; button.disabled = false; }
-            }
-        });
-    }
     page.dataset.initialized = 'true';
 }
 

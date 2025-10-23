@@ -7,9 +7,9 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
 
-    // 【修改】在 SELECT 列表中加入 perk_claimed_level
+    // 【修改】在 SELECT 列表中加入 notes 和 perk_claimed_level
     const stmt = db.prepare(
-      `SELECT user_id, line_display_name, nickname, real_name, level, current_exp, tag, class, perk_claimed_level
+      `SELECT user_id, line_display_name, nickname, real_name, level, current_exp, tag, class, perk, notes, perk_claimed_level
        FROM Users ORDER BY created_at DESC`
     );
     const { results } = await stmt.all();
