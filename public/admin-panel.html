@@ -389,6 +389,11 @@
 <div id="page-inventory" class="page">
     <div class="page-header">
         <h2>庫存管理</h2>
+        <div>
+            <button id="btn-download-csv-template" class="action-btn" style="background-color: var(--info-color);">下載 CSV 模板</button>
+            <button id="btn-import-csv" class="action-btn" style="background-color: var(--success-color);">從 CSV 匯入</button>
+            <button id="btn-add-new-product" class="action-btn btn-save" style="margin-left: 10px;">新增單筆產品</button>
+        </div>
     </div>
     <div class="filter-bar">
         <input type="text" id="game-search-input" placeholder="依桌遊名稱搜尋..." style="flex-grow: 1; padding: 8px;">
@@ -1072,5 +1077,36 @@
             </div>
         </div>
     </div>
+
+<div id="import-csv-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>從 CSV 匯入遊戲</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="import-csv-form">
+                <div class="form-group">
+                    <label for="csv-file-input">選擇 .csv 檔案</label>
+                    <input type="file" id="csv-file-input" accept=".csv" required>
+                </div>
+                <div class="form-group">
+                    <p style="font-size: 0.9rem; color: var(--text-light);">
+                        請確保 CSV 檔案的欄位標題與模板一致。<br>
+                        - <b>遊戲ID (game_id)</b>: 留空會自動生成，填入既有 ID 則會更新該筆資料。<br>
+                        - <b>是否上架</b>: 填入 TRUE 或 1 代表上架。
+                    </p>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="action-btn btn-cancel">取消</button>
+                    <button type="submit" class="action-btn btn-save">開始匯入</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="confirmation-modal" class="modal-overlay">
+        </div>
+</body>
+</html>
+
     </body>
 </html>
