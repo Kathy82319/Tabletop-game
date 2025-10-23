@@ -1,4 +1,4 @@
-// REPLACE THIS FUNCTION
+// functions/api/get-users.js
 export async function onRequest(context) {
   try {
     if (context.request.method !== 'GET') {
@@ -6,10 +6,11 @@ export async function onRequest(context) {
     }
 
     const db = context.env.DB;
-    
-    // ** 需求 1 修正：在查詢中加入 real_name 欄位 **
+
+    // 【修改】在 SELECT 列表中加入 perk_claimed_level
     const stmt = db.prepare(
-      'SELECT user_id, line_display_name, nickname, real_name, level, current_exp, tag, class FROM Users ORDER BY created_at DESC'
+      `SELECT user_id, line_display_name, nickname, real_name, level, current_exp, tag, class, perk_claimed_level
+       FROM Users ORDER BY created_at DESC`
     );
     const { results } = await stmt.all();
 

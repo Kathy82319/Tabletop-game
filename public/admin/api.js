@@ -41,7 +41,7 @@ export const api = {
     getUsers: () => request('/api/get-users'),
     getUserDetails: (userId) => request(`/api/admin/user-details?userId=${userId}`),
     updateUserDetails: (data) => request('/api/update-user-details', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
-    
+    claimPerk: (userId) => request('/api/admin/claim-perk', { method: 'POST', body: JSON.stringify({ userId }) }),
     searchUsers: (query) => request(`/api/admin/user-search?q=${encodeURIComponent(query)}`),
 
 // Inventory (Boardgames)
