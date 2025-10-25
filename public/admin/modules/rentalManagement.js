@@ -57,8 +57,17 @@ function applyFiltersAndRender() {
     const statusFilter = rentalStatusFilter.querySelector('.active').dataset.filter;
     let filteredRentals = allRentals;
     if (statusFilter !== 'all') {
-        filteredRentals = allRentals.filter(r => r.derived_status === statusFilter);
+        
+        if (statusFilter === 'rented') {
+            // "租借中" 應該包含所有未歸還的 (租借中、今日到期、已逾期)
+            const activeRentalStates = ['rented', 'due_today', 'overdue'];
+            filteredRentals = allRentals.filter(r => activeRentalStates.includes(r.derived_status));
+        } else {
+            filteredRentals = allRentals.filter(r => r.derived_status === statusFilter);
+        }
+        // --- ▲▲▲ 修改結束 ▲▲▲ ---
     }
+
     if (searchTerm) {
         filteredRentals = filteredRentals.filter(r =>
             (r.game_name || '').toLowerCase().includes(searchTerm) ||
@@ -68,7 +77,6 @@ function applyFiltersAndRender() {
     }
     renderRentalList(filteredRentals);
 }
-
 // --- 建立租借相關功能 ---
 
 export async function openCreateRentalModal(initialGameId) {
