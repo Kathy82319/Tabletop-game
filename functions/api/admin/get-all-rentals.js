@@ -39,8 +39,10 @@ export async function onRequest(context) {
     const stmt = db.prepare(query).bind(...queryParams);
     let { results } = await stmt.all();
 
-    const todayDate = new Date();
+const todayDate = new Date();
     todayDate.setHours(0, 0, 0, 0);
+    // 【修正點】取得今天的 YYYY-MM-DD 字串，用於精確比較
+    const todayStr = todayDate.toISOString().split('T')[0];
 
     results = results.map(rental => {
         const dueDate = new Date(rental.due_date);
@@ -48,19 +50,29 @@ export async function onRequest(context) {
         let overdue_days = 0;
         let calculated_late_fee = 0;
 
-        if (rental.status === 'rented' && dueDate < todayDate) {
-            derived_status = 'overdue';
-            const diffTime = Math.abs(todayDate - dueDate);
-            overdue_days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        // --- ▼▼▼ 這裡是核心修正 ▼▼▼ ---
+        if (rental.status === 'rented') {
+            const dueDateStr = rental.due_date;
+
+            // 1. 檢查是否今日到期
+            if (dueDateStr === todayStr) {
+                derived_status = 'due_today';
+            } 
+            // 2. 檢查是否已逾期
+            else if (dueDate < todayDate) {
+                derived_status = 'overdue';
+                const diffTime = Math.abs(todayDate - dueDate);
+                overdue_days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            }
+            // (如果以上皆非，derived_status 會保持為 'rented'，這是正確的)
         }
+        // --- ▲▲▲ 修正結束 ▲▲▲ ---
         
-        // 【** 步驟 2: 修改計算邏輯 **】
+        // (計算逾期費用的邏輯不變)
         if (rental.late_fee_override !== null && rental.late_fee_override !== undefined) {
-            // 優先使用手動覆寫的金額
             calculated_late_fee = rental.late_fee_override;
         } else if (overdue_days > 0) {
-            // 如果沒有手動覆寫，就使用這筆租借紀錄上儲存的客製化逾期費來計算
-            calculated_late_fee = overdue_days * (rental.late_fee_per_day || 50); // 使用 r.late_fee_per_day
+            calculated_late_fee = overdue_days * (rental.late_fee_per_day || 50);
         }
 
         return { ...rental, derived_status, overdue_days, calculated_late_fee };
