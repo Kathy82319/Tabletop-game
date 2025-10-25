@@ -72,7 +72,7 @@ function setupEventListeners() {
 /**
  * 模組的初始化函式
  */
-export const init = async () => {
+export const init = async (context, param) => {
     const page = document.getElementById('page-store-info');
     storeInfoForm = document.getElementById('store-info-form');
     if (!page || !storeInfoForm) return;

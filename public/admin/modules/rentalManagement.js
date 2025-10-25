@@ -370,12 +370,21 @@ function setupEventListeners() {
 
     rentalSearchInput.addEventListener('input', applyFiltersAndRender);
 
-    rentalStatusFilter.addEventListener('click', e => {
+rentalStatusFilter.addEventListener('click', e => {
         if (e.target.tagName === 'BUTTON') {
-            rentalStatusFilter.querySelector('.active')?.classList.remove('active');
-            e.target.classList.add('active');
+            // OLD:
+            // rentalStatusFilter.querySelector('.active')?.classList.remove('active');
+            // e.target.classList.add('active');
+            // const status = e.target.dataset.filter;
+            // init(status);
+
+            // NEW: 改為更新 hash，讓 app.js 的路由統一處理
             const status = e.target.dataset.filter;
-            init(status);
+            if (status === 'all') {
+                window.location.hash = '#rentals';
+            } else {
+                window.location.hash = `#rentals@${status}`;
+            }
         }
     });
 
@@ -465,7 +474,7 @@ function setupEventListeners() {
     page.dataset.initialized = 'true';
 }
 
-export const init = async (status = 'all') => {
+export const init = async (context, initialStatus) => {
     const page = document.getElementById('page-rentals');
     rentalListTbody = page.querySelector('#rental-list-tbody');
     rentalSearchInput = page.querySelector('#rental-search-input');
@@ -475,11 +484,23 @@ export const init = async (status = 'all') => {
 
     if (!rentalListTbody) return;
     
+    // 【修改 2】使用傳入的 initialStatus，若無則預設為 'all'
+    const status = initialStatus || 'all';
+
+    // 【修改 3】根據 status 更新篩選按鈕的 UI
+    if (rentalStatusFilter) {
+        rentalStatusFilter.querySelector('.active')?.classList.remove('active');
+        const newActiveButton = rentalStatusFilter.querySelector(`button[data-filter="${status}"]`);
+        if (newActiveButton) {
+            newActiveButton.classList.add('active');
+        }
+    }
+    
     rentalListTbody.innerHTML = '<tr><td colspan="6">正在載入租借紀錄...</td></tr>';
     try {
+        // 【修改 4】使用 status 變數來呼叫 API
         allRentals = await api.getAllRentals(status);
         applyFiltersAndRender();
-        // 【核心修改】init 不再負責綁定 create-rental-modal 的事件
         setupEventListeners();
     } catch (error) {
         console.error('載入租借紀錄失敗:', error);

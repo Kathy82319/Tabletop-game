@@ -77,10 +77,13 @@ const setupEventListeners = () => {
             if (target === 'bookings') {
                 window.location.hash = '#bookings';
             } else if (target === 'rentals-rented') {
-                window.location.hash = '#rentals';
-                // 我們稍後會在 rentalManagement.js 中實作篩選器邏輯
+                // 【修改 1】
+                // OLD: window.location.hash = '#rentals';
+                window.location.hash = '#rentals@rented'; // <-- NEW
             } else if (target === 'rentals-due-today') {
-                window.location.hash = '#rentals';
+                // 【修改 2】
+                // OLD: window.location.hash = '#rentals';
+                window.location.hash = '#rentals@due_today'; // <-- NEW
             }
         });
         dashboardGrid.dataset.listenerAttached = 'true';
@@ -88,7 +91,7 @@ const setupEventListeners = () => {
 };
 
 // 模組的初始化函式，由 app.js 呼叫
-export const init = async () => {
+export const init = async (context, param) => {
     const page = document.getElementById('page-dashboard');
     if (!page) return;
 

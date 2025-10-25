@@ -202,7 +202,7 @@ function setupEventListeners() {
 /**
  * 模組初始化函式
  */
-export const init = async () => {
+export const init = async (context, param) => {
     const page = document.getElementById('page-scan');
     if (!page) return;
 

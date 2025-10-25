@@ -72,7 +72,7 @@ function setupEventListeners() {
 /**
  * 模組初始化函式
  */
-export const init = async () => {
+export const init = async (context, param) => {
     const page = document.getElementById('page-exp-history');
     const tbody = document.getElementById('exp-history-tbody');
     if (!page || !tbody) return;

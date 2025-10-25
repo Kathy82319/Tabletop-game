@@ -173,7 +173,7 @@ function setupEventListeners() {
 /**
  * 模組的初始化函式
  */
-export const init = async () => {
+export const init = async (context, param) => {
     const page = document.getElementById('page-news');
     const tbody = document.getElementById('news-list-tbody');
     if (!page || !tbody) return;

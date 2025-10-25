@@ -500,7 +500,7 @@ function setupEventListeners() {
  * 【★★ 核心 ★★】
  * 模組的進入點函式
  */
-export const init = async (ctx) => {
+export const init = async (ctx, param) => {
     context = ctx; 
     const pageElement = document.getElementById('page-inventory');
     if (!pageElement) return;

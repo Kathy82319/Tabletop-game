@@ -422,7 +422,7 @@ function setupEventListeners() {
 /**
  * 模組初始化函式
  */
-export const init = async () => {
+export const init = async (context, param) => {
     pageElement = document.getElementById('page-bookings');
     bookingListTbody = pageElement.querySelector('#booking-list-tbody');
     listViewContainer = pageElement.querySelector('#list-view-container');

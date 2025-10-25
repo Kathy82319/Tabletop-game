@@ -239,7 +239,7 @@ function setupEventListeners() {
 }
 
 // 模組初始化函式 (不變)
-export const init = async () => {
+export const init = async (context, param) => {
     const userListTbody = document.getElementById('user-list-tbody'); if (!userListTbody) return;
     userListTbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">正在載入顧客資料...</td></tr>';
     try { allUsers = await api.getUsers(); renderUserList(allUsers); setupEventListeners(); } catch (error) { console.error('獲取使用者列表失敗:', error); userListTbody.innerHTML = `<tr><td colspan="6" style="color: red; text-align: center;">讀取失敗: ${error.message}</td></tr>`; }
