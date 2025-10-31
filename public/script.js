@@ -302,13 +302,18 @@ async function initializeProfilePage() {
     }
 }
 
+
     async function fetchGameData(forceRefresh = false) { 
         if (!forceRefresh && gameData && gameData.user_id) return gameData;
         try {
+            // 【解決方案 1：在這裡加入檢查】
+            const picUrl = userProfile.pictureUrl || "https://meee.com.tw/JOqBTeG";
+
             const response = await fetch('/api/user', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: userProfile.userId, displayName: userProfile.displayName, pictureUrl: userProfile.pictureUrl }),
+                // 【修改】將 userProfile.pictureUrl 改為 picUrl
+                body: JSON.stringify({ userId: userProfile.userId, displayName: userProfile.displayName, pictureUrl: picUrl }),
             });
             if (!response.ok) throw new Error('無法取得會員遊戲資料');
             gameData = await response.json();

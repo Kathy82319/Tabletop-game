@@ -22,21 +22,33 @@ async function loadAndRenderActivities() {
 
     try {
         const activities = await api.getActivities(); 
+        // 【解決方案 2：在這裡定義時區選項】
+        const options = {
+            timeZone: 'Asia/Taipei',
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        };
 
-        if (activities && activities.length > 0) {
+            if (activities && activities.length > 0) {
             badge.textContent = `${activities.length} 則未讀`;
             badge.style.display = 'inline-block';
-            container.innerHTML = activities.map(act => `
-                <div class="activity-item" data-id="${act.activity_id}" style="padding: 0.8rem 0.5rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 1rem; opacity: 1; transition: opacity 0.5s ease; text-align: left;">
-                    <div style="flex-shrink: 0;">
-                        <input type="checkbox" class="mark-activity-read" title="標示為已讀">
-                    </div>
+            container.innerHTML = activities.map(act => {
+                // 【修改】使用 .toLocaleString('zh-TW', options)
+                const localizedTime = new Date(act.created_at).toLocaleString('zh-TW', options);
+                
+                return `
+                <div class="activity-item" data-id="${act.activity_id}" style="...">
                     <div style="flex-grow: 1;">
                         <p style="margin: 0; font-weight: 500;">${act.message}</p>
-                        <small style="color: var(--text-light);">${new Date(act.created_at).toLocaleString()}</small>
+                        <small style="color: var(--text-light);">${localizedTime}</small>
                     </div>
                 </div>
-            `).join('');
+                `
+            }).join('');
 
             container.querySelectorAll('.mark-activity-read').forEach(checkbox => {
                 checkbox.addEventListener('change', async (e) => {
