@@ -1,16 +1,24 @@
 // functions/api/admin/migrate-random-to-numeric.js
 // !!注意!! 這是高風險操作，執行完一次後請立即刪除此檔案
 
-export async function onRequest(context) {
-  if (context.request.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
-  }
+// ----------------------------------------------------
+// 【CORS 修正】輔助函式：回傳 CORS 標頭
+// ----------------------------------------------------
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*', // 允許所有來源 (在 admin-panel.html 中執行 fetch)
+  'Access-Control-Allow-Methods': 'POST, OPTIONS', // 允許 POST 和 OPTIONS
+  'Access-Control-Allow-Headers': 'Content-Type', // 允許 'Content-Type' 標頭
+};
 
+// ----------------------------------------------------
+// 移轉邏輯函式 (原本的 onRequest)
+// ----------------------------------------------------
+async function handleMigrationRequest(context) {
   // 增加一個簡單的密碼保護，防止被意外觸發
   const { password } = await context.request.json();
   // *** 警告：請將 'YOUR_SECRET_PASSWORD' 改成一個你自己的臨時密碼 ***
   if (password !== '55688') { 
-    return new Response('Unauthorized', { status: 401 });
+    return new Response('Unauthorized', { status: 401, headers: corsHeaders });
   }
 
   try {
@@ -24,14 +32,14 @@ export async function onRequest(context) {
     let nextNumericId = (result?.max_id || 0) + 1;
 
     // 步驟 2：找出所有「非數字」(亂碼) 的 ID
-    // (條件：不是數字開頭，或者 包含非數字字元)
     const { results: gamesToMigrate } = await db.prepare(
       "SELECT game_id FROM BoardGames WHERE game_id NOT GLOB '[0-9]*' OR game_id LIKE '%[^0-9]%'"
     ).all();
 
     if (!gamesToMigrate || gamesToMigrate.length === 0) {
       return new Response(JSON.stringify({ success: true, message: '資料庫中沒有需要轉移的亂碼 ID。' }), {
-        headers: { 'Content-Type': 'application/json' },
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -47,13 +55,11 @@ export async function onRequest(context) {
       idMap.set(oldRandomId, newNumericIdStr);
       report += `${oldRandomId} -> ${newNumericIdStr}\n`;
 
-      // 準備更新 BoardGames 表
       operations.push(
         db.prepare("UPDATE BoardGames SET game_id = ?2 WHERE game_id = ?1")
           .bind(oldRandomId, newNumericIdStr)
       );
       
-      // 準備更新 Rentals 表 (保持資料關聯)
       operations.push(
         db.prepare("UPDATE Rentals SET game_id = ?2 WHERE game_id = ?1")
           .bind(oldRandomId, newNumericIdStr)
@@ -66,14 +72,36 @@ export async function onRequest(context) {
     await db.batch(operations);
 
     return new Response(JSON.stringify({ success: true, message: `成功轉移 ${idMap.size} 筆亂碼 ID。`, report }), {
-      headers: { 'Content-Type': 'application/json' },
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('ID 轉移失敗:', error);
     return new Response(JSON.stringify({ error: '轉移過程中發生嚴重錯誤', details: error.message }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
+}
+
+// ----------------------------------------------------
+// 主 onRequest 處理函式 (處理 CORS)
+// ----------------------------------------------------
+export async function onRequest(context) {
+  // 【CORS 修正】處理 preflight OPTIONS 請求
+  if (context.request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204, // No Content
+      headers: corsHeaders,
+    });
+  }
+
+  // 處理 POST 請求 (原本的邏輯)
+  if (context.request.method === 'POST') {
+    return await handleMigrationRequest(context);
+  }
+
+  // 拒絕 POST 和 OPTIONS 以外的所有請求
+  return new Response('Method Not Allowed', { status: 405 });
 }
