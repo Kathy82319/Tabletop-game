@@ -12,41 +12,34 @@ export async function onRequest(context) {
         rentPrice, deposit, lateFeePerDay 
     } = body;
 
-    // --- (驗證邏輯不變) ---
+    // --- 【核心修改：放寬驗證規則】 ---
     const errors = [];
+    // userId 現在可以是 null (代表散客)，所以只有當它有值時才驗證格式
     if (userId && typeof userId !== 'string') errors.push('無效的會員 ID 格式。');
     if (!gameIds || !Array.isArray(gameIds) || gameIds.length === 0) errors.push('必須至少選擇一款租借的遊戲。');
     if (!dueDate || !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) errors.push('無效的歸還日期格式。');
     if (!name || typeof name !== 'string' || name.trim().length === 0 || name.length > 50) errors.push('租借人姓名為必填，且長度不可超過 50 字。');
+    // 電話的驗證已移除
+
     const rentPriceNum = Number(rentPrice);
     const depositNum = Number(deposit);
     const lateFeeNum = Number(lateFeePerDay);
+
     if (isNaN(rentPriceNum) || rentPriceNum < 0) errors.push('租金必須是有效的非負數。');
     if (isNaN(depositNum) || depositNum < 0) errors.push('押金必須是有效的非負數。');
     if (isNaN(lateFeeNum) || lateFeeNum < 0) errors.push('每日逾期費必須是有效的非負數。');
+
     if (errors.length > 0) {
         return new Response(JSON.stringify({ error: errors.join(' ') }), { status: 400 });
     }
-    // --- (驗證結束) ---
 
     const db = context.env.DB;
     const allGameNames = [];
     const dbOperations = [];
     
     for (const gameId of gameIds) {
-        
-        // 【!! 核心修正 1 !!】
-        // 強制轉為數字
-        const gameIdNum = Number(gameId); 
-        if (isNaN(gameIdNum)) {
-             throw new Error(`無效的 gameId 格式: ${gameId}`);
-        }
-        
-        // 【!! 核心修正 2 !!】
-        // 使用數字 ID 查詢 (SQLite 會自動處理 "SELECT ... WHERE int_col = num")
-        const game = await db.prepare('SELECT name, for_rent_stock FROM BoardGames WHERE game_id = ?').bind(gameIdNum).first();
-        
-        if (!game) throw new Error(`找不到 ID 為 ${gameIdNum} 的遊戲。`);
+        const game = await db.prepare('SELECT name, for_rent_stock FROM BoardGames WHERE game_id = ?').bind(gameId).first();
+        if (!game) throw new Error(`找不到 ID 為 ${gameId} 的遊戲。`);
         if (game.for_rent_stock <= 0) throw new Error(`《${game.name}》目前已無可租借庫存。`);
         
         allGameNames.push(game.name);
@@ -57,22 +50,20 @@ export async function onRequest(context) {
         );
         
         dbOperations.push(insertStmt.bind(
+            // 如果 userId 是 "null" 或空字串，就存入真正的 NULL
             userId || null, 
-            gameIdNum, // 【!! 核心修正 3 !!】 確保插入的是數字
-            dueDate, name, 
-            phone || null, 
+            gameId, dueDate, name, 
+            phone || null, // 電話也一樣
             rentPriceNum, depositNum, lateFeeNum
         ));
         
-        // 【!! 核心修正 4 !!】
-        // 確保更新庫存時也是用數字 ID
         const updateStmt = db.prepare('UPDATE BoardGames SET for_rent_stock = for_rent_stock - 1 WHERE game_id = ?');
-        dbOperations.push(updateStmt.bind(gameIdNum));
+        dbOperations.push(updateStmt.bind(gameId));
     }
     
     await db.batch(dbOperations);
     
-    // (準備訊息的程式碼不變...)
+    // 準備要傳送給顧客的 LINE 訊息
     const rentalDateStr = new Date().toISOString().split('T')[0];
     const rentalDuration = Math.round((new Date(dueDate) - new Date(rentalDateStr)) / (1000 * 60 * 60 * 24)) + 1;
     const message = `🎉 租借資訊確認\n\n` +
@@ -89,6 +80,7 @@ export async function onRequest(context) {
                     `如上面資訊沒有問題，請回覆「ok」並視為同意租借規則。\n`+
                     `感謝您的預約！`;
 
+    // 背景發送 LINE 訊息
     if (userId && message) {
         context.waitUntil(
             fetch(new URL('/api/send-message', context.request.url), {
