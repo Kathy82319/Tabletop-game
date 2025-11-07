@@ -59,13 +59,11 @@ function applyFiltersAndRender() {
     if (statusFilter !== 'all') {
         
         if (statusFilter === 'rented') {
-            // "租借中" 應該包含所有未歸還的 (租借中、今日到期、已逾期)
             const activeRentalStates = ['rented', 'due_today', 'overdue'];
             filteredRentals = allRentals.filter(r => activeRentalStates.includes(r.derived_status));
         } else {
             filteredRentals = allRentals.filter(r => r.derived_status === statusFilter);
         }
-        // --- ▲▲▲ 修改結束 ▲▲▲ ---
     }
 
     if (searchTerm) {
@@ -77,8 +75,6 @@ function applyFiltersAndRender() {
     }
     renderRentalList(filteredRentals);
 }
-// --- 建立租借相關功能 ---
-
 export async function openCreateRentalModal(initialGameId) {
     createRentalModal = document.getElementById('create-rental-modal');
     createRentalForm = document.getElementById('create-rental-form');
@@ -100,8 +96,9 @@ export async function openCreateRentalModal(initialGameId) {
     document.getElementById('user-search-results').style.display = 'none';
     
     if (initialGameId) {
-        // 【關鍵修正】使用 == 進行比較，忽略字串和數字的型別差異
-        const game = allGames.find(g => g.game_id == initialGameId);
+        // 【!! 核心修正 1 !!】 
+        // 比較時，兩邊都轉為數字
+        const game = allGames.find(g => Number(g.game_id) == Number(initialGameId));
         if (game) {
             addGameToSelection(game);
         } else {
@@ -119,20 +116,20 @@ export async function openCreateRentalModal(initialGameId) {
 }
 
 function addGameToSelection(game) {
-    // 【!! 核心修正 1 !!】
-    // 無論 game.game_id 是數字還是字串，都強制轉為字串
-    const gameIdStr = String(game.game_id);
+    // 【!! 核心修正 2 !!】
+    // 強制轉為數字
+    const gameIdNum = Number(game.game_id);
 
-    if (selectedRentalGames.has(gameIdStr)) { // 使用字串 key 檢查
+    if (selectedRentalGames.has(gameIdNum)) { // 使用數字 key 檢查
         ui.toast.info(`《${game.name}》已在租借清單中。`);
         return;
     }
-    selectedRentalGames.set(gameIdStr, game); // 使用字串 key 儲存
+    selectedRentalGames.set(gameIdNum, game); // 使用數字 key 儲存
     
     const container = document.getElementById('rental-games-container');
     const tag = document.createElement('div');
     tag.className = 'selected-game-tag';
-    tag.dataset.gameId = gameIdStr; // data- 屬性自動就是字串
+    tag.dataset.gameId = gameIdNum; // data- 屬性會自動轉為字串，但我們刪除時會再轉回來
     tag.innerHTML = `<span>${game.name}</span><button type="button" class="remove-game-btn">&times;</button>`;
     container.appendChild(tag);
     document.getElementById('rental-game-search').value = '';
@@ -167,7 +164,7 @@ async function handleCreateRentalFormSubmit(event) {
 
     const data = {
         userId: form.querySelector('#rental-user-id').value || null,
-        gameIds: [...selectedRentalGames.keys()],
+        gameIds: [...selectedRentalGames.keys()], // 這裡會是數字 [383]
         dueDate: form.querySelector('#rental-due-date').value,
         name: form.querySelector('#rental-contact-name').value.trim(),
         phone: phone,
@@ -294,8 +291,6 @@ export function initializeCreateRentalModalEventListeners() {
     createRentalForm = document.getElementById('create-rental-form');
     if (!createRentalModal || !createRentalForm) return;
 
-    const gameSearchInput = document.getElementById('rental-game-search');
-    const gameSearchResults = document.getElementById('game-search-results');
     const userSearchInput = document.getElementById('rental-user-search');
     const userSearchResults = document.getElementById('user-search-results');
 
@@ -311,7 +306,7 @@ export function initializeCreateRentalModalEventListeners() {
         gameSearchResults.style.display = results.length > 0 ? 'block' : 'none';
     });
 
-gameSearchResults.addEventListener('click', async (e) => {
+    gameSearchResults.addEventListener('click', async (e) => {
         if (e.target.tagName === 'LI') {
             if (allGames.length === 0) {
                 try {
@@ -322,11 +317,11 @@ gameSearchResults.addEventListener('click', async (e) => {
                 }
             }
             
-            const gameId = e.target.dataset.gameId; // 這是字串
+            const gameId = e.target.dataset.gameId; // 這是字串 "383"
     
-            // 【!! 核心修正 2 !!】
-            // 比較時，也把 allGames 中的 ID 轉為字串
-            const game = allGames.find(g => String(g.game_id) === gameId);
+            // 【!! 核心修正 3 !!】
+            // 比較時，兩邊都轉為數字
+            const game = allGames.find(g => Number(g.game_id) === Number(gameId));
             
             if (game) {
                 addGameToSelection(game);
@@ -340,7 +335,9 @@ gameSearchResults.addEventListener('click', async (e) => {
     document.getElementById('rental-games-container').addEventListener('click', (e) => {
         if (e.target.classList.contains('remove-game-btn')) {
             const tag = e.target.closest('.selected-game-tag');
-            selectedRentalGames.delete(tag.dataset.gameId);
+            // 【!! 核心修正 4 !!】
+            // 刪除時，也使用數字 key
+            selectedRentalGames.delete(Number(tag.dataset.gameId)); 
             tag.remove();
             updateRentalPrice();
         }
@@ -424,67 +421,85 @@ rentalStatusFilter.addEventListener('click', e => {
     });
     
     // --- 建立租借視窗的事件監聽 ---
-    const gameSearchInput = document.getElementById('rental-game-search');
+const gameSearchInput = document.getElementById('rental-game-search');
     const gameSearchResults = document.getElementById('game-search-results');
     
-    gameSearchInput.addEventListener('input', () => {
-        const term = gameSearchInput.value.toLowerCase();
-        if (term.length < 1) {
-            gameSearchResults.style.display = 'none';
-            return;
-        }
-        const results = allGames.filter(g => g.name.toLowerCase().includes(term) && g.for_rent_stock > 0);
-        gameSearchResults.innerHTML = results.map(g => `<li data-game-id="${g.game_id}">${g.name} (庫存: ${g.for_rent_stock})</li>`).join('');
-        gameSearchResults.style.display = results.length > 0 ? 'block' : 'none';
-    });
+    if (gameSearchInput) {
+        gameSearchInput.addEventListener('input', () => {
+            const term = gameSearchInput.value.toLowerCase();
+            if (term.length < 1) {
+                gameSearchResults.style.display = 'none';
+                return;
+            }
+            const results = allGames.filter(g => g.name.toLowerCase().includes(term) && g.for_rent_stock > 0);
+            gameSearchResults.innerHTML = results.map(g => `<li data-game-id="${g.game_id}">${g.name} (庫存: ${g.for_rent_stock})</li>`).join('');
+            gameSearchResults.style.display = results.length > 0 ? 'block' : 'none';
+        });
+    }
 
-    gameSearchResults.addEventListener('click', (e) => {
-        if (e.target.tagName === 'LI') {
-            const game = allGames.find(g => g.game_id === e.target.dataset.gameId);
-            if (game) addGameToSelection(game);
-        }
-    });
+    if (gameSearchResults) {
+        gameSearchResults.addEventListener('click', (e) => {
+            if (e.target.tagName === 'LI') {
+                // 【!! 核心修正 5 !!】
+                const gameId = e.target.dataset.gameId;
+                const game = allGames.find(g => Number(g.game_id) === Number(gameId));
+                if (game) addGameToSelection(game);
+            }
+        });
+    }
 
-    document.getElementById('rental-games-container').addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-game-btn')) {
-            const tag = e.target.closest('.selected-game-tag');
-            selectedRentalGames.delete(tag.dataset.gameId);
-            tag.remove();
-            updateRentalPrice();
-        }
-    });
+    const rentalGamesContainer = document.getElementById('rental-games-container');
+    if (rentalGamesContainer) {
+        rentalGamesContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-game-btn')) {
+                const tag = e.target.closest('.selected-game-tag');
+                // 【!! 核心修正 6 !!】
+                selectedRentalGames.delete(Number(tag.dataset.gameId));
+                tag.remove();
+                updateRentalPrice();
+            }
+        });
+    }
 
     const userSearchInput = document.getElementById('rental-user-search');
     const userSearchResults = document.getElementById('user-search-results');
 
-    userSearchInput.addEventListener('input', async (e) => {
-        const searchTerm = e.target.value.trim();
-        createRentalForm.querySelector('#rental-user-id').value = '';
-        
-        if (searchTerm.length < 1) {
-            userSearchResults.style.display = 'none';
-            return;
-        }
-        try {
-            const users = await api.searchUsers(searchTerm);
-            userSearchResults.innerHTML = users.map(u => `<li data-user-id="${u.user_id}" data-name="${u.nickname || u.line_display_name}" data-phone="${u.phone || ''}">${u.nickname || u.line_display_name} (${u.user_id})</li>`).join('');
-            userSearchResults.style.display = users.length > 0 ? 'block' : 'none';
-        } catch (error) { console.error('搜尋使用者失敗', error); }
-    });
+    if (userSearchInput) {
+        userSearchInput.addEventListener('input', async (e) => {
+            const searchTerm = e.target.value.trim();
+            if (createRentalForm) createRentalForm.querySelector('#rental-user-id').value = '';
+            
+            if (searchTerm.length < 1) {
+                if (userSearchResults) userSearchResults.style.display = 'none';
+                return;
+            }
+            try {
+                const users = await api.searchUsers(searchTerm);
+                if (userSearchResults) {
+                    userSearchResults.innerHTML = users.map(u => `<li data-user-id="${u.user_id}" data-name="${u.nickname || u.line_display_name}" data-phone="${u.phone || ''}">${u.nickname || u.line_display_name} (${u.user_id})</li>`).join('');
+                    userSearchResults.style.display = users.length > 0 ? 'block' : 'none';
+                }
+            } catch (error) { console.error('搜尋使用者失敗', error); }
+        });
+    }
     
-    userSearchResults.addEventListener('click', (e) => {
-        if (e.target.tagName === 'LI') {
-            const target = e.target;
-            createRentalForm.querySelector('#rental-user-id').value = target.dataset.userId;
-            createRentalForm.querySelector('#rental-user-search').value = ''; // 清空搜尋框
-            createRentalForm.querySelector('#rental-contact-name').value = target.dataset.name;
-            createRentalForm.querySelector('#rental-contact-phone').value = target.dataset.phone;
-            userSearchResults.style.display = 'none';
-        }
-    });
+    if (userSearchResults) {
+        userSearchResults.addEventListener('click', (e) => {
+            if (e.target.tagName === 'LI') {
+                const target = e.target;
+                if (createRentalForm) {
+                    createRentalForm.querySelector('#rental-user-id').value = target.dataset.userId;
+                    createRentalForm.querySelector('#rental-user-search').value = ''; // 清空搜尋框
+                    createRentalForm.querySelector('#rental-contact-name').value = target.dataset.name;
+                    createRentalForm.querySelector('#rental-contact-phone').value = target.dataset.phone;
+                }
+                userSearchResults.style.display = 'none';
+            }
+        });
+    }
 
-    createRentalForm.addEventListener('submit', handleCreateRentalFormSubmit);
-    editRentalForm.addEventListener('submit', handleEditRentalFormSubmit);
+    if (createRentalForm) createRentalForm.addEventListener('submit', handleCreateRentalFormSubmit);
+    if (editRentalForm) editRentalForm.addEventListener('submit', handleEditRentalFormSubmit);
 
     page.dataset.initialized = 'true';
 }
@@ -496,13 +511,15 @@ export const init = async (context, initialStatus) => {
     rentalStatusFilter = page.querySelector('#rental-status-filter');
     editRentalModal = document.getElementById('edit-rental-modal');
     editRentalForm = document.getElementById('edit-rental-form');
+    
+    // 確保 createRentalModal 和 createRentalForm 也被賦值
+    createRentalModal = document.getElementById('create-rental-modal');
+    createRentalForm = document.getElementById('create-rental-form');
 
     if (!rentalListTbody) return;
     
-    // 【修改 2】使用傳入的 initialStatus，若無則預設為 'all'
     const status = initialStatus || 'all';
 
-    // 【修改 3】根據 status 更新篩選按鈕的 UI
     if (rentalStatusFilter) {
         rentalStatusFilter.querySelector('.active')?.classList.remove('active');
         const newActiveButton = rentalStatusFilter.querySelector(`button[data-filter="${status}"]`);
@@ -513,8 +530,11 @@ export const init = async (context, initialStatus) => {
     
     rentalListTbody.innerHTML = '<tr><td colspan="6">正在載入租借紀錄...</td></tr>';
     try {
-        // 【修改 4】使用 status 變數來呼叫 API
         allRentals = await api.getAllRentals(status);
+        // 確保 allGames 也被載入
+        if (allGames.length === 0) {
+            allGames = await api.getProducts();
+        }
         applyFiltersAndRender();
         setupEventListeners();
     } catch (error) {

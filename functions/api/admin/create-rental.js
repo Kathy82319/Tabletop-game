@@ -12,7 +12,7 @@ export async function onRequest(context) {
         rentPrice, deposit, lateFeePerDay 
     } = body;
 
-    // --- 【核心修改：放寬驗證規則】 --- (這部分不變)
+    // --- (驗證邏輯不變) ---
     const errors = [];
     if (userId && typeof userId !== 'string') errors.push('無效的會員 ID 格式。');
     if (!gameIds || !Array.isArray(gameIds) || gameIds.length === 0) errors.push('必須至少選擇一款租借的遊戲。');
@@ -36,14 +36,17 @@ export async function onRequest(context) {
     for (const gameId of gameIds) {
         
         // 【!! 核心修正 1 !!】
-        // 無論傳進來的是 123 (數字) 還是 "123" (字串)，都強制轉為字串
-        const gameIdStr = String(gameId); 
+        // 強制轉為數字
+        const gameIdNum = Number(gameId); 
+        if (isNaN(gameIdNum)) {
+             throw new Error(`無效的 gameId 格式: ${gameId}`);
+        }
         
         // 【!! 核心修正 2 !!】
-        // 使用字串 ID 查詢
-        const game = await db.prepare('SELECT name, for_rent_stock FROM BoardGames WHERE game_id = ?').bind(gameIdStr).first();
+        // 使用數字 ID 查詢 (SQLite 會自動處理 "SELECT ... WHERE int_col = num")
+        const game = await db.prepare('SELECT name, for_rent_stock FROM BoardGames WHERE game_id = ?').bind(gameIdNum).first();
         
-        if (!game) throw new Error(`找不到 ID 為 ${gameIdStr} 的遊戲。`);
+        if (!game) throw new Error(`找不到 ID 為 ${gameIdNum} 的遊戲。`);
         if (game.for_rent_stock <= 0) throw new Error(`《${game.name}》目前已無可租借庫存。`);
         
         allGameNames.push(game.name);
@@ -55,16 +58,16 @@ export async function onRequest(context) {
         
         dbOperations.push(insertStmt.bind(
             userId || null, 
-            gameIdStr, // 【!! 核心修正 3 !!】 確保插入的是字串
+            gameIdNum, // 【!! 核心修正 3 !!】 確保插入的是數字
             dueDate, name, 
             phone || null, 
             rentPriceNum, depositNum, lateFeeNum
         ));
         
         // 【!! 核心修正 4 !!】
-        // 確保更新庫存時也是用字串 ID
+        // 確保更新庫存時也是用數字 ID
         const updateStmt = db.prepare('UPDATE BoardGames SET for_rent_stock = for_rent_stock - 1 WHERE game_id = ?');
-        dbOperations.push(updateStmt.bind(gameIdStr));
+        dbOperations.push(updateStmt.bind(gameIdNum));
     }
     
     await db.batch(dbOperations);
