@@ -88,11 +88,11 @@ export async function openCreateRentalModal(initialGameId) {
         return ui.toast.error("HTML 結構錯誤：找不到 create-rental-modal。");
     }
     if (allGames.length === 0) {
-        try {
-            allGames = await api.getProducts();
-        } catch (e) {
-            return ui.toast.error('無法載入遊戲列表，無法開啟租借視窗。');
-        }
+    try {
+        allGames = await api.getProducts(); // 直接重新獲取
+    } catch (e) {
+        return ui.toast.error('無法載入遊戲列表，無法開啟租借視窗。');
+    }
     }
     createRentalForm.reset();
     createRentalForm.querySelector('#rental-user-id').value = '';
@@ -540,14 +540,15 @@ export const init = async (context, initialStatus) => {
     }
     
     rentalListTbody.innerHTML = '<tr><td colspan="6">正在載入租借紀錄...</td></tr>';
-    try {
-        // 同時載入租借紀錄和遊戲列表
-        const [rentals] = await Promise.all([
+try {
+
+        const [rentals, games] = await Promise.all([
             api.getAllRentals(status),
-            (allGames.length === 0 ? api.getProducts() : Promise.resolve(allGames)) // 只有在 allGames 為空時才載入
+            api.getProducts() // 強制重新獲取
         ]);
-        
+
         allRentals = rentals;
+        allGames = games;
         if (allGames.length === 0) {
             allGames = await api.getProducts(); // 確保 allGames 被賦值
         }
