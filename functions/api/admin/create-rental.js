@@ -38,8 +38,9 @@ export async function onRequest(context) {
     const dbOperations = [];
     
     for (const gameId of gameIds) {
-        const game = await db.prepare('SELECT name, for_rent_stock FROM BoardGames WHERE game_id = ?').bind(gameId).first();
-        if (!game) throw new Error(`找不到 ID 為 ${gameId} 的遊戲。`);
+        const gameIdStr = String(gameId);
+        const game = await db.prepare('SELECT name, for_rent_stock FROM BoardGames WHERE game_id = ?').bind(gameIdStr).first();
+        if (!game) throw new Error(`找不到 ID 為 ${gameIdStr} 的遊戲。`);
         if (game.for_rent_stock <= 0) throw new Error(`《${game.name}》目前已無可租借庫存。`);
         
         allGameNames.push(game.name);
@@ -50,13 +51,13 @@ export async function onRequest(context) {
         );
         
         dbOperations.push(insertStmt.bind(
-            // 如果 userId 是 "null" 或空字串，就存入真正的 NULL
             userId || null, 
-            gameId, dueDate, name, 
-            phone || null, // 電話也一樣
+            gameIdStr, // 【修改點 3】確保插入的是字串
+            dueDate, name, 
+            phone || null, 
             rentPriceNum, depositNum, lateFeeNum
         ));
-        
+
         const updateStmt = db.prepare('UPDATE BoardGames SET for_rent_stock = for_rent_stock - 1 WHERE game_id = ?');
         dbOperations.push(updateStmt.bind(gameId));
     }

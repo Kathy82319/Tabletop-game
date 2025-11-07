@@ -119,15 +119,21 @@ export async function openCreateRentalModal(initialGameId) {
 }
 
 function addGameToSelection(game) {
+    const gameIdStr = String(game.game_id);
     if (selectedRentalGames.has(game.game_id)) {
         ui.toast.info(`《${game.name}》已在租借清單中。`);
         return;
     }
-    selectedRentalGames.set(game.game_id, game);
+    if (selectedRentalGames.has(gameIdStr)) { 
+        ui.toast.info(`《${game.name}》已在租借清單中。`);
+        return;
+    }
+    selectedRentalGames.set(gameIdStr, game); // 存入字串 key
+    
     const container = document.getElementById('rental-games-container');
     const tag = document.createElement('div');
     tag.className = 'selected-game-tag';
-    tag.dataset.gameId = game.game_id;
+    tag.dataset.gameId = gameIdStr; // data- 屬性自動就是字串
     tag.innerHTML = `<span>${game.name}</span><button type="button" class="remove-game-btn">&times;</button>`;
     container.appendChild(tag);
     document.getElementById('rental-game-search').value = '';
@@ -308,6 +314,7 @@ export function initializeCreateRentalModalEventListeners() {
 
     gameSearchResults.addEventListener('click', async (e) => {
         if (e.target.tagName === 'LI') {
+            
             if (allGames.length === 0) {
                 try {
                     allGames = await api.getProducts();
@@ -319,8 +326,7 @@ export function initializeCreateRentalModalEventListeners() {
             
             const gameId = e.target.dataset.gameId;
     
-            const game = allGames.find(g => g.game_id == gameId);
-            
+            const game = allGames.find(g => String(g.game_id) === gameId);            
             if (game) {
                 addGameToSelection(game);
             } else {
