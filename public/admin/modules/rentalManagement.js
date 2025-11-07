@@ -1,11 +1,12 @@
 // public/admin/modules/rentalManagement.js (最新修正版 - 2025-11-08)
 // 【核心修正】此版本強制將 game_id 視為「數字 (Number)」處理，以匹配你的資料庫。
+// 【快取修正】強制重新載入 allGames，解決 Stale Cache 問題。
 import { api } from '../api.js';
 import { ui } from '../ui.js';
 
 let allRentals = [];
 let allDrafts = [];
-let allGames = [];
+let allGames = []; // 這個變數是問題點，我們將強制更新它
 let selectedRentalGames = new Map();
 
 let rentalListTbody, rentalSearchInput, rentalStatusFilter,
@@ -87,13 +88,14 @@ export async function openCreateRentalModal(initialGameId) {
     if (!createRentalModal || !createRentalForm) {
         return ui.toast.error("HTML 結構錯誤：找不到 create-rental-modal。");
     }
-    if (allGames.length === 0) {
+
+    // 【!! 核心修正 1：移除 if (allGames.length === 0) 檢查，強制重新載入 !!】
     try {
-        allGames = await api.getProducts(); // 直接重新獲取
+        allGames = await api.getProducts();
     } catch (e) {
         return ui.toast.error('無法載入遊戲列表，無法開啟租借視窗。');
     }
-    }
+    
     createRentalForm.reset();
     createRentalForm.querySelector('#rental-user-id').value = '';
     selectedRentalGames.clear();
@@ -102,7 +104,7 @@ export async function openCreateRentalModal(initialGameId) {
     document.getElementById('user-search-results').style.display = 'none';
     
     if (initialGameId) {
-        // 【!! 核心修正 1 !!】 
+        // 【!! 核心修正 1 !!】 (此為舊修正，保留)
         // 比較時，兩邊都轉為數字
         const game = allGames.find(g => Number(g.game_id) == Number(initialGameId));
         if (game) {
@@ -122,7 +124,7 @@ export async function openCreateRentalModal(initialGameId) {
 }
 
 function addGameToSelection(game) {
-    // 【!! 核心修正 2 !!】
+    // 【!! 核心修正 2 !!】 (此為舊修正，保留)
     // 強制轉為數字
     const gameIdNum = Number(game.game_id);
 
@@ -331,7 +333,7 @@ export function initializeCreateRentalModalEventListeners() {
             
             const gameId = e.target.dataset.gameId; // 這是字串 "383"
     
-            // 【!! 核心修正 3 !!】
+            // 【!! 核心修正 3 !!】 (此為舊修正，保留)
             // 比較時，兩邊都轉為數字
             const game = allGames.find(g => Number(g.game_id) === Number(gameId));
             
@@ -347,7 +349,7 @@ export function initializeCreateRentalModalEventListeners() {
     document.getElementById('rental-games-container').addEventListener('click', (e) => {
         if (e.target.classList.contains('remove-game-btn')) {
             const tag = e.target.closest('.selected-game-tag');
-            // 【!! 核心修正 4 !!】
+            // 【!! 核心修正 4 !!】 (此為舊修正，保留)
             // 刪除時，也使用數字 key
             selectedRentalGames.delete(Number(tag.dataset.gameId)); 
             tag.remove();
@@ -451,7 +453,7 @@ function setupEventListeners() {
     if (gameSearchResults) {
         gameSearchResults.addEventListener('click', (e) => {
             if (e.target.tagName === 'LI') {
-                // 【!! 核心修正 5 !!】
+                // 【!! 核心修正 5 !!】 (此為舊修正，保留)
                 const gameId = e.target.dataset.gameId;
                 const game = allGames.find(g => Number(g.game_id) === Number(gameId));
                 if (game) addGameToSelection(game);
@@ -464,7 +466,7 @@ function setupEventListeners() {
         rentalGamesContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('remove-game-btn')) {
                 const tag = e.target.closest('.selected-game-tag');
-                // 【!! 核心修正 6 !!】
+                // 【!! 核心修正 6 !!】 (此為舊修正，保留)
                 selectedRentalGames.delete(Number(tag.dataset.gameId));
                 tag.remove();
                 updateRentalPrice();
@@ -540,18 +542,15 @@ export const init = async (context, initialStatus) => {
     }
     
     rentalListTbody.innerHTML = '<tr><td colspan="6">正在載入租借紀錄...</td></tr>';
-try {
-
+    try {
+        // 【!! 核心修正 2：修改 Promise.all，強制重新載入 allGames !!】
         const [rentals, games] = await Promise.all([
             api.getAllRentals(status),
             api.getProducts() // 強制重新獲取
         ]);
-
+        
         allRentals = rentals;
-        allGames = games;
-        if (allGames.length === 0) {
-            allGames = await api.getProducts(); // 確保 allGames 被賦值
-        }
+        allGames = games; // 覆蓋舊的快取
 
         applyFiltersAndRender();
         setupEventListeners();
