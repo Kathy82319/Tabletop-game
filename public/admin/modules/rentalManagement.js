@@ -119,16 +119,15 @@ export async function openCreateRentalModal(initialGameId) {
 }
 
 function addGameToSelection(game) {
+    // 【!! 核心修正 1 !!】
+    // 無論 game.game_id 是數字還是字串，都強制轉為字串
     const gameIdStr = String(game.game_id);
-    if (selectedRentalGames.has(game.game_id)) {
+
+    if (selectedRentalGames.has(gameIdStr)) { // 使用字串 key 檢查
         ui.toast.info(`《${game.name}》已在租借清單中。`);
         return;
     }
-    if (selectedRentalGames.has(gameIdStr)) { 
-        ui.toast.info(`《${game.name}》已在租借清單中。`);
-        return;
-    }
-    selectedRentalGames.set(gameIdStr, game); // 存入字串 key
+    selectedRentalGames.set(gameIdStr, game); // 使用字串 key 儲存
     
     const container = document.getElementById('rental-games-container');
     const tag = document.createElement('div');
@@ -312,9 +311,8 @@ export function initializeCreateRentalModalEventListeners() {
         gameSearchResults.style.display = results.length > 0 ? 'block' : 'none';
     });
 
-    gameSearchResults.addEventListener('click', async (e) => {
+gameSearchResults.addEventListener('click', async (e) => {
         if (e.target.tagName === 'LI') {
-            
             if (allGames.length === 0) {
                 try {
                     allGames = await api.getProducts();
@@ -324,9 +322,12 @@ export function initializeCreateRentalModalEventListeners() {
                 }
             }
             
-            const gameId = e.target.dataset.gameId;
+            const gameId = e.target.dataset.gameId; // 這是字串
     
-            const game = allGames.find(g => String(g.game_id) === gameId);            
+            // 【!! 核心修正 2 !!】
+            // 比較時，也把 allGames 中的 ID 轉為字串
+            const game = allGames.find(g => String(g.game_id) === gameId);
+            
             if (game) {
                 addGameToSelection(game);
             } else {
