@@ -1,109 +1,107 @@
-// functions/api/admin/bulk-create-games.js
+// functions/api/admin/migrate-random-to-numeric.js
+// !!注意!! 這是高風險操作，執行完一次後請立即刪除此檔案
 
-// 【修改】移除了亂碼生成函式
-
-// CSV 欄位中文與資料庫欄位英文的對應表
-const headerMapping = {
-    "遊戲ID": "game_id",
-    "遊戲名稱": "name", "遊戲介紹": "description", "圖片網址1": "image_url", "圖片網址2": "image_url_2",
-    "圖片網址3": "image_url_3", "標籤(逗號分隔)": "tags", "最少人數": "min_players", "最多人數": "max_players",
-    "難度": "difficulty", "總庫存": "total_stock", "可租借庫存": "for_rent_stock", "售價": "sale_price",
-    "租金": "rent_price", "押金": "deposit", "每日逾期費": "late_fee_per_day", "是否上架(TRUE/FALSE)": "is_visible",
-    "補充說明": "supplementary_info"
+// ----------------------------------------------------
+// 【CORS 修正】輔助函式：回傳 CORS 標頭
+// ----------------------------------------------------
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*', // 允許所有來源 (在 admin-panel.html 中執行 fetch)
+  'Access-Control-Allow-Methods': 'POST, OPTIONS', // 允許 POST 和 OPTIONS
+  'Access-Control-Allow-Headers': 'Content-Type', // 允許 'Content-Type' 標頭
 };
 
-export async function onRequest(context) {
-    try {
-        if (context.request.method !== 'POST') {
-            return new Response(JSON.stringify({ error: '無效的請求方法' }), { status: 405 });
-        }
-        const { games } = await context.request.json();
-        if (!Array.isArray(games) || games.length === 0) {
-            return new Response(JSON.stringify({ error: '請提供有效的遊戲資料陣列。' }), { status: 400 });
-        }
+// ----------------------------------------------------
+// 移轉邏輯函式 (原本的 onRequest)
+// ----------------------------------------------------
+async function handleMigrationRequest(context) {
+  // 增加一個簡單的密碼保護，防止被意外觸發
+  const { password } = await context.request.json();
+  // *** 警告：請將 'YOUR_SECRET_PASSWORD' 改成一個你自己的臨時密碼 ***
+  if (password !== '55688') { 
+    return new Response('Unauthorized', { status: 401, headers: corsHeaders });
+  }
 
-        const db = context.env.DB;
-        const operations = [];
-        let successCount = 0;
-        let failCount = 0;
-        const errors = [];
+  try {
+    const db = context.env.DB;
+    
+    // 步驟 1：找出目前最大的「純數字」ID
+    const result = await db.prepare(
+      "SELECT MAX(CAST(game_id AS INTEGER)) as max_id FROM BoardGames WHERE game_id GLOB '[0-9]*' AND game_id NOT LIKE '%[^0-9]%'"
+    ).first();
+    
+    let nextNumericId = (result?.max_id || 0) + 1;
 
-        // 【修改】在迴圈外查詢一次最大 ID
-        const result = await db.prepare(
-          "SELECT MAX(CAST(game_id AS INTEGER)) as max_id FROM BoardGames WHERE game_id GLOB '[0-9]*' AND game_id NOT LIKE '%[^0-9]%'"
-        ).first();
-        
-        let currentMaxId = result?.max_id || 0;
+    // 步驟 2：找出所有「非數字」(亂碼) 的 ID
+    const { results: gamesToMigrate } = await db.prepare(
+      "SELECT game_id FROM BoardGames WHERE game_id NOT GLOB '[0-9]*' OR game_id LIKE '%[^0-9]%'"
+    ).all();
 
-        // 準備 UPSERT (存在則更新，不存在則插入) 指令
-        const stmt = db.prepare(
-            `INSERT INTO BoardGames (
-                game_id, name, description, image_url, image_url_2, image_url_3, tags, min_players, max_players, difficulty,
-                total_stock, for_rent_stock, for_sale_stock, sale_price, rent_price, deposit, late_fee_per_day, is_visible, supplementary_info, display_order
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 999)
-             ON CONFLICT(game_id) DO UPDATE SET
-               name=excluded.name, description=excluded.description, image_url=excluded.image_url, image_url_2=excluded.image_url_2,
-               image_url_3=excluded.image_url_3, tags=excluded.tags, min_players=excluded.min_players, max_players=excluded.max_players,
-               difficulty=excluded.difficulty, total_stock=excluded.total_stock, for_rent_stock=excluded.for_rent_stock,
-               for_sale_stock=excluded.for_sale_stock, sale_price=excluded.sale_price, rent_price=excluded.rent_price,
-               deposit=excluded.deposit, late_fee_per_day=excluded.late_fee_per_day, is_visible=excluded.is_visible,
-               supplementary_info=excluded.supplementary_info`
-        );
-
-        for (let i = 0; i < games.length; i++) {
-            const rawGame = games[i];
-            const game = {};
-            // 使用 mapping 將中文標頭轉為英文 key
-            for (const chiHeader in rawGame) {
-                if (headerMapping[chiHeader]) {
-                    game[headerMapping[chiHeader]] = rawGame[chiHeader];
-                }
-            }
-
-            if (!game.name || game.name.trim().length === 0) {
-                failCount++;
-                errors.push(`第 ${i + 2} 行：缺少遊戲名稱。`);
-                continue;
-            }
-
-            // 【修改】決定要使用的 game_id
-            let gameIdToUse;
-            if (game.game_id && String(game.game_id).trim() !== '') {
-                gameIdToUse = String(game.game_id).trim(); // 使用 CSV 提供的 ID (保持字串)
-            } else {
-                // 如果 CSV 未提供 ID，則生成新的數字順序 ID
-                currentMaxId++; 
-                gameIdToUse = String(currentMaxId);
-            }
-
-            const isVisible = ['TRUE', 'YES', 'Y', '1'].includes((game.is_visible || '').toString().trim().toUpperCase());
-            const total_stock = Number(game.total_stock) || 0;
-            const for_rent_stock = Number(game.for_rent_stock) || 0;
-            const for_sale_stock = total_stock - for_rent_stock;
-
-            operations.push(stmt.bind(
-                gameIdToUse, // 【修改】使用決定好的 ID
-                game.name.trim(), game.description || null, game.image_url || null, game.image_url_2 || null,
-                game.image_url_3 || null, game.tags || null, Number(game.min_players) || 1, Number(game.max_players) || 4, game.difficulty || '普通',
-                total_stock, for_rent_stock, for_sale_stock, Number(game.sale_price) || 0, Number(game.rent_price) || 0,
-                Number(game.deposit) || 0, Number(game.late_fee_per_day) || 50, isVisible ? 1 : 0, game.supplementary_info || null
-            ));
-            successCount++;
-        }
-
-        if (operations.length > 0) {
-            await db.batch(operations);
-        }
-
-        let message = `匯入完成！成功處理 ${successCount} 筆資料。`;
-        if (failCount > 0) {
-            message += `\n失敗 ${failCount} 筆。\n錯誤詳情：\n${errors.slice(0, 5).join('\n')}`;
-        }
-
-        return new Response(JSON.stringify({ success: true, message }), { status: 200 });
-
-    } catch (error) {
-        console.error('Error in bulk-create-games API:', error);
-        return new Response(JSON.stringify({ error: '批量匯入時發生嚴重錯誤', details: error.message }), { status: 500 });
+    if (!gamesToMigrate || gamesToMigrate.length === 0) {
+      return new Response(JSON.stringify({ success: true, message: '資料庫中沒有需要轉移的亂碼 ID。' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+
+    const idMap = new Map();
+    const operations = [];
+    let report = '轉移報告 (舊 ID -> 新 ID)：\n';
+
+    // 步驟 3：為每一個亂碼 ID 準備更新操作
+    for (const game of gamesToMigrate) {
+      const oldRandomId = game.game_id;
+      const newNumericIdStr = String(nextNumericId); // 確保儲存為字串
+
+      idMap.set(oldRandomId, newNumericIdStr);
+      report += `${oldRandomId} -> ${newNumericIdStr}\n`;
+
+      operations.push(
+        db.prepare("UPDATE BoardGames SET game_id = ?2 WHERE game_id = ?1")
+          .bind(oldRandomId, newNumericIdStr)
+      );
+      
+      operations.push(
+        db.prepare("UPDATE Rentals SET game_id = ?2 WHERE game_id = ?1")
+          .bind(oldRandomId, newNumericIdStr)
+      );
+      
+      nextNumericId++; // 準備下一個數字
+    }
+
+    // 步驟 4：在一個事務中執行所有更新
+    await db.batch(operations);
+
+    return new Response(JSON.stringify({ success: true, message: `成功轉移 ${idMap.size} 筆亂碼 ID。`, report }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (error) {
+    console.error('ID 轉移失敗:', error);
+    return new Response(JSON.stringify({ error: '轉移過程中發生嚴重錯誤', details: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+// ----------------------------------------------------
+// 主 onRequest 處理函式 (處理 CORS)
+// ----------------------------------------------------
+export async function onRequest(context) {
+  // 【CORS 修正】處理 preflight OPTIONS 請求
+  if (context.request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204, // No Content
+      headers: corsHeaders,
+    });
+  }
+
+  // 處理 POST 請求 (原本的邏輯)
+  if (context.request.method === 'POST') {
+    return await handleMigrationRequest(context);
+  }
+
+  // 拒絕 POST 和 OPTIONS 以外的所有請求
+  return new Response('Method Not Allowed', { status: 405 });
 }
