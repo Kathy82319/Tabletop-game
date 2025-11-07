@@ -1,5 +1,15 @@
 // functions/api/admin/create-boardgame.js
 
+// 【修正】移除 nanoid import，改用內建函式
+const generateGameId = () => {
+  const alphabet = '0123456789abcdefghijklmnopqrstuvwxyz';
+  let id = '';
+  for (let i = 0; i < 10; i++) {
+    id += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+  }
+  return id;
+};
+
 export async function onRequest(context) {
     try {
         if (context.request.method !== 'POST') {
@@ -7,20 +17,15 @@ export async function onRequest(context) {
         }
 
         const body = await context.request.json();
-        const db = context.env.DB; 
 
+        // 這裡的驗證邏輯與 update-boardgame-details.js 類似
         if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
             return new Response(JSON.stringify({ error: '遊戲名稱為必填。' }), { status: 400 });
         }
-        
-        const result = await db.prepare(
-          "SELECT MAX(CAST(game_id AS INTEGER)) as max_id FROM BoardGames WHERE game_id GLOB '[0-9]*' AND game_id NOT LIKE '%[^0-9]%'"
-        ).first();
-        
-        // 【!! 核心修正 !!】
-        // 直接使用數字 ID，不再轉為字串
-        const newGameId = (result?.max_id || 0) + 1; 
 
+        const db = context.env.DB;
+
+        const newGameId = generateGameId(); // <-- 使用新的內建函式
         const for_sale_stock = (Number(body.total_stock) || 0) - (Number(body.for_rent_stock) || 0);
 
         const stmt = db.prepare(
@@ -34,7 +39,7 @@ export async function onRequest(context) {
         );
 
         await stmt.bind(
-            newGameId, // 【!! 核心修正 !!】 使用數字 ID
+            newGameId,
             body.name, body.description || '', body.image_url || '', body.image_url_2 || '', body.image_url_3 || '', body.tags || '',
             Number(body.min_players) || 1, Number(body.max_players) || 4, body.difficulty || '普通',
             Number(body.total_stock) || 0, Number(body.for_rent_stock) || 0, for_sale_stock,

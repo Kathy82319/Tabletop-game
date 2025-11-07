@@ -1,9 +1,18 @@
 // functions/api/admin/bulk-create-games.js
-// (這是「批次新增」的正確版本)
+
+// 【修正】移除 nanoid import，改用內建函式
+const generateGameId = () => {
+  const alphabet = '0123456789abcdefghijklmnopqrstuvwxyz';
+  let id = '';
+  for (let i = 0; i < 10; i++) {
+    id += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+  }
+  return id;
+};
 
 // CSV 欄位中文與資料庫欄位英文的對應表
 const headerMapping = {
-    "遊戲ID": "game_id",
+    "遊戲ID": "game_id", // 修正：確保 CSV 模板中的 "遊戲ID" 被對應
     "遊戲名稱": "name", "遊戲介紹": "description", "圖片網址1": "image_url", "圖片網址2": "image_url_2",
     "圖片網址3": "image_url_3", "標籤(逗號分隔)": "tags", "最少人數": "min_players", "最多人數": "max_players",
     "難度": "difficulty", "總庫存": "total_stock", "可租借庫存": "for_rent_stock", "售價": "sale_price",
@@ -27,13 +36,7 @@ export async function onRequest(context) {
         let failCount = 0;
         const errors = [];
 
-        // 在迴圈外查詢一次最大 ID
-        const result = await db.prepare(
-          "SELECT MAX(CAST(game_id AS INTEGER)) as max_id FROM BoardGames WHERE game_id GLOB '[0-9]*' AND game_id NOT LIKE '%[^0-9]%'"
-        ).first();
-        
-        let currentMaxId = result?.max_id || 0;
-
+        // 準備 UPSERT (存在則更新，不存在則插入) 指令
         const stmt = db.prepare(
             `INSERT INTO BoardGames (
                 game_id, name, description, image_url, image_url_2, image_url_3, tags, min_players, max_players, difficulty,
@@ -51,6 +54,7 @@ export async function onRequest(context) {
         for (let i = 0; i < games.length; i++) {
             const rawGame = games[i];
             const game = {};
+            // 使用 mapping 將中文標頭轉為英文 key
             for (const chiHeader in rawGame) {
                 if (headerMapping[chiHeader]) {
                     game[headerMapping[chiHeader]] = rawGame[chiHeader];
@@ -63,28 +67,13 @@ export async function onRequest(context) {
                 continue;
             }
 
-            // 【!! 核心修正 !!】
-            let gameIdToUse;
-            if (game.game_id && String(game.game_id).trim() !== '') {
-                gameIdToUse = Number(game.game_id); // 使用 CSV 提供的 ID (轉為數字)
-            } else {
-                currentMaxId++; 
-                gameIdToUse = currentMaxId; // 生成新的數字 ID
-            }
-            if (isNaN(gameIdToUse)) {
-                 failCount++;
-                 errors.push(`第 ${i + 2} 行：ID ${game.game_id} 不是有效數字。`);
-                 continue;
-            }
-            // 【!! 修正結束 !!】
-
             const isVisible = ['TRUE', 'YES', 'Y', '1'].includes((game.is_visible || '').toString().trim().toUpperCase());
             const total_stock = Number(game.total_stock) || 0;
             const for_rent_stock = Number(game.for_rent_stock) || 0;
             const for_sale_stock = total_stock - for_rent_stock;
 
             operations.push(stmt.bind(
-                gameIdToUse, // 【!! 核心修正 !!】 使用數字 ID
+                game.game_id || generateGameId(), // <-- 使用新的內建函式
                 game.name.trim(), game.description || null, game.image_url || null, game.image_url_2 || null,
                 game.image_url_3 || null, game.tags || null, Number(game.min_players) || 1, Number(game.max_players) || 4, game.difficulty || '普通',
                 total_stock, for_rent_stock, for_sale_stock, Number(game.sale_price) || 0, Number(game.rent_price) || 0,
