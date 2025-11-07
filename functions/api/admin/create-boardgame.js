@@ -1,14 +1,6 @@
 // functions/api/admin/create-boardgame.js
 
-// 【修正】移除 nanoid import，改用內建函式
-const generateGameId = () => {
-  const alphabet = '0123456789abcdefghijklmnopqrstuvwxyz';
-  let id = '';
-  for (let i = 0; i < 10; i++) {
-    id += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
-  }
-  return id;
-};
+// 【修正】移除舊的 generateGameId 相關程式碼
 
 export async function onRequest(context) {
     try {
@@ -17,15 +9,25 @@ export async function onRequest(context) {
         }
 
         const body = await context.request.json();
+        const db = context.env.DB; // <-- 將 db 宣告移到前面
 
         // 這裡的驗證邏輯與 update-boardgame-details.js 類似
         if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
             return new Response(JSON.stringify({ error: '遊戲名稱為必填。' }), { status: 400 });
         }
 
-        const db = context.env.DB;
+        // --- 【▼▼▼ 核心修改：產生新的數字 ID ▼▼▼】 ---
+        // 1. 查詢當前最大的 game_id (並確保轉換為整數比較)
+        const maxIdResult = await db.prepare("SELECT MAX(CAST(game_id AS INTEGER)) as maxId FROM BoardGames").first();
+        
+        // 2. 新 ID = 最大 ID + 1。
+        // 如果資料庫是空的 (maxId 為 null)，或者最大ID小於383，我們都從 384 開始
+        let newGameId = 384;
+        if (maxIdResult && maxIdResult.maxId && maxIdResult.maxId >= 383) {
+            newGameId = maxIdResult.maxId + 1;
+        }
+        // --- 【▲▲▲ 核心修改結束 ▲▲▲】 ---
 
-        const newGameId = generateGameId(); // <-- 使用新的內建函式
         const for_sale_stock = (Number(body.total_stock) || 0) - (Number(body.for_rent_stock) || 0);
 
         const stmt = db.prepare(
@@ -39,7 +41,7 @@ export async function onRequest(context) {
         );
 
         await stmt.bind(
-            newGameId,
+            newGameId, // <-- 使用新的數字 ID
             body.name, body.description || '', body.image_url || '', body.image_url_2 || '', body.image_url_3 || '', body.tags || '',
             Number(body.min_players) || 1, Number(body.max_players) || 4, body.difficulty || '普通',
             Number(body.total_stock) || 0, Number(body.for_rent_stock) || 0, for_sale_stock,

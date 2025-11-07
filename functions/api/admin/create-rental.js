@@ -37,8 +37,17 @@ export async function onRequest(context) {
     const allGameNames = [];
     const dbOperations = [];
     
-    for (const gameId of gameIds) {
-        const game = await db.prepare('SELECT name, for_rent_stock FROM BoardGames WHERE game_id = ?').bind(gameId).first();
+for (const rawGameId of gameIds) { // <-- 變數改名為 rawGameId
+        
+        // --- 【▼▼▼ 核心修改：型態轉換與驗證 ▼▼▼】 ---
+        // 假設 game_id 現在應該是數字
+        const gameId = Number(rawGameId);
+        if (isNaN(gameId) || gameId <= 0) {
+            throw new Error(`傳入了無效的遊戲 ID：${rawGameId}`);
+        }
+        // --- 【▲▲▲ 修改結束 ▲▲▲】 ---
+
+        const game = await db.prepare('SELECT name, for_rent_stock FROM BoardGames WHERE game_id = ?').bind(gameId).first(); // <-- 綁定轉換後的 gameId
         if (!game) throw new Error(`找不到 ID 為 ${gameId} 的遊戲。`);
         if (game.for_rent_stock <= 0) throw new Error(`《${game.name}》目前已無可租借庫存。`);
         
@@ -52,13 +61,14 @@ export async function onRequest(context) {
         dbOperations.push(insertStmt.bind(
             // 如果 userId 是 "null" 或空字串，就存入真正的 NULL
             userId || null, 
-            gameId, dueDate, name, 
+            gameId, // <-- 綁定轉換後的 gameId
+            dueDate, name, 
             phone || null, // 電話也一樣
             rentPriceNum, depositNum, lateFeeNum
         ));
         
         const updateStmt = db.prepare('UPDATE BoardGames SET for_rent_stock = for_rent_stock - 1 WHERE game_id = ?');
-        dbOperations.push(updateStmt.bind(gameId));
+        dbOperations.push(updateStmt.bind(gameId)); // <-- 綁定轉換後的 gameId
     }
     
     await db.batch(dbOperations);
