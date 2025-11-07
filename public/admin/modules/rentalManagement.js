@@ -1,4 +1,5 @@
-// public/admin/modules/rentalManagement.js (最新修正版)
+// public/admin/modules/rentalManagement.js (最新修正版 - 2025-11-08)
+// 【核心修正】此版本強制將 game_id 視為「數字 (Number)」處理，以匹配你的資料庫。
 import { api } from '../api.js';
 import { ui } from '../ui.js';
 
@@ -53,12 +54,15 @@ function renderRentalList(rentals) {
     });
 }
 function applyFiltersAndRender() {
+    if (!rentalSearchInput || !rentalStatusFilter) return; // 防呆
+    
     const searchTerm = rentalSearchInput.value.toLowerCase().trim();
     const statusFilter = rentalStatusFilter.querySelector('.active').dataset.filter;
     let filteredRentals = allRentals;
     if (statusFilter !== 'all') {
         
         if (statusFilter === 'rented') {
+            // "租借中" 應該包含所有未歸還的 (租借中、今日到期、已逾期)
             const activeRentalStates = ['rented', 'due_today', 'overdue'];
             filteredRentals = allRentals.filter(r => activeRentalStates.includes(r.derived_status));
         } else {
@@ -75,6 +79,8 @@ function applyFiltersAndRender() {
     }
     renderRentalList(filteredRentals);
 }
+// --- 建立租借相關功能 ---
+
 export async function openCreateRentalModal(initialGameId) {
     createRentalModal = document.getElementById('create-rental-modal');
     createRentalForm = document.getElementById('create-rental-form');
@@ -182,7 +188,9 @@ async function handleCreateRentalFormSubmit(event) {
         const result = await api.createRental(data);
         ui.toast.success(result.message || '租借紀錄已建立！');
         ui.hideModal('#create-rental-modal');
-        init();
+        // 傳遞目前選擇的 filter 重新整理
+        const activeFilter = rentalStatusFilter ? rentalStatusFilter.querySelector('.active').dataset.filter : 'all';
+        init(null, activeFilter); 
     } catch (error) {
         ui.toast.error(`建立失敗: ${error.message}`);
     } finally {
@@ -273,7 +281,9 @@ async function handleEditRentalFormSubmit(event) {
         await api.updateRentalDetails({ rentalId, dueDate, lateFeeOverride });
         ui.toast.success('租借紀錄更新成功！');
         ui.hideModal('#edit-rental-modal');
-        init(); // 重新載入所有資料
+        // 傳遞目前選擇的 filter 重新整理
+        const activeFilter = rentalStatusFilter ? rentalStatusFilter.querySelector('.active').dataset.filter : 'all';
+        init(null, activeFilter);
     } catch (error) {
         ui.toast.error(`更新失敗: ${error.message}`);
     } finally {
@@ -291,6 +301,8 @@ export function initializeCreateRentalModalEventListeners() {
     createRentalForm = document.getElementById('create-rental-form');
     if (!createRentalModal || !createRentalForm) return;
 
+    const gameSearchInput = document.getElementById('rental-game-search');
+    const gameSearchResults = document.getElementById('game-search-results');
     const userSearchInput = document.getElementById('rental-user-search');
     const userSearchResults = document.getElementById('user-search-results');
 
@@ -382,15 +394,8 @@ function setupEventListeners() {
 
     rentalSearchInput.addEventListener('input', applyFiltersAndRender);
 
-rentalStatusFilter.addEventListener('click', e => {
+    rentalStatusFilter.addEventListener('click', e => {
         if (e.target.tagName === 'BUTTON') {
-            // OLD:
-            // rentalStatusFilter.querySelector('.active')?.classList.remove('active');
-            // e.target.classList.add('active');
-            // const status = e.target.dataset.filter;
-            // init(status);
-
-            // NEW: 改為更新 hash，讓 app.js 的路由統一處理
             const status = e.target.dataset.filter;
             if (status === 'all') {
                 window.location.hash = '#rentals';
@@ -409,7 +414,9 @@ rentalStatusFilter.addEventListener('click', e => {
                 try {
                     await api.updateRentalStatus(rentalId, 'returned');
                     ui.toast.success('狀態已更新為「已歸還」！');
-                    await init(rentalStatusFilter.querySelector('.active').dataset.filter);
+                    // 傳遞目前選擇的 filter 重新整理
+                    const activeFilter = rentalStatusFilter ? rentalStatusFilter.querySelector('.active').dataset.filter : 'all';
+                    await init(null, activeFilter);
                 } catch (error) {
                     ui.toast.error(`操作失敗: ${error.message}`);
                 }
@@ -421,7 +428,11 @@ rentalStatusFilter.addEventListener('click', e => {
     });
     
     // --- 建立租借視窗的事件監聽 ---
-const gameSearchInput = document.getElementById('rental-game-search');
+    // 這部分邏輯已由 initializeCreateRentalModalEventListeners 處理
+    // 但為避免 app.js 呼叫順序問題，我們保留一個檢查
+    // (如果 init 比 app.js 的 initialize... 早執行，這些還是需要的)
+    
+    const gameSearchInput = document.getElementById('rental-game-search');
     const gameSearchResults = document.getElementById('game-search-results');
     
     if (gameSearchInput) {
@@ -530,11 +541,17 @@ export const init = async (context, initialStatus) => {
     
     rentalListTbody.innerHTML = '<tr><td colspan="6">正在載入租借紀錄...</td></tr>';
     try {
-        allRentals = await api.getAllRentals(status);
-        // 確保 allGames 也被載入
+        // 同時載入租借紀錄和遊戲列表
+        const [rentals] = await Promise.all([
+            api.getAllRentals(status),
+            (allGames.length === 0 ? api.getProducts() : Promise.resolve(allGames)) // 只有在 allGames 為空時才載入
+        ]);
+        
+        allRentals = rentals;
         if (allGames.length === 0) {
-            allGames = await api.getProducts();
+            allGames = await api.getProducts(); // 確保 allGames 被賦值
         }
+
         applyFiltersAndRender();
         setupEventListeners();
     } catch (error) {
