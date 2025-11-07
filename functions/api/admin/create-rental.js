@@ -12,7 +12,6 @@ export async function onRequest(context) {
         rentPrice, deposit, lateFeePerDay 
     } = body;
 
-    // --- 【驗證區塊】 --- (保持不變)
     const errors = [];
     if (userId && typeof userId !== 'string') errors.push('無效的會員 ID 格式。');
     if (!gameIds || !Array.isArray(gameIds) || gameIds.length === 0) errors.push('必須至少選擇一款租借的遊戲。');
@@ -30,32 +29,21 @@ export async function onRequest(context) {
     if (errors.length > 0) {
         return new Response(JSON.stringify({ error: errors.join(' ') }), { status: 400 });
     }
-    // --- 【驗證區塊結束】 ---
 
     const db = context.env.DB;
     const allGameNames = [];
     const dbOperations = [];
     
-    for (const gameId of gameIds) { // <-- 恢復使用 gameId
-
-        // --- 【▼▼▼ 核心修改：移除型態轉換 ▼▼▼】 ---
-        // const gameId = Number(rawGameId); // <-- 移除這一行
+    for (const rawGameId of gameIds) {
         
-        // 增加一個基本檢查，確保 gameId 不是 null 或 undefined
-        if (gameId === null || gameId === undefined) {
-            throw new Error(`傳入了無效的遊戲 ID：${gameId}`);
+        const gameId = Number(rawGameId);
+        if (isNaN(gameId) || gameId <= 0) {
+            throw new Error(`傳入了無效的遊戲 ID：${rawGameId}`);
         }
-        // --- 【▲▲▲ 修改結束 ▲▲▲】 ---
 
-        // 我們現在直接使用前端傳來的原始 gameId (可能是字串 "383" 或數字 384) 進行查詢
         const game = await db.prepare('SELECT name, for_rent_stock FROM BoardGames WHERE game_id = ?').bind(gameId).first();
-        if (!game) {
-            // 這個錯誤現在會正確顯示傳入的 ID (例如 "383")
-            throw new Error(`找不到 ID 為 ${gameId} 的遊戲。`);
-        }
-        if (game.for_rent_stock <= 0) {
-            throw new Error(`《${game.name}》目前已無可租借庫存。`);
-        }
+        if (!game) throw new Error(`找不到 ID 為 ${gameId} 的遊戲。`);
+        if (game.for_rent_stock <= 0) throw new Error(`《${game.name}》目前已無可租借庫存。`);
         
         allGameNames.push(game.name);
 
@@ -66,20 +54,18 @@ export async function onRequest(context) {
         
         dbOperations.push(insertStmt.bind(
             userId || null, 
-            gameId, // <-- 綁定原始型態的 gameId
+            gameId,
             dueDate, name, 
             phone || null,
             rentPriceNum, depositNum, lateFeeNum
         ));
         
         const updateStmt = db.prepare('UPDATE BoardGames SET for_rent_stock = for_rent_stock - 1 WHERE game_id = ?');
-        dbOperations.push(updateStmt.bind(gameId)); // <-- 綁定原始型態的 gameId
+        dbOperations.push(updateStmt.bind(gameId));
     }
     
     await db.batch(dbOperations);
-
-
-    // 準備要傳送給顧客的 LINE 訊息
+    
     const rentalDateStr = new Date().toISOString().split('T')[0];
     const rentalDuration = Math.round((new Date(dueDate) - new Date(rentalDateStr)) / (1000 * 60 * 60 * 24)) + 1;
     const message = `🎉 租借資訊確認\n\n` +
@@ -96,7 +82,6 @@ export async function onRequest(context) {
                     `如上面資訊沒有問題，請回覆「ok」並視為同意租借規則。\n`+
                     `感謝您的預約！`;
 
-    // 背景發送 LINE 訊息
     if (userId && message) {
         context.waitUntil(
             fetch(new URL('/api/send-message', context.request.url), {
