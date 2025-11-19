@@ -46,20 +46,24 @@ function renderUserList(users) {
     });
 }
 
-// 處理使用者搜尋
+// 【修正重點】處理使用者搜尋 - 擴充搜尋欄位
 function handleUserSearch() {
     const userSearchInput = document.getElementById('user-search-input');
     const searchTerm = userSearchInput.value.toLowerCase().trim();
+    
     const filteredUsers = searchTerm
         ? allUsers.filter(user =>
-            (user.line_display_name || '').toLowerCase().includes(searchTerm) ||
-            (user.nickname || '').toLowerCase().includes(searchTerm)
+            (user.line_display_name || '').toLowerCase().includes(searchTerm) || // LINE 名稱
+            (user.nickname || '').toLowerCase().includes(searchTerm) ||          // 暱稱
+            (user.real_name || '').toLowerCase().includes(searchTerm) ||         // 真實姓名
+            (user.class || '').toLowerCase().includes(searchTerm) ||             // 職業
+            (user.tag || '').toLowerCase().includes(searchTerm)                  // 標籤
         )
         : allUsers;
     renderUserList(filteredUsers);
 }
 
-// 開啟編輯使用者彈窗 (大幅重構選單邏輯)
+// 開啟編輯使用者彈窗
 function openEditUserModal(userId) {
     const user = allUsers.find(u => u.user_id === userId);
     if (!user) {
@@ -83,36 +87,28 @@ function openEditUserModal(userId) {
     const tagSelect = modal.querySelector('#edit-tag-select');
     const tagOtherInput = modal.querySelector('#edit-tag-other-input');
 
-    // --- 【核心修改】通用函式：取得所有使用者已使用的不重複選項 ---
+    // 通用函式：取得所有使用者已使用的不重複選項
     const getUniqueOptions = (field, defaults) => {
-        // 取得所有非空值
         const usedValues = allUsers.map(u => u[field]).filter(v => v && v.trim() !== '');
-        // 合併預設值與使用中的值，並去除重複
         return [...defaults, ...new Set(usedValues.filter(v => !defaults.includes(v)))];
     };
 
     // 定義預設選項
     const defaultClasses = ['無'];
     const defaultPerks = ['無特殊優惠'];
-    const defaultTags = ['無', '會員', '員工', '黑名單']; // 標籤的預設選項
+    const defaultTags = ['無', '會員', '員工', '黑名單'];
 
     // 產生動態選項列表
     const uniqueClasses = getUniqueOptions('class', defaultClasses);
     const uniquePerks = getUniqueOptions('perk', defaultPerks);
-    const uniqueTags = getUniqueOptions('tag', defaultTags); // 【新增】標籤也使用動態列表
+    const uniqueTags = getUniqueOptions('tag', defaultTags);
 
-    // --- 【核心修改】通用函式：填充下拉選單並處理「其他」邏輯 ---
+    // 通用函式：填充下拉選單並處理「其他」邏輯
     const populateDropdown = (selectEl, otherInputEl, options, currentValue) => {
         selectEl.innerHTML = '';
-        
-        // 1. 加入現有選項
         options.forEach(opt => selectEl.add(new Option(opt, opt)));
-        
-        // 2. 加入「其他」選項
         selectEl.add(new Option('其他 (自訂)', 'other'));
 
-        // 3. 判斷當前值是否在選項中
-        // 如果值是 null 或空字串，視為預設的第一個選項(通常是'無')
         const valToCheck = currentValue || options[0]; 
         
         if (options.includes(valToCheck)) {
@@ -120,13 +116,11 @@ function openEditUserModal(userId) {
             otherInputEl.style.display = 'none'; 
             otherInputEl.value = '';
         } else {
-            // 如果值不在選項中(或是全新的自訂值)，選中「其他」並顯示輸入框
             selectEl.value = 'other'; 
             otherInputEl.style.display = 'block'; 
             otherInputEl.value = currentValue || '';
         }
 
-        // 4. 綁定切換事件
         selectEl.onchange = () => { 
             if (selectEl.value === 'other') {
                 otherInputEl.style.display = 'block';
@@ -140,7 +134,7 @@ function openEditUserModal(userId) {
     // 應用到三個欄位
     populateDropdown(classSelect, classOtherInput, uniqueClasses, user.class);
     populateDropdown(perkSelect, perkOtherInput, uniquePerks, user.perk);
-    populateDropdown(tagSelect, tagOtherInput, uniqueTags, user.tag); // 【新增】應用到標籤
+    populateDropdown(tagSelect, tagOtherInput, uniqueTags, user.tag);
 
     ui.showModal('#edit-user-modal');
 }
@@ -162,7 +156,7 @@ async function handleEditUserFormSubmit(event) {
     let finalPerk = perkSelect.value;
     if (finalPerk === 'other') finalPerk = form.querySelector('#edit-perk-other-input').value.trim() || '無特殊優惠';
 
-    // 【新增】處理標籤值
+    // 處理標籤值
     const tagSelect = form.querySelector('#edit-tag-select');
     let finalTag = tagSelect.value;
     if (finalTag === 'other') finalTag = form.querySelector('#edit-tag-other-input').value.trim() || '無';
@@ -181,7 +175,7 @@ async function handleEditUserFormSubmit(event) {
     try {
         await api.updateUserDetails(updatedData);
         ui.toast.success('使用者資料更新成功！');
-        await init(); // 重新載入資料 (這會更新選單選項)
+        await init(); 
         handleUserSearch();
         ui.hideModal('#edit-user-modal');
     } catch (error) { 
@@ -269,10 +263,17 @@ async function openUserDetailsModal(userId) {
     try { const data = await api.getUserDetails(userId); renderUserDetails(data); } catch (error) { console.error("CRM 執行錯誤:", error); contentContainer.innerHTML = `<p style="color:red;">載入資料時發生錯誤：${error.message}</p>`; }
 }
 
-// setupEventListeners (不變)
+// setupEventListeners
 function setupEventListeners() {
     const page = document.getElementById('page-users'); if (!page || page.dataset.initialized) return;
-    const userSearchInput = document.getElementById('user-search-input'); userSearchInput.addEventListener('input', handleUserSearch);
+    const userSearchInput = document.getElementById('user-search-input'); 
+    
+    // 【新增】更新搜尋框的 placeholder 提示，讓使用者知道可以搜尋更多欄位
+    if (userSearchInput) {
+        userSearchInput.placeholder = "搜尋 LINE / 暱稱 / 真實姓名 / 職業 / 標籤...";
+        userSearchInput.addEventListener('input', handleUserSearch);
+    }
+    
     const userListTbody = document.getElementById('user-list-tbody');
     userListTbody.addEventListener('click', async (event) => {
         const target = event.target; const row = target.closest('tr'); if (!row || !row.dataset.userId) return; const userId = row.dataset.userId;
