@@ -17,14 +17,13 @@ function renderUserList(users) {
         row.style.cursor = 'pointer';
         const displayName = user.nickname ? `${user.line_display_name} (${user.nickname})` : user.line_display_name;
 
-        // 【修改 1】調整條件：檢查 user.level > 1
+        // 檢查是否需要升級福利 (user.level > 1 且 等級 > 已領取等級)
         const needsPerk = user.level > 1 && user.level > (user.perk_claimed_level || 0);
         const levelDisplay = needsPerk ? `${user.level} ⭐` : user.level;
 
-        // 【修改 2】動態產生操作欄位的按鈕 HTML
+        // 動態產生操作欄位的按鈕 HTML
         let actionsHTML = `<button class="action-btn btn-edit-user" data-userid="${user.user_id}" style="background-color: var(--warning-color); color: #000;">編輯</button>`;
         if (needsPerk) {
-            // 如果需要福利，才加入「福利已給」按鈕
             actionsHTML += ` <button class="action-btn btn-claim-perk-list" data-userid="${user.user_id}" style="background-color: var(--success-color);">✅ 福利已給</button>`;
         }
 
@@ -40,14 +39,14 @@ function renderUserList(users) {
             <td class="actions-cell">${actionsHTML}</td> 
         `;
 
-        // 背景色標示 (可選，條件同上)
+        // 背景色標示需要福利的會員
         if (needsPerk) {
             row.style.backgroundColor = 'rgba(255, 255, 0, 0.1)';
         }
     });
 }
 
-// 處理使用者搜尋 (不變)
+// 處理使用者搜尋
 function handleUserSearch() {
     const userSearchInput = document.getElementById('user-search-input');
     const searchTerm = userSearchInput.value.toLowerCase().trim();
@@ -60,7 +59,7 @@ function handleUserSearch() {
     renderUserList(filteredUsers);
 }
 
-// 開啟編輯使用者彈窗
+// 開啟編輯使用者彈窗 (大幅重構選單邏輯)
 function openEditUserModal(userId) {
     const user = allUsers.find(u => u.user_id === userId);
     if (!user) {
@@ -68,62 +67,80 @@ function openEditUserModal(userId) {
     }
     const modal = document.getElementById('edit-user-modal');
     if (!modal) return;
+
+    // 填入基本資料
     modal.querySelector('#edit-user-id').value = user.user_id;
     modal.querySelector('#modal-user-title').textContent = `編輯：${user.line_display_name}`;
     modal.querySelector('#edit-level-input').value = user.level || 1;
     modal.querySelector('#edit-exp-input').value = user.current_exp || 0;
     modal.querySelector('#edit-notes-textarea').value = user.notes || '';
     
+    // 取得所有下拉選單與輸入框元素
     const classSelect = modal.querySelector('#edit-class-select');
     const classOtherInput = modal.querySelector('#edit-class-other-input');
     const perkSelect = modal.querySelector('#edit-perk-select');
     const perkOtherInput = modal.querySelector('#edit-perk-other-input');
-    
-    // --- 【修正重點】新增標籤欄位的 DOM 元素 ---
     const tagSelect = modal.querySelector('#edit-tag-select');
     const tagOtherInput = modal.querySelector('#edit-tag-other-input');
 
-    const uniqueClasses = ['無', ...new Set(allUsers.map(u => u.class).filter(c => c && c !== '無'))];
-    const uniquePerks = ['無特殊優惠', ...new Set(allUsers.map(u => u.perk).filter(p => p && p !== '無特殊優惠'))];
-    
+    // --- 【核心修改】通用函式：取得所有使用者已使用的不重複選項 ---
+    const getUniqueOptions = (field, defaults) => {
+        // 取得所有非空值
+        const usedValues = allUsers.map(u => u[field]).filter(v => v && v.trim() !== '');
+        // 合併預設值與使用中的值，並去除重複
+        return [...defaults, ...new Set(usedValues.filter(v => !defaults.includes(v)))];
+    };
+
+    // 定義預設選項
+    const defaultClasses = ['無'];
+    const defaultPerks = ['無特殊優惠'];
+    const defaultTags = ['無', '會員', '員工', '黑名單']; // 標籤的預設選項
+
+    // 產生動態選項列表
+    const uniqueClasses = getUniqueOptions('class', defaultClasses);
+    const uniquePerks = getUniqueOptions('perk', defaultPerks);
+    const uniqueTags = getUniqueOptions('tag', defaultTags); // 【新增】標籤也使用動態列表
+
+    // --- 【核心修改】通用函式：填充下拉選單並處理「其他」邏輯 ---
     const populateDropdown = (selectEl, otherInputEl, options, currentValue) => {
         selectEl.innerHTML = '';
+        
+        // 1. 加入現有選項
         options.forEach(opt => selectEl.add(new Option(opt, opt)));
+        
+        // 2. 加入「其他」選項
         selectEl.add(new Option('其他 (自訂)', 'other'));
-        if (options.includes(currentValue)) {
-            selectEl.value = currentValue;
-            otherInputEl.style.display = 'none'; otherInputEl.value = '';
+
+        // 3. 判斷當前值是否在選項中
+        // 如果值是 null 或空字串，視為預設的第一個選項(通常是'無')
+        const valToCheck = currentValue || options[0]; 
+        
+        if (options.includes(valToCheck)) {
+            selectEl.value = valToCheck;
+            otherInputEl.style.display = 'none'; 
+            otherInputEl.value = '';
         } else {
-            selectEl.value = 'other'; otherInputEl.style.display = 'block'; otherInputEl.value = currentValue || '';
+            // 如果值不在選項中(或是全新的自訂值)，選中「其他」並顯示輸入框
+            selectEl.value = 'other'; 
+            otherInputEl.style.display = 'block'; 
+            otherInputEl.value = currentValue || '';
         }
-        selectEl.onchange = () => { otherInputEl.style.display = (selectEl.value === 'other') ? 'block' : 'none'; if(selectEl.value === 'other') otherInputEl.focus(); };
+
+        // 4. 綁定切換事件
+        selectEl.onchange = () => { 
+            if (selectEl.value === 'other') {
+                otherInputEl.style.display = 'block';
+                otherInputEl.focus();
+            } else {
+                otherInputEl.style.display = 'none';
+            }
+        };
     };
     
+    // 應用到三個欄位
     populateDropdown(classSelect, classOtherInput, uniqueClasses, user.class);
     populateDropdown(perkSelect, perkOtherInput, uniquePerks, user.perk);
-
-    // --- 【修正重點】處理標籤的邏輯 ---
-    const standardTags = ['', '會員', '員工', '黑名單']; // 與 HTML 中的 option value 對應
-    const currentTag = user.tag || '';
-
-    if (standardTags.includes(currentTag)) {
-        tagSelect.value = currentTag;
-        tagOtherInput.style.display = 'none';
-        tagOtherInput.value = '';
-    } else {
-        tagSelect.value = 'other';
-        tagOtherInput.style.display = 'block';
-        tagOtherInput.value = currentTag;
-    }
-
-    tagSelect.onchange = () => {
-        if (tagSelect.value === 'other') {
-            tagOtherInput.style.display = 'block';
-            tagOtherInput.focus();
-        } else {
-            tagOtherInput.style.display = 'none';
-        }
-    };
+    populateDropdown(tagSelect, tagOtherInput, uniqueTags, user.tag); // 【新增】應用到標籤
 
     ui.showModal('#edit-user-modal');
 }
@@ -135,27 +152,27 @@ async function handleEditUserFormSubmit(event) {
     const userId = form.querySelector('#edit-user-id').value;
     const button = form.querySelector('button[type="submit"]');
     
+    // 處理職業值
     const classSelect = form.querySelector('#edit-class-select');
     let finalClass = classSelect.value;
     if (finalClass === 'other') finalClass = form.querySelector('#edit-class-other-input').value.trim() || '無';
     
+    // 處理福利值
     const perkSelect = form.querySelector('#edit-perk-select');
     let finalPerk = perkSelect.value;
     if (finalPerk === 'other') finalPerk = form.querySelector('#edit-perk-other-input').value.trim() || '無特殊優惠';
 
-    // --- 【修正重點】處理標籤的提交值 ---
+    // 【新增】處理標籤值
     const tagSelect = form.querySelector('#edit-tag-select');
     let finalTag = tagSelect.value;
-    if (finalTag === 'other') {
-        finalTag = form.querySelector('#edit-tag-other-input').value.trim();
-    }
+    if (finalTag === 'other') finalTag = form.querySelector('#edit-tag-other-input').value.trim() || '無';
 
     const updatedData = {
         userId: userId,
         level: parseInt(form.querySelector('#edit-level-input').value, 10),
         current_exp: parseInt(form.querySelector('#edit-exp-input').value, 10),
         user_class: finalClass,
-        tag: finalTag, // 使用處理過後的 tag 值
+        tag: finalTag,
         perk: finalPerk,
         notes: form.querySelector('#edit-notes-textarea').value.trim(),
     };
@@ -164,11 +181,14 @@ async function handleEditUserFormSubmit(event) {
     try {
         await api.updateUserDetails(updatedData);
         ui.toast.success('使用者資料更新成功！');
-        await init();
+        await init(); // 重新載入資料 (這會更新選單選項)
         handleUserSearch();
         ui.hideModal('#edit-user-modal');
-    } catch (error) { ui.toast.error(`更新失敗：${error.message}`);
-    } finally { button.textContent = '儲存'; button.disabled = false; }
+    } catch (error) { 
+        ui.toast.error(`更新失敗：${error.message}`);
+    } finally { 
+        button.textContent = '儲存'; button.disabled = false; 
+    }
 }
 
 // renderHistoryTable (不變)
@@ -188,13 +208,13 @@ async function loadAndBindMessageDrafts(userId) {
     sendBtn.onclick = async () => { const message = content.value.trim(); if (!message) return ui.toast.error('訊息內容不可為空！'); const confirmed = await ui.confirm(`確定要發送訊息給該顧客嗎？`); if (!confirmed) return; try { sendBtn.textContent = '發送中...'; sendBtn.disabled = true; await api.sendMessage(userId, message); ui.toast.success('訊息發送成功！'); content.value = ''; select.value = ''; } catch (error) { ui.toast.error(`錯誤：${error.message}`); } finally { sendBtn.textContent = '確認發送'; sendBtn.disabled = false; } };
 }
 
-// 【修改】renderUserDetails 調整條件：檢查 profile.level > 1
+// renderUserDetails (不變)
 function renderUserDetails(data) {
     const contentContainer = document.querySelector('#user-details-modal #user-details-content'); if (!contentContainer) return;
     const { profile, bookings, rentals, exp_history } = data; const displayName = profile.nickname || profile.line_display_name;
     document.querySelector('#user-details-modal #user-details-title').textContent = displayName;
-    // 【調整條件】
-contentContainer.innerHTML = `
+    
+    contentContainer.innerHTML = `
         <div class="details-grid">
             <div class="profile-summary">
                 <img src="/api/admin/get-avatar?userId=${profile.user_id}" alt="Avatar">
@@ -249,29 +269,29 @@ async function openUserDetailsModal(userId) {
     try { const data = await api.getUserDetails(userId); renderUserDetails(data); } catch (error) { console.error("CRM 執行錯誤:", error); contentContainer.innerHTML = `<p style="color:red;">載入資料時發生錯誤：${error.message}</p>`; }
 }
 
-// 【修改】setupEventListeners 加入列表福利按鈕的監聽
+// setupEventListeners (不變)
 function setupEventListeners() {
     const page = document.getElementById('page-users'); if (!page || page.dataset.initialized) return;
     const userSearchInput = document.getElementById('user-search-input'); userSearchInput.addEventListener('input', handleUserSearch);
     const userListTbody = document.getElementById('user-list-tbody');
-    userListTbody.addEventListener('click', async (event) => { // 【修改】改為 async
+    userListTbody.addEventListener('click', async (event) => {
         const target = event.target; const row = target.closest('tr'); if (!row || !row.dataset.userId) return; const userId = row.dataset.userId;
 
         if (target.classList.contains('btn-edit-user')) {
             openEditUserModal(userId);
-        } else if (target.classList.contains('btn-claim-perk-list')) { // 【新增】處理列表中的福利按鈕
+        } else if (target.classList.contains('btn-claim-perk-list')) {
             const button = target;
             const confirmed = await ui.confirm('您確定已經給予該顧客升級福利了嗎？'); if (!confirmed) return;
             button.textContent = '處理中...'; button.disabled = true;
             try {
                 await api.claimPerk(userId);
                 ui.toast.success('狀態更新成功！');
-                await init(); // 重新載入列表
+                await init(); 
             } catch (error) {
                 ui.toast.error(`更新失敗: ${error.message}`);
-                button.textContent = '✅ 福利已給'; button.disabled = false; // 恢復按鈕
+                button.textContent = '✅ 福利已給'; button.disabled = false;
             }
-        } else { // 點擊列的其他地方
+        } else { 
             openUserDetailsModal(userId);
         }
     });
