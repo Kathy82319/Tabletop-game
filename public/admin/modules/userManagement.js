@@ -60,7 +60,7 @@ function handleUserSearch() {
     renderUserList(filteredUsers);
 }
 
-// 開啟編輯使用者彈窗 (不變)
+// 開啟編輯使用者彈窗
 function openEditUserModal(userId) {
     const user = allUsers.find(u => u.user_id === userId);
     if (!user) {
@@ -73,12 +73,19 @@ function openEditUserModal(userId) {
     modal.querySelector('#edit-level-input').value = user.level || 1;
     modal.querySelector('#edit-exp-input').value = user.current_exp || 0;
     modal.querySelector('#edit-notes-textarea').value = user.notes || '';
+    
     const classSelect = modal.querySelector('#edit-class-select');
     const classOtherInput = modal.querySelector('#edit-class-other-input');
     const perkSelect = modal.querySelector('#edit-perk-select');
     const perkOtherInput = modal.querySelector('#edit-perk-other-input');
+    
+    // --- 【修正重點】新增標籤欄位的 DOM 元素 ---
+    const tagSelect = modal.querySelector('#edit-tag-select');
+    const tagOtherInput = modal.querySelector('#edit-tag-other-input');
+
     const uniqueClasses = ['無', ...new Set(allUsers.map(u => u.class).filter(c => c && c !== '無'))];
     const uniquePerks = ['無特殊優惠', ...new Set(allUsers.map(u => u.perk).filter(p => p && p !== '無特殊優惠'))];
+    
     const populateDropdown = (selectEl, otherInputEl, options, currentValue) => {
         selectEl.innerHTML = '';
         options.forEach(opt => selectEl.add(new Option(opt, opt)));
@@ -91,33 +98,68 @@ function openEditUserModal(userId) {
         }
         selectEl.onchange = () => { otherInputEl.style.display = (selectEl.value === 'other') ? 'block' : 'none'; if(selectEl.value === 'other') otherInputEl.focus(); };
     };
+    
     populateDropdown(classSelect, classOtherInput, uniqueClasses, user.class);
     populateDropdown(perkSelect, perkOtherInput, uniquePerks, user.perk);
-    modal.querySelector('#edit-tag-select').value = user.tag || '';
+
+    // --- 【修正重點】處理標籤的邏輯 ---
+    const standardTags = ['', '會員', '員工', '黑名單']; // 與 HTML 中的 option value 對應
+    const currentTag = user.tag || '';
+
+    if (standardTags.includes(currentTag)) {
+        tagSelect.value = currentTag;
+        tagOtherInput.style.display = 'none';
+        tagOtherInput.value = '';
+    } else {
+        tagSelect.value = 'other';
+        tagOtherInput.style.display = 'block';
+        tagOtherInput.value = currentTag;
+    }
+
+    tagSelect.onchange = () => {
+        if (tagSelect.value === 'other') {
+            tagOtherInput.style.display = 'block';
+            tagOtherInput.focus();
+        } else {
+            tagOtherInput.style.display = 'none';
+        }
+    };
+
     ui.showModal('#edit-user-modal');
 }
 
-// 處理編輯使用者表單提交 (不變)
+// 處理編輯使用者表單提交
 async function handleEditUserFormSubmit(event) {
     event.preventDefault();
     const form = event.target;
     const userId = form.querySelector('#edit-user-id').value;
     const button = form.querySelector('button[type="submit"]');
+    
     const classSelect = form.querySelector('#edit-class-select');
     let finalClass = classSelect.value;
     if (finalClass === 'other') finalClass = form.querySelector('#edit-class-other-input').value.trim() || '無';
+    
     const perkSelect = form.querySelector('#edit-perk-select');
     let finalPerk = perkSelect.value;
     if (finalPerk === 'other') finalPerk = form.querySelector('#edit-perk-other-input').value.trim() || '無特殊優惠';
+
+    // --- 【修正重點】處理標籤的提交值 ---
+    const tagSelect = form.querySelector('#edit-tag-select');
+    let finalTag = tagSelect.value;
+    if (finalTag === 'other') {
+        finalTag = form.querySelector('#edit-tag-other-input').value.trim();
+    }
+
     const updatedData = {
         userId: userId,
         level: parseInt(form.querySelector('#edit-level-input').value, 10),
         current_exp: parseInt(form.querySelector('#edit-exp-input').value, 10),
         user_class: finalClass,
-        tag: form.querySelector('#edit-tag-select').value,
+        tag: finalTag, // 使用處理過後的 tag 值
         perk: finalPerk,
         notes: form.querySelector('#edit-notes-textarea').value.trim(),
     };
+    
     button.textContent = '儲存中...'; button.disabled = true;
     try {
         await api.updateUserDetails(updatedData);
