@@ -454,81 +454,96 @@ input[readonly] {
     padding: 15px 5px; /* 增加垂直 padding */
 }
 
-/* 個人資料卡片容器 */
+/* --- 冒險者資料卡片 (上下分層版) --- */
 .profile-card {
-    background-color: #f9f4e8; /* 米黃色背景 */
-    border: 2px solid #ecaa04; /* 金色邊框 */
-    border-radius: 10px;
+    background-color: #f9f4e8; /* 米色背景 */
+    border: 2px solid #b8860b; /* 金色邊框 */
+    border-radius: 12px;
     padding: 20px;
     margin: 20px 0;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-.profile-avatar-section {
-    flex-shrink: 0;
-    text-align: center;
+/* 上半部：Flex 橫向排列 (頭像在左，資訊在右) */
+.profile-header-section {
+    display: flex;
+    align-items: center; /* 垂直置中對齊 */
+    gap: 20px;
+    margin-bottom: 15px;
 }
 
 .profile-avatar-img {
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    border: 3px solid #ecaa04;
+    border: 3px solid #b8860b;
     object-fit: cover;
     background-color: #fff;
+    flex-shrink: 0; /* 防止頭像被壓縮 */
 }
 
-.profile-info-section {
+.profile-basic-info {
     flex-grow: 1;
     font-family: var(--font-primary);
 }
 
 .profile-name {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     font-weight: bold;
-    margin: 0 0 5px 0;
+    margin: 0 0 8px 0;
     color: #333;
+    border: none; /* 移除預設標題底線 */
+    text-align: left; /* 強制靠左 */
 }
 
-.profile-class, 
-.profile-field {
-    display: flex;            /* 啟用 Flex 佈局 */
-    align-items: flex-start;  /* 文字從頂部開始對齊 (避免多行時置中) */
-    margin-bottom: 6px;       /* 行距稍微縮小一點，更緊湊 */
-    line-height: 1.5;         /* 設定舒適的行高 */
-}
-/* 針對職業欄位的特殊微調 (取消原本的 italic 斜體設定) */
-.profile-class {
-    font-size: 1rem;
-    color: #333; /* 加深顏色 */
-}
-/* 等級與經驗值併排 */
-.profile-level-row {
+/* 等級與經驗值併排容器 */
+.profile-level-container {
     display: flex;
-    justify-content: space-between;
-    border-bottom: 1px dashed #b8860b;
-    padding-bottom: 5px;
-    margin-bottom: 10px;
+    justify-content: space-between; /* 左右撐開 */
+    margin-top: 5px;
+    width: 100%;
 }
 
+/* 通用單行項目 (職業、等級、經驗值) */
+.profile-row-item {
+    display: flex;
+    align-items: baseline;
+}
 
+/* 分隔虛線 */
+.profile-divider {
+    border-top: 1px dashed #b8860b;
+    margin: 10px 0 15px 0;
+    opacity: 0.6;
+}
 
+/* 下半部：詳細資料區 (技能、裝備) */
+.profile-details-section {
+    font-family: var(--font-primary);
+}
+
+/* 每一行資料的 Flex 設定 (用於對齊標題與內容) */
+.profile-field {
+    display: flex;
+    align-items: flex-start; /* 內容多行時，標題固定在頂部 */
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+/* 標題樣式 (技能：、裝備：) */
 .profile-label {
-    flex-shrink: 0;           /* 關鍵：禁止標題被壓縮換行 */
-    margin-right: 2px;        /* 依照需求：縮小與內容的間距 */
+    flex-shrink: 0;    /* 標題不壓縮 */
+    margin-right: 2px; /* 標題與內容的間距 */
     font-weight: bold;
     color: #555;
-    white-space: nowrap;      /* 強制標題不換行 */
+    white-space: nowrap;
 }
 
+/* 內容數值樣式 */
 .profile-value {
-    flex-grow: 1;             /* 佔滿右側剩餘空間 */
     color: #000;
-    word-break: break-all;    /* 確保長網址或長英文會自動換行 */
-    text-align: left;         /* 確保文字靠左對齊 */
+    word-break: break-all; /* 避免長英文字串破版 */
+    text-align: left;
 }
 
 /* D. 預約/經驗/租借歷史頁 */

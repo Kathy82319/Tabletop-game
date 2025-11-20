@@ -107,25 +107,37 @@
         <div id="qrcode"></div>
     </div>
     
-    <div class="profile-card">
-        <div class="profile-avatar-section">
-            <img id="profile-picture" class="profile-avatar-img" src="placeholder.jpg" alt="Avatar">
-        </div>
-        <div class="profile-info-section">
-            <h2 id="display-name" class="profile-name">讀取中...</h2>
-
-<div class="profile-class">
-    <span class="profile-label">職業：</span>
-    <span class="profile-value">
-        <span id="user-class">--</span> <span id="user-perk-text" style="font-size:0.9em; color:#000000;"></span>
-    </span>
-</div>
-            
-            <div class="profile-level-row">
-                <span>等級：<span id="user-level">--</span></span>
-                <span>經驗值：<span id="user-exp">--</span></span>
+<div class="profile-card">
+        <div class="profile-header-section">
+            <div class="profile-avatar-container">
+                <img id="profile-picture" class="profile-avatar-img" src="placeholder.jpg" alt="Avatar">
             </div>
-            
+            <div class="profile-basic-info">
+                <h2 id="display-name" class="profile-name">讀取中...</h2>
+                
+                <div class="profile-row-item">
+                    <span class="profile-label">職業：</span>
+                    <span class="profile-value">
+                        <span id="user-class">--</span> <span id="user-perk-text" style="font-size:0.9em; color:#666;"></span>
+                    </span>
+                </div>
+                
+                <div class="profile-level-container">
+                    <div class="profile-row-item">
+                        <span class="profile-label">等級：</span>
+                        <span id="user-level" class="profile-value">--</span>
+                    </div>
+                    <div class="profile-row-item">
+                        <span class="profile-label">經驗值：</span>
+                        <span id="user-exp" class="profile-value">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-divider"></div>
+
+        <div class="profile-details-section">
             <div class="profile-field" id="field-skill">
                 <span class="profile-label">技能：</span>
                 <span id="user-skill" class="profile-value">--</span>
