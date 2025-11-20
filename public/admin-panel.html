@@ -338,6 +338,23 @@
     .calendar-booking:hover .calendar-cancel-btn {
         display: block; /* 滑鼠移上去時顯示 */
     }
+    #edit-user-form {
+        overflow-y: auto;   /* 內容過長時顯示垂直滾動條 */
+        flex: 1;            /* 讓表單自動填滿 modal 剩餘空間 */
+        padding-right: 5px; /* 避免滾動條遮擋住輸入框最右邊 */
+        
+        /* 確保表單在 flex 容器中能正確計算高度 */
+        display: flex;      
+        flex-direction: column;
+    }
+
+    /* 讓按鈕區域保持在底部 (選擇性，若想讓按鈕跟著滾動則不需要這行) */
+    /* 若加上這行，中間內容滾動時，儲存按鈕會固定在底部 */
+    #edit-user-form .form-actions {
+        margin-top: auto;
+        padding-top: 20px;
+        padding-bottom: 10px; /* 預留底部空間 */
+    }
     </style>
 </head>
 <body>
