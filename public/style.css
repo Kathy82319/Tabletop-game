@@ -454,6 +454,75 @@ input[readonly] {
     padding: 15px 5px; /* 增加垂直 padding */
 }
 
+/* 個人資料卡片容器 */
+.profile-card {
+    background-color: #f9f4e8; /* 米黃色背景 */
+    border: 2px solid #b8860b; /* 金色邊框 */
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.profile-avatar-section {
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.profile-avatar-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid #b8860b;
+    object-fit: cover;
+    background-color: #fff;
+}
+
+.profile-info-section {
+    flex-grow: 1;
+    font-family: var(--font-primary);
+}
+
+.profile-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0 0 5px 0;
+    color: #333;
+}
+
+.profile-class {
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 10px;
+    font-style: italic;
+}
+
+/* 等級與經驗值併排 */
+.profile-level-row {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dashed #b8860b;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+.profile-field {
+    margin-bottom: 8px;
+}
+
+.profile-label {
+    font-weight: bold;
+    color: #555;
+    margin-right: 5px;
+}
+
+.profile-value {
+    color: #000;
+}
+
 /* D. 預約/經驗/租借歷史頁 */
 /* 樣式已由通用 .card, h1, .details-back-button 覆蓋 */
 
