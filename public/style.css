@@ -457,7 +457,7 @@ input[readonly] {
 /* 個人資料卡片容器 */
 .profile-card {
     background-color: #f9f4e8; /* 米黃色背景 */
-    border: 2px solid #b8860b; /* 金色邊框 */
+    border: 2px solid #ecaa04; /* 金色邊框 */
     border-radius: 10px;
     padding: 20px;
     margin: 20px 0;
@@ -476,7 +476,7 @@ input[readonly] {
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    border: 3px solid #b8860b;
+    border: 3px solid #ecaa04;
     object-fit: cover;
     background-color: #fff;
 }
