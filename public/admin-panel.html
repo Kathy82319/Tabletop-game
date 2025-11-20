@@ -412,11 +412,13 @@
     <div class="page-header">
         <h2>顧客管理</h2>
     </div>
-    <div class="filter-bar" style="border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 15px;">
-        <button id="tab-users-list" class="action-btn" style="background-color: var(--primary-color);">顧客總表</button>
-        </div>
 
-    <div id="users-list-container">
+    <div class="sub-nav-tabs">
+        <button class="sub-tab-btn active" data-target="view-user-list">顧客總表</button>
+        <button class="sub-tab-btn" data-target="view-membership-settings">會員制度設定</button>
+    </div>
+
+    <div id="view-user-list" class="sub-view-container">
         <input type="text" id="user-search-input" placeholder="搜尋 LINE / 暱稱 / 真實姓名 / 職業 / 標籤..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
         <table>
             <thead>
@@ -425,32 +427,28 @@
             <tbody id="user-list-tbody"></tbody>
         </table>
     </div>
-</div>
 
-<div id="page-membership-settings" class="page">
-    <div class="page-header">
-        <h2>會員制度設定</h2>
-        <button id="btn-add-asset" class="action-btn btn-save">新增項目</button>
-    </div>
-    
-    <div class="filter-bar">
-        <div id="assets-type-filter" class="filter-group">
-            <button class="active" data-type="class">職業管理</button>
-            <button data-type="skill">技能管理</button>
-            <button data-type="equipment">裝備管理</button>
+    <div id="view-membership-settings" class="sub-view-container" style="display: none;">
+        <div class="filter-bar" style="margin-top: 15px;">
+            <div id="assets-type-filter" class="filter-group">
+                <button class="active" data-type="class">職業管理</button>
+                <button data-type="skill">技能管理</button>
+                <button data-type="equipment">裝備管理</button>
+            </div>
+            <button id="btn-add-asset" class="action-btn btn-save" style="margin-left: auto;">新增項目</button>
         </div>
-    </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>名稱</th>
-                <th id="asset-desc-header">福利 / 說明</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody id="assets-list-tbody"></tbody>
-    </table>
+        <table style="margin-top: 10px;">
+            <thead>
+                <tr>
+                    <th>名稱</th>
+                    <th id="asset-desc-header">福利 / 說明</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="assets-list-tbody"></tbody>
+        </table>
+    </div>
 </div>
 
 <div id="page-inventory" class="page">
@@ -1185,22 +1183,25 @@
 
 <div id="edit-asset-modal" class="modal-overlay">
     <div class="modal-content">
-        <div class="modal-header"><h3 id="modal-asset-title">編輯項目</h3><button class="modal-close">&times;</button></div>
+        <div class="modal-header">
+            <h3 id="modal-asset-title">編輯項目</h3>
+            <button class="modal-close">&times;</button>
+        </div>
         <form id="edit-asset-form">
             <input type="hidden" id="edit-asset-id">
             <input type="hidden" id="edit-asset-type">
             <div class="form-group">
                 <label>項目名稱</label>
-                <input type="text" id="edit-asset-name" required>
+                <input type="text" id="edit-asset-name" required placeholder="例如：戰士、火球術、新手劍">
             </div>
             <div class="form-group">
                 <label id="edit-asset-desc-label">內容說明</label>
-                <textarea id="edit-asset-desc" rows="4"></textarea>
+                <textarea id="edit-asset-desc" rows="4" placeholder="輸入福利內容或技能說明..."></textarea>
             </div>
             <div class="form-actions">
                 <button type="button" class="action-btn btn-cancel">取消</button>
                 <button type="submit" class="action-btn btn-save">儲存</button>
-                <button type="button" id="delete-asset-btn" class="action-btn" style="background-color: var(--danger-color); float: left;">刪除</button>
+                <button type="button" id="delete-asset-btn" class="action-btn" style="background-color: var(--danger-color); float: left; display: none;">刪除</button>
             </div>
         </form>
     </div>
