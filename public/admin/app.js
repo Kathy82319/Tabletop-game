@@ -16,6 +16,7 @@ const App = {
         'drafts': './modules/draftsManagement.js',
         'store-info': './modules/storeInfo.js',
         'scan': './modules/scanAndPoint.js',
+        'membership-settings': './modules/membershipSettings.js',
     },
 
 async handleRouteChange() {

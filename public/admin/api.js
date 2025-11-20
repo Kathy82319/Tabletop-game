@@ -30,6 +30,12 @@ export async function fetchAllUsers() {
     return await response.json();
 }
 export const api = {
+
+    // Game Assets (Membership Settings)
+    getGameAssets: () => request('/api/admin/game-assets'),
+    saveGameAsset: (data) => request('/api/admin/game-assets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+    deleteGameAsset: (id) => request('/api/admin/game-assets', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }),
+
     // Auth
     checkAuthStatus: () => request('/api/admin/auth/status'),
     

@@ -328,20 +328,27 @@ async function initializeProfilePage() {
 
 function updateProfileDisplay(data) {
     if (!data) return;
+    
+    // 基本資料
     document.getElementById('display-name').textContent = data.nickname || userProfile.displayName;
     document.getElementById('user-class').textContent = data.class || "無";
+    
+    // 如果有職業福利，顯示在職業旁邊
+    const perkText = data.perk && data.perk !== '無' && data.perk !== '無特殊優惠' ? `(${data.perk})` : '';
+    document.getElementById('user-perk-text').textContent = perkText;
+    
     document.getElementById('user-level').textContent = data.level;
     document.getElementById('user-exp').textContent = `${data.current_exp} / 10`;
 
-    const perkLine = document.getElementById('user-perk-line');
-    const perkSpan = document.getElementById('user-perk');
-    
-    if (perkLine && perkSpan && data.perk && data.class !== '無') {
-        perkSpan.textContent = data.perk;
-        perkLine.style.display = 'block'; 
-    } else if (perkLine) {
-        perkLine.style.display = 'none'; 
-    }
+    // 新增欄位處理：若為空則顯示 "無" 或隱藏
+    const setField = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value && value !== '无' ? value : '無';
+    };
+
+    setField('user-skill', data.skill);
+    setField('user-skill-desc', data.skill_description);
+    setField('user-equipment', data.equipment);
 }
 
 async function initializeMyBookingsPage() {

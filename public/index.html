@@ -107,16 +107,33 @@
         <div id="qrcode"></div>
     </div>
     
-    <div class="profile-details-grid">
-        <div class="profile-avatar">
-            <img id="profile-picture" src="placeholder.jpg" alt="Profile Picture">
+    <div class="profile-card">
+        <div class="profile-avatar-section">
+            <img id="profile-picture" class="profile-avatar-img" src="placeholder.jpg" alt="Avatar">
         </div>
-        <div class="profile-stats">
-                <h2 id="display-name">讀取中...</h2>
-                <p><strong>職業：</strong><span id="user-class">--</span></p>
-                <p><strong>等級：</strong><span id="user-level">--</span></p>
-                <p><strong>經驗值：</strong><span id="user-exp">-- / --</span></p>
-                <p id="user-perk-line" style="display: none;"><strong>職業福利：</strong><span id="user-perk"></span></p>
+        <div class="profile-info-section">
+            <h2 id="display-name" class="profile-name">讀取中...</h2>
+            <div class="profile-class">
+                職業：<span id="user-class">--</span> <span id="user-perk-text" style="font-size:0.8em;"></span>
+            </div>
+            
+            <div class="profile-level-row">
+                <span>等級：<span id="user-level">--</span></span>
+                <span>經驗值：<span id="user-exp">--</span></span>
+            </div>
+            
+            <div class="profile-field" id="field-skill">
+                <span class="profile-label">技能：</span>
+                <span id="user-skill" class="profile-value">--</span>
+            </div>
+            <div class="profile-field" id="field-skill-desc">
+                <span class="profile-label">技能說明：</span>
+                <span id="user-skill-desc" class="profile-value">--</span>
+            </div>
+            <div class="profile-field" id="field-equipment">
+                <span class="profile-label">裝備：</span>
+                <span id="user-equipment" class="profile-value">--</span>
+            </div>
         </div>
     </div>
 

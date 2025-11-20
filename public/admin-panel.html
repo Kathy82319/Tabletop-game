@@ -348,6 +348,7 @@
         <nav class="nav-tabs">
             <a href="#dashboard" class="active">儀表板</a>
             <a href="#users">顧客管理</a>
+            <a href="#membership-settings">會員制度設定</a>
             <a href="#inventory">庫存管理</a>
             <a href="#rentals">桌遊租借</a>
             <a href="#bookings">訂位管理</a>
@@ -391,18 +392,50 @@
             
         </div>
 
-        <div id="page-users" class="page">
-            <div class="page-header">
-                <h2>顧客總表</h2>
-            </div>
-            <input type="text" id="user-search-input" placeholder="依 LINE 名稱或暱稱搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
-            <table>
-                <thead>
-                    <tr><th>LINE 名稱 / 暱稱</th><th>等級</th><th>經驗值</th><th>職業</th><th>標籤</th><th>操作</th></tr>
-                </thead>
-                <tbody id="user-list-tbody"></tbody>
-            </table>
+<div id="page-users" class="page">
+    <div class="page-header">
+        <h2>顧客管理</h2>
+    </div>
+    <div class="filter-bar" style="border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 15px;">
+        <button id="tab-users-list" class="action-btn" style="background-color: var(--primary-color);">顧客總表</button>
         </div>
+
+    <div id="users-list-container">
+        <input type="text" id="user-search-input" placeholder="搜尋 LINE / 暱稱 / 真實姓名 / 職業 / 標籤..." style="width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 1rem;">
+        <table>
+            <thead>
+                <tr><th>LINE 名稱 / 暱稱</th><th>等級</th><th>經驗值</th><th>職業</th><th>標籤</th><th>操作</th></tr>
+            </thead>
+            <tbody id="user-list-tbody"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="page-membership-settings" class="page">
+    <div class="page-header">
+        <h2>會員制度設定</h2>
+        <button id="btn-add-asset" class="action-btn btn-save">新增項目</button>
+    </div>
+    
+    <div class="filter-bar">
+        <div id="assets-type-filter" class="filter-group">
+            <button class="active" data-type="class">職業管理</button>
+            <button data-type="skill">技能管理</button>
+            <button data-type="equipment">裝備管理</button>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>名稱</th>
+                <th id="asset-desc-header">福利 / 說明</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="assets-list-tbody"></tbody>
+    </table>
+</div>
 
 <div id="page-inventory" class="page">
     <div class="page-header">
@@ -733,46 +766,59 @@
                 <h3 id="modal-user-title">編輯使用者</h3>
                 <button class="modal-close">&times;</button>
             </div>
-            <form id="edit-user-form">
-                <input type="hidden" id="edit-user-id">
-                <div class="form-group">
-                    <label for="edit-level-input">等級</label>
-                    <input type="number" id="edit-level-input" min="1" required>
-                </div>
-                <div class="form-group">
-                    <label for="edit-exp-input">經驗值</label>
-                    <input type="number" id="edit-exp-input" min="0" required>
-                </div>
-                <div class="form-group">
-                    <label for="edit-class-select">職業</label>
-                    <select id="edit-class-select"></select>
-                    <input type="text" id="edit-class-other-input" placeholder="請輸入自訂職業" style="display: none; margin-top: 10px;">
-                </div>
-                <div class="form-group">
-                    <label for="edit-perk-select">職業內容 (福利)</label>
-                    <select id="edit-perk-select"></select>
-                    <input type="text" id="edit-perk-other-input" placeholder="請輸入自訂福利" style="display: none; margin-top: 10px;">
-                </div>
-                <div class="form-group">
-                    <label for="edit-tag-select">標籤</label>
-                    <select id="edit-tag-select">
-                        <option value="">無</option>
-                        <option value="會員">會員</option>
-                        <option value="員工">員工</option>
-                        <option value="黑名單">黑名單</option>
-                        <option value="other">其他 (自訂)</option>
-                    </select>
-                    <input type="text" id="edit-tag-other-input" placeholder="請輸入自訂標籤" style="display: none; margin-top: 10px;">
-                </div>
-<div class="form-group">
-    <label for="edit-notes-textarea">備註</label>
-    <textarea id="edit-notes-textarea" rows="4" placeholder="記錄客人的特殊事項..."></textarea>
-</div>                
-                <div class="form-actions">
-                    <button type="button" class="action-btn btn-cancel">取消</button>
-                    <button type="submit" class="action-btn btn-save">儲存</button>
-                </div>
-            </form>
+<form id="edit-user-form">
+    <input type="hidden" id="edit-user-id">
+    
+    <div class="sub-grid">
+        <div class="form-group"><label>等級</label><input type="number" id="edit-level-input" min="1"></div>
+        <div class="form-group"><label>經驗值</label><input type="number" id="edit-exp-input" min="0"></div>
+    </div>
+
+    <div class="form-group">
+        <label>職業 (Class)</label>
+        <select id="edit-class-select"></select>
+        <input type="text" id="edit-class-other-input" placeholder="自訂職業" style="display:none; margin-top:5px;">
+    </div>
+    <div class="form-group">
+        <label>職業福利 (Perk)</label>
+        <input type="text" id="edit-perk-input" placeholder="對應職業的福利內容">
+    </div>
+    
+    <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
+
+    <div class="form-group">
+        <label>技能 (Skill)</label>
+        <select id="edit-skill-select"></select>
+        <input type="text" id="edit-skill-other-input" placeholder="自訂技能" style="display:none; margin-top:5px;">
+    </div>
+    <div class="form-group">
+        <label>技能說明 (Description)</label>
+        <textarea id="edit-skill-desc-input" rows="2" placeholder="技能的效果說明"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label>裝備 (Equipment)</label>
+        <select id="edit-equipment-select"></select>
+        <input type="text" id="edit-equipment-other-input" placeholder="自訂裝備" style="display:none; margin-top:5px;">
+    </div>
+
+    <div class="form-group">
+        <label>標籤</label>
+        <select id="edit-tag-select"></select>
+        <input type="text" id="edit-tag-other-input" style="display:none; margin-top:5px;">
+    </div>
+    
+    <div class="form-group">
+        <label>備註</label>
+        <textarea id="edit-notes-textarea" rows="3"></textarea>
+    </div>
+
+    <div class="form-actions">
+        <button type="button" class="action-btn btn-cancel">取消</button>
+        <button type="submit" class="action-btn btn-save">儲存</button>
+    </div>
+</form>
+
         </div>
     </div>
 
@@ -1120,6 +1166,31 @@
     </div>
     <div id="confirmation-modal" class="modal-overlay">
         </div>
+
+<div id="edit-asset-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header"><h3 id="modal-asset-title">編輯項目</h3><button class="modal-close">&times;</button></div>
+        <form id="edit-asset-form">
+            <input type="hidden" id="edit-asset-id">
+            <input type="hidden" id="edit-asset-type">
+            <div class="form-group">
+                <label>項目名稱</label>
+                <input type="text" id="edit-asset-name" required>
+            </div>
+            <div class="form-group">
+                <label id="edit-asset-desc-label">內容說明</label>
+                <textarea id="edit-asset-desc" rows="4"></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="action-btn btn-cancel">取消</button>
+                <button type="submit" class="action-btn btn-save">儲存</button>
+                <button type="button" id="delete-asset-btn" class="action-btn" style="background-color: var(--danger-color); float: left;">刪除</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
 </body>
 </html>
 

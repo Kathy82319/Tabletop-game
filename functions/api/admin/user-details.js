@@ -15,8 +15,9 @@ export async function onRequest(context) {
 
     const userProfile = await db.prepare(
         `SELECT user_id, line_display_name, nickname, real_name, phone, email, 
-                preferred_games, class, level, current_exp, tag, perk, notes, created_at 
-         FROM Users WHERE user_id = ?`
+       preferred_games, class, level, current_exp, tag, perk, notes, created_at,
+       skill, skill_description, equipment
+        FROM Users WHERE user_id = ?`
     ).bind(userId).first();
 
     if (!userProfile) {

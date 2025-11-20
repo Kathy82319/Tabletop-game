@@ -4,6 +4,9 @@ import { ui } from '../ui.js';
 
 let allUsers = []; // 快取所有使用者資料
 let allDrafts = []; // 快取訊息草稿
+let gameAssetsCache = [];
+
+
 
 // 渲染使用者列表
 function renderUserList(users) {
@@ -64,77 +67,109 @@ function handleUserSearch() {
 }
 
 // 開啟編輯使用者彈窗
+async function loadGameAssets() {
+    try {
+        gameAssetsCache = await api.getGameAssets();
+    } catch (e) { console.error("無法載入資源設定"); }
+}
+
+// 產生下拉選單的輔助函式
+function setupAssetDropdown(selectId, otherInputId, type, currentValue, onSelectCallback) {
+    const select = document.getElementById(selectId);
+    const otherInput = document.getElementById(otherInputId);
+    
+    // 1. 找出該類型的所有設定選項
+    const assets = gameAssetsCache.filter(a => a.type === type);
+    
+    select.innerHTML = '<option value="">無</option>';
+    assets.forEach(asset => {
+        const opt = document.createElement('option');
+        opt.value = asset.name; // 存名稱即可
+        opt.textContent = asset.name;
+        opt.dataset.desc = asset.description || ''; // 把說明藏在 dataset
+        select.appendChild(opt);
+    });
+    select.add(new Option('其他 (自訂)', 'other'));
+
+    // 2. 判斷當前值是否在選項內
+    const isStandard = assets.some(a => a.name === currentValue);
+    if (currentValue && !isStandard) {
+        select.value = 'other';
+        otherInput.style.display = 'block';
+        otherInput.value = currentValue;
+    } else {
+        select.value = currentValue || '';
+        otherInput.style.display = 'none';
+    }
+
+    // 3. 綁定變更事件
+    select.onchange = () => {
+        if (select.value === 'other') {
+            otherInput.style.display = 'block';
+            otherInput.value = '';
+            otherInput.focus();
+        } else {
+            otherInput.style.display = 'none';
+            // 如果有 callback (例如技能選了要自動帶入說明)，則執行
+            if (onSelectCallback) {
+                const selectedOpt = select.options[select.selectedIndex];
+                onSelectCallback(selectedOpt.dataset.desc || '');
+            }
+        }
+    };
+}
+
 function openEditUserModal(userId) {
     const user = allUsers.find(u => u.user_id === userId);
-    if (!user) {
-        return ui.toast.error('找不到該使用者！');
-    }
-    const modal = document.getElementById('edit-user-modal');
-    if (!modal) return;
+    if (!user) return ui.toast.error('找不到該使用者！');
+    
+    // 確保資源已載入
+    if (gameAssetsCache.length === 0) loadGameAssets().then(() => _openModal(user));
+    else _openModal(user);
+}
 
-    // 填入基本資料
+function _openModal(user) {
+    const modal = document.getElementById('edit-user-modal');
+    
     modal.querySelector('#edit-user-id').value = user.user_id;
-    modal.querySelector('#modal-user-title').textContent = `編輯：${user.line_display_name}`;
-    modal.querySelector('#edit-level-input').value = user.level || 1;
-    modal.querySelector('#edit-exp-input').value = user.current_exp || 0;
+    modal.querySelector('#modal-user-title').textContent = `編輯：${user.nickname || user.line_display_name}`;
+    modal.querySelector('#edit-level-input').value = user.level;
+    modal.querySelector('#edit-exp-input').value = user.current_exp;
     modal.querySelector('#edit-notes-textarea').value = user.notes || '';
     
-    // 取得所有下拉選單與輸入框元素
-    const classSelect = modal.querySelector('#edit-class-select');
-    const classOtherInput = modal.querySelector('#edit-class-other-input');
-    const perkSelect = modal.querySelector('#edit-perk-select');
-    const perkOtherInput = modal.querySelector('#edit-perk-other-input');
-    const tagSelect = modal.querySelector('#edit-tag-select');
-    const tagOtherInput = modal.querySelector('#edit-tag-other-input');
+    modal.querySelector('#edit-perk-input').value = user.perk || '';
+    modal.querySelector('#edit-skill-desc-input').value = user.skill_description || '';
 
-    // 通用函式：取得所有使用者已使用的不重複選項
-    const getUniqueOptions = (field, defaults) => {
-        const usedValues = allUsers.map(u => u[field]).filter(v => v && v.trim() !== '');
-        return [...defaults, ...new Set(usedValues.filter(v => !defaults.includes(v)))];
-    };
+    // 設定職業 (Class) - 連動：選職業自動帶入該職業的福利 (Perk)
+    setupAssetDropdown('edit-class-select', 'edit-class-other-input', 'class', user.class, (desc) => {
+        document.getElementById('edit-perk-input').value = desc;
+    });
 
-    // 定義預設選項
-    const defaultClasses = ['無'];
-    const defaultPerks = ['無特殊優惠'];
+    // 設定技能 (Skill) - 連動：選技能自動帶入技能說明
+    setupAssetDropdown('edit-skill-select', 'edit-skill-other-input', 'skill', user.skill, (desc) => {
+        document.getElementById('edit-skill-desc-input').value = desc;
+    });
+
+    // 設定裝備 (Equipment)
+    setupAssetDropdown('edit-equipment-select', 'edit-equipment-other-input', 'equipment', user.equipment);
+
+    // 設定標籤 (Tag) - 標籤目前沒有在 GameAssets，沿用舊邏輯或簡單處理
+    const tagSelect = document.getElementById('edit-tag-select');
+    const tagInput = document.getElementById('edit-tag-other-input');
     const defaultTags = ['無', '會員', '員工', '黑名單'];
-
-    // 產生動態選項列表
-    const uniqueClasses = getUniqueOptions('class', defaultClasses);
-    const uniquePerks = getUniqueOptions('perk', defaultPerks);
-    const uniqueTags = getUniqueOptions('tag', defaultTags);
-
-    // 通用函式：填充下拉選單並處理「其他」邏輯
-    const populateDropdown = (selectEl, otherInputEl, options, currentValue) => {
-        selectEl.innerHTML = '';
-        options.forEach(opt => selectEl.add(new Option(opt, opt)));
-        selectEl.add(new Option('其他 (自訂)', 'other'));
-
-        const valToCheck = currentValue || options[0]; 
-        
-        if (options.includes(valToCheck)) {
-            selectEl.value = valToCheck;
-            otherInputEl.style.display = 'none'; 
-            otherInputEl.value = '';
-        } else {
-            selectEl.value = 'other'; 
-            otherInputEl.style.display = 'block'; 
-            otherInputEl.value = currentValue || '';
-        }
-
-        selectEl.onchange = () => { 
-            if (selectEl.value === 'other') {
-                otherInputEl.style.display = 'block';
-                otherInputEl.focus();
-            } else {
-                otherInputEl.style.display = 'none';
-            }
-        };
-    };
+    tagSelect.innerHTML = '';
+    defaultTags.forEach(t => tagSelect.add(new Option(t, t)));
+    tagSelect.add(new Option('其他', 'other'));
     
-    // 應用到三個欄位
-    populateDropdown(classSelect, classOtherInput, uniqueClasses, user.class);
-    populateDropdown(perkSelect, perkOtherInput, uniquePerks, user.perk);
-    populateDropdown(tagSelect, tagOtherInput, uniqueTags, user.tag);
+    if (defaultTags.includes(user.tag)) {
+        tagSelect.value = user.tag || '無';
+        tagInput.style.display = 'none';
+    } else {
+        tagSelect.value = 'other';
+        tagInput.style.display = 'block';
+        tagInput.value = user.tag;
+    }
+    tagSelect.onchange = () => { tagInput.style.display = tagSelect.value === 'other' ? 'block' : 'none'; };
 
     ui.showModal('#edit-user-modal');
 }
@@ -143,45 +178,35 @@ function openEditUserModal(userId) {
 async function handleEditUserFormSubmit(event) {
     event.preventDefault();
     const form = event.target;
-    const userId = form.querySelector('#edit-user-id').value;
-    const button = form.querySelector('button[type="submit"]');
-    
-    // 處理職業值
-    const classSelect = form.querySelector('#edit-class-select');
-    let finalClass = classSelect.value;
-    if (finalClass === 'other') finalClass = form.querySelector('#edit-class-other-input').value.trim() || '無';
-    
-    // 處理福利值
-    const perkSelect = form.querySelector('#edit-perk-select');
-    let finalPerk = perkSelect.value;
-    if (finalPerk === 'other') finalPerk = form.querySelector('#edit-perk-other-input').value.trim() || '無特殊優惠';
-
-    // 處理標籤值
-    const tagSelect = form.querySelector('#edit-tag-select');
-    let finalTag = tagSelect.value;
-    if (finalTag === 'other') finalTag = form.querySelector('#edit-tag-other-input').value.trim() || '無';
-
-    const updatedData = {
-        userId: userId,
-        level: parseInt(form.querySelector('#edit-level-input').value, 10),
-        current_exp: parseInt(form.querySelector('#edit-exp-input').value, 10),
-        user_class: finalClass,
-        tag: finalTag,
-        perk: finalPerk,
-        notes: form.querySelector('#edit-notes-textarea').value.trim(),
+    const getValue = (selId, inpId) => {
+        const val = form.querySelector(selId).value;
+        return val === 'other' ? form.querySelector(inpId).value.trim() : val;
     };
-    
-    button.textContent = '儲存中...'; button.disabled = true;
+
+    const data = {
+        userId: form.querySelector('#edit-user-id').value,
+        level: form.querySelector('#edit-level-input').value,
+        current_exp: form.querySelector('#edit-exp-input').value,
+        user_class: getValue('#edit-class-select', '#edit-class-other-input'),
+        perk: form.querySelector('#edit-perk-input').value.trim(),
+        skill: getValue('#edit-skill-select', '#edit-skill-other-input'),
+        skill_description: form.querySelector('#edit-skill-desc-input').value.trim(),
+        equipment: getValue('#edit-equipment-select', '#edit-equipment-other-input'),
+        tag: getValue('#edit-tag-select', '#edit-tag-other-input'),
+        notes: form.querySelector('#edit-notes-textarea').value.trim()
+    };
+
+    const btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
     try {
-        await api.updateUserDetails(updatedData);
-        ui.toast.success('使用者資料更新成功！');
-        await init(); 
-        handleUserSearch();
+        await api.updateUserDetails(data);
+        ui.toast.success('更新成功');
         ui.hideModal('#edit-user-modal');
-    } catch (error) { 
-        ui.toast.error(`更新失敗：${error.message}`);
-    } finally { 
-        button.textContent = '儲存'; button.disabled = false; 
+        await init(); // 重新載入列表
+    } catch (e) {
+        ui.toast.error(e.message);
+    } finally {
+        btn.disabled = false;
     }
 }
 
