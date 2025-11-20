@@ -355,6 +355,43 @@
         padding-top: 20px;
         padding-bottom: 10px; /* 預留底部空間 */
     }
+
+    /* 子分頁導覽列樣式 */
+.sub-nav-tabs {
+    display: flex;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 15px;
+}
+
+.sub-tab-btn {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    color: #6c757d;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.sub-tab-btn:hover {
+    color: #007bff;
+}
+
+.sub-tab-btn.active {
+    color: #007bff;
+    border-bottom: 3px solid #007bff; /* 藍色底線 */
+}
+
+.sub-view-container {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
     </style>
 </head>
 <body>
