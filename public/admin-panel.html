@@ -811,65 +811,64 @@
                 </div>
         </div>
     </div>
-    <div id="edit-user-modal" class="modal-overlay">
+<div id="edit-user-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modal-user-title">編輯使用者</h3>
                 <button class="modal-close">&times;</button>
             </div>
-<form id="edit-user-form">
-    <input type="hidden" id="edit-user-id">
-    
-    <div class="sub-grid">
-        <div class="form-group"><label>等級</label><input type="number" id="edit-level-input" min="1"></div>
-        <div class="form-group"><label>經驗值</label><input type="number" id="edit-exp-input" min="0"></div>
-    </div>
+            <form id="edit-user-form">
+                <input type="hidden" id="edit-user-id">
+                
+                <div class="sub-grid">
+                    <div class="form-group"><label>等級</label><input type="number" id="edit-level-input" min="1"></div>
+                    <div class="form-group"><label>經驗值</label><input type="number" id="edit-exp-input" min="0"></div>
+                </div>
 
-    <div class="form-group">
-        <label>職業 (Class)</label>
-        <select id="edit-class-select"></select>
-        <input type="text" id="edit-class-other-input" placeholder="自訂職業" style="display:none; margin-top:5px;">
-    </div>
-    <div class="form-group">
-        <label>職業福利 (Perk)</label>
-        <input type="text" id="edit-perk-input" placeholder="對應職業的福利內容">
-    </div>
-    
-    <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
+                <div class="form-group">
+                    <label>職業 (Class)</label>
+                    <select id="edit-class-select"></select>
+                    <input type="text" id="edit-class-other-input" placeholder="自訂職業" style="display:none; margin-top:5px;">
+                </div>
+                <div class="form-group">
+                    <label>職業福利 (Perk)</label>
+                    <input type="text" id="edit-perk-input" placeholder="對應職業的福利內容">
+                </div>
+                
+                <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
 
-    <div class="form-group">
-        <label>技能 (Skill)</label>
-        <select id="edit-skill-select"></select>
-        <input type="text" id="edit-skill-other-input" placeholder="自訂技能" style="display:none; margin-top:5px;">
-    </div>
-    <div class="form-group">
-        <label>技能說明 (Description)</label>
-        <textarea id="edit-skill-desc-input" rows="2" placeholder="技能的效果說明"></textarea>
-    </div>
+                <div class="form-group">
+                    <label>技能 (Skill)</label>
+                    <select id="edit-skill-select"></select>
+                    <input type="text" id="edit-skill-other-input" placeholder="自訂技能" style="display:none; margin-top:5px;">
+                </div>
+                <div class="form-group">
+                    <label>技能說明 (Description)</label>
+                    <textarea id="edit-skill-desc-input" rows="2" placeholder="技能的效果說明"></textarea>
+                </div>
 
-    <div class="form-group">
-        <label>裝備 (Equipment)</label>
-        <select id="edit-equipment-select"></select>
-        <input type="text" id="edit-equipment-other-input" placeholder="自訂裝備" style="display:none; margin-top:5px;">
-    </div>
+                <div class="form-group">
+                    <label>裝備 (Equipment)</label>
+                    <select id="edit-equipment-select"></select>
+                    <input type="text" id="edit-equipment-other-input" placeholder="自訂裝備" style="display:none; margin-top:5px;">
+                </div>
 
-    <div class="form-group">
-        <label>標籤</label>
-        <select id="edit-tag-select"></select>
-        <input type="text" id="edit-tag-other-input" style="display:none; margin-top:5px;">
-    </div>
-    
-    <div class="form-group">
-        <label>備註</label>
-        <textarea id="edit-notes-textarea" rows="3"></textarea>
-    </div>
+                <div class="form-group">
+                    <label>標籤</label>
+                    <select id="edit-tag-select"></select>
+                    <input type="text" id="edit-tag-other-input" style="display:none; margin-top:5px;">
+                </div>
+                
+                <div class="form-group">
+                    <label>備註</label>
+                    <textarea id="edit-notes-textarea" rows="3"></textarea>
+                </div>
 
-    <div class="form-actions">
-        <button type="button" class="action-btn btn-cancel">取消</button>
-        <button type="submit" class="action-btn btn-save">儲存</button>
-    </div>
-</form>
-
+                <div class="form-actions">
+                    <button type="button" class="action-btn btn-cancel">取消</button>
+                    <button type="submit" class="action-btn btn-save">儲存</button>
+                </div>
+            </form>
         </div>
     </div>
 
