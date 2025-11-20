@@ -248,6 +248,7 @@ async function openEditUserModal(userId) {
     
     modal.querySelector('#edit-perk-input').value = user.perk || '';
     modal.querySelector('#edit-skill-desc-input').value = user.skill_description || '';
+    modal.querySelector('#edit-equipment-desc-input').value = user.equipment_description || '';
 
     setupAssetDropdown('edit-class-select', 'edit-class-other-input', 'class', user.class, (desc) => {
         document.getElementById('edit-perk-input').value = desc;
@@ -255,8 +256,9 @@ async function openEditUserModal(userId) {
     setupAssetDropdown('edit-skill-select', 'edit-skill-other-input', 'skill', user.skill, (desc) => {
         document.getElementById('edit-skill-desc-input').value = desc;
     });
-    setupAssetDropdown('edit-equipment-select', 'edit-equipment-other-input', 'equipment', user.equipment);
-
+    setupAssetDropdown('edit-equipment-select', 'edit-equipment-other-input', 'equipment', user.equipment, (desc) => {
+        document.getElementById('edit-equipment-desc-input').value = desc;
+    });
     const tagSelect = document.getElementById('edit-tag-select');
     const tagInput = document.getElementById('edit-tag-other-input');
     const defaultTags = ['無', '會員', '員工', '黑名單'];
@@ -295,6 +297,7 @@ async function handleEditUserFormSubmit(event) {
         skill: getValue('#edit-skill-select', '#edit-skill-other-input'),
         skill_description: form.querySelector('#edit-skill-desc-input').value.trim(),
         equipment: getValue('#edit-equipment-select', '#edit-equipment-other-input'),
+        equipment_description: form.querySelector('#edit-equipment-desc-input').value.trim(),
         tag: getValue('#edit-tag-select', '#edit-tag-other-input'),
         notes: form.querySelector('#edit-notes-textarea').value.trim()
     };

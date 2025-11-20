@@ -349,6 +349,7 @@ function updateProfileDisplay(data) {
     setField('user-skill', data.skill);
     setField('user-skill-desc', data.skill_description);
     setField('user-equipment', data.equipment);
+    setField('user-equipment-desc', data.equipment_description);
 }
 
 async function initializeMyBookingsPage() {

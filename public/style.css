@@ -497,7 +497,6 @@ input[readonly] {
     font-size: 1rem;
     color: #666;
     margin-bottom: 10px;
-    font-style: italic;
 }
 
 /* 等級與經驗值併排 */

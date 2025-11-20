@@ -5,21 +5,22 @@ export async function onRequest(context) {
     }
 
     const body = await context.request.json();
-    // 【修改】解構新增 skill, skill_description, equipment
-    const { userId, level, current_exp, tag, user_class, perk, notes, skill, skill_description, equipment } = body;
+    // 【修改 1】加入 equipment_description
+    const { userId, level, current_exp, tag, user_class, perk, notes, skill, skill_description, equipment, equipment_description } = body;
 
     if (!userId) return new Response(JSON.stringify({ error: '無效的使用者 ID。' }), { status: 400 });
 
     const db = context.env.DB;
 
-    // 【修改】SQL 語句加入新欄位
+    // 【修改 2】SQL 加入 equipment_description
     const stmt = db.prepare(`
         UPDATE Users 
         SET level = ?, current_exp = ?, tag = ?, class = ?, perk = ?, notes = ?,
-            skill = ?, skill_description = ?, equipment = ?
+            skill = ?, skill_description = ?, equipment = ?, equipment_description = ?
         WHERE user_id = ?
     `);
     
+    // 【修改 3】bind 加入對應變數
     await stmt.bind(
         Number(level) || 1, 
         Number(current_exp) || 0, 
@@ -30,6 +31,7 @@ export async function onRequest(context) {
         skill || '', 
         skill_description || '', 
         equipment || '',
+        equipment_description || '', // 新增這行
         userId
     ).run();
 
