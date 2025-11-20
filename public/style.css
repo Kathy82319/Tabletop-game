@@ -493,12 +493,18 @@ input[readonly] {
     color: #333;
 }
 
+.profile-class, 
+.profile-field {
+    display: flex;            /* 啟用 Flex 佈局 */
+    align-items: flex-start;  /* 文字從頂部開始對齊 (避免多行時置中) */
+    margin-bottom: 6px;       /* 行距稍微縮小一點，更緊湊 */
+    line-height: 1.5;         /* 設定舒適的行高 */
+}
+/* 針對職業欄位的特殊微調 (取消原本的 italic 斜體設定) */
 .profile-class {
     font-size: 1rem;
-    color: #000000;
-    margin-bottom: 10px;
+    color: #333; /* 加深顏色 */
 }
-
 /* 等級與經驗值併排 */
 .profile-level-row {
     display: flex;
@@ -508,18 +514,21 @@ input[readonly] {
     margin-bottom: 10px;
 }
 
-.profile-field {
-    margin-bottom: 8px;
-}
+
 
 .profile-label {
+    flex-shrink: 0;           /* 關鍵：禁止標題被壓縮換行 */
+    margin-right: 2px;        /* 依照需求：縮小與內容的間距 */
     font-weight: bold;
     color: #555;
-    margin-right: 5px;
+    white-space: nowrap;      /* 強制標題不換行 */
 }
 
 .profile-value {
+    flex-grow: 1;             /* 佔滿右側剩餘空間 */
     color: #000;
+    word-break: break-all;    /* 確保長網址或長英文會自動換行 */
+    text-align: left;         /* 確保文字靠左對齊 */
 }
 
 /* D. 預約/經驗/租借歷史頁 */
