@@ -42,8 +42,90 @@
             <button id="clear-filters">清除所有篩選</button>
         </div>
         <div id="game-list-container"><p>正在載入桌遊資料...</p></div>
+
+        <button id="fab-quiz-btn" title="桌遊挑選助手">
+        <span style="font-size: 1.5rem;">🧞‍♂️</span>
+        </button>
     </div>
     
+<div id="quiz-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content quiz-modal-content">
+        <button class="modal-close-btn" onclick="RecWizard.close()">&times;</button>
+        
+        <div id="quiz-wizard-container">
+            <div class="quiz-progress-container">
+                <div id="quiz-progress-bar"></div>
+            </div>
+
+            <div id="quiz-step-1" class="quiz-step">
+                <h3>Q1. 請問有多少人要一起玩？</h3>
+                <div class="quiz-option-grid">
+                    <button onclick="RecWizard.select('players', 1)">1人</button>
+                    <button onclick="RecWizard.select('players', 2)">2人</button>
+                    <button onclick="RecWizard.select('players', 3)">3人</button>
+                    <button onclick="RecWizard.select('players', 4)">4人</button>
+                    <button onclick="RecWizard.select('players', 5)">5人</button>
+                    <button onclick="RecWizard.select('players', 6)">6人</button>
+                    <button onclick="RecWizard.select('players', 7)">7人以上</button>
+                </div>
+            </div>
+
+            <div id="quiz-step-2" class="quiz-step" style="display: none;">
+                <h3>Q2. 預算範圍 (售價) 是？</h3>
+                <div class="quiz-option-list">
+                    <button onclick="RecWizard.select('price', 'low')">500元以內</button>
+                    <button onclick="RecWizard.select('price', 'mid')">500 ~ 1000元</button>
+                    <button onclick="RecWizard.select('price', 'high')">1000 ~ 2000元</button>
+                    <button onclick="RecWizard.select('price', 'expensive')">2000元以上</button>
+                    <button class="secondary" onclick="RecWizard.select('price', 'all')">不介意價格</button>
+                </div>
+                <div class="quiz-nav">
+                    <button class="text-btn" onclick="RecWizard.prev(1)">← 上一題</button>
+                </div>
+            </div>
+
+            <div id="quiz-step-3" class="quiz-step" style="display: none;">
+                <h3>Q3. 今天想玩什麼類型的遊戲？</h3>
+                <div class="quiz-option-grid">
+                    <button onclick="RecWizard.select('tag', '策略燒腦')">🧠 策略燒腦</button>
+                    <button onclick="RecWizard.select('tag', '家庭')">🏠 家庭</button>
+                    <button onclick="RecWizard.select('tag', '派對')">🎉 派對</button>
+                    <button onclick="RecWizard.select('tag', '陣營')">🎭 陣營</button>
+                    <button onclick="RecWizard.select('tag', '兒童')">👶 兒童</button>
+                    <button onclick="RecWizard.select('tag', '輕鬆小品')">☕ 輕鬆小品</button>
+                    <button onclick="RecWizard.select('tag', '合作闖關')">🤝 合作闖關</button>
+                </div>
+                <div class="quiz-nav">
+                    <button class="text-btn" onclick="RecWizard.prev(2)">← 上一題</button>
+                </div>
+            </div>
+
+            <div id="quiz-step-4" class="quiz-step" style="display: none;">
+                <h3>Q4. 希望遊戲的難度是？</h3>
+                <div class="quiz-option-list">
+                    <button onclick="RecWizard.select('difficulty', '簡單')">簡單 (輕鬆好上手)</button>
+                    <button onclick="RecWizard.select('difficulty', '普通')">普通 (稍微動點腦)</button>
+                    <button onclick="RecWizard.select('difficulty', '困難')">困難 (挑戰極限)</button>
+                    <button onclick="RecWizard.select('difficulty', '專家')">專家 (重度策略)</button>
+                    <button class="secondary" onclick="RecWizard.select('difficulty', 'all')">都可以</button>
+                </div>
+                <div class="quiz-nav">
+                    <button class="text-btn" onclick="RecWizard.prev(3)">← 上一題</button>
+                </div>
+            </div>
+
+            <div id="quiz-result" class="quiz-step" style="display: none;">
+                <h3>🎯 推薦結果</h3>
+                <p id="quiz-result-count" style="text-align: center; color: #666; margin-bottom: 15px;"></p>
+                <div id="quiz-result-list" class="game-list-grid" style="max-height: 50vh; overflow-y: auto;"></div>
+                <div class="quiz-nav">
+                    <button class="text-btn" onclick="RecWizard.restart()">🔄 重新測驗</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
     <div id="page-game-details">
         <button class="details-back-button">← 返回列表</button>
         

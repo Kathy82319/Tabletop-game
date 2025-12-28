@@ -55,6 +55,152 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
+
+// --- [新增] 問卷助手邏輯 ---
+const RecWizard = {
+    answers: {},
+    allGames: [], // 這裡會儲存從 API 取得的遊戲列表
+
+    // 初始化：綁定按鈕事件
+    init: function() {
+        const fab = document.getElementById('fab-quiz-btn');
+        if (fab) {
+            fab.addEventListener('click', () => this.open());
+        }
+    },
+
+    open: function() {
+        // 嘗試取得全域的遊戲資料，如果 script.js 其他地方已經有 fetch 過，可以直接用
+        // 這裡假設我們需要重新確認資料存在
+        // 如果您的 script.js 裡有全域變數 games (或其他名稱)，請替換這裡
+        if (this.allGames.length === 0) {
+            // 簡易防呆，嘗試從現有的 DOM 或變數抓取，或再次 fetch
+            fetch('/api/get-boardgames')
+                .then(r => r.json())
+                .then(data => { this.allGames = data; });
+        }
+        
+        document.getElementById('quiz-modal').style.display = 'flex';
+        this.restart();
+    },
+
+    close: function() {
+        document.getElementById('quiz-modal').style.display = 'none';
+    },
+
+    restart: function() {
+        this.answers = {};
+        this.showStep(1);
+    },
+
+    select: function(key, value) {
+        this.answers[key] = value;
+        const currentStep = Object.keys(this.answers).length;
+        
+        if (currentStep < 4) {
+            this.showStep(currentStep + 1);
+        } else {
+            this.showResults();
+        }
+    },
+
+    prev: function(step) {
+        // 刪除該步驟之後的答案，並回到該步驟
+        // 這裡簡化處理，直接顯示指定步驟即可
+        this.showStep(step);
+    },
+
+    showStep: function(step) {
+        // 隱藏所有步驟
+        document.querySelectorAll('.quiz-step').forEach(el => el.style.display = 'none');
+        // 顯示目標步驟
+        const target = document.getElementById(`quiz-step-${step}`);
+        if(target) target.style.display = 'block';
+        
+        // 更新進度條
+        const progress = (step / 4) * 100;
+        document.getElementById('quiz-progress-bar').style.width = `${progress}%`;
+    },
+
+    showResults: function() {
+        document.querySelectorAll('.quiz-step').forEach(el => el.style.display = 'none');
+        document.getElementById('quiz-result').style.display = 'block';
+        document.getElementById('quiz-progress-bar').style.width = '100%';
+
+        const { players, price, tag, difficulty } = this.answers;
+        
+        const results = this.allGames.filter(game => {
+            // 1. 人數
+            let matchPlayers = false;
+            if (players === 7) matchPlayers = (game.max_players >= 7);
+            else matchPlayers = (game.min_players <= players && game.max_players >= players);
+            if (!matchPlayers) return false;
+
+            // 2. 價格 (假設資料庫欄位是 sale_price)
+            let matchPrice = false;
+            const p = game.sale_price || 0;
+            if (price === 'all') matchPrice = true;
+            else if (price === 'low') matchPrice = (p <= 500);
+            else if (price === 'mid') matchPrice = (p > 500 && p <= 1000);
+            else if (price === 'high') matchPrice = (p > 1000 && p <= 2000);
+            else if (price === 'expensive') matchPrice = (p > 2000);
+            if (!matchPrice) return false;
+
+            // 3. 類型 (標籤) - 假設 tags 是字串 "派對, 陣營"
+            if (tag && (!game.tags || !game.tags.includes(tag))) return false;
+
+            // 4. 難易度
+            if (difficulty !== 'all' && game.difficulty !== difficulty) return false;
+
+            return true;
+        });
+
+        // 渲染結果
+        const container = document.getElementById('quiz-result-list');
+        const countDisplay = document.getElementById('quiz-result-count');
+        container.innerHTML = '';
+
+        if (results.length === 0) {
+            countDisplay.textContent = '😢 找不到完全符合的遊戲，請嘗試放寬條件';
+        } else {
+            countDisplay.textContent = `為您推薦以下 ${results.length} 款遊戲：`;
+            results.forEach(game => {
+                // 這裡盡量重用原本圖鑑卡片的 CSS class (例如 game-card)
+                const card = document.createElement('div');
+                card.className = 'game-card'; // 假設您原本的 CSS class 是這個
+                card.innerHTML = `
+                    <div class="game-card-image-container">
+                        <img src="${game.image_url || 'placeholder.jpg'}" alt="${game.name}" loading="lazy">
+                    </div>
+                    <div class="game-card-info">
+                        <h3 class="game-card-title">${game.name}</h3>
+                        <div class="game-card-meta">
+                            <span>👥 ${game.min_players}-${game.max_players}人</span>
+                            <span>⭐ ${game.difficulty}</span>
+                        </div>
+                    </div>
+                `;
+                // 點擊後：關閉彈窗，並呼叫原本的詳情頁邏輯
+                card.onclick = () => {
+                    this.close();
+                    // 假設 script.js 裡原本就有 showGameDetails 這個函式
+                    if (typeof showGameDetails === 'function') {
+                        showGameDetails(game);
+                    } else {
+                        console.error('找不到 showGameDetails 函式，請確認 script.js');
+                    }
+                };
+                container.appendChild(card);
+            });
+        }
+    }
+};
+
+// 在 DOMContentLoaded 或 initApp 中呼叫
+document.addEventListener('DOMContentLoaded', () => {
+    RecWizard.init();
+});
+
     // =================================================================
     // 頁面切換邏輯 (重構)
     // =================================================================
@@ -1131,3 +1277,4 @@ async function initializeInfoPage() {
 
     initializeLiff();
 });
+

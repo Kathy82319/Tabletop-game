@@ -881,3 +881,98 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     font-weight: bold;
 }
 
+/* --- 漂浮按鈕 (FAB) --- */
+#fab-quiz-btn {
+    position: fixed;
+    bottom: 80px; /* 避開底部 Tab Bar */
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--primary-color, #007bff);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    cursor: pointer;
+    z-index: 999; /* 確保在最上層 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.2s;
+}
+
+#fab-quiz-btn:hover {
+    transform: scale(1.1);
+    background-color: #0056b3;
+}
+
+/* --- 問卷彈窗樣式 --- */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(3px); /* 背景模糊效果 */
+}
+
+.quiz-modal-content {
+    background: white;
+    width: 90%;
+    max-width: 500px;
+    padding: 25px;
+    border-radius: 16px;
+    position: relative;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 10px; right: 15px;
+    background: none; border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #999;
+}
+
+/* 選項與排版 */
+.quiz-step h3 { text-align: center; margin-bottom: 20px; color: #333; }
+
+.quiz-option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.quiz-option-list { display: flex; flex-direction: column; gap: 10px; }
+
+.quiz-step button:not(.text-btn):not(.modal-close-btn) {
+    padding: 12px;
+    border: 2px solid #eee;
+    background: white;
+    border-radius: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.quiz-step button:not(.text-btn):hover {
+    border-color: var(--primary-color, #007bff);
+    background: #f8f9fa;
+}
+
+.quiz-step button.secondary { color: #666; font-size: 0.9rem; }
+
+.quiz-nav { margin-top: 20px; text-align: center; border-top: 1px solid #eee; padding-top: 10px; }
+.text-btn { background: none; border: none; color: #666; cursor: pointer; text-decoration: underline; }
+
+.quiz-progress-container {
+    height: 6px; background: #eee; border-radius: 3px; margin-bottom: 20px; overflow: hidden;
+}
+#quiz-progress-bar {
+    height: 100%; background: var(--primary-color, #007bff); width: 25%; transition: width 0.3s;
+}
