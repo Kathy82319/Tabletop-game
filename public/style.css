@@ -1135,7 +1135,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 /* --- 5. 進度條 --- */
 .quiz-progress-container {
-    height: 8px; background: #EFEBE9; border-radius: 4px; margin-bottom: 20px; 
+    height: 8px; background: #EFEBE9; border-radius: 4px; margin-bottom: 16px; 
     overflow: hidden; border: 1px solid #D7CCC8; flex-shrink: 0;
 }
 #quiz-progress-bar { height: 100%; background: #D4AF37; width: 25%; transition: width 0.3s ease; }
