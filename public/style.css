@@ -976,3 +976,50 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 #quiz-progress-bar {
     height: 100%; background: var(--primary-color, #007bff); width: 25%; transition: width 0.3s;
 }
+
+/* --- 漂浮按鈕 (FAB) 修改版 --- */
+#fab-quiz-btn {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    /* 修改寬度與圓角，變成膠囊狀 */
+    width: auto; 
+    padding: 10px 20px; 
+    border-radius: 50px; 
+    
+    background-color: var(--primary-color, #007bff);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    cursor: pointer;
+    z-index: 999;
+    
+    /* 讓圖示跟文字橫向排列 */
+    display: flex;
+    align-items: center;
+    gap: 8px; /* 圖示與文字的間距 */
+    
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+#fab-quiz-btn:hover {
+    transform: scale(1.05); /* 稍微放大就好，不要太大 */
+    background-color: #0056b3;
+}
+
+/* 新增文字樣式 */
+.fab-text {
+    font-size: 1rem;
+    font-weight: bold;
+    white-space: nowrap; /* 確保文字不換行 */
+}
+
+/* 手機版優化：螢幕太小時可以只顯示圖示，或是縮小文字 (可選) */
+@media (max-width: 480px) {
+    #fab-quiz-btn {
+        padding: 10px 15px;
+    }
+    .fab-text {
+        font-size: 0.9rem;
+    }
+}
