@@ -1153,7 +1153,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 /* 重新篩選按鈕 (小巧版) */
 .restart-btn {
     background-color: #5D4037;
-    color: #FFF8DC;
+    color: #000000;
     border: 1px solid #000000;
     padding: 5px 15px;
     border-radius: 15px;
