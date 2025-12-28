@@ -1146,7 +1146,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .next-step-btn {
     background-color: #8D6E63; /* 復古赤褐色 */
-    color: #FFF !important;    /* 強制文字白色 */
+    color: #000000 !important;   
     border: none;
     padding: 10px 30px;
     border-radius: 20px;
