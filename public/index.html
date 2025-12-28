@@ -404,14 +404,16 @@
                 </div>
             </div>
 
-            <div id="quiz-result" class="quiz-step" style="display: none;">
-                <h3>🎯 推薦結果</h3>
-                <p id="quiz-result-count" style="text-align: center; color: #666; margin-bottom: 15px;"></p>
-                <div id="quiz-result-list"></div>
-                <div class="quiz-nav">
-                    <button class="text-btn" onclick="RecWizard.restart()">🔄 重新測驗</button>
-                </div>
-            </div>
+<div id="quiz-result" class="quiz-step" style="display: none;">
+    <h3>🎯 推薦結果</h3>
+    
+    <div class="quiz-result-header">
+        <p id="quiz-result-count" style="margin: 0; color: #5D4037; font-weight: bold;"></p>
+        <button class="restart-btn" onclick="RecWizard.restart()">🔄 重新篩選</button>
+    </div>
+
+    <div id="quiz-result-list"></div>
+</div>
         </div>
     </div>
 </div> 

@@ -1138,8 +1138,8 @@ async function initializeInfoPage() {
 });
 
 // --- [新增] 問卷助手邏輯 ---
+// --- 修改後的 RecWizard (支援記憶功能與複選) ---
 const RecWizard = {
-    // 答案改成陣列 (Set 確保不重複，但存 JSON 時轉 Array 較方便)
     answers: {
         players: [],
         price: [],
@@ -1156,13 +1156,26 @@ const RecWizard = {
     },
 
     open: function() {
+        // 載入遊戲資料
         if (this.allGames.length === 0) {
             fetch('/api/get-boardgames')
                 .then(r => r.json())
-                .then(data => { this.allGames = data; });
+                .then(data => { 
+                    this.allGames = data; 
+                    // 資料載入後，如果之前有結果，重新渲染一次結果頁
+                    if (this.hasSavedState()) this.showResults();
+                });
         }
+        
         document.getElementById('quiz-modal').style.display = 'flex';
-        this.restart();
+        
+        // 【核心修改】檢查是否有暫存的狀態
+        if (this.hasSavedState()) {
+            this.loadState();
+            this.showResults(); // 直接顯示結果，不重置
+        } else {
+            this.restart(); // 沒資料才重置
+        }
     },
 
     close: function() {
@@ -1170,35 +1183,25 @@ const RecWizard = {
     },
 
     restart: function() {
-        // 重置答案
         this.answers = { players: [], price: [], tag: [], difficulty: [] };
-        // 重置所有按鈕樣式
+        sessionStorage.removeItem('quiz_answers'); // 清除暫存
         document.querySelectorAll('.quiz-option-btn').forEach(btn => btn.classList.remove('selected'));
         this.showStep(1);
     },
 
-    // 核心修改：切換選取狀態 (Toggle)
     toggle: function(category, value, btnElement) {
         const index = this.answers[category].indexOf(value);
-        
         if (index === -1) {
-            // 沒選過 -> 加入
             this.answers[category].push(value);
             btnElement.classList.add('selected');
         } else {
-            // 已選過 -> 移除
             this.answers[category].splice(index, 1);
             btnElement.classList.remove('selected');
         }
+        this.saveState(); // 每次變動都儲存
     },
 
     next: function(currentStep) {
-        // 檢查是否至少選了一項 (可選，如果不強制則可以移除這段)
-        // const categories = ['players', 'price', 'tag', 'difficulty'];
-        // const currentCat = categories[currentStep - 1];
-        // if (this.answers[currentCat].length === 0) {
-        //    alert('請至少選擇一個選項，或是直接點下一步跳過');
-        // }
         this.showStep(currentStep + 1);
     },
 
@@ -1215,71 +1218,49 @@ const RecWizard = {
         document.getElementById('quiz-progress-bar').style.width = `${progress}%`;
     },
 
-showResults: function() {
+    showResults: function() {
         document.querySelectorAll('.quiz-step').forEach(el => el.style.display = 'none');
         document.getElementById('quiz-result').style.display = 'block';
         document.getElementById('quiz-progress-bar').style.width = '100%';
 
         const { players, price, tag, difficulty } = this.answers;
         
-        // ... (篩選邏輯保持不變) ...
+        // 篩選邏輯 (與之前相同)
         const results = this.allGames.filter(game => {
-            // 1. 人數 (只要符合"其中一個"選擇的人數即可)
-            let matchPlayers = false;
-            if (players.length === 0) matchPlayers = true; // 沒選代表不限制
-            else {
-                // 檢查是否有任何一個選中的人數，落在這款遊戲的範圍內
-                matchPlayers = players.some(p => {
-                    if (p === 7) return game.max_players >= 7;
-                    return game.min_players <= p && game.max_players >= p;
-                });
-            }
+            let matchPlayers = (players.length === 0) ? true : players.some(p => (p === 7 ? game.max_players >= 7 : (game.min_players <= p && game.max_players >= p)));
             if (!matchPlayers) return false;
 
-            // 2. 價格
-            let matchPrice = false;
-            const p = game.sale_price || 0;
-            if (price.length === 0) matchPrice = true;
-            else {
-                matchPrice = price.some(range => {
-                    if (range === 'low') return p <= 500;
-                    if (range === 'mid') return p > 500 && p <= 1000;
-                    if (range === 'high') return p > 1000 && p <= 2000;
-                    if (range === 'expensive') return p > 2000;
-                    return false;
-                });
-            }
+            let matchPrice = (price.length === 0) ? true : price.some(range => {
+                const p = game.sale_price || 0;
+                if (range === 'low') return p <= 500;
+                if (range === 'mid') return p > 500 && p <= 1000;
+                if (range === 'high') return p > 1000 && p <= 2000;
+                if (range === 'expensive') return p > 2000;
+                return false;
+            });
             if (!matchPrice) return false;
 
-            // 3. 類型 (標籤) - 部分文字匹配
-            // 只要遊戲標籤字串中包含使用者選的"任一個"關鍵字，就算符合
             if (tag.length > 0) {
                 const gameTags = game.tags || '';
-                // 例如選了 ['策略', '派對']，只要 gameTags 裡有 '策略' 或 '派對' 就回傳 true
-                const hasTag = tag.some(t => gameTags.includes(t));
-                if (!hasTag) return false;
+                if (!tag.some(t => gameTags.includes(t))) return false;
             }
 
-            // 4. 難易度
-            if (difficulty.length > 0) {
-                if (!difficulty.includes(game.difficulty)) return false;
-            }
+            if (difficulty.length > 0 && !difficulty.includes(game.difficulty)) return false;
 
             return true;
         });
 
-        // 渲染結果 (使用新的 mini-game-card 樣式)
+        // 渲染結果
         const container = document.getElementById('quiz-result-list');
         const countDisplay = document.getElementById('quiz-result-count');
         container.innerHTML = '';
 
         if (results.length === 0) {
-            countDisplay.textContent = '😢 找不到同時符合這些條件的遊戲，試試看減少一些條件？';
+            countDisplay.textContent = '😢 找不到同時符合條件的遊戲，請試著減少條件';
         } else {
             countDisplay.textContent = `為您推薦以下 ${results.length} 款遊戲：`;
             results.forEach(game => {
                 const card = document.createElement('div');
-                // 改用新的 class
                 card.className = 'mini-game-card'; 
                 card.innerHTML = `
                     <div class="mini-game-card-img-container">
@@ -1295,12 +1276,42 @@ showResults: function() {
                 `;
                 card.onclick = () => {
                     this.close();
-                    // 導向詳情頁
                     window.location.hash = `page-game-details@${game.game_id}`;
                 };
                 container.appendChild(card);
             });
         }
+    },
+
+    // --- 新增：狀態儲存與讀取 ---
+    saveState: function() {
+        sessionStorage.setItem('quiz_answers', JSON.stringify(this.answers));
+    },
+
+    loadState: function() {
+        const saved = sessionStorage.getItem('quiz_answers');
+        if (saved) {
+            this.answers = JSON.parse(saved);
+            // 恢復按鈕的選中狀態 (如果是重開網頁的情況)
+            this.restoreButtonStates();
+        }
+    },
+
+    hasSavedState: function() {
+        // 檢查是否有儲存且不為空
+        const saved = sessionStorage.getItem('quiz_answers');
+        if (!saved) return false;
+        const parsed = JSON.parse(saved);
+        // 檢查是否至少選了一個條件
+        return parsed.players.length > 0 || parsed.price.length > 0 || parsed.tag.length > 0 || parsed.difficulty.length > 0;
+    },
+
+    restoreButtonStates: function() {
+        // 根據 this.answers 重新標記按鈕 (僅在必要時呼叫，例如重新整理後)
+        document.querySelectorAll('.quiz-option-btn').forEach(btn => btn.classList.remove('selected'));
+        // 這裡邏輯較複雜，因為 DOM 是靜態的，通常不需要特別恢復按鈕狀態，
+        // 除非我們在 restart 以外的時候回到前面的步驟。
+        // 目前主要用途是 showResults() 直接顯示結果，所以這步可省略或做為擴充。
     }
 };
 
