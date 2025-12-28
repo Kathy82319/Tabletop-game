@@ -33,6 +33,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const fabBtn = target.closest('#fab-quiz-btn');
+        if (fabBtn) {
+            RecWizard.open();
+            return;
+        }
 
         const newsCard = target.closest('.news-card');
         if (newsCard && newsCard.dataset.newsId) {
@@ -1258,13 +1263,9 @@ const RecWizard = {
                 `;
                 // 點擊後：關閉彈窗，並呼叫原本的詳情頁邏輯
                 card.onclick = () => {
-                    this.close();
-                    // 假設 script.js 裡原本就有 showGameDetails 這個函式
-                    if (typeof showGameDetails === 'function') {
-                        showGameDetails(game);
-                    } else {
-                        console.error('找不到 showGameDetails 函式，請確認 script.js');
-                    }
+                    this.close(); // 關閉問卷彈窗
+                    // 直接修改網址 hash，讓網頁跳轉到詳情頁
+                    window.location.hash = `page-game-details@${game.game_id}`;
                 };
                 container.appendChild(card);
             });
