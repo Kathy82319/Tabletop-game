@@ -977,35 +977,6 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     height: 100%; background: var(--primary-color, #007bff); width: 25%; transition: width 0.3s;
 }
 
-/* --- 漂浮按鈕 (FAB) 修改版 --- */
-#fab-quiz-btn {
-    position: fixed;
-    bottom: 80px;
-    right: 20px;
-    /* 修改寬度與圓角，變成膠囊狀 */
-    width: auto; 
-    padding: 10px 20px; 
-    border-radius: 50px; 
-    
-    background-color: var(--primary-color, #007bff);
-    color: white;
-    border: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    cursor: pointer;
-    z-index: 999;
-    
-    /* 讓圖示跟文字橫向排列 */
-    display: flex;
-    align-items: center;
-    gap: 8px; /* 圖示與文字的間距 */
-    
-    transition: transform 0.2s, background-color 0.2s;
-}
-
-#fab-quiz-btn:hover {
-    transform: scale(1.05); /* 稍微放大就好，不要太大 */
-    background-color: #0056b3;
-}
 
 /* 新增文字樣式 */
 .fab-text {
@@ -1022,4 +993,82 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     .fab-text {
         font-size: 0.9rem;
     }
+}
+
+/* --- 1. 金色五芒星懸浮按鈕 --- */
+#fab-quiz-btn {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 70px;  /*稍微大一點*/
+    height: 70px;
+    border-radius: 50%;
+    /* 背景色維持 APP 色系 (藍色)，這樣金色星星才明顯 */
+    background-color: var(--primary-color, #007bff);
+    border: 3px solid #fff; /* 加個白邊更有質感 */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    cursor: pointer;
+    z-index: 999;
+    
+    display: flex;
+    flex-direction: column; /* 垂直排列：星在上，字在下 */
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.2s;
+    overflow: hidden;
+}
+
+#fab-quiz-btn:hover {
+    transform: scale(1.1) rotate(5deg); /* 懸停時稍微旋轉 */
+}
+
+.star-icon {
+    font-size: 2rem;
+    line-height: 1;
+    color: #FFD700; /* 金色 */
+    text-shadow: 0 2px 2px rgba(0,0,0,0.2);
+    margin-top: -2px;
+}
+
+.fab-text {
+    font-size: 0.7rem;
+    color: white;
+    font-weight: bold;
+    margin-top: 2px;
+}
+
+/* --- 2. 問卷複選樣式 --- */
+.quiz-option-btn {
+    padding: 12px;
+    border: 2px solid #eee;
+    background: white;
+    border-radius: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #333;
+}
+
+/* 選中狀態：變成 APP 主色系，文字變白 */
+.quiz-option-btn.selected {
+    background-color: var(--primary-color, #007bff);
+    color: white;
+    border-color: var(--primary-color, #007bff);
+    box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+}
+
+/* --- 3. 下一步按鈕 --- */
+.next-step-btn {
+    background-color: #28a745; /* 綠色，代表前進 */
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-left: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.next-step-btn:hover {
+    background-color: #218838;
 }
