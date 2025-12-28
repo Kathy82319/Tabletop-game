@@ -49,7 +49,7 @@ export async function onRequest(context) {
     const stmt = db.prepare(
       `UPDATE BoardGames SET
          name = ?, description = ?, image_url = ?, image_url_2 = ?, image_url_3 = ?, tags = ?,
-         min_players = ?, max_players = ?, difficulty = ?,
+         min_players = ?, max_players = ?, difficulty = ?, play_time = ?,  
          total_stock = ?, for_rent_stock = ?, for_sale_stock = ?,
          sale_price = ?, rent_price = ?, deposit = ?, late_fee_per_day = ?,
          is_visible = ?, supplementary_info = ?
@@ -59,7 +59,8 @@ export async function onRequest(context) {
 
     const result = await stmt.bind(
         body.name, body.description || '', body.image_url || '', body.image_url_2 || '', body.image_url_3 || '', body.tags || '',
-        Number(body.min_players), Number(body.max_players), body.difficulty,
+        Number(body.min_players), Number(body.max_players), body.difficulty, 
+        body.play_time || '30~90分鐘',
         Number(body.total_stock), Number(body.for_rent_stock), for_sale_stock,
         Number(body.sale_price), Number(body.rent_price),
         Number(body.deposit), Number(body.late_fee_per_day),

@@ -33,17 +33,18 @@ export async function onRequest(context) {
         const stmt = db.prepare(
           `INSERT INTO BoardGames (
              game_id, name, description, image_url, image_url_2, image_url_3, tags,
-             min_players, max_players, difficulty,
+             min_players, max_players, difficulty, play_time,  -- 【修改 1】這裡加 play_time
              total_stock, for_rent_stock, for_sale_stock,
              sale_price, rent_price, deposit, late_fee_per_day,
              is_visible, supplementary_info, display_order
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 999)`
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 999)` 
         );
 
         await stmt.bind(
-            newGameId, // <-- 使用新的數字 ID
+            newGameId,
             body.name, body.description || '', body.image_url || '', body.image_url_2 || '', body.image_url_3 || '', body.tags || '',
-            Number(body.min_players) || 1, Number(body.max_players) || 4, body.difficulty || '普通',
+            Number(body.min_players) || 1, Number(body.max_players) || 4, body.difficulty || '普通', 
+            body.play_time || '30~90分鐘', // 【修改 3】這裡綁定 play_time
             Number(body.total_stock) || 0, Number(body.for_rent_stock) || 0, for_sale_stock,
             Number(body.sale_price) || 0, Number(body.rent_price) || 0,
             Number(body.deposit) || 0, Number(body.late_fee_per_day) || 50,

@@ -201,6 +201,7 @@ function openEditGameModal(gameId) {
         document.getElementById('edit-min-players').value = game.min_players || 1;
         document.getElementById('edit-max-players').value = game.max_players || 1;
         document.getElementById('edit-difficulty').value = game.difficulty || '普通';
+        document.getElementById('edit-play-time').value = game.play_time || '30~90分鐘';
         document.getElementById('edit-total-stock').value = game.total_stock || 0;
         document.getElementById('edit-for-rent-stock').value = game.for_rent_stock || 0;
         document.getElementById('edit-sale-price').value = game.sale_price || 0;
@@ -220,6 +221,7 @@ function openEditGameModal(gameId) {
         document.getElementById('edit-min-players').value = 1;
         document.getElementById('edit-max-players').value = 4;
         document.getElementById('edit-difficulty').value = '普通';
+        document.getElementById('edit-play-time').value = '30~90分鐘';
         document.getElementById('edit-total-stock').value = 1;
         document.getElementById('edit-for-rent-stock').value = 1;
         document.getElementById('edit-late-fee').value = 50;
@@ -247,6 +249,7 @@ async function handleEditGameFormSubmit(e) {
         min_players: document.getElementById('edit-min-players').value,
         max_players: document.getElementById('edit-max-players').value,
         difficulty: document.getElementById('edit-difficulty').value,
+        play_time: document.getElementById('edit-play-time').value,
         total_stock: document.getElementById('edit-total-stock').value,
         for_rent_stock: document.getElementById('edit-for-rent-stock').value,
         sale_price: document.getElementById('edit-sale-price').value,
