@@ -979,21 +979,18 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 
 /* =========================================
-   修正版：復古暗金風 - 漂浮按鈕與問卷樣式
+   最終修正版：復古暗金風 - 漂浮按鈕與問卷樣式
    ========================================= */
 
 /* --- 0. 動畫定義 --- */
-
-/* 用戶指定的彈跳效果 (用於出現時或點擊時) */
 @keyframes stampBounce {
     0% { transform: scale(0.8); opacity: 0.5; }
     50% { transform: scale(1.2); opacity: 1; }
     100% { transform: scale(1.05); }
 }
 
-/* 新增：上下輕微漂浮 (讓按鈕平時有懸浮感) */
 @keyframes floatBob {
-    0% { transform: translateY(0px) scale(1.05); } /* 配合 stampBounce 結束的 scale */
+    0% { transform: translateY(0px) scale(1.05); }
     50% { transform: translateY(-8px) scale(1.05); }
     100% { transform: translateY(0px) scale(1.05); }
 }
@@ -1010,11 +1007,10 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     /* 背景：復古暗金漸層 */
     background: linear-gradient(135deg, #D4AF37 0%, #B8860B 100%);
     
-    /* 邊框：米白內圈 + 深褐外圈，營造徽章感 */
+    /* 邊框：米白內圈 + 深褐外圈 */
     border: 2px solid #FFF8DC; 
     outline: 2px solid #5D4037; 
     
-    /* 陰影：暖色系光暈 */
     box-shadow: 0 6px 15px rgba(93, 64, 55, 0.5), 
                 inset 0 2px 5px rgba(255, 255, 255, 0.3);
     
@@ -1026,13 +1022,11 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     justify-content: center;
     align-items: center;
     
-    /* 動畫：先執行 stampBounce 出場，接著執行 floatBob 循環懸浮 */
     animation: stampBounce 0.8s ease-out forwards, 
                floatBob 3s ease-in-out 0.8s infinite; 
 }
 
 #fab-quiz-btn:hover {
-    /* 懸停時加強金色亮度 */
     background: linear-gradient(135deg, #FFD700 0%, #DAA520 100%);
     box-shadow: 0 8px 20px rgba(218, 165, 32, 0.6);
 }
@@ -1040,17 +1034,17 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .star-icon {
     font-size: 2rem;
     line-height: 1;
-    color: #FFF8DC; /* 米白色星星 */
-    text-shadow: 0 2px 2px rgba(93, 64, 55, 0.4); /* 深褐色陰影 */
+    color: #FFF8DC;
+    text-shadow: 0 2px 2px rgba(93, 64, 55, 0.4);
     margin-top: -3px;
 }
 
 .fab-text {
     font-size: 0.7rem;
-    color: #3E2723; /* 深咖啡色文字 */
-    font-weight: 800; /* 加粗 */
+    color: #3E2723;
+    font-weight: 800;
     margin-top: 2px;
-    font-family: 'Cwtex Fangsong', serif; /* 確保字體一致 */
+    font-family: 'Cwtex Fangsong', serif;
     letter-spacing: 1px;
 }
 
@@ -1059,7 +1053,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(62, 39, 35, 0.7); /* 深咖啡色半透明背景 */
+    background: rgba(62, 39, 35, 0.85); /* 背景加深一點，凸顯彈窗 */
     z-index: 2000;
     display: flex;
     justify-content: center;
@@ -1068,61 +1062,53 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .quiz-modal-content {
-    /* 背景：羊皮紙色 */
-    background-color: #FFF8E1; 
+    background-color: #FFF8E1; /* 羊皮紙色 */
     width: 90%;
     max-width: 500px;
     padding: 25px;
     border-radius: 16px;
     position: relative;
-    /* 邊框與陰影 */
     border: 2px solid #D4AF37;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    
-    /* 讓內容有復古感 */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     color: #5D4037;
     font-family: 'Cwtex Fangsong', serif;
-    animation: stampBounce 0.4s ease-out; /* 彈窗出現時也用這個彈跳效果 */
+    animation: stampBounce 0.4s ease-out;
 }
 
 .modal-close-btn {
     position: absolute;
     top: 10px; right: 15px;
     background: none; border: none;
-    font-size: 1.8rem;
+    font-size: 2rem;
     cursor: pointer;
     color: #8D6E63;
-    transition: color 0.2s;
 }
-.modal-close-btn:hover {
-    color: #3E2723;
-}
+.modal-close-btn:hover { color: #3E2723; }
 
-/* 標題與排版 */
 .quiz-step h3 { 
     text-align: center; 
     margin-bottom: 20px; 
     color: #5D4037; 
     font-weight: bold;
-    border-bottom: 2px dashed #D4AF37; /* 虛線分隔 */
+    border-bottom: 2px dashed #D4AF37;
     padding-bottom: 10px;
 }
 
 .quiz-option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .quiz-option-list { display: flex; flex-direction: column; gap: 12px; }
 
-/* --- 3. 選項按鈕 (Option Buttons) --- */
+/* --- 3. 選項按鈕優化 --- */
 .quiz-option-btn {
     padding: 12px;
-    /* 預設：米白底 + 淺褐邊框 */
     background: #FFFFFF;
-    border: 2px solid #D7CCC8;
+    border: 2px solid #D7CCC8; /* 未選中時是淺褐邊框 */
     border-radius: 10px;
     font-size: 1rem;
     cursor: pointer;
     transition: all 0.2s;
-    color: #5D4037;
+    color: #5D4037; /* 深褐文字 */
     font-weight: 600;
+    outline: none; /* 移除瀏覽器預設藍框 */
 }
 
 .quiz-option-btn:hover {
@@ -1131,15 +1117,16 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     transform: translateY(-2px);
 }
 
-/* 選中狀態：暗金底 + 白字 */
+/* 選中狀態：底色變深一點的金色，文字維持深色，邊框變金色 */
 .quiz-option-btn.selected {
-    background-color: #D4AF37; /* 暗金色 */
-    color: #FFF;
-    border-color: #B8860B;
-    box-shadow: 0 2px 8px rgba(184, 134, 11, 0.4);
+    background-color: #FFECB3; /* 淺金色背景，不反白 */
+    color: #3E2723;            /* 文字維持深咖啡色，確保對比 */
+    border-color: #FFA000;     /* 邊框改為較深的金色/橘金 */
+    box-shadow: 0 0 0 2px #FFE082; /* 雙層光暈效果代替藍框 */
+    font-weight: bold;
 }
 
-/* --- 4. 導航按鈕 (Next/Prev) --- */
+/* --- 4. 導航與按鈕 --- */
 .quiz-nav { 
     margin-top: 25px; 
     text-align: center; 
@@ -1156,19 +1143,18 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     font-size: 0.9rem;
     margin-right: 15px;
 }
-.text-btn:hover { color: #3E2723; }
 
 .next-step-btn {
-    /* 下一步按鈕：深綠色或鐵鏽紅，這裡選用溫暖的赤褐色以搭配金色 */
-    background-color: #8D6E63; 
-    color: white;
+    background-color: #8D6E63; /* 復古赤褐色 */
+    color: #FFF !important;    /* 強制文字白色 */
     border: none;
-    padding: 10px 25px;
+    padding: 10px 30px;
     border-radius: 20px;
     font-size: 1rem;
     cursor: pointer;
     box-shadow: 0 3px 6px rgba(0,0,0,0.2);
     transition: background 0.2s;
+    font-weight: bold;
 }
 .next-step-btn:hover {
     background-color: #6D4C41;
@@ -1176,21 +1162,69 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 /* --- 5. 進度條 --- */
 .quiz-progress-container {
-    height: 8px; 
-    background: #EFEBE9; 
-    border-radius: 4px; 
-    margin-bottom: 25px; 
-    overflow: hidden;
-    border: 1px solid #D7CCC8;
+    height: 8px; background: #EFEBE9; border-radius: 4px; margin-bottom: 25px; 
+    overflow: hidden; border: 1px solid #D7CCC8;
 }
 #quiz-progress-bar {
-    height: 100%; 
-    background: #D4AF37; /* 金色進度條 */
-    width: 25%; 
-    transition: width 0.3s ease;
+    height: 100%; background: #D4AF37; width: 25%; transition: width 0.3s ease;
 }
 
-/* --- 6. 結果列表微調 --- */
-.game-card {
-    border: 1px solid #D7CCC8; /* 配合整體色系調整卡片邊框 */
+/* --- 6. 結果卡片 (Mini Card) 優化 --- */
+#quiz-result-list {
+    /* 使用 Grid 排版，自動適應寬度，卡片變小 */
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 15px;
+    padding: 5px;
+}
+
+.mini-game-card {
+    background: white;
+    border: 1px solid #D7CCC8;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.mini-game-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-color: #D4AF37;
+}
+
+.mini-game-card-img-container {
+    width: 100%;
+    height: 90px; /* 固定高度，讓卡片變小 */
+    background: #eee;
+}
+
+.mini-game-card-img-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 確保圖片填滿不變形 */
+}
+
+.mini-game-card-info {
+    padding: 8px;
+    text-align: center;
+}
+
+.mini-game-card h4 {
+    margin: 0 0 5px 0;
+    font-size: 0.9rem;
+    color: #3E2723;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* 文字太長變... */
+}
+
+.mini-game-card-meta {
+    font-size: 0.75rem;
+    color: #8D6E63;
+    display: flex;
+    justify-content: center;
+    gap: 5px;
 }

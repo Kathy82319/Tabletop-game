@@ -1215,13 +1215,14 @@ const RecWizard = {
         document.getElementById('quiz-progress-bar').style.width = `${progress}%`;
     },
 
-    showResults: function() {
+showResults: function() {
         document.querySelectorAll('.quiz-step').forEach(el => el.style.display = 'none');
         document.getElementById('quiz-result').style.display = 'block';
         document.getElementById('quiz-progress-bar').style.width = '100%';
 
         const { players, price, tag, difficulty } = this.answers;
         
+        // ... (篩選邏輯保持不變) ...
         const results = this.allGames.filter(game => {
             // 1. 人數 (只要符合"其中一個"選擇的人數即可)
             let matchPlayers = false;
@@ -1267,7 +1268,7 @@ const RecWizard = {
             return true;
         });
 
-        // 渲染結果 (保持不變)
+        // 渲染結果 (使用新的 mini-game-card 樣式)
         const container = document.getElementById('quiz-result-list');
         const countDisplay = document.getElementById('quiz-result-count');
         container.innerHTML = '';
@@ -1278,21 +1279,23 @@ const RecWizard = {
             countDisplay.textContent = `為您推薦以下 ${results.length} 款遊戲：`;
             results.forEach(game => {
                 const card = document.createElement('div');
-                card.className = 'game-card';
+                // 改用新的 class
+                card.className = 'mini-game-card'; 
                 card.innerHTML = `
-                    <div class="game-card-image-container">
+                    <div class="mini-game-card-img-container">
                         <img src="${game.image_url || 'placeholder.jpg'}" alt="${game.name}" loading="lazy">
                     </div>
-                    <div class="game-card-info">
-                        <h3 class="game-card-title">${game.name}</h3>
-                        <div class="game-card-meta">
-                            <span>👥 ${game.min_players}-${game.max_players}人</span>
-                            <span>⭐ ${game.difficulty}</span>
+                    <div class="mini-game-card-info">
+                        <h4>${game.name}</h4>
+                        <div class="mini-game-card-meta">
+                            <span>${game.min_players}-${game.max_players}人</span>
+                            <span>${game.difficulty}</span>
                         </div>
                     </div>
                 `;
                 card.onclick = () => {
                     this.close();
+                    // 導向詳情頁
                     window.location.hash = `page-game-details@${game.game_id}`;
                 };
                 container.appendChild(card);
