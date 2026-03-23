@@ -375,7 +375,7 @@ function updateProfileDisplay(data) {
     document.getElementById('user-level').textContent = data.level;
     document.getElementById('user-exp').textContent = `${data.current_exp} / 10`;
 
-    // --- 【修改】核心邏輯：直接讀取後端傳來的 class_icon_url ---
+    // --- 【修正】只保留讀取後端傳來的 class_icon_url (刪除了下面會互相衝突的舊代碼) ---
     if (data.class_icon_url && classIconEl && overlayEl) {
         classIconEl.src = data.class_icon_url; 
         overlayEl.style.display = 'block'; 
@@ -383,24 +383,9 @@ function updateProfileDisplay(data) {
         overlayEl.style.display = 'none'; 
     }
 
-    // 處理多筆動態資產 (user_assets) 保持不變
+    // 處理多筆動態資產 (user_assets)
     const assets = data.user_assets || [];
 
-    // --- 【新增】核心邏輯：在 user_assets 中尋找對應的職業圖片並顯示在小圈圈中 ---
-    if (assets.length > 0) {
-        // 比對出真實的職業資產
-        const classAsset = assets.find(a => a.type === 'class' && a.name === data.class);
-        if (classAsset && classAsset.icon_url && classIconEl && overlayEl) {
-            classIconEl.src = classAsset.icon_url; // 填充圖片網址
-            overlayEl.style.display = 'block'; // 顯示小圈圈
-        } else if(overlayEl) {
-            overlayEl.style.display = 'none'; // 找不到圖片或職業不存在，則隱藏小圈圈
-        }
-    } else if(overlayEl) {
-        overlayEl.style.display = 'none'; // 新系統沒資料，則隱藏小圈圈
-    }
-    
-    // --- 【原有邏輯】渲染「稱號、成就」部分 保持不變 ... ---
     // 渲染帶圖示、可點擊的互動標籤 (稱號、成就)
     const renderInteractiveTags = (type) => {
         const items = assets.filter(a => a.type === type);
@@ -414,7 +399,6 @@ function updateProfileDisplay(data) {
         }).join('<span style="color: #ccc; margin: 0 4px;">|</span>'); // 用直槓分隔
     };
 
-    // --- 【原有邏輯】渲染「技能、裝備」部分 保持不變 ... ---
     // 渲染一般圖示標籤與條列式說明文字 (技能、裝備)
     const renderStaticTagsAndDesc = (type, tagContainerId, descContainerId) => {
         const items = assets.filter(a => a.type === type);
@@ -443,7 +427,6 @@ function updateProfileDisplay(data) {
         }
     };
 
-    // --- 【原有邏輯】寫入畫面部分 保持不變 ... ---
     // 寫入畫面
     if (assets.length > 0) {
         document.getElementById('user-title').innerHTML = renderInteractiveTags('title');
@@ -460,7 +443,6 @@ function updateProfileDisplay(data) {
         document.getElementById('user-equipment-desc').innerHTML = data.equipment_description || '無';
     }
 }
-
 
 // 【新增】開啟小小解釋欄 (Popover)
 window.showAssetPopover = function(name, desc) {
