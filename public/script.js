@@ -355,14 +355,12 @@ liff.getProfile().then(profile => {
         }
     }
 
-// public/script.js -> function updateProfileDisplay(data) {...}
-
 function updateProfileDisplay(data) {
     if (!data) return;
     
-    // 【修改】大頭貼圖片與職業小圈圈邏輯
+    // 大頭貼圖片與職業小圈圈邏輯
     const pictureEl = document.getElementById('profile-picture');
-    if (pictureEl) pictureEl.src = userProfile.pictureUrl || '/api/admin/get-avatar?userId=' + data.user_id; // LINE Picture优先，否则后端拉取
+    if (pictureEl) pictureEl.src = userProfile.pictureUrl || '/api/admin/get-avatar?userId=' + data.user_id;
 
     const overlayEl = document.getElementById('class-icon-overlay');
     const classIconEl = document.getElementById('user-class-icon');
@@ -377,7 +375,15 @@ function updateProfileDisplay(data) {
     document.getElementById('user-level').textContent = data.level;
     document.getElementById('user-exp').textContent = `${data.current_exp} / 10`;
 
-    // 處理多筆動態資產 (user_assets)
+    // --- 【修改】核心邏輯：直接讀取後端傳來的 class_icon_url ---
+    if (data.class_icon_url && classIconEl && overlayEl) {
+        classIconEl.src = data.class_icon_url; 
+        overlayEl.style.display = 'block'; 
+    } else if (overlayEl) {
+        overlayEl.style.display = 'none'; 
+    }
+
+    // 處理多筆動態資產 (user_assets) 保持不變
     const assets = data.user_assets || [];
 
     // --- 【新增】核心邏輯：在 user_assets 中尋找對應的職業圖片並顯示在小圈圈中 ---

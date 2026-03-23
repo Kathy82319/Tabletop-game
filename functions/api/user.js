@@ -29,6 +29,14 @@ export async function onRequest(context) {
       
       user.user_assets = assets || [];
 
+      // --- 【關鍵新增】3. 單獨拉取會員「職業」的專屬圖示網址 ---
+      if (user.class && user.class !== '無') {
+          const classAsset = await db.prepare(`SELECT icon_url FROM GameAssets WHERE type = 'class' AND name = ?`).bind(user.class).first();
+          user.class_icon_url = classAsset ? classAsset.icon_url : null;
+      } else {
+          user.class_icon_url = null;
+      }
+
       return new Response(JSON.stringify({ ...user, expToNextLevel }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
     } else {
@@ -36,7 +44,8 @@ export async function onRequest(context) {
       const newUser = {
         user_id: userId, line_display_name: displayName || '未提供名稱', line_picture_url: pictureUrl || '',
         real_name: '', class: '無', level: 1, current_exp: 0, tag: null, perk: '無特殊優惠',
-        user_assets: [] // 新會員預設沒有任何裝備與技能
+        user_assets: [], 
+        class_icon_url: null // 【新增】新會員預設無職業圖示
       };
       
       const activityMessage = `新會員加入: ${newUser.line_display_name}`;
