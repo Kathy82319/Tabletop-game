@@ -495,18 +495,18 @@ function renderUserDetails(data) {
     const displayName = profile.nickname || profile.line_display_name;
     document.querySelector('#user-details-modal #user-details-title').textContent = displayName;
     
-    // 【新增】產生帶有圖示與互動說明的資產標籤
+    // 產生帶有圖示與互動說明的資產標籤
     const renderAssetsHtml = (type) => {
         const items = profile.user_assets ? profile.user_assets.filter(a => a.type === type) : [];
         if (items.length === 0) return '<span style="color:#aaa;">無</span>';
         return items.map(a => {
             const icon = a.icon_url ? `<img src="${a.icon_url}" style="height: 1.2em; vertical-align: middle; margin-right: 4px; border-radius: 2px;">` : '';
             const desc = a.custom_description || a.default_desc || '無說明';
-            // 使用 title 屬性，游標移過去就會浮現說明框，省去寫複雜 Modal 的麻煩
-            return `<span style="display: inline-block; background: #e9ecef; padding: 2px 8px; border-radius: 12px; margin: 2px; cursor: help; border: 1px solid #ced4da;" title="${desc}">${icon}${a.name}</span>`;
-        }).join(' ');
+            return `<span style="display: inline-block; background: #e9ecef; padding: 3px 10px; border-radius: 12px; cursor: help; border: 1px solid #ced4da;" title="${desc}">${icon}${a.name}</span>`;
+        }).join('');
     };
 
+    // 重新編排版面結構
     contentContainer.innerHTML = `
         <div class="details-grid">
             <div class="profile-summary">
@@ -515,24 +515,29 @@ function renderUserDetails(data) {
                 <p><strong>姓名:</strong> ${profile.real_name || '未設定'}</p>
                 <p><strong>電話:</strong> ${profile.phone || '未設定'}</p>
                 <p><strong>Email:</strong> ${profile.email || '未設定'}</p>
-                <hr>
-                <p><strong>等級:</strong> ${profile.level} (${profile.current_exp}/10 EXP)</p>
-                <p><strong>職業:</strong> ${profile.class}</p>
-                <div style="margin: 8px 0;"><strong>稱號:</strong> <div style="margin-top:2px;">${renderAssetsHtml('title')}</div></div>
-                <div style="margin: 8px 0;"><strong>成就:</strong> <div style="margin-top:2px;">${renderAssetsHtml('achievement')}</div></div>
-                <div style="margin: 8px 0;"><strong>技能:</strong> <div style="margin-top:2px;">${renderAssetsHtml('skill')}</div></div>
-                <div style="margin: 8px 0;"><strong>裝備:</strong> <div style="margin-top:2px;">${renderAssetsHtml('equipment')}</div></div>
-                <hr>
-                <p><strong>標籤:</strong> <span class="tag-display">${profile.tag}</span></p>
+                <p style="margin-top: 10px;"><strong>標籤:</strong> <span class="tag-display">${profile.tag}</span></p>
             </div>
             <div class="profile-details">
                 ${profile.notes ? `<div class="crm-notes-section" style="margin-bottom: 1rem; padding: 0.8rem; background-color: #fffbe6; border-radius: 6px; border: 1px solid #ffe58f; max-height: 5em; overflow-y: auto;"><h4 style="margin-bottom: 5px;">顧客備註</h4><p style="white-space: pre-wrap; margin: 0; text-align: left;">${profile.notes}</p></div>` : ''}
                 <div class="details-tabs">
-                    <button class="details-tab active" data-target="tab-bookings">預約紀錄</button>
+                    <button class="details-tab active" data-target="tab-adventurer">冒險者資料</button>
+                    <button class="details-tab" data-target="tab-bookings">預約紀錄</button>
                     <button class="details-tab" data-target="tab-rentals">租借紀錄</button>
                     <button class="details-tab" data-target="tab-exp">經驗紀錄</button>
                 </div>
-                <div class="details-tab-content active" id="tab-bookings"></div>
+                
+                <div class="details-tab-content active" id="tab-adventurer" style="padding: 15px 5px;">
+                    <div style="margin-bottom: 12px; font-size: 0.95rem;">
+                        <span style="display: inline-block; width: 45%;"><strong>等級:</strong> ${profile.level} (${profile.current_exp}/10 EXP)</span>
+                        <span style="display: inline-block; width: 45%;"><strong>職業:</strong> ${profile.class}</span>
+                    </div>
+                    <div style="margin-bottom: 12px;"><strong>稱號:</strong> <div style="margin-top:6px; display: flex; flex-wrap: wrap; gap: 6px;">${renderAssetsHtml('title')}</div></div>
+                    <div style="margin-bottom: 12px;"><strong>成就:</strong> <div style="margin-top:6px; display: flex; flex-wrap: wrap; gap: 6px;">${renderAssetsHtml('achievement')}</div></div>
+                    <div style="margin-bottom: 12px;"><strong>技能:</strong> <div style="margin-top:6px; display: flex; flex-wrap: wrap; gap: 6px;">${renderAssetsHtml('skill')}</div></div>
+                    <div style="margin-bottom: 12px;"><strong>裝備:</strong> <div style="margin-top:6px; display: flex; flex-wrap: wrap; gap: 6px;">${renderAssetsHtml('equipment')}</div></div>
+                </div>
+
+                <div class="details-tab-content" id="tab-bookings"></div>
                 <div class="details-tab-content" id="tab-rentals"></div>
                 <div class="details-tab-content" id="tab-exp"></div>
             </div>
@@ -553,10 +558,12 @@ function renderUserDetails(data) {
         </div>
     `;
     
+    // 渲染歷史紀錄表格
     contentContainer.querySelector('#tab-bookings').appendChild(renderHistoryTable(bookings, ['booking_date', 'num_of_people', 'status_text'], { booking_date: '預約日', num_of_people: '人數', status_text: '狀態' }));
     contentContainer.querySelector('#tab-rentals').appendChild(renderHistoryTable(rentals, ['rental_date', 'game_name', 'status'], { rental_date: '租借日', game_name: '遊戲', status: '狀態' }));
     contentContainer.querySelector('#tab-exp').appendChild(renderHistoryTable(exp_history, ['created_at', 'reason', 'exp_added'], { created_at: '日期', reason: '原因', exp_added: '經驗' }));
     
+    // 綁定分頁切換功能
     contentContainer.querySelector('.details-tabs').addEventListener('click', e => { 
         if (e.target.tagName === 'BUTTON') { 
             contentContainer.querySelector('.details-tab.active')?.classList.remove('active'); 
@@ -568,7 +575,6 @@ function renderUserDetails(data) {
     
     loadAndBindMessageDrafts(profile.user_id);
 }
-
 /**
  * 開啟 CRM 詳細資料彈窗
  */
