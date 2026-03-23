@@ -199,9 +199,10 @@ async function handleAssetDelete(id) {
 }
 
 // ============================================================
-// 3. 編輯使用者 (整合下拉選單)
+// 3. 編輯使用者 (整合下拉選單與動態欄位)
 // ============================================================
 
+// 保留職業(Class)的單選設定功能
 function setupAssetDropdown(selectId, otherInputId, type, currentValue, onSelectCallback) {
     const select = document.getElementById(selectId);
     const otherInput = document.getElementById(otherInputId);
@@ -244,6 +245,50 @@ function setupAssetDropdown(selectId, otherInputId, type, currentValue, onSelect
     };
 }
 
+// 【新增】產生動態多筆欄位
+function addDynamicAssetRow(containerId, assetType, selectedName = '', description = '') {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const row = document.createElement('div');
+    row.className = 'dynamic-asset-row';
+
+    const assets = allAssets.filter(a => a.type === assetType);
+    let optionsHtml = '<option value="">請選擇項目...</option>';
+    assets.forEach(a => {
+        const selected = (a.name === selectedName) ? 'selected' : '';
+        optionsHtml += `<option value="${a.name}" data-desc="${a.description || ''}" ${selected}>${a.name}</option>`;
+    });
+
+    row.innerHTML = `
+        <div class="dynamic-asset-inputs">
+            <select class="asset-name-select" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
+                ${optionsHtml}
+            </select>
+            <input type="text" class="asset-desc-input" placeholder="自訂說明 / 效果 (可留空)" value="${description}" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        <button type="button" class="btn-remove-asset" title="移除此項目">&times;</button>
+    `;
+
+    // 綁定下拉選單連動說明
+    const selectEl = row.querySelector('.asset-name-select');
+    const descEl = row.querySelector('.asset-desc-input');
+    selectEl.addEventListener('change', (e) => {
+        const selectedOpt = e.target.options[e.target.selectedIndex];
+        // 只有當輸入框是空的，才自動填入預設說明
+        if (selectedOpt && selectedOpt.dataset.desc && !descEl.value) {
+            descEl.value = selectedOpt.dataset.desc;
+        }
+    });
+
+    // 綁定移除按鈕
+    row.querySelector('.btn-remove-asset').addEventListener('click', () => {
+        row.remove();
+    });
+
+    container.appendChild(row);
+}
+
 async function openEditUserModal(userId) {
     const user = allUsers.find(u => u.user_id === userId);
     if (!user) return ui.toast.error('找不到該使用者！');
@@ -261,20 +306,14 @@ async function openEditUserModal(userId) {
     modal.querySelector('#edit-level-input').value = user.level;
     modal.querySelector('#edit-exp-input').value = user.current_exp;
     modal.querySelector('#edit-notes-textarea').value = user.notes || '';
-    
     modal.querySelector('#edit-perk-input').value = user.perk || '';
-    modal.querySelector('#edit-skill-desc-input').value = user.skill_description || '';
-    modal.querySelector('#edit-equipment-desc-input').value = user.equipment_description || '';
 
+    // 設定職業 (單選)
     setupAssetDropdown('edit-class-select', 'edit-class-other-input', 'class', user.class, (desc) => {
         document.getElementById('edit-perk-input').value = desc;
     });
-    setupAssetDropdown('edit-skill-select', 'edit-skill-other-input', 'skill', user.skill, (desc) => {
-        document.getElementById('edit-skill-desc-input').value = desc;
-    });
-    setupAssetDropdown('edit-equipment-select', 'edit-equipment-other-input', 'equipment', user.equipment, (desc) => {
-        document.getElementById('edit-equipment-desc-input').value = desc;
-    });
+
+    // 設定標籤 (單選)
     const tagSelect = document.getElementById('edit-tag-select');
     const tagInput = document.getElementById('edit-tag-other-input');
     const defaultTags = ['無', '會員', '員工', '黑名單'];
@@ -292,6 +331,20 @@ async function openEditUserModal(userId) {
     }
     tagSelect.onchange = () => { tagInput.style.display = tagSelect.value === 'other' ? 'block' : 'none'; };
 
+    // 【新增】清空所有動態容器
+    ['edit-title-container', 'edit-achievement-container', 'edit-skill-container', 'edit-equipment-container'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '';
+    });
+
+    // 【過渡期處理】把舊資料庫中的單一 skill 和 equipment 轉化成動態欄位顯示
+    if (user.skill && user.skill !== '無') {
+        addDynamicAssetRow('edit-skill-container', 'skill', user.skill, user.skill_description || '');
+    }
+    if (user.equipment && user.equipment !== '無') {
+        addDynamicAssetRow('edit-equipment-container', 'equipment', user.equipment, user.equipment_description || '');
+    }
+
     ui.showModal('#edit-user-modal');
 }
 
@@ -304,18 +357,32 @@ async function handleEditUserFormSubmit(event) {
         return val === 'other' ? form.querySelector(inpId).value.trim() : val;
     };
 
+    // 收集動態欄位內容
+    const collectAssets = (containerId, type) => {
+        const items = [];
+        document.getElementById(containerId).querySelectorAll('.dynamic-asset-row').forEach(row => {
+            const name = row.querySelector('.asset-name-select').value;
+            const desc = row.querySelector('.asset-desc-input').value.trim();
+            if (name) items.push({ type, name, description: desc });
+        });
+        return items;
+    };
+
     const data = {
         userId: form.querySelector('#edit-user-id').value,
         level: form.querySelector('#edit-level-input').value,
         current_exp: form.querySelector('#edit-exp-input').value,
         user_class: getValue('#edit-class-select', '#edit-class-other-input'),
         perk: form.querySelector('#edit-perk-input').value.trim(),
-        skill: getValue('#edit-skill-select', '#edit-skill-other-input'),
-        skill_description: form.querySelector('#edit-skill-desc-input').value.trim(),
-        equipment: getValue('#edit-equipment-select', '#edit-equipment-other-input'),
-        equipment_description: form.querySelector('#edit-equipment-desc-input').value.trim(),
         tag: getValue('#edit-tag-select', '#edit-tag-other-input'),
-        notes: form.querySelector('#edit-notes-textarea').value.trim()
+        notes: form.querySelector('#edit-notes-textarea').value.trim(),
+        // 【新增】把所有動態新增的項目包裝成陣列送給後端
+        user_assets: [
+            ...collectAssets('edit-title-container', 'title'),
+            ...collectAssets('edit-achievement-container', 'achievement'),
+            ...collectAssets('edit-skill-container', 'skill'),
+            ...collectAssets('edit-equipment-container', 'equipment')
+        ]
     };
 
     const btn = form.querySelector('button[type="submit"]');
@@ -579,6 +646,14 @@ function setupEventListeners() {
     }
 
     page.dataset.initialized = 'true';
+
+    document.querySelectorAll('.btn-add-asset-row').forEach(btn => {
+        btn.onclick = () => {
+            const type = btn.dataset.type;
+            addDynamicAssetRow(`edit-${type}-container`, type);
+        };
+    });
+
 }
  
 /**
