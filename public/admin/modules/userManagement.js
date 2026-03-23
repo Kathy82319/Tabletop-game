@@ -515,7 +515,7 @@ function renderUserDetails(data) {
                 <p><strong>姓名:</strong> ${profile.real_name || '未設定'}</p>
                 <p><strong>電話:</strong> ${profile.phone || '未設定'}</p>
                 <p><strong>Email:</strong> ${profile.email || '未設定'}</p>
-                <p style="margin-top: 10px;"><strong>標籤:</strong> <span class="tag-display">${profile.tag}</span></p>
+                <p><strong>標籤:</strong> <span class="tag-display">${profile.tag}</span></p>
             </div>
             <div class="profile-details">
                 ${profile.notes ? `<div class="crm-notes-section" style="margin-bottom: 1rem; padding: 0.8rem; background-color: #fffbe6; border-radius: 6px; border: 1px solid #ffe58f; max-height: 5em; overflow-y: auto;"><h4 style="margin-bottom: 5px;">顧客備註</h4><p style="white-space: pre-wrap; margin: 0; text-align: left;">${profile.notes}</p></div>` : ''}
@@ -528,13 +528,13 @@ function renderUserDetails(data) {
                 
                 <div class="details-tab-content active" id="tab-adventurer" style="padding: 15px 5px;">
                     <div style="margin-bottom: 12px; font-size: 0.95rem;">
-                        <span style="display: inline-block; width: 45%;"><strong>等級:</strong> ${profile.level} (${profile.current_exp}/10 EXP)</span>
-                        <span style="display: inline-block; width: 45%;"><strong>職業:</strong> ${profile.class}</span>
+                        <span><strong>等級:</strong> ${profile.level} (${profile.current_exp}/10 EXP)</span>
+                        <span><strong>職業:</strong> ${profile.class}</span>
                     </div>
-                    <div style="margin-bottom: 12px;"><strong>稱號:</strong> <div style="margin-top:6px; display: flex; flex-wrap: wrap; gap: 6px;">${renderAssetsHtml('title')}</div></div>
-                    <div style="margin-bottom: 12px;"><strong>成就:</strong> <div style="margin-top:6px; display: flex; flex-wrap: wrap; gap: 6px;">${renderAssetsHtml('achievement')}</div></div>
-                    <div style="margin-bottom: 12px;"><strong>技能:</strong> <div style="margin-top:6px; display: flex; flex-wrap: wrap; gap: 6px;">${renderAssetsHtml('skill')}</div></div>
-                    <div style="margin-bottom: 12px;"><strong>裝備:</strong> <div style="margin-top:6px; display: flex; flex-wrap: wrap; gap: 6px;">${renderAssetsHtml('equipment')}</div></div>
+                    <div>稱號:${renderAssetsHtml('title')}</div>
+                    <div>成就:${renderAssetsHtml('achievement')}</div>
+                    <div>技能:${renderAssetsHtml('skill')}</div>
+                    <div>裝備:${renderAssetsHtml('equipment')}</div>
                 </div>
 
                 <div class="details-tab-content" id="tab-bookings"></div>
