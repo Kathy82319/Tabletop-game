@@ -5,7 +5,7 @@ import { ui } from '../ui.js';
 let allAssets = [];
 let currentType = 'class';
 
-// 【修改】加入 title 與 achievement 的顯示標籤
+// 這裡定義了所有分類，共用同一套邏輯
 const typeLabels = {
     'class': { label: '職業', desc: '預設福利' },
     'skill': { label: '技能', desc: '技能說明' },
@@ -22,17 +22,19 @@ function renderList() {
     
     tbody.innerHTML = '';
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4">尚無資料。</td></tr>'; // colspan 改為 4
+        tbody.innerHTML = '<tr><td colspan="4">尚無資料。</td></tr>'; // 確保這裡跨 4 欄
         return;
     }
 
     filtered.forEach(asset => {
         const row = tbody.insertRow();
-        // 【新增】判斷如果有圖片網址，就顯示出來（限制高度為 1.5em，與文字差不多高）
+        
+        // 判斷並生成圖片的 HTML
         const iconHtml = asset.icon_url 
             ? `<img src="${asset.icon_url}" style="max-height: 1.5em; vertical-align: middle; border-radius: 4px;">` 
             : '-';
 
+        // 確保這裡嚴格輸出 4 個 <td>，對應表頭的 4 個欄位
         row.innerHTML = `
             <td style="text-align: center;">${iconHtml}</td>
             <td>${asset.name}</td>
@@ -58,14 +60,15 @@ function openEditModal(assetId = null) {
         document.getElementById('edit-asset-id').value = asset.id;
         document.getElementById('edit-asset-name').value = asset.name;
         document.getElementById('edit-asset-desc').value = asset.description;
-        // 【新增】帶入圖示網址
+        
+        // 編輯時，將圖片網址帶入輸入框
         document.getElementById('edit-asset-icon').value = asset.icon_url || '';
         
         deleteBtn.style.display = 'inline-block';
         deleteBtn.onclick = () => handleDelete(asset.id);
     } else {
         document.getElementById('edit-asset-id').value = '';
-        document.getElementById('edit-asset-icon').value = ''; // 【新增】清空圖示網址
+        document.getElementById('edit-asset-icon').value = ''; // 新增時清空輸入框
         deleteBtn.style.display = 'none';
     }
     
@@ -79,7 +82,7 @@ async function handleSave(e) {
         type: document.getElementById('edit-asset-type').value,
         name: document.getElementById('edit-asset-name').value,
         description: document.getElementById('edit-asset-desc').value,
-        icon_url: document.getElementById('edit-asset-icon').value // 【新增】收集圖示網址
+        icon_url: document.getElementById('edit-asset-icon').value // 儲存時收集圖片網址
     };
     
     try {
@@ -114,8 +117,8 @@ export const init = async () => {
                 if (e.target.tagName === 'BUTTON') {
                     filterContainer.querySelector('.active').classList.remove('active');
                     e.target.classList.add('active');
-                    currentType = e.target.dataset.type;
-                    renderList();
+                    currentType = e.target.dataset.type; // 切換分類
+                    renderList(); // 重新渲染列表
                 }
             });
             document.getElementById('btn-add-asset').addEventListener('click', () => openEditModal());
