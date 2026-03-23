@@ -110,11 +110,15 @@
 <div id="page-profile">
     <h1 class="page-main-title">冒險者資料</h1>
     
-    <div id="qrcode-container">
+    <div style="text-align: center; margin-bottom: 20px;">
+        <button id="toggle-qrcode-btn" class="cta-button" style="background-color: var(--color-primary); width: auto; padding: 10px 20px; font-size: 1rem;">📱 出示公會卡 (QR Code)</button>
+    </div>
+    
+    <div id="qrcode-container" style="display: none;">
         <div id="qrcode"></div>
     </div>
     
-<div class="profile-card">
+    <div class="profile-card">
         <div class="profile-header-section">
             <div class="profile-avatar-container">
                 <img id="profile-picture" class="profile-avatar-img" src="placeholder.jpg" alt="Avatar">
@@ -135,7 +139,7 @@
                         <span id="user-level" class="profile-value">--</span>
                     </div>
                     <div class="profile-row-item">
-                        <span class="profile-label">經驗值：</span>
+                        <span class="profile-label">經驗：</span>
                         <span id="user-exp" class="profile-value">--</span>
                     </div>
                 </div>
@@ -145,21 +149,31 @@
         <div class="profile-divider"></div>
 
         <div class="profile-details-section">
-            <div class="profile-field" id="field-skill">
+            <div class="profile-field" id="field-title">
+                <span class="profile-label">稱號：</span>
+                <span id="user-title" class="profile-value" style="display: flex; flex-wrap: wrap; gap: 6px;">--</span>
+            </div>
+            <div class="profile-field" id="field-achievement">
+                <span class="profile-label">成就：</span>
+                <span id="user-achievement" class="profile-value" style="display: flex; flex-wrap: wrap; gap: 6px;">--</span>
+            </div>
+
+            <div class="profile-field" id="field-skill" style="margin-top: 10px;">
                 <span class="profile-label">技能：</span>
-                <span id="user-skill" class="profile-value">--</span>
+                <span id="user-skill" class="profile-value" style="display: flex; flex-wrap: wrap; gap: 6px;">--</span>
             </div>
             <div class="profile-field" id="field-skill-desc">
                 <span class="profile-label">技能說明：</span>
-                <span id="user-skill-desc" class="profile-value">--</span>
+                <div id="user-skill-desc" class="profile-value" style="font-size: 0.9em; color: #555;">--</div>
             </div>
-            <div class="profile-field" id="field-equipment">
+
+            <div class="profile-field" id="field-equipment" style="margin-top: 10px;">
                 <span class="profile-label">裝備：</span>
-                <span id="user-equipment" class="profile-value">--</span>
+                <span id="user-equipment" class="profile-value" style="display: flex; flex-wrap: wrap; gap: 6px;">--</span>
             </div>
             <div class="profile-field" id="field-equipment-desc">
                 <span class="profile-label">裝備效果：</span>
-                <span id="user-equipment-desc" class="profile-value">--</span>
+                <div id="user-equipment-desc" class="profile-value" style="font-size: 0.9em; color: #555;">--</div>
             </div>
         </div>
     </div>
@@ -417,6 +431,14 @@
         </div>
     </div>
 </div> 
+
+<div id="asset-info-modal" class="modal-overlay" style="display: none; z-index: 9999;">
+    <div class="modal-content" style="max-width: 300px; text-align: center; padding: 25px 20px;">
+        <h3 id="asset-info-title" style="margin-top:0; color: var(--color-primary);">--</h3>
+        <p id="asset-info-desc" style="color: #444; line-height: 1.5; margin-bottom: 20px;">--</p>
+        <button class="cta-button" onclick="document.getElementById('asset-info-modal').style.display='none'">關閉</button>
+    </div>
+</div>
 
 </body>
 </html>

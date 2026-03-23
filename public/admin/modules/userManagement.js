@@ -528,13 +528,13 @@ function renderUserDetails(data) {
                 
                 <div class="details-tab-content active" id="tab-adventurer" style="padding: 15px 5px;">
                     <div style="margin-bottom: 12px; font-size: 0.95rem;">
-                        <span><strong>等級:</strong> ${profile.level} (${profile.current_exp}/10 EXP)</span>
-                        <span><strong>職業:</strong> ${profile.class}</span>
+                        <span>等級： ${profile.level} (${profile.current_exp}/10 EXP)  </span>
+                        <span>職業： ${profile.class}</span>
                     </div>
-                    <div>稱號:${renderAssetsHtml('title')}</div>
-                    <div>成就:${renderAssetsHtml('achievement')}</div>
-                    <div>技能:${renderAssetsHtml('skill')}</div>
-                    <div>裝備:${renderAssetsHtml('equipment')}</div>
+                    <div>稱號： ${renderAssetsHtml('title')}</div>
+                    <div>成就： ${renderAssetsHtml('achievement')}</div>
+                    <div>技能： ${renderAssetsHtml('skill')}</div>
+                    <div>裝備： ${renderAssetsHtml('equipment')}</div>
                 </div>
 
                 <div class="details-tab-content" id="tab-bookings"></div>

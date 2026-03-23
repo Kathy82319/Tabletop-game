@@ -298,6 +298,20 @@ async function initializeProfilePage() {
         document.getElementById('my-exp-history-btn').addEventListener('click', () => navigateTo('page-my-exp-history'));
         document.getElementById('rental-history-btn').addEventListener('click', () => navigateTo('page-rental-history'));
 
+// 【新增】綁定 QR Code 顯示按鈕
+    const qrBtn = document.getElementById('toggle-qrcode-btn');
+    const qrContainer = document.getElementById('qrcode-container');
+    if (qrBtn && qrContainer) {
+        // 清除舊事件避免重複綁定
+        const newQrBtn = qrBtn.cloneNode(true);
+        qrBtn.parentNode.replaceChild(newQrBtn, qrBtn);
+        newQrBtn.addEventListener('click', () => {
+            const isHidden = qrContainer.style.display === 'none';
+            qrContainer.style.display = isHidden ? 'flex' : 'none';
+            newQrBtn.innerHTML = isHidden ? '隱藏公會卡' : '📱 出示公會卡 (QR Code)';
+        });
+    }
+
     try {
         const userData = await fetchGameData(true); 
         updateProfileDisplay(userData);
@@ -338,24 +352,78 @@ function updateProfileDisplay(data) {
     document.getElementById('display-name').textContent = data.nickname || userProfile.displayName;
     document.getElementById('user-class').textContent = data.class || "無";
     
-    // 如果有職業福利，顯示在職業旁邊
     const perkText = data.perk && data.perk !== '無' && data.perk !== '無特殊優惠' ? `(${data.perk})` : '';
     document.getElementById('user-perk-text').textContent = perkText;
     
     document.getElementById('user-level').textContent = data.level;
     document.getElementById('user-exp').textContent = `${data.current_exp} / 10`;
 
-    // 新增欄位處理：若為空則顯示 "無" 或隱藏
-    const setField = (id, value) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = value && value !== '无' ? value : '無';
+    // 處理多筆動態資產 (user_assets)
+    const assets = data.user_assets || [];
+    
+    // 渲染帶圖示、可點擊的互動標籤 (稱號、成就)
+    const renderInteractiveTags = (type) => {
+        const items = assets.filter(a => a.type === type);
+        if (items.length === 0) return '<span>無</span>';
+        
+        return items.map(a => {
+            const icon = a.icon_url ? `<img src="${a.icon_url}" style="height: 1.2em; vertical-align: middle; margin-right: 4px; border-radius: 2px;">` : '';
+            const desc = a.custom_description || a.default_desc || '無說明';
+            // 加入點擊事件並使用虛線底線提示可互動
+            return `<span style="display: inline-block; background: #fff3cd; padding: 4px 10px; border-radius: 12px; cursor: pointer; border: 1px solid #ffeeba; text-decoration: underline dotted #d39e00;" onclick="showAssetModal('${a.name}', '${desc}')">${icon}${a.name}</span>`;
+        }).join('');
     };
 
-    setField('user-skill', data.skill);
-    setField('user-skill-desc', data.skill_description);
-    setField('user-equipment', data.equipment);
-    setField('user-equipment-desc', data.equipment_description);
+    // 渲染一般圖示標籤與條列式說明文字 (技能、裝備)
+    const renderStaticTagsAndDesc = (type, tagContainerId, descContainerId) => {
+        const items = assets.filter(a => a.type === type);
+        const tagContainer = document.getElementById(tagContainerId);
+        const descContainer = document.getElementById(descContainerId);
+        
+        if (items.length === 0) {
+            if(tagContainer) tagContainer.innerHTML = '<span>無</span>';
+            if(descContainer) descContainer.innerHTML = '無';
+            return;
+        }
+
+        if(tagContainer) {
+            tagContainer.innerHTML = items.map(a => {
+                const icon = a.icon_url ? `<img src="${a.icon_url}" style="height: 1.2em; vertical-align: middle; margin-right: 4px; border-radius: 2px;">` : '';
+                return `<span style="display: inline-block; background: #e9ecef; padding: 3px 10px; border-radius: 12px; border: 1px solid #ced4da;">${icon}${a.name}</span>`;
+            }).join('');
+        }
+        
+        if(descContainer) {
+            descContainer.innerHTML = items.map(a => {
+                const desc = a.custom_description || a.default_desc || '無說明';
+                return `<div style="margin-bottom: 4px;"><strong>${a.name}:</strong> ${desc}</div>`;
+            }).join('');
+        }
+    };
+
+    // 寫入畫面
+    if (assets.length > 0) {
+        document.getElementById('user-title').innerHTML = renderInteractiveTags('title');
+        document.getElementById('user-achievement').innerHTML = renderInteractiveTags('achievement');
+        renderStaticTagsAndDesc('skill', 'user-skill', 'user-skill-desc');
+        renderStaticTagsAndDesc('equipment', 'user-equipment', 'user-equipment-desc');
+    } else {
+        // 向下相容舊版資料
+        document.getElementById('user-title').innerHTML = '<span>無</span>';
+        document.getElementById('user-achievement').innerHTML = '<span>無</span>';
+        document.getElementById('user-skill').innerHTML = data.skill || '無';
+        document.getElementById('user-skill-desc').innerHTML = data.skill_description || '無';
+        document.getElementById('user-equipment').innerHTML = data.equipment || '無';
+        document.getElementById('user-equipment-desc').innerHTML = data.equipment_description || '無';
+    }
 }
+
+// 【新增】供 onClick 呼叫的全域函式，用來開啟小視窗
+window.showAssetModal = function(name, desc) {
+    document.getElementById('asset-info-title').textContent = name;
+    document.getElementById('asset-info-desc').textContent = desc;
+    document.getElementById('asset-info-modal').style.display = 'flex';
+};
 
 async function initializeMyBookingsPage() {
     if (!userProfile) return;
