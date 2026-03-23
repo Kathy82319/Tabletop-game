@@ -128,7 +128,14 @@ function addGameToSelection(game) {
     const tag = document.createElement('div');
     tag.className = 'selected-game-tag';
     tag.dataset.gameId = game.game_id;
-    tag.innerHTML = `<span>${game.name}</span><button type="button" class="remove-game-btn">&times;</button>`;
+    
+    // 【修改】在標籤內加入重量輸入框 (game-weight-input)
+    tag.innerHTML = `
+        <span>${game.name}</span>
+        <input type="number" class="game-weight-input" placeholder="重量(g)" style="width: 70px; margin-left: 8px; padding: 2px 4px; border-radius: 4px; border: none; outline: none; color: #333; font-size: 0.85rem;" min="0" required>
+        <button type="button" class="remove-game-btn">&times;</button>
+    `;
+    
     container.appendChild(tag);
     document.getElementById('rental-game-search').value = '';
     document.getElementById('game-search-results').style.display = 'none';
@@ -160,9 +167,19 @@ async function handleCreateRentalFormSubmit(event) {
         if (!confirmed) return;
     }
 
+        // 【新增】從畫面上逐一取得每個遊戲的 ID 與重量
+    const gamesData = [];
+    const gameElements = form.querySelectorAll('.selected-game-tag');
+    gameElements.forEach(el => {
+        gamesData.push({
+            gameId: el.dataset.gameId,
+            weight: el.querySelector('.game-weight-input').value
+        });
+    });
+
     const data = {
         userId: form.querySelector('#rental-user-id').value || null,
-        gameIds: [...selectedRentalGames.keys()],
+        games: gamesData, // 【修改】將原本的 gameIds 改為 games
         dueDate: form.querySelector('#rental-due-date').value,
         name: form.querySelector('#rental-contact-name').value.trim(),
         phone: phone,
@@ -171,7 +188,7 @@ async function handleCreateRentalFormSubmit(event) {
         lateFeePerDay: form.querySelector('#rental-late-fee').value,
     };
     
-    if (data.gameIds.length === 0) return ui.toast.error('請至少選擇一款遊戲。');
+    if (data.games.length === 0) return ui.toast.error('請至少選擇一款遊戲。');
     if (!data.name) return ui.toast.error('租借人姓名為必填。');
 
     button.disabled = true;

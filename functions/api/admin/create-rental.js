@@ -7,14 +7,16 @@ export async function onRequest(context) {
     }
 
     const body = await context.request.json();
+    // 【修改】將 gameIds 改為接收 games
     const { 
-        userId, gameIds, dueDate, name, phone,
+        userId, games, dueDate, name, phone,
         rentPrice, deposit, lateFeePerDay 
     } = body;
 
     const errors = [];
     if (userId && typeof userId !== 'string') errors.push('無效的會員 ID 格式。');
-    if (!gameIds || !Array.isArray(gameIds) || gameIds.length === 0) errors.push('必須至少選擇一款租借的遊戲。');
+    // 【修改】驗證 games 陣列
+    if (!games || !Array.isArray(games) || games.length === 0) errors.push('必須至少選擇一款租借的遊戲。');
     if (!dueDate || !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) errors.push('無效的歸還日期格式。');
     if (!name || typeof name !== 'string' || name.trim().length === 0 || name.length > 50) errors.push('租借人姓名為必填，且長度不可超過 50 字。');
 
@@ -34,7 +36,10 @@ export async function onRequest(context) {
     const allGameNames = [];
     const dbOperations = [];
     
-    for (const rawGameId of gameIds) {
+    // 【修改】迴圈遍歷 games 物件陣列
+    for (const item of games) {
+        const rawGameId = item.gameId;
+        const gameWeight = item.weight || '未填寫'; // 取得公克數
         
         const gameId = Number(rawGameId);
         if (isNaN(gameId) || gameId <= 0) {
@@ -45,7 +50,8 @@ export async function onRequest(context) {
         if (!game) throw new Error(`找不到 ID 為 ${gameId} 的遊戲。`);
         if (game.for_rent_stock <= 0) throw new Error(`《${game.name}》目前已無可租借庫存。`);
         
-        allGameNames.push(game.name);
+        // 【關鍵修改】將重量加入到 LINE 訊息用的陣列中
+        allGameNames.push(`${game.name} (重量: ${gameWeight}g)`);
 
         const insertStmt = db.prepare(
             `INSERT INTO Rentals (user_id, game_id, due_date, name, phone, rent_price, deposit, late_fee_per_day) 
