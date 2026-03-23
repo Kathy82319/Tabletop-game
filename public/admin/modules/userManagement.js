@@ -290,8 +290,16 @@ function addDynamicAssetRow(containerId, assetType, selectedName = '', descripti
 }
 
 async function openEditUserModal(userId) {
-    const user = allUsers.find(u => u.user_id === userId);
-    if (!user) return ui.toast.error('找不到該使用者！');
+    ui.showModal('#edit-user-modal'); // 先顯示 Modal 提高反應速度
+    
+    // 【關鍵修改】每次編輯都從後端拉取最新、最完整的資料
+    let user;
+    try {
+        const data = await api.getUserDetails(userId);
+        user = data.profile;
+    } catch (e) {
+        return ui.toast.error("無法取得顧客資料：" + e.message);
+    }
 
     if (allAssets.length === 0) {
         try { allAssets = await api.getGameAssets(); } 
@@ -299,8 +307,6 @@ async function openEditUserModal(userId) {
     }
 
     const modal = document.getElementById('edit-user-modal');
-    if(!modal) return ui.toast.error("HTML 結構錯誤");
-
     modal.querySelector('#edit-user-id').value = user.user_id;
     modal.querySelector('#modal-user-title').textContent = `編輯：${user.nickname || user.line_display_name}`;
     modal.querySelector('#edit-level-input').value = user.level;
@@ -308,12 +314,11 @@ async function openEditUserModal(userId) {
     modal.querySelector('#edit-notes-textarea').value = user.notes || '';
     modal.querySelector('#edit-perk-input').value = user.perk || '';
 
-    // 設定職業 (單選)
+    // 設定職業與標籤
     setupAssetDropdown('edit-class-select', 'edit-class-other-input', 'class', user.class, (desc) => {
         document.getElementById('edit-perk-input').value = desc;
     });
 
-    // 設定標籤 (單選)
     const tagSelect = document.getElementById('edit-tag-select');
     const tagInput = document.getElementById('edit-tag-other-input');
     const defaultTags = ['無', '會員', '員工', '黑名單'];
@@ -331,21 +336,27 @@ async function openEditUserModal(userId) {
     }
     tagSelect.onchange = () => { tagInput.style.display = tagSelect.value === 'other' ? 'block' : 'none'; };
 
-    // 【新增】清空所有動態容器
+    // 清空所有動態容器
     ['edit-title-container', 'edit-achievement-container', 'edit-skill-container', 'edit-equipment-container'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = '';
     });
 
-    // 【過渡期處理】把舊資料庫中的單一 skill 和 equipment 轉化成動態欄位顯示
-    if (user.skill && user.skill !== '無') {
-        addDynamicAssetRow('edit-skill-container', 'skill', user.skill, user.skill_description || '');
+    // 【新增】把資料庫裡的動態資產顯示出來
+    if (user.user_assets && user.user_assets.length > 0) {
+        user.user_assets.forEach(asset => {
+            const desc = asset.custom_description || asset.default_desc || '';
+            addDynamicAssetRow(`edit-${asset.type}-container`, asset.type, asset.name, desc);
+        });
+    } else {
+        // 【過渡期相容】如果新系統沒資料，就把舊版的技能/裝備秀出來
+        if (user.skill && user.skill !== '無') {
+            addDynamicAssetRow('edit-skill-container', 'skill', user.skill, user.skill_description || '');
+        }
+        if (user.equipment && user.equipment !== '無') {
+            addDynamicAssetRow('edit-equipment-container', 'equipment', user.equipment, user.equipment_description || '');
+        }
     }
-    if (user.equipment && user.equipment !== '無') {
-        addDynamicAssetRow('edit-equipment-container', 'equipment', user.equipment, user.equipment_description || '');
-    }
-
-    ui.showModal('#edit-user-modal');
 }
 
 async function handleEditUserFormSubmit(event) {
@@ -484,6 +495,18 @@ function renderUserDetails(data) {
     const displayName = profile.nickname || profile.line_display_name;
     document.querySelector('#user-details-modal #user-details-title').textContent = displayName;
     
+    // 【新增】產生帶有圖示與互動說明的資產標籤
+    const renderAssetsHtml = (type) => {
+        const items = profile.user_assets ? profile.user_assets.filter(a => a.type === type) : [];
+        if (items.length === 0) return '<span style="color:#aaa;">無</span>';
+        return items.map(a => {
+            const icon = a.icon_url ? `<img src="${a.icon_url}" style="height: 1.2em; vertical-align: middle; margin-right: 4px; border-radius: 2px;">` : '';
+            const desc = a.custom_description || a.default_desc || '無說明';
+            // 使用 title 屬性，游標移過去就會浮現說明框，省去寫複雜 Modal 的麻煩
+            return `<span style="display: inline-block; background: #e9ecef; padding: 2px 8px; border-radius: 12px; margin: 2px; cursor: help; border: 1px solid #ced4da;" title="${desc}">${icon}${a.name}</span>`;
+        }).join(' ');
+    };
+
     contentContainer.innerHTML = `
         <div class="details-grid">
             <div class="profile-summary">
@@ -495,16 +518,19 @@ function renderUserDetails(data) {
                 <hr>
                 <p><strong>等級:</strong> ${profile.level} (${profile.current_exp}/10 EXP)</p>
                 <p><strong>職業:</strong> ${profile.class}</p>
-                <p><strong>技能:</strong> ${profile.skill || '無'}</p>
-                <p><strong>裝備:</strong> ${profile.equipment || '無'}</p>
-                <p><strong>標籤:</strong> ${profile.tag}</p>
+                <div style="margin: 8px 0;"><strong>稱號:</strong> <div style="margin-top:2px;">${renderAssetsHtml('title')}</div></div>
+                <div style="margin: 8px 0;"><strong>成就:</strong> <div style="margin-top:2px;">${renderAssetsHtml('achievement')}</div></div>
+                <div style="margin: 8px 0;"><strong>技能:</strong> <div style="margin-top:2px;">${renderAssetsHtml('skill')}</div></div>
+                <div style="margin: 8px 0;"><strong>裝備:</strong> <div style="margin-top:2px;">${renderAssetsHtml('equipment')}</div></div>
+                <hr>
+                <p><strong>標籤:</strong> <span class="tag-display">${profile.tag}</span></p>
             </div>
             <div class="profile-details">
                 ${profile.notes ? `<div class="crm-notes-section" style="margin-bottom: 1rem; padding: 0.8rem; background-color: #fffbe6; border-radius: 6px; border: 1px solid #ffe58f; max-height: 5em; overflow-y: auto;"><h4 style="margin-bottom: 5px;">顧客備註</h4><p style="white-space: pre-wrap; margin: 0; text-align: left;">${profile.notes}</p></div>` : ''}
                 <div class="details-tabs">
                     <button class="details-tab active" data-target="tab-bookings">預約紀錄</button>
                     <button class="details-tab" data-target="tab-rentals">租借紀錄</button>
-                    <button class="details-tab" data-target="tab-exp">經驗值紀錄</button>
+                    <button class="details-tab" data-target="tab-exp">經驗紀錄</button>
                 </div>
                 <div class="details-tab-content active" id="tab-bookings"></div>
                 <div class="details-tab-content" id="tab-rentals"></div>
