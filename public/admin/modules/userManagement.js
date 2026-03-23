@@ -83,10 +83,13 @@ function handleUserSearch() {
 // 2. 會員制度設定相關功能 (新增功能)
 // ============================================================
 
+// 【修改】加入 title 與 achievement 的顯示標籤
 const typeLabels = {
     'class': { label: '職業', desc: '預設福利' },
     'skill': { label: '技能', desc: '技能說明' },
-    'equipment': { label: '裝備', desc: '裝備效果' }
+    'equipment': { label: '裝備', desc: '裝備效果' },
+    'title': { label: '稱號', desc: '稱號說明' },
+    'achievement': { label: '成就', desc: '達成條件說明' }
 };
 
 function renderAssetsList() {
@@ -100,13 +103,21 @@ function renderAssetsList() {
     
     tbody.innerHTML = '';
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3">尚無資料。</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4">尚無資料。</td></tr>'; // 【修改】跨 4 欄
         return;
     }
 
     filtered.forEach(asset => {
         const row = tbody.insertRow();
+        
+        // 【新增】判斷如果有圖片網址，就顯示出來
+        const iconHtml = asset.icon_url 
+            ? `<img src="${asset.icon_url}" style="max-height: 1.5em; vertical-align: middle; border-radius: 4px;">` 
+            : '-';
+
+        // 【修改】嚴格輸出 4 個 <td>
         row.innerHTML = `
+            <td style="text-align: center;">${iconHtml}</td>
             <td>${asset.name}</td>
             <td>${asset.description || '-'}</td>
             <td><button class="action-btn btn-edit-asset" data-id="${asset.id}" style="background-color: var(--warning-color); color: #000;">編輯</button></td>
@@ -131,11 +142,14 @@ function openEditAssetModal(assetId = null) {
             document.getElementById('edit-asset-id').value = asset.id;
             document.getElementById('edit-asset-name').value = asset.name;
             document.getElementById('edit-asset-desc').value = asset.description;
+            // 【新增】編輯時帶入圖示網址
+            document.getElementById('edit-asset-icon').value = asset.icon_url || '';
             deleteBtn.style.display = 'inline-block';
             deleteBtn.onclick = () => handleAssetDelete(asset.id);
         }
     } else {
         document.getElementById('edit-asset-id').value = '';
+        document.getElementById('edit-asset-icon').value = ''; // 【新增】清空圖示網址
         deleteBtn.style.display = 'none';
     }
     
@@ -148,11 +162,13 @@ async function handleAssetSave(e) {
     button.disabled = true;
     button.textContent = '儲存中...';
 
+    // 【修改】收集資料時抓取 icon_url
     const data = {
         id: document.getElementById('edit-asset-id').value,
         type: document.getElementById('edit-asset-type').value,
         name: document.getElementById('edit-asset-name').value,
-        description: document.getElementById('edit-asset-desc').value
+        description: document.getElementById('edit-asset-desc').value,
+        icon_url: document.getElementById('edit-asset-icon').value
     };
     
     try {
