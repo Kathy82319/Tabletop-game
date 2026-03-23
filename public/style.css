@@ -412,21 +412,28 @@ input[readonly] {
 .profile-avatar-container {
     position: relative; /* 關鍵：為了讓小圈圈相對於此定位 */
     width: 80px;  /* 稍微放大 LINE 大頭貼 */
-    height: 80px;
-    margin: 0 auto;
+    height: 80px; /* 關鍵：強制設定高度與寬度一樣，確保它是正方形 */
+    
+    /* 關鍵排版修正：解決 elliptical 橢圓問題 */
+    flex-shrink: 0; /* 防止它在空間不足時被擠壓 */
+    align-self: center; /* 關鍵：讓它在父容器 (flex) 中垂直置中，而【不要】讓父容器把它垂直拉伸 (Stretch) */
+    
+    margin: 0 auto; /* 水平置中 (用於原本結構) */
 }
 
 /* 2. 主圈圈 (LINE 大頭貼) */
 .profile-avatar-img {
-    width: 100%;
+    width: 100%; /* 填滿正方形 container */
     height: 100%;
-    border-radius: 50%;
+    border-radius: 50%; /* 在正方形上，就是完美的圓形 */
     border: 3px solid white; /* 白色外圈 */
     box-shadow: 0 2px 10px rgba(0,0,0,0.15); /* 柔和陰影 */
-    object-fit: cover;
+    
+    /* 關鍵縮放控制：解決內容變形問題 */
+    object-fit: cover; /* 關鍵：這行能保證圖片會自動充滿圓形邊界，裁剪掉不需要的部分，但絕對不會「被壓扁」或「被拉長」，保持長寬比。就像 LINE 本身的裁切頭像效果。 */
+    display: block; /* 移除基線空格 */
 }
 
-/* 3. 【新增】小圈圈容器 (職業圖片) */
 #class-icon-overlay {
     position: absolute; /* 相對於父容器定位 */
     bottom: -5px;  /* 關鍵定位：黏在右下角 */
@@ -439,9 +446,10 @@ input[readonly] {
     overflow: hidden; /* 確保內部的圖片不會跑出來 */
     display: none; /* 預設隱藏，有圖片才顯示 */
     box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* 小陰影 */
+    z-index: 10; /* 確保它保持在最上層 */
 }
 
-/* 4. 小圈圈內部的圖片 */
+/* 4. 小圈圈內部的圖片 保持不變 ... */
 #user-class-icon {
     width: 100%;
     height: 100%;
