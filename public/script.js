@@ -355,10 +355,19 @@ liff.getProfile().then(profile => {
         }
     }
 
+// public/script.js -> function updateProfileDisplay(data) {...}
+
 function updateProfileDisplay(data) {
     if (!data) return;
     
-    // 基本資料
+    // 【修改】大頭貼圖片與職業小圈圈邏輯
+    const pictureEl = document.getElementById('profile-picture');
+    if (pictureEl) pictureEl.src = userProfile.pictureUrl || '/api/admin/get-avatar?userId=' + data.user_id; // LINE Picture优先，否则后端拉取
+
+    const overlayEl = document.getElementById('class-icon-overlay');
+    const classIconEl = document.getElementById('user-class-icon');
+    
+    // 基本資料填充
     document.getElementById('display-name').textContent = data.nickname || userProfile.displayName;
     document.getElementById('user-class').textContent = data.class || "無";
     
@@ -370,8 +379,23 @@ function updateProfileDisplay(data) {
 
     // 處理多筆動態資產 (user_assets)
     const assets = data.user_assets || [];
+
+    // --- 【新增】核心邏輯：在 user_assets 中尋找對應的職業圖片並顯示在小圈圈中 ---
+    if (assets.length > 0) {
+        // 比對出真實的職業資產
+        const classAsset = assets.find(a => a.type === 'class' && a.name === data.class);
+        if (classAsset && classAsset.icon_url && classIconEl && overlayEl) {
+            classIconEl.src = classAsset.icon_url; // 填充圖片網址
+            overlayEl.style.display = 'block'; // 顯示小圈圈
+        } else if(overlayEl) {
+            overlayEl.style.display = 'none'; // 找不到圖片或職業不存在，則隱藏小圈圈
+        }
+    } else if(overlayEl) {
+        overlayEl.style.display = 'none'; // 新系統沒資料，則隱藏小圈圈
+    }
     
-    // 渲染「稱號、成就」：拿掉黃底，保留虛線，點擊彈出小視窗
+    // --- 【原有邏輯】渲染「稱號、成就」部分 保持不變 ... ---
+    // 渲染帶圖示、可點擊的互動標籤 (稱號、成就)
     const renderInteractiveTags = (type) => {
         const items = assets.filter(a => a.type === type);
         if (items.length === 0) return '<span>無</span>';
@@ -379,12 +403,13 @@ function updateProfileDisplay(data) {
         return items.map(a => {
             const icon = a.icon_url ? `<img src="${a.icon_url}" style="height: 1.1em; vertical-align: middle; margin-right: 3px; border-radius: 2px;">` : '';
             const desc = a.custom_description || a.default_desc || '無說明';
-            // 【修改】CSS 樣式：拿掉背景與邊框，文字顏色加深，保留虛線底線
+            // CSS 樣式：拿掉背景與邊框，文字顏色加深，保留虛線底線
             return `<span style="display: inline-block; padding: 2px 0; cursor: pointer; color: #333; text-decoration: underline dotted #999; text-underline-offset: 3px;" onclick="showAssetPopover('${a.name}', '${desc}')">${icon}${a.name}</span>`;
         }).join('<span style="color: #ccc; margin: 0 4px;">|</span>'); // 用直槓分隔
     };
 
-    // 渲染「技能、裝備」：一般圖示標籤，說明改為條列式且標題粗體
+    // --- 【原有邏輯】渲染「技能、裝備」部分 保持不變 ... ---
+    // 渲染一般圖示標籤與條列式說明文字 (技能、裝備)
     const renderStaticTagsAndDesc = (type, tagContainerId, descContainerId) => {
         const items = assets.filter(a => a.type === type);
         const tagContainer = document.getElementById(tagContainerId);
@@ -399,13 +424,12 @@ function updateProfileDisplay(data) {
         if(tagContainer) {
             tagContainer.innerHTML = items.map(a => {
                 const icon = a.icon_url ? `<img src="${a.icon_url}" style="height: 1.1em; vertical-align: middle; margin-right: 3px; border-radius: 2px;">` : '';
-                // 這裡的 CSS 已由 admin-panel.html 統一樣式
                 return `<span style="display: inline-block; background: #e9ecef; padding: 2px 8px; border-radius: 12px; border: 1px solid #ced4da; font-size: 0.9em;">${icon}${a.name}</span>`;
             }).join('');
         }
         
         if(descContainer) {
-            // 【修改】說明排版：標題變粗體，內容不變粗體
+            // 說明排版：標題變粗體，內容不變粗體
             descContainer.innerHTML = items.map(a => {
                 const desc = a.custom_description || a.default_desc || '無說明';
                 return `<div style="margin-bottom: 3px;"><strong style="color: #444;">${a.name}:</strong> <span style="color: #666;">${desc}</span></div>`;
@@ -413,6 +437,7 @@ function updateProfileDisplay(data) {
         }
     };
 
+    // --- 【原有邏輯】寫入畫面部分 保持不變 ... ---
     // 寫入畫面
     if (assets.length > 0) {
         document.getElementById('user-title').innerHTML = renderInteractiveTags('title');
@@ -420,7 +445,7 @@ function updateProfileDisplay(data) {
         renderStaticTagsAndDesc('skill', 'user-skill', 'user-skill-desc');
         renderStaticTagsAndDesc('equipment', 'user-equipment', 'user-equipment-desc');
     } else {
-        // 向下相容舊版資料保持不變
+        // 向下相容舊版資料 保持不變
         document.getElementById('user-title').innerHTML = '<span>無</span>';
         document.getElementById('user-achievement').innerHTML = '<span>無</span>';
         document.getElementById('user-skill').innerHTML = data.skill || '無';
@@ -429,6 +454,7 @@ function updateProfileDisplay(data) {
         document.getElementById('user-equipment-desc').innerHTML = data.equipment_description || '無';
     }
 }
+
 
 // 【新增】開啟小小解釋欄 (Popover)
 window.showAssetPopover = function(name, desc) {

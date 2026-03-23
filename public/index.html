@@ -121,10 +121,16 @@
         <div class="profile-header-section">
             <div class="profile-avatar-container">
                 <img id="profile-picture" class="profile-avatar-img" src="placeholder.jpg" alt="Avatar">
+                <div id="class-icon-overlay">
+                    <img id="user-class-icon" src="" alt="Class">
+                </div>
             </div>
+            
             <div class="profile-basic-info" style="position: relative; flex-grow: 1;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <h2 id="display-name" class="profile-name" style="margin: 0; padding-right: 30px;">讀取中...</h2>
+
+
 <span id="qr-icon-btn" style="cursor: pointer; position: absolute; top: 0; right: 0; color: #333;" title="出示公會卡">
     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="background-color: #fff; padding: 4px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
         <rect width="5" height="5" x="3" y="3" rx="1"></rect>
@@ -143,7 +149,7 @@
 </span>
                 </div>
                 
-                <div class="profile-row-item" style="margin-top: 5px;">
+        <div class="profile-row-item" style="margin-top: 5px;">
                     <span class="profile-label">職業：</span>
                     <span class="profile-value">
                         <span id="user-class">--</span> <span id="user-perk-text" style="font-size:0.9em; color:#666;"></span>

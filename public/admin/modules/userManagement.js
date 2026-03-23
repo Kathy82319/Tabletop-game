@@ -495,14 +495,15 @@ function renderUserDetails(data) {
     const displayName = profile.nickname || profile.line_display_name;
     document.querySelector('#user-details-modal #user-details-title').textContent = displayName;
     
-    // 產生帶有圖示與互動說明的資產標籤
+    // 【修改 1】產生資產標籤：拿掉原本 span 內的 margin: 2px;
     const renderAssetsHtml = (type) => {
         const items = profile.user_assets ? profile.user_assets.filter(a => a.type === type) : [];
         if (items.length === 0) return '<span style="color:#aaa;">無</span>';
         return items.map(a => {
             const icon = a.icon_url ? `<img src="${a.icon_url}" style="height: 1.2em; vertical-align: middle; margin-right: 4px; border-radius: 2px;">` : '';
             const desc = a.custom_description || a.default_desc || '無說明';
-            return `<span style="display: inline-block; background: #e9ecef; padding: 3px 10px; border-radius: 12px; cursor: help; border: 1px solid #ced4da;" title="${desc}">${icon}${a.name}</span>`;
+            // 【關鍵修改】這裡拿掉了原本的 margin: 2px;
+            return `<span style="display: inline-block; background: #e9ecef; padding: 3px 10px; border-radius: 12px; cursor: help; border: 1px solid #ced4da; line-height: 1.2;" title="${desc}">${icon}${a.name}</span>`;
         }).join('');
     };
 
@@ -515,7 +516,7 @@ function renderUserDetails(data) {
                 <p><strong>姓名:</strong> ${profile.real_name || '未設定'}</p>
                 <p><strong>電話:</strong> ${profile.phone || '未設定'}</p>
                 <p><strong>Email:</strong> ${profile.email || '未設定'}</p>
-                <p><strong>標籤:</strong> <span class="tag-display">${profile.tag}</span></p>
+                <p style="margin-top: 10px;"><strong>標籤:</strong> <span class="tag-display">${profile.tag}</span></p>
             </div>
             <div class="profile-details">
                 ${profile.notes ? `<div class="crm-notes-section" style="margin-bottom: 1rem; padding: 0.8rem; background-color: #fffbe6; border-radius: 6px; border: 1px solid #ffe58f; max-height: 5em; overflow-y: auto;"><h4 style="margin-bottom: 5px;">顧客備註</h4><p style="white-space: pre-wrap; margin: 0; text-align: left;">${profile.notes}</p></div>` : ''}
@@ -526,15 +527,15 @@ function renderUserDetails(data) {
                     <button class="details-tab" data-target="tab-exp">經驗紀錄</button>
                 </div>
                 
-                <div class="details-tab-content active" id="tab-adventurer" style="padding: 15px 5px;">
-                    <div style="margin-bottom: 12px; font-size: 0.95rem;">
-                        <span>等級： ${profile.level} (${profile.current_exp}/10 EXP)  </span>
-                        <span>職業： ${profile.class}</span>
+                <div class="details-tab-content active" id="tab-adventurer" style="padding: 15px 5px; line-height: 1.5;">
+                    <div style="margin-bottom: 14px; font-size: 0.95rem;">
+                        <span style="display: inline-block; width: 45%;"><strong>等級:</strong> ${profile.level} (${profile.current_exp}/10 EXP)</span>
+                        <span style="display: inline-block; width: 45%;"><strong>職業:</strong> ${profile.class}</span>
                     </div>
-                    <div>稱號： ${renderAssetsHtml('title')}</div>
-                    <div>成就： ${renderAssetsHtml('achievement')}</div>
-                    <div>技能： ${renderAssetsHtml('skill')}</div>
-                    <div>裝備： ${renderAssetsHtml('equipment')}</div>
+                    <div style="margin-bottom: 14px;"><strong>稱號:</strong> <div style="margin-top:8px; display: flex; flex-wrap: wrap; gap: 8px;">${renderAssetsHtml('title')}</div></div>
+                    <div style="margin-bottom: 14px;"><strong>成就:</strong> <div style="margin-top:8px; display: flex; flex-wrap: wrap; gap: 8px;">${renderAssetsHtml('achievement')}</div></div>
+                    <div style="margin-bottom: 14px;"><strong>技能:</strong> <div style="margin-top:8px; display: flex; flex-wrap: wrap; gap: 8px;">${renderAssetsHtml('skill')}</div></div>
+                    <div style="margin-bottom: 14px;"><strong>裝備:</strong> <div style="margin-top:8px; display: flex; flex-wrap: wrap; gap: 8px;">${renderAssetsHtml('equipment')}</div></div>
                 </div>
 
                 <div class="details-tab-content" id="tab-bookings"></div>
