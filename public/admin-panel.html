@@ -392,6 +392,43 @@
     from { opacity: 0; }
     to { opacity: 1; }
 }
+
+/* --- 【新增】編輯使用者：動態多筆資產欄位樣式 --- */
+.dynamic-asset-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    align-items: flex-start;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+.dynamic-asset-inputs {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.btn-remove-asset {
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.2rem;
+    line-height: 1;
+}
+.add-asset-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
     </style>
 </head>
 <body>
@@ -814,68 +851,83 @@
         </div>
     </div>
 <div id="edit-user-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modal-user-title">編輯使用者</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <form id="edit-user-form">
-                <input type="hidden" id="edit-user-id">
-                
-                <div class="sub-grid">
-                    <div class="form-group"><label>等級</label><input type="number" id="edit-level-input" min="1"></div>
-                    <div class="form-group"><label>經驗值</label><input type="number" id="edit-exp-input" min="0"></div>
-                </div>
-
-                <div class="form-group">
-                    <label>職業 (Class)</label>
-                    <select id="edit-class-select"></select>
-                    <input type="text" id="edit-class-other-input" placeholder="自訂職業" style="display:none; margin-top:5px;">
-                </div>
-                <div class="form-group">
-                    <label>職業福利 (Perk)</label>
-                    <input type="text" id="edit-perk-input" placeholder="對應職業的福利內容">
-                </div>
-                
-                <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
-
-                <div class="form-group">
-                    <label>技能 (Skill)</label>
-                    <select id="edit-skill-select"></select>
-                    <input type="text" id="edit-skill-other-input" placeholder="自訂技能" style="display:none; margin-top:5px;">
-                </div>
-                <div class="form-group">
-                    <label>技能說明 (Description)</label>
-                    <textarea id="edit-skill-desc-input" rows="2" placeholder="技能的效果說明"></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>裝備 (Equipment)</label>
-                    <select id="edit-equipment-select"></select>
-                    <input type="text" id="edit-equipment-other-input" placeholder="自訂裝備" style="display:none; margin-top:5px;">
-                </div>
-                <div class="form-group">
-                    <label>裝備效果 (Effect)</label>
-                    <textarea id="edit-equipment-desc-input" rows="2" placeholder="裝備的特殊效果"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>標籤</label>
-                    <select id="edit-tag-select"></select>
-                    <input type="text" id="edit-tag-other-input" style="display:none; margin-top:5px;">
-                </div>
-                
-                <div class="form-group">
-                    <label>備註</label>
-                    <textarea id="edit-notes-textarea" rows="3"></textarea>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" class="action-btn btn-cancel">取消</button>
-                    <button type="submit" class="action-btn btn-save">儲存</button>
-                </div>
-            </form>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-user-title">編輯使用者</h3>
+            <button class="modal-close">&times;</button>
         </div>
+        <form id="edit-user-form">
+            <input type="hidden" id="edit-user-id">
+            
+            <div class="sub-grid">
+                <div class="form-group"><label>等級</label><input type="number" id="edit-level-input" min="1"></div>
+                <div class="form-group"><label>經驗值</label><input type="number" id="edit-exp-input" min="0"></div>
+            </div>
+
+            <div class="form-group">
+                <label>職業 (Class) - 單選</label>
+                <select id="edit-class-select"></select>
+                <input type="text" id="edit-class-other-input" placeholder="自訂職業" style="display:none; margin-top:5px;">
+            </div>
+            <div class="form-group">
+                <label>職業福利 (Perk)</label>
+                <input type="text" id="edit-perk-input" placeholder="對應職業的福利內容">
+            </div>
+            
+            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
+
+            <div class="form-group">
+                <div class="add-asset-header">
+                    <label style="margin: 0; font-weight: bold; color: var(--primary-color);">稱號 (Title)</label>
+                    <button type="button" class="action-btn btn-add-asset-row" data-type="title" style="background-color: var(--success-color); padding: 3px 10px; font-size: 0.85rem;">＋ 新增稱號</button>
+                </div>
+                <div id="edit-title-container"></div>
+            </div>
+
+            <div class="form-group">
+                <div class="add-asset-header">
+                    <label style="margin: 0; font-weight: bold; color: var(--primary-color);">成就 (Achievement)</label>
+                    <button type="button" class="action-btn btn-add-asset-row" data-type="achievement" style="background-color: var(--success-color); padding: 3px 10px; font-size: 0.85rem;">＋ 新增成就</button>
+                </div>
+                <div id="edit-achievement-container"></div>
+            </div>
+
+            <div class="form-group">
+                <div class="add-asset-header">
+                    <label style="margin: 0; font-weight: bold; color: var(--primary-color);">技能 (Skill)</label>
+                    <button type="button" class="action-btn btn-add-asset-row" data-type="skill" style="background-color: var(--success-color); padding: 3px 10px; font-size: 0.85rem;">＋ 新增技能</button>
+                </div>
+                <div id="edit-skill-container"></div>
+            </div>
+
+            <div class="form-group">
+                <div class="add-asset-header">
+                    <label style="margin: 0; font-weight: bold; color: var(--primary-color);">裝備 (Equipment)</label>
+                    <button type="button" class="action-btn btn-add-asset-row" data-type="equipment" style="background-color: var(--success-color); padding: 3px 10px; font-size: 0.85rem;">＋ 新增裝備</button>
+                </div>
+                <div id="edit-equipment-container"></div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
+
+            <div class="form-group">
+                <label>標籤</label>
+                <select id="edit-tag-select"></select>
+                <input type="text" id="edit-tag-other-input" style="display:none; margin-top:5px;">
+            </div>
+            
+            <div class="form-group">
+                <label>備註</label>
+                <textarea id="edit-notes-textarea" rows="3"></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="action-btn btn-cancel">取消</button>
+                <button type="submit" class="action-btn btn-save">儲存</button>
+            </div>
+        </form>
     </div>
+</div>
 
     <div id="edit-news-modal" class="modal-overlay">
         <div class="modal-content">
