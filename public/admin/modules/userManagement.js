@@ -246,7 +246,10 @@ function setupAssetDropdown(selectId, otherInputId, type, currentValue, onSelect
 }
 
 // 【新增】產生動態多筆欄位
-function addDynamicAssetRow(containerId, assetType, selectedName = '', description = '') {
+// public/admin/modules/userManagement.js
+
+// 產生動態多筆欄位
+function addDynamicAssetRow(containerId, assetType, selectedName = '', customDescription = '') {
     const container = document.getElementById(containerId);
     if (!container) return;
     
@@ -265,20 +268,30 @@ function addDynamicAssetRow(containerId, assetType, selectedName = '', descripti
             <select class="asset-name-select" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
                 ${optionsHtml}
             </select>
-            <input type="text" class="asset-desc-input" placeholder="自訂說明 / 效果 (可留空)" value="${description}" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
+            <input type="text" class="asset-desc-input" value="${customDescription}" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
         </div>
         <button type="button" class="btn-remove-asset" title="移除此項目">&times;</button>
     `;
 
-    // 綁定下拉選單連動說明
     const selectEl = row.querySelector('.asset-name-select');
     const descEl = row.querySelector('.asset-desc-input');
-    selectEl.addEventListener('change', (e) => {
-        const selectedOpt = e.target.options[e.target.selectedIndex];
-        // 只有當輸入框是空的，才自動填入預設說明
-        if (selectedOpt && selectedOpt.dataset.desc && !descEl.value) {
-            descEl.value = selectedOpt.dataset.desc;
+
+    // 【新增】動態更新輸入框的浮水印 (Placeholder) 來提示預設說明
+    const updatePlaceholder = () => {
+        const selectedOpt = selectEl.options[selectEl.selectedIndex];
+        if (selectedOpt && selectedOpt.dataset.desc) {
+            descEl.placeholder = selectedOpt.dataset.desc;
+        } else {
+            descEl.placeholder = '自訂說明 / 效果 (可留空)';
         }
+    };
+    
+    updatePlaceholder(); // 初始化執行一次
+
+    // 綁定下拉選單連動
+    selectEl.addEventListener('change', () => {
+        updatePlaceholder(); // 切換選項時，更新背景浮水印
+        descEl.value = ''; // 【關鍵修改】切換項目時，強制清空輸入框，讓它吃最新的預設說明
     });
 
     // 綁定移除按鈕
@@ -342,22 +355,22 @@ async function openEditUserModal(userId) {
         if (el) el.innerHTML = '';
     });
 
-    // 【新增】把資料庫裡的動態資產顯示出來
+    // 把資料庫裡的動態資產顯示出來
     if (user.user_assets && user.user_assets.length > 0) {
         user.user_assets.forEach(asset => {
-            const desc = asset.custom_description || asset.default_desc || '';
+            // 【關鍵修改】只讀取「自訂說明」，如果沒有就給空字串，絕對不把「預設說明」塞給輸入框！
+            const desc = asset.custom_description || ''; 
             addDynamicAssetRow(`edit-${asset.type}-container`, asset.type, asset.name, desc);
         });
     } else {
-        // 【過渡期相容】如果新系統沒資料，就把舊版的技能/裝備秀出來
+        // 【過渡期相容】
         if (user.skill && user.skill !== '無') {
-            addDynamicAssetRow('edit-skill-container', 'skill', user.skill, user.skill_description || '');
+            addDynamicAssetRow('edit-skill-container', 'skill', user.skill, '');
         }
         if (user.equipment && user.equipment !== '無') {
-            addDynamicAssetRow('edit-equipment-container', 'equipment', user.equipment, user.equipment_description || '');
+            addDynamicAssetRow('edit-equipment-container', 'equipment', user.equipment, '');
         }
     }
-}
 
 async function handleEditUserFormSubmit(event) {
     event.preventDefault();
