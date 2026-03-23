@@ -298,17 +298,27 @@ async function initializeProfilePage() {
         document.getElementById('my-exp-history-btn').addEventListener('click', () => navigateTo('page-my-exp-history'));
         document.getElementById('rental-history-btn').addEventListener('click', () => navigateTo('page-rental-history'));
 
-// 【新增】綁定 QR Code 顯示按鈕
-    const qrBtn = document.getElementById('toggle-qrcode-btn');
+liff.getProfile().then(profile => {
+        userProfile = profile;
+        const pictureEl = document.getElementById('profile-picture');
+        if(pictureEl) pictureEl.src = profile.pictureUrl || 'placeholder.jpg';
+        // 舊的按鈕預設不顯示
+        const oldQrBtn = document.getElementById('toggle-qrcode-btn');
+        if(oldQrBtn) oldQrBtn.style.display = 'none'; 
+    });
+
+    // 【新增/修改】綁定 QR Code Icon 點擊按鈕
+    const qrIconBtn = document.getElementById('qr-icon-btn');
     const qrContainer = document.getElementById('qrcode-container');
-    if (qrBtn && qrContainer) {
+    if (qrIconBtn && qrContainer) {
         // 清除舊事件避免重複綁定
-        const newQrBtn = qrBtn.cloneNode(true);
-        qrBtn.parentNode.replaceChild(newQrBtn, qrBtn);
-        newQrBtn.addEventListener('click', () => {
+        const newQrIconBtn = qrIconBtn.cloneNode(true);
+        qrIconBtn.parentNode.replaceChild(newQrIconBtn, qrIconBtn);
+        newQrIconBtn.addEventListener('click', () => {
             const isHidden = qrContainer.style.display === 'none';
-            qrContainer.style.display = isHidden ? 'flex' : 'none';
-            newQrBtn.innerHTML = isHidden ? '隱藏公會卡' : '📱 出示公會卡 (QR Code)';
+            qrContainer.style.display = isHidden ? 'block' : 'none'; // 修改顯示方式為 block
+            // 點擊後滾動到上方，確保 QR Code 能被看見
+            if(isHidden) window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     }
 
@@ -361,20 +371,20 @@ function updateProfileDisplay(data) {
     // 處理多筆動態資產 (user_assets)
     const assets = data.user_assets || [];
     
-    // 渲染帶圖示、可點擊的互動標籤 (稱號、成就)
+    // 渲染「稱號、成就」：拿掉黃底，保留虛線，點擊彈出小視窗
     const renderInteractiveTags = (type) => {
         const items = assets.filter(a => a.type === type);
         if (items.length === 0) return '<span>無</span>';
         
         return items.map(a => {
-            const icon = a.icon_url ? `<img src="${a.icon_url}" style="height: 1.2em; vertical-align: middle; margin-right: 4px; border-radius: 2px;">` : '';
+            const icon = a.icon_url ? `<img src="${a.icon_url}" style="height: 1.1em; vertical-align: middle; margin-right: 3px; border-radius: 2px;">` : '';
             const desc = a.custom_description || a.default_desc || '無說明';
-            // 加入點擊事件並使用虛線底線提示可互動
-            return `<span style="display: inline-block; background: #fff3cd; padding: 4px 10px; border-radius: 12px; cursor: pointer; border: 1px solid #ffeeba; text-decoration: underline dotted #d39e00;" onclick="showAssetModal('${a.name}', '${desc}')">${icon}${a.name}</span>`;
-        }).join('');
+            // 【修改】CSS 樣式：拿掉背景與邊框，文字顏色加深，保留虛線底線
+            return `<span style="display: inline-block; padding: 2px 0; cursor: pointer; color: #333; text-decoration: underline dotted #999; text-underline-offset: 3px;" onclick="showAssetPopover('${a.name}', '${desc}')">${icon}${a.name}</span>`;
+        }).join('<span style="color: #ccc; margin: 0 4px;">|</span>'); // 用直槓分隔
     };
 
-    // 渲染一般圖示標籤與條列式說明文字 (技能、裝備)
+    // 渲染「技能、裝備」：一般圖示標籤，說明改為條列式且標題粗體
     const renderStaticTagsAndDesc = (type, tagContainerId, descContainerId) => {
         const items = assets.filter(a => a.type === type);
         const tagContainer = document.getElementById(tagContainerId);
@@ -388,15 +398,17 @@ function updateProfileDisplay(data) {
 
         if(tagContainer) {
             tagContainer.innerHTML = items.map(a => {
-                const icon = a.icon_url ? `<img src="${a.icon_url}" style="height: 1.2em; vertical-align: middle; margin-right: 4px; border-radius: 2px;">` : '';
-                return `<span style="display: inline-block; background: #e9ecef; padding: 3px 10px; border-radius: 12px; border: 1px solid #ced4da;">${icon}${a.name}</span>`;
+                const icon = a.icon_url ? `<img src="${a.icon_url}" style="height: 1.1em; vertical-align: middle; margin-right: 3px; border-radius: 2px;">` : '';
+                // 這裡的 CSS 已由 admin-panel.html 統一樣式
+                return `<span style="display: inline-block; background: #e9ecef; padding: 2px 8px; border-radius: 12px; border: 1px solid #ced4da; font-size: 0.9em;">${icon}${a.name}</span>`;
             }).join('');
         }
         
         if(descContainer) {
+            // 【修改】說明排版：標題變粗體，內容不變粗體
             descContainer.innerHTML = items.map(a => {
                 const desc = a.custom_description || a.default_desc || '無說明';
-                return `<div style="margin-bottom: 4px;"><strong>${a.name}:</strong> ${desc}</div>`;
+                return `<div style="margin-bottom: 3px;"><strong style="color: #444;">${a.name}:</strong> <span style="color: #666;">${desc}</span></div>`;
             }).join('');
         }
     };
@@ -408,7 +420,7 @@ function updateProfileDisplay(data) {
         renderStaticTagsAndDesc('skill', 'user-skill', 'user-skill-desc');
         renderStaticTagsAndDesc('equipment', 'user-equipment', 'user-equipment-desc');
     } else {
-        // 向下相容舊版資料
+        // 向下相容舊版資料保持不變
         document.getElementById('user-title').innerHTML = '<span>無</span>';
         document.getElementById('user-achievement').innerHTML = '<span>無</span>';
         document.getElementById('user-skill').innerHTML = data.skill || '無';
@@ -418,11 +430,19 @@ function updateProfileDisplay(data) {
     }
 }
 
-// 【新增】供 onClick 呼叫的全域函式，用來開啟小視窗
-window.showAssetModal = function(name, desc) {
-    document.getElementById('asset-info-title').textContent = name;
-    document.getElementById('asset-info-desc').textContent = desc;
-    document.getElementById('asset-info-modal').style.display = 'flex';
+// 【新增】開啟小小解釋欄 (Popover)
+window.showAssetPopover = function(name, desc) {
+    document.getElementById('asset-popover-title').textContent = name;
+    document.getElementById('asset-popover-desc').textContent = desc;
+    
+    document.getElementById('popover-backdrop').style.display = 'block';
+    document.getElementById('asset-popover').style.display = 'block';
+};
+
+// 【新增】關閉小小解釋欄 (Popover)
+window.closeAssetPopover = function() {
+    document.getElementById('popover-backdrop').style.display = 'none';
+    document.getElementById('asset-popover').style.display = 'none';
 };
 
 async function initializeMyBookingsPage() {

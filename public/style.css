@@ -522,28 +522,100 @@ input[readonly] {
     font-family: var(--font-primary);
 }
 
-/* 每一行資料的 Flex 設定 (用於對齊標題與內容) */
+/* --- 【新增/修改】冒險者頁面精緻化樣式 --- */
+
+/* 1. 解決標籤和標題上下置中對齊問題 */
 .profile-field {
     display: flex;
-    align-items: flex-start; /* 內容多行時，標題固定在頂部 */
+    align-items: center; /* 關鍵：垂直置中 */
     margin-bottom: 8px;
-    line-height: 1.5;
+    min-height: 1.6em; /* 確保沒資料時也有高度 */
 }
 
-/* 標題樣式 (技能：、裝備：) */
 .profile-label {
-    flex-shrink: 0;    /* 標題不壓縮 */
-    margin-right: 2px; /* 標題與內容的間距 */
     font-weight: bold;
-    color: #555;
-    white-space: nowrap;
+    color: #444;
+    margin-right: 8px;
+    white-space: nowrap; /* 防止標題斷行 */
+    flex-shrink: 0; /* 防止標題被壓縮 */
 }
 
-/* 內容數值樣式 */
 .profile-value {
-    color: #000;
-    word-break: break-all; /* 避免長英文字串破版 */
-    text-align: left;
+    color: #222;
+    flex-grow: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center; /* 標籤容器內部也要垂直置中 */
+}
+
+/* 2. 技能說明區塊樣式 (拿掉標題，只留內容) */
+#field-skill-desc {
+    display: block; /* 技能說明不使用 flex，讓條列文字自然排版 */
+    margin-top: 4px;
+    padding-left: 10px; /* 稍微縮排 */
+    border-left: 2px solid #ddd; /* 加一條灰色裝飾線 */
+    font-size: 0.9em;
+    color: #555;
+}
+
+#field-equipment-desc {
+    display: block;
+    margin-top: 4px;
+    padding-left: 10px;
+    border-left: 2px solid #ddd;
+    font-size: 0.9em;
+    color: #555;
+}
+
+/* 3. 網頁版風格的小小解釋欄 (Popover) */
+#asset-popover {
+    display: none; /* 預設隱藏 */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* 畫面正中央 */
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25); /* 柔和陰影 */
+    width: 85%;
+    max-width: 280px; /* 限制最大寬度 */
+    padding: 18px;
+    z-index: 10000; /* 確保在最上層 */
+    text-align: center;
+    border: 1px solid #eee;
+}
+
+#popover-backdrop {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); /* 半透明背景 */
+    z-index: 9999;
+}
+
+#asset-popover-title {
+    margin: 0 0 10px 0;
+    color: var(--color-primary);
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+#asset-popover-desc {
+    color: #444;
+    line-height: 1.5;
+    margin-bottom: 15px;
+    font-size: 0.95rem;
+}
+
+.popover-close-btn {
+    background: #e0e0e0;
+    color: #333;
+    border: none;
+    padding: 6px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
 }
 
 /* D. 預約/經驗/租借歷史頁 */
