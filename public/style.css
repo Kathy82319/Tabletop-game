@@ -515,15 +515,7 @@ input[readonly] {
     margin-bottom: 15px;
 }
 
-.profile-avatar-img {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    border: 3px solid #b8860b;
-    object-fit: cover;
-    background-color: #fff;
-    flex-shrink: 0; /* 防止頭像被壓縮 */
-}
+
 
 .profile-basic-info {
     flex-grow: 1;
