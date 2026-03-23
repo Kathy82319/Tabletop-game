@@ -180,7 +180,10 @@ async function handleCreateRentalFormSubmit(event) {
         const result = await api.createRental(data);
         ui.toast.success(result.message || '租借紀錄已建立！');
         ui.hideModal('#create-rental-modal');
-        init();
+        
+        // 取得目前的篩選狀態並重新載入
+        const currentStatus = rentalStatusFilter?.querySelector('.active')?.dataset.filter || 'all';
+        init(null, currentStatus);
     } catch (error) {
         ui.toast.error(`建立失敗: ${error.message}`);
     } finally {
@@ -268,11 +271,14 @@ async function handleEditRentalFormSubmit(event) {
     button.disabled = true;
 
     try {
-        await api.updateRentalDetails({ rentalId, dueDate, lateFeeOverride });
-        ui.toast.success('租借紀錄更新成功！');
-        ui.hideModal('#edit-rental-modal');
-        init(); // 重新載入所有資料
-    } catch (error) {
+await api.updateRentalDetails({ rentalId, dueDate, lateFeeOverride });
+ui.toast.success('租借紀錄更新成功！');
+ui.hideModal('#edit-rental-modal');
+
+    // 取得目前的篩選狀態並重新載入，保持在目前的頁籤
+    const currentStatus = rentalStatusFilter?.querySelector('.active')?.dataset.filter || 'all';
+    init(null, currentStatus); 
+} catch (error) {
         ui.toast.error(`更新失敗: ${error.message}`);
     } finally {
         button.disabled = false;
@@ -402,11 +408,11 @@ rentalStatusFilter.addEventListener('click', e => {
             const rentalId = parseInt(target.dataset.rentalId, 10);
             const confirmed = await ui.confirm('確定要將此遊戲標記為「已歸還」嗎？庫存將會補回。');
             if (confirmed) {
-                try {
-                    await api.updateRentalStatus(rentalId, 'returned');
-                    ui.toast.success('狀態已更新為「已歸還」！');
-                    await init(rentalStatusFilter.querySelector('.active').dataset.filter);
-                } catch (error) {
+    try {
+        await api.updateRentalStatus(rentalId, 'returned');
+        ui.toast.success('狀態已更新為「已歸還」！');
+        await init(null, rentalStatusFilter.querySelector('.active').dataset.filter);
+    } catch (error) {
                     ui.toast.error(`操作失敗: ${error.message}`);
                 }
             }
