@@ -305,7 +305,6 @@ function addDynamicAssetRow(containerId, assetType, selectedName = '', customDes
 async function openEditUserModal(userId) {
     ui.showModal('#edit-user-modal'); // 先顯示 Modal 提高反應速度
     
-    // 【關鍵修改】每次編輯都從後端拉取最新、最完整的資料
     let user;
     try {
         const data = await api.getUserDetails(userId);
@@ -358,12 +357,12 @@ async function openEditUserModal(userId) {
     // 把資料庫裡的動態資產顯示出來
     if (user.user_assets && user.user_assets.length > 0) {
         user.user_assets.forEach(asset => {
-            // 【關鍵修改】只讀取「自訂說明」，如果沒有就給空字串，絕對不把「預設說明」塞給輸入框！
+            // 只讀取「自訂說明」，沒有就給空字串，讓 Placeholder 顯示預設說明
             const desc = asset.custom_description || ''; 
             addDynamicAssetRow(`edit-${asset.type}-container`, asset.type, asset.name, desc);
         });
     } else {
-        // 【過渡期相容】
+        // 過渡期相容
         if (user.skill && user.skill !== '無') {
             addDynamicAssetRow('edit-skill-container', 'skill', user.skill, '');
         }
@@ -371,6 +370,7 @@ async function openEditUserModal(userId) {
             addDynamicAssetRow('edit-equipment-container', 'equipment', user.equipment, '');
         }
     }
+} 
 
 async function handleEditUserFormSubmit(event) {
     event.preventDefault();
