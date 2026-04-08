@@ -1,0 +1,7 @@
+name = "tabletop-game"
+compatibility_date = "2024-04-08"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "game-cafe-db"
+database_id = "18bc1f60-74ee-4321-8930-5ddf2f82f164"
