@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let bookingData = {};
     let dailyAvailability = { limit: TOTAL_TABLES, booked: 0, available: TOTAL_TABLES };
     let disabledDatesByAdmin = [];
-
+ 
     // =================================================================
     // 全域事件監聽
     // =================================================================
