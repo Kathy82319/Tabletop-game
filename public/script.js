@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
             event.preventDefault();
             history.back(); 
             return;
-        } 
+        }
 
         const fabBtn = target.closest('#fab-quiz-btn');
         if (fabBtn) {

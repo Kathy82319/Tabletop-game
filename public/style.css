@@ -57,6 +57,13 @@ body {
     padding: 10px 15px;
 }
 
+/* 手機版減少 padding */
+@media (max-width: 768px) {
+    #app-content {
+        padding: 10px 10px;
+    }
+}
+
 /* 標題樣式 */
 h1, h2, h3 {
     color: var(--color-text-primary);
@@ -273,6 +280,13 @@ input[readonly] {
     width: 100%;
     height: auto;
     object-fit: cover;
+}
+
+/* 響應式設計 - 手機版新聞卡片圖片 */
+@media (max-width: 768px) {
+    .news-card-image-container {
+        max-height: 150px; /* 手機版稍微縮小高度 */
+    }
 }
 
 /* B. 桌遊圖鑑 (page-games & page-game-details) */
@@ -944,6 +958,26 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .price-tag { /* 取代原本的 .stock-info */
     font-size: 0.9rem;
     color: var(--color-text-secondary);
+}
+
+/* --- 新聞詳情頁 (page-news-details) --- */
+.details-image {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100% !important;
+    border-radius: var(--border-radius);
+    margin-bottom: 15px;
+}
+
+/* 響應式設計 - 手機版限制圖片寬度 */
+@media (max-width: 768px) {
+    .details-image {
+        max-width: 100% !important;
+        width: 100% !important;
+        height: auto !important;
+        max-height: 50vh !important; /* 限制高度不超過視窗高度的一半 */
+        object-fit: contain !important; /* 保持比例，不裁剪 */
+    }
 }
 
 /* public/style.css */
