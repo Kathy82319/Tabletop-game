@@ -11,12 +11,12 @@ export async function onRequest(context) {
     const url = new URL(request.url);
     const statusFilter = url.searchParams.get('status');
 
-    let query = "SELECT * FROM Bookings";
+    // 【修正核心】加上 booking_preference AS item，讓前端能順利用 booking.item 讀取到資料
+    let query = "SELECT *, booking_preference AS item FROM Bookings";
     const queryParams = [];
     const conditions = [];
 
     if (statusFilter) {
-        // 【核心修正】新增對 'all_upcoming' 的處理
         if (statusFilter === 'all_upcoming') {
             conditions.push("booking_date >= date('now', 'localtime')");
         } else if (statusFilter === 'today') {
