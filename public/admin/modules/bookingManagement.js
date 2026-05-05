@@ -24,7 +24,7 @@ function renderBookingList(bookings) {
     if (!bookingListTbody) return;
     bookingListTbody.innerHTML = '';
     if (bookings.length === 0) {
-        bookingListTbody.innerHTML = '<tr><td colspan="5">沒有符合條件的預約紀錄。</td></tr>';
+        bookingListTbody.innerHTML = '<tr><td colspan="6">沒有符合條件的預約紀錄。</td></tr>';
         return;
     }
     bookings.forEach(booking => {
@@ -39,6 +39,7 @@ function renderBookingList(bookings) {
                 <div class="sub-info">${booking.user_id || '現場客'}</div>
             </td>
             <td>${booking.num_of_people}</td>
+            <td>${booking.item || '-'}</td>
             <td>${statusText}</td>
             <td class="actions-cell">
                 <button class="action-btn btn-check-in" data-booking-id="${booking.booking_id}" style="background-color: var(--success-color);" ${booking.status !== 'confirmed' ? 'disabled' : ''}>報到</button>
@@ -53,12 +54,12 @@ function renderBookingList(bookings) {
  */
 async function loadAndRenderList(statusFilter = 'today') {
     if (!bookingListTbody) return;
-    bookingListTbody.innerHTML = '<tr><td colspan="5">正在載入預約資料...</td></tr>';
+    bookingListTbody.innerHTML = '<tr><td colspan="6">正在載入預約資料...</td></tr>';
     try {
         allBookings = await api.getBookings(statusFilter);
         renderBookingList(allBookings);
     } catch (error) {
-        bookingListTbody.innerHTML = `<tr><td colspan="5" style="color:red;">載入失敗: ${error.message}</td></tr>`;
+        bookingListTbody.innerHTML = `<tr><td colspan="6" style="color:red;">載入失敗: ${error.message}</td></tr>`;
     }
 }
 
@@ -328,6 +329,7 @@ async function openBookingDetailsModal(bookingId) {
              <p><strong>聯絡姓名:</strong> ${booking.contact_name}</p>
              <p><strong>聯絡電話:</strong> ${booking.contact_phone || '未提供'}</p>
              <p><strong>預約人數:</strong> ${booking.num_of_people} 人</p>
+             <p><strong>預約項目:</strong> ${booking.item || '無'}</p>
              <p><strong>狀態:</strong> ${booking.status}</p>
         </div>
     `;
