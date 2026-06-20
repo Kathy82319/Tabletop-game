@@ -20,6 +20,8 @@ function initializeToolsPage() {
                 teamsOpen();
             } else if (tool === 'counter') {
                 counterOpen();
+            } else if (tool === 'roles') {
+                rolesOpen();
             }
         });
     });
@@ -1100,3 +1102,251 @@ function counterRender() {
         };
     });
 }
+
+// ================================================================
+// 工具七：秘密角色分配
+// ================================================================
+
+var roleAssignments  = [];
+var rolePassword     = '';
+var roleCurrentIdx   = 0;
+var rolePhase        = 'setup';
+
+function rolesOpen() {
+    document.getElementById('roles-overlay').style.display = 'flex';
+    document.getElementById('roles-close-btn').onclick = rolesClose;
+
+    if (rolePhase === 'playing') {
+        rolesShowPhase('roles-playing');
+    } else if (rolePhase === 'final') {
+        rolesShowPhase('roles-final');
+    } else {
+        rolePhase = 'setup';
+        rolesShowSetup();
+    }
+}
+
+function rolesClose() {
+    document.getElementById('roles-overlay').style.display = 'none';
+}
+
+function rolesShowPhase(activeId) {
+    ['roles-setup','roles-distributing','roles-playing','roles-final'].forEach(function(id) {
+        document.getElementById(id).style.display = (id === activeId) ? 'flex' : 'none';
+    });
+}
+
+function rolesShowSetup() {
+    rolePhase = 'setup';
+    rolesShowPhase('roles-setup');
+
+    var playerList = document.getElementById('roles-player-list');
+    playerList.innerHTML = '';
+    var defaults = ['玩家 1','玩家 2','玩家 3','玩家 4','玩家 5','玩家 6'];
+    defaults.forEach(function(n) { rolesAddPlayerRow(n, playerList); });
+
+    var defList = document.getElementById('roles-def-list');
+    defList.innerHTML = '';
+    rolesAddRoleRow({ emoji:'🐺', name:'狼人',   desc:'夜晚可睜眼互認',     count:2 }, defList);
+    rolesAddRoleRow({ emoji:'🔮', name:'預言家',  desc:'每晚查驗一位玩家身份', count:1 }, defList);
+    rolesAddRoleRow({ emoji:'👥', name:'村民',    desc:'',                   count:3 }, defList);
+
+    document.getElementById('roles-add-player-btn').onclick = function() {
+        rolesAddPlayerRow('', playerList);
+    };
+    document.getElementById('roles-add-role-btn').onclick = function() {
+        rolesAddRoleRow({ emoji:'', name:'', desc:'', count:1 }, defList);
+    };
+    document.getElementById('roles-start-btn').onclick = rolesStart;
+    document.getElementById('roles-password').value = '';
+
+    var setup = document.getElementById('roles-setup');
+    setup.removeEventListener('input', rolesUpdateCountStatus);
+    setup.addEventListener('input', rolesUpdateCountStatus);
+    rolesUpdateCountStatus();
+}
+
+function rolesAddPlayerRow(defaultName, list) {
+    var idx = list.querySelectorAll('.player-input-row').length + 1;
+    var row = document.createElement('div');
+    row.className = 'player-input-row';
+    row.innerHTML =
+        '<input type="text" class="player-name-input" placeholder="玩家 ' + idx + '" value="' + defaultName + '">' +
+        '<button class="remove-player-btn">×</button>';
+    row.querySelector('.remove-player-btn').onclick = function() {
+        if (list.querySelectorAll('.player-input-row').length > 2) { row.remove(); }
+        rolesUpdateCountStatus();
+    };
+    list.appendChild(row);
+}
+
+function rolesAddRoleRow(opts, container) {
+    var row = document.createElement('div');
+    row.className = 'role-def-row-wrap';
+    row.innerHTML =
+        '<div class="role-def-row">' +
+            '<input type="text" class="role-emoji-input" value="' + (opts.emoji || '') + '" placeholder="🎭" maxlength="2">' +
+            '<input type="text" class="player-name-input role-name-field" value="' + (opts.name || '') + '" placeholder="角色名稱">' +
+            '<input type="number" class="role-count-input" value="' + (opts.count || 1) + '" min="1" max="20" inputmode="numeric">' +
+            '<button class="remove-player-btn">×</button>' +
+        '</div>' +
+        '<input type="text" class="role-desc-input" value="' + (opts.desc || '') + '" placeholder="簡短說明（選填）">';
+    row.querySelector('.remove-player-btn').onclick = function() {
+        if (container.querySelectorAll('.role-def-row-wrap').length > 1) {
+            row.remove();
+            rolesUpdateCountStatus();
+        }
+    };
+    container.appendChild(row);
+}
+
+function rolesUpdateCountStatus() {
+    var playerCount = document.querySelectorAll('#roles-player-list .player-input-row').length;
+    var roleTotal = 0;
+    document.querySelectorAll('.role-count-input').forEach(function(el) {
+        roleTotal += (parseInt(el.value) || 0);
+    });
+    var status   = document.getElementById('roles-count-status');
+    var startBtn = document.getElementById('roles-start-btn');
+
+    if (playerCount === roleTotal && roleTotal > 0) {
+        status.textContent = '✓ ' + playerCount + ' 位玩家，' + roleTotal + ' 個角色，數量符合';
+        status.style.color = '#2ecc71';
+        startBtn.disabled  = false;
+        startBtn.style.opacity = '1';
+    } else {
+        status.textContent = '✗ ' + playerCount + ' 位玩家 vs ' + roleTotal + ' 個角色，請確保數量相符';
+        status.style.color = '#e74c3c';
+        startBtn.disabled  = true;
+        startBtn.style.opacity = '0.45';
+    }
+}
+
+function rolesStart() {
+    var players = [];
+    document.querySelectorAll('#roles-player-list .player-name-input').forEach(function(el, i) {
+        players.push(el.value.trim() || ('玩家 ' + (i + 1)));
+    });
+
+    var pool = [];
+    document.querySelectorAll('.role-def-row-wrap').forEach(function(wrap) {
+        var emoji = wrap.querySelector('.role-emoji-input').value.trim()  || '🎭';
+        var name  = wrap.querySelector('.role-name-field').value.trim()   || '未命名';
+        var desc  = wrap.querySelector('.role-desc-input').value.trim();
+        var count = parseInt(wrap.querySelector('.role-count-input').value) || 1;
+        for (var i = 0; i < count; i++) {
+            pool.push({ emoji: emoji, name: name, desc: desc });
+        }
+    });
+
+    for (var i = pool.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+    }
+
+    roleAssignments = players.map(function(playerName, i) {
+        return { playerName: playerName, role: pool[i] };
+    });
+    rolePassword   = document.getElementById('roles-password').value;
+    roleCurrentIdx = 0;
+
+    rolesShowPhase('roles-distributing');
+    rolesShowHandoff();
+}
+
+function rolesShowHandoff() {
+    rolePhase = 'distributing';
+    var player = roleAssignments[roleCurrentIdx];
+
+    document.getElementById('roles-handoff').style.display     = 'flex';
+    document.getElementById('roles-reveal-card').style.display = 'none';
+
+    document.getElementById('roles-handoff-name').textContent = player.playerName;
+
+    var btn = document.getElementById('roles-ready-btn');
+    btn.textContent = '我是 ' + player.playerName + '，準備好了';
+    btn.onclick = rolesShowRoleCard;
+}
+
+function rolesShowRoleCard() {
+    var role = roleAssignments[roleCurrentIdx].role;
+    document.getElementById('roles-handoff').style.display = 'none';
+
+    var card = document.getElementById('roles-reveal-card');
+    card.style.animation = 'none';
+    void card.offsetWidth;
+    card.style.animation = '';
+    card.style.display = 'flex';
+
+    document.getElementById('roles-card-emoji').textContent = role.emoji;
+    document.getElementById('roles-card-name').textContent  = role.name;
+    document.getElementById('roles-card-desc').textContent  = role.desc;
+
+    document.getElementById('roles-confirm-btn').onclick = rolesConfirmRole;
+}
+
+function rolesConfirmRole() {
+    roleCurrentIdx++;
+    if (roleCurrentIdx < roleAssignments.length) {
+        rolesShowHandoff();
+    } else {
+        rolesShowPlaying();
+    }
+}
+
+function rolesShowPlaying() {
+    rolePhase = 'playing';
+    rolesShowPhase('roles-playing');
+    document.getElementById('roles-end-btn').onclick = rolesShowFinal;
+}
+
+function rolesShowFinal() {
+    rolePhase = 'final';
+    rolesShowPhase('roles-final');
+
+    document.getElementById('roles-unlock-panel').style.display = 'flex';
+    document.getElementById('roles-full-reveal').style.display  = 'none';
+    document.getElementById('roles-unlock-input').value         = '';
+    document.getElementById('roles-unlock-error').style.display = 'none';
+
+    if (!rolePassword) {
+        rolesShowFullReveal();
+        return;
+    }
+
+    document.getElementById('roles-unlock-btn').onclick = function() {
+        var input = document.getElementById('roles-unlock-input').value;
+        if (input === rolePassword) {
+            rolesShowFullReveal();
+        } else {
+            document.getElementById('roles-unlock-error').style.display = 'block';
+            document.getElementById('roles-unlock-input').value = '';
+        }
+    };
+}
+
+function rolesShowFullReveal() {
+    document.getElementById('roles-unlock-panel').style.display = 'none';
+    document.getElementById('roles-full-reveal').style.display  = 'flex';
+
+    var list = document.getElementById('roles-reveal-list');
+    list.innerHTML = '';
+
+    roleAssignments.forEach(function(entry, i) {
+        var item = document.createElement('div');
+        item.className = 'roles-reveal-item';
+        item.style.animationDelay = (i * 160) + 'ms';
+        item.innerHTML =
+            '<span class="roles-reveal-player">' + entry.playerName + '</span>' +
+            '<span class="roles-reveal-emoji">'  + entry.role.emoji  + '</span>'  +
+            '<span class="roles-reveal-role">'   + entry.role.name   + '</span>';
+        list.appendChild(item);
+    });
+
+    document.getElementById('roles-restart-btn').onclick = function() {
+        rolePhase = 'setup';
+        roleAssignments = [];
+        rolesShowSetup();
+    };
+}
+

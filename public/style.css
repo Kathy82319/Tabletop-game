@@ -2558,3 +2558,279 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     border-radius: 3px;
     transition: width 0.3s ease, background-color 0.3s ease;
 }
+
+/* ================================================================
+   秘密角色分配
+   ================================================================ */
+
+/* Setup：角色定義列 */
+.role-def-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    width: 100%;
+}
+
+.role-emoji-input {
+    width: 48px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 1.4rem;
+    padding: 6px 2px;
+    flex-shrink: 0;
+}
+
+.role-emoji-input:focus { outline: none; border-color: var(--color-frame-gold); }
+
+.role-count-input {
+    width: 52px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 1rem;
+    font-family: var(--font-primary);
+    text-align: center;
+    padding: 8px 4px;
+    -moz-appearance: textfield;
+    flex-shrink: 0;
+}
+
+.role-count-input::-webkit-outer-spin-button,
+.role-count-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.role-count-input:focus { outline: none; border-color: var(--color-frame-gold); }
+
+.role-desc-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.82rem;
+    font-family: var(--font-primary);
+    padding: 7px 10px;
+    margin: -2px 0 6px 56px;
+    width: calc(100% - 56px);
+}
+
+.role-desc-input::placeholder { color: rgba(255,255,255,0.2); }
+.role-desc-input:focus { outline: none; border-color: rgba(184,134,11,0.4); }
+
+/* 玩家/角色數量狀態 */
+.roles-count-status {
+    font-size: 0.82rem;
+    text-align: center;
+    margin: 4px 0 12px;
+    min-height: 18px;
+}
+
+/* 全相位佔滿面板 */
+.roles-full-phase {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 65vh;
+    gap: 0;
+}
+
+/* Phase 2：傳閱畫面 */
+.roles-handoff-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 0 24px;
+}
+
+.roles-handoff-hint {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin: 0;
+    letter-spacing: 0.05em;
+}
+
+.roles-handoff-name {
+    font-size: 3rem;
+    font-weight: bold;
+    color: white;
+    margin: 8px 0;
+    text-align: center;
+}
+
+.roles-handoff-sub {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.25);
+    margin: 0 0 32px;
+}
+
+.roles-ready-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 24px;
+    color: white;
+    font-size: 1rem;
+    font-family: var(--font-primary);
+    padding: 14px 40px;
+    cursor: pointer;
+    width: 100%;
+    max-width: 280px;
+}
+
+/* Phase 2：角色揭示卡 */
+.roles-reveal-card-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    animation: role-card-in 0.3s ease both;
+    padding: 0 24px;
+    width: 100%;
+}
+
+@keyframes role-card-in {
+    from { transform: scale(0.85); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+}
+
+.roles-card-emoji {
+    font-size: 5.5rem;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.roles-card-name {
+    font-size: 2.6rem;
+    font-weight: bold;
+    color: white;
+    margin: 0;
+    text-align: center;
+    letter-spacing: 4px;
+}
+
+.roles-card-desc {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.45);
+    text-align: center;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.roles-confirm-btn {
+    background: var(--color-frame-gold);
+    color: white;
+    border: none;
+    border-radius: 24px;
+    padding: 14px 40px;
+    font-size: 1rem;
+    font-family: var(--font-primary);
+    cursor: pointer;
+    margin-top: 16px;
+    width: 100%;
+    max-width: 280px;
+}
+
+/* Phase 3：遊戲進行中 */
+.roles-playing-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 40px;
+}
+
+.roles-playing-icon { font-size: 4rem; }
+
+.roles-playing-title {
+    font-size: 1.4rem;
+    color: white;
+    margin: 0;
+    border: none;
+}
+
+.roles-playing-sub {
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin: 0;
+}
+
+/* Phase 4：密碼輸入 */
+.roles-unlock-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 320px;
+}
+
+.roles-unlock-hint {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.45);
+    text-align: center;
+    margin: 0;
+}
+
+.roles-unlock-input {
+    text-align: center !important;
+    font-size: 1.4rem !important;
+    letter-spacing: 6px;
+}
+
+.roles-unlock-error {
+    color: #e74c3c;
+    font-size: 0.82rem;
+    margin: 0;
+}
+
+/* Phase 4：最終公開 */
+.roles-reveal-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.roles-reveal-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 14px 16px;
+    animation: roles-reveal-in 0.4s ease both;
+}
+
+@keyframes roles-reveal-in {
+    from { transform: translateX(-16px); opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+}
+
+.roles-reveal-player {
+    flex: 1;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.6);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.roles-reveal-emoji { font-size: 1.8rem; flex-shrink: 0; }
+
+.roles-reveal-role {
+    font-size: 1.05rem;
+    font-weight: bold;
+    color: white;
+    flex-shrink: 0;
+}

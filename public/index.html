@@ -404,6 +404,14 @@
                 </div>
                 <div class="tool-card-arrow">›</div>
             </div>
+            <div class="card tool-card" data-tool="roles">
+                <div class="tool-card-icon">🎭</div>
+                <div class="tool-card-info">
+                    <h3>秘密角色分配</h3>
+                    <p>手機輪傳，每人秘密查看自己的角色，遊戲結束密碼解鎖公開！</p>
+                </div>
+                <div class="tool-card-arrow">›</div>
+            </div>
         </div>
     </div>
 
@@ -609,6 +617,76 @@
         </div>
         <div id="counter-log-list"></div>
         <p id="counter-log-empty">還沒有任何變動紀錄</p>
+    </div>
+</div>
+
+<!-- 秘密角色分配覆蓋層 -->
+<div id="roles-overlay" class="tool-overlay" style="display:none;">
+    <button id="roles-close-btn" class="tool-overlay-close">✕ 關閉</button>
+
+    <!-- Phase 1: Setup -->
+    <div id="roles-setup" class="tool-setup-panel">
+        <h2 class="tool-overlay-title">秘密角色分配</h2>
+
+        <p class="tools-section-label">玩家</p>
+        <div id="roles-player-list" class="player-list"></div>
+        <button class="add-player-btn" id="roles-add-player-btn">＋ 新增玩家</button>
+
+        <p class="tools-section-label" style="margin-top:12px">角色（圖示・名稱・數量）</p>
+        <div id="roles-def-list"></div>
+        <button class="add-player-btn" id="roles-add-role-btn">＋ 新增角色</button>
+
+        <p id="roles-count-status" class="roles-count-status"></p>
+
+        <div style="width:100%; margin-bottom:16px;">
+            <p class="tools-section-label" style="margin-bottom:6px">主持人密碼</p>
+            <input type="password" id="roles-password" class="player-name-input"
+                   placeholder="設定密碼（留空則不需要密碼）">
+        </div>
+
+        <button class="tool-start-btn" id="roles-start-btn">開始分配角色</button>
+    </div>
+
+    <!-- Phase 2: Distributing -->
+    <div id="roles-distributing" class="roles-full-phase" style="display:none;">
+        <div id="roles-handoff" class="roles-handoff-wrap">
+            <p class="roles-handoff-hint">請把手機交給</p>
+            <h1 id="roles-handoff-name" class="roles-handoff-name">—</h1>
+            <p class="roles-handoff-sub">其他人請勿偷看</p>
+            <button id="roles-ready-btn" class="roles-ready-btn"></button>
+        </div>
+        <div id="roles-reveal-card" class="roles-reveal-card-wrap" style="display:none;">
+            <div id="roles-card-emoji" class="roles-card-emoji">🎭</div>
+            <h1 id="roles-card-name" class="roles-card-name">—</h1>
+            <p id="roles-card-desc" class="roles-card-desc"></p>
+            <button id="roles-confirm-btn" class="roles-confirm-btn">已記住，繼續</button>
+        </div>
+    </div>
+
+    <!-- Phase 3: Playing (game in progress) -->
+    <div id="roles-playing" class="roles-full-phase" style="display:none;">
+        <div class="roles-playing-inner">
+            <div class="roles-playing-icon">🎉</div>
+            <h2 class="roles-playing-title">所有玩家已確認角色</h2>
+            <p class="roles-playing-sub">遊戲開始！</p>
+        </div>
+        <button class="tool-secondary-btn" id="roles-end-btn">遊戲結束 / 公開角色</button>
+    </div>
+
+    <!-- Phase 4: Final reveal -->
+    <div id="roles-final" class="roles-full-phase" style="display:none;">
+        <div id="roles-unlock-panel" class="roles-unlock-panel">
+            <p class="roles-unlock-hint">請主持人輸入密碼以公開所有角色</p>
+            <input type="password" id="roles-unlock-input" class="player-name-input roles-unlock-input"
+                   placeholder="密碼">
+            <p id="roles-unlock-error" class="roles-unlock-error" style="display:none">密碼錯誤，請再試一次</p>
+            <button class="tool-start-btn" id="roles-unlock-btn">確認</button>
+        </div>
+        <div id="roles-full-reveal" style="display:none; width:100%; max-width:400px;">
+            <h2 class="tool-overlay-title">角色公開</h2>
+            <div id="roles-reveal-list" class="roles-reveal-list"></div>
+            <button class="tool-secondary-btn" id="roles-restart-btn" style="margin-bottom:30px">重新開始</button>
+        </div>
     </div>
 </div>
 
