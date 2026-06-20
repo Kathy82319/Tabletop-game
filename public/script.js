@@ -1549,7 +1549,7 @@ function fpUpdateStatus() {
 function fpScheduleCountdown() {
     clearTimeout(fpStabTimer);
     if (Object.keys(fpTouches).length >= 2 && fpPhase === 'waiting') {
-        fpStabTimer = setTimeout(fpStartCountdown, 1500);
+        fpStabTimer = setTimeout(fpStartCountdown, 300);
     }
 }
 
