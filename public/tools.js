@@ -757,10 +757,11 @@ function teamsShuffle() {
 
 // counterResDefs: [{ name, startVal, maxVal }]  (maxVal = null 代表無上限)
 // counterPlayers: [{ name, resources: [{ value, maxVal }] }]
-let counterResDefs  = [];
-let counterPlayers  = [];
-let counterLog      = [];
-let counterIsActive = false;
+let counterResDefs     = [];
+let counterPlayers     = [];
+let counterLog         = [];
+let counterIsActive    = false;
+let counterCustomTarget = { pi: -1, ri: -1 };
 
 const COUNTER_STORAGE_KEY = 'counter_history';
 const COUNTER_MAX_HISTORY = 5;
@@ -894,6 +895,37 @@ function counterClose() {
     counterIsActive = false;
     document.getElementById('counter-overlay').style.display = 'none';
     document.getElementById('counter-log-drawer').style.display = 'none';
+    document.getElementById('counter-custom-popup').style.display = 'none';
+}
+
+function counterOpenCustomPopup(pi, ri) {
+    counterCustomTarget = { pi, ri };
+    const player = counterPlayers[pi];
+    const def    = counterResDefs[ri];
+    document.getElementById('counter-popup-label').textContent =
+        `為「${player.name}」的 ${def.name} 加減`;
+    document.getElementById('counter-popup-input').value = '';
+    const popup = document.getElementById('counter-custom-popup');
+    popup.style.display = 'flex';
+    setTimeout(() => document.getElementById('counter-popup-input').focus(), 50);
+
+    document.getElementById('counter-popup-plus').onclick  = () => counterApplyCustom(1);
+    document.getElementById('counter-popup-minus').onclick = () => counterApplyCustom(-1);
+    document.getElementById('counter-popup-cancel').onclick = () => {
+        popup.style.display = 'none';
+    };
+}
+
+function counterApplyCustom(sign) {
+    const val = parseInt(document.getElementById('counter-popup-input').value);
+    const { pi, ri } = counterCustomTarget;
+    if (!isNaN(val) && val > 0 && pi >= 0) {
+        const delta = sign * val;
+        counterPlayers[pi].resources[ri].value += delta;
+        counterAddLog(pi, ri, delta);
+    }
+    document.getElementById('counter-custom-popup').style.display = 'none';
+    counterRender();
 }
 
 function counterGoPlaying() {
@@ -1015,7 +1047,7 @@ function counterRender() {
         card.className = 'counter-player-card' + (eliminated ? ' eliminated' : '');
 
         const resRows = counterResDefs.map((def, ri) => {
-            const res   = player.resources[ri];
+            const res    = player.resources[ri];
             const hasMax = res.maxVal !== null;
             const ratio  = hasMax ? Math.max(0, res.value) / res.maxVal : 1;
             const color  = hasMax ? counterBarColor(ratio) : 'rgba(255,255,255,0.5)';
@@ -1031,9 +1063,14 @@ function counterRender() {
                 <div class="counter-res-row">
                     <div class="counter-res-row-top">
                         <span class="counter-res-label-text">${def.name}</span>
-                        <button class="counter-res-ctrl-btn" data-pi="${pi}" data-ri="${ri}" data-d="-1">−</button>
                         <span class="counter-res-value-display">${valDisplay}</span>
-                        <button class="counter-res-ctrl-btn" data-pi="${pi}" data-ri="${ri}" data-d="1">+</button>
+                    </div>
+                    <div class="counter-res-row-btns">
+                        <button class="sb-btn" data-pi="${pi}" data-ri="${ri}" data-d="-5">-5</button>
+                        <button class="sb-btn" data-pi="${pi}" data-ri="${ri}" data-d="-1">-1</button>
+                        <button class="sb-btn" data-pi="${pi}" data-ri="${ri}" data-d="1">+1</button>
+                        <button class="sb-btn" data-pi="${pi}" data-ri="${ri}" data-d="5">+5</button>
+                        <button class="sb-btn sb-custom-btn" data-pi="${pi}" data-ri="${ri}" data-d="custom">自訂</button>
                     </div>
                     ${bar}
                 </div>`;
@@ -1048,14 +1085,18 @@ function counterRender() {
         container.appendChild(card);
     });
 
-    container.querySelectorAll('.counter-res-ctrl-btn').forEach(btn => {
+    container.querySelectorAll('.counter-res-row-btns .sb-btn').forEach(btn => {
         btn.onclick = () => {
-            const pi    = parseInt(btn.dataset.pi);
-            const ri    = parseInt(btn.dataset.ri);
-            const delta = parseInt(btn.dataset.d);
-            counterPlayers[pi].resources[ri].value += delta;
-            counterAddLog(pi, ri, delta);
-            counterRender();
+            const pi = parseInt(btn.dataset.pi);
+            const ri = parseInt(btn.dataset.ri);
+            if (btn.dataset.d === 'custom') {
+                counterOpenCustomPopup(pi, ri);
+            } else {
+                const delta = parseInt(btn.dataset.d);
+                counterPlayers[pi].resources[ri].value += delta;
+                counterAddLog(pi, ri, delta);
+                counterRender();
+            }
         };
     });
 }

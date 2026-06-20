@@ -2037,8 +2037,9 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     border-color: rgba(184, 134, 11, 0.35);
 }
 
-/* 記分板自訂分數浮層 */
-#sb-custom-popup {
+/* 自訂分數／數值浮層（記分板 + 資源計數器共用） */
+#sb-custom-popup,
+#counter-custom-popup {
     position: fixed;
     left: 50%; bottom: 0;
     transform: translateX(-50%);
@@ -2054,13 +2055,15 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     gap: 14px;
 }
 
-#sb-popup-label {
+#sb-popup-label,
+#counter-popup-label {
     font-size: 1rem;
     color: rgba(255, 255, 255, 0.6);
     margin: 0;
 }
 
-#sb-popup-input {
+#sb-popup-input,
+#counter-popup-input {
     width: 100%;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.25);
@@ -2074,9 +2077,12 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 #sb-popup-input::-webkit-outer-spin-button,
-#sb-popup-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+#sb-popup-input::-webkit-inner-spin-button,
+#counter-popup-input::-webkit-outer-spin-button,
+#counter-popup-input::-webkit-inner-spin-button { -webkit-appearance: none; }
 
-#sb-popup-input:focus { outline: none; border-color: var(--color-frame-gold); }
+#sb-popup-input:focus,
+#counter-popup-input:focus { outline: none; border-color: var(--color-frame-gold); }
 
 .sb-popup-btns {
     display: flex;
@@ -2095,10 +2101,11 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     font-weight: bold;
 }
 
-#sb-popup-minus { background: rgba(231, 76, 60, 0.25); color: #e74c3c; border: 1px solid rgba(231,76,60,0.4); }
-#sb-popup-plus  { background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid rgba(46,204,113,0.35); }
+#sb-popup-minus, #counter-popup-minus { background: rgba(231, 76, 60, 0.25); color: #e74c3c; border: 1px solid rgba(231,76,60,0.4); }
+#sb-popup-plus,  #counter-popup-plus  { background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid rgba(46,204,113,0.35); }
 
-#sb-popup-cancel {
+#sb-popup-cancel,
+#counter-popup-cancel {
     background: none;
     border: none;
     color: rgba(255, 255, 255, 0.35);
@@ -2480,6 +2487,17 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .counter-res-row:last-child { margin-bottom: 0; }
+
+.counter-res-row-btns {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 6px;
+}
+
+.counter-res-row-btns .sb-btn {
+    padding: 7px 4px;
+    font-size: 0.82rem;
+}
 
 .counter-res-row-top {
     display: flex;
