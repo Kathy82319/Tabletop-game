@@ -5,10 +5,3 @@ compatibility_date = "2024-04-08"
 binding = "DB"
 database_name = "game-cafe-db"
 database_id = "18bc1f60-74ee-4321-8930-5ddf2f82f164"
-
-[[r2_buckets]]
-binding = "ASSETS"
-bucket_name = "tabletop-assets"
-
-[vars]
-R2_PUBLIC_URL = "https://pub-f37fbf2e23fb45e9a3705973776f12e4.r2.dev"
