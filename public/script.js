@@ -149,7 +149,7 @@ function renderNews(filterCategory = 'ALL') {
             : '';
 
         return `
-        <div class="news-card" data-news-id="${news.id}">
+        <div class="card news-card" data-news-id="${news.id}">
             <div class="news-card-header">
                 <span class="news-card-category">${news.category}</span>
                 <span class="news-card-date">${news.published_date}</span>
@@ -476,7 +476,7 @@ async function initializeMyBookingsPage() {
             return;
         }
         container.innerHTML = bookings.map(booking => `
-            <div class="booking-info-card">
+            <div class="card booking-info-card">
                 <p class="booking-date-time">${booking.booking_date} - ${booking.time_slot}</p>
                 <p><strong>預約姓名：</strong> ${booking.contact_name}</p>
                 <p><strong>預約人數：</strong> ${booking.num_of_people} 人</p>
@@ -535,7 +535,7 @@ async function initializeMyBookingsPage() {
                 const expClass = record.exp_added > 0 ? 'exp-gain' : 'exp-loss';
                 const expSign = record.exp_added > 0 ? '+' : '';
                 return `
-                    <div class="exp-record-card">
+                    <div class="card exp-record-card">
                         <div class="exp-record-date">${date}</div>
                         <div class="exp-record-reason">${record.reason}</div>
                         <div class="exp-record-value ${expClass}">${expSign}${record.exp_added}</div>
@@ -579,7 +579,7 @@ async function initializeRentalHistoryPage() {
             }
 
             return `
-                <div class="rental-card">
+                <div class="card rental-card">
                     <img src="${rental.game_image_url || 'placeholder.jpg'}" class="rental-game-image">
                     <div class="rental-info">
                         <h3 class="rental-game-title">${rental.game_name}</h3>
@@ -844,7 +844,7 @@ function renderGames() {
             return;
         }
         container.innerHTML = filteredGames.map(game => `
-            <div class="game-card" data-game-id="${game.game_id}">
+            <div class="card game-card" data-game-id="${game.game_id}">
                 <img src="${game.image_url || 'placeholder.jpg'}" alt="${game.name}" class="game-image">
                 <div class="game-info">
                     <h3 class="game-title">${game.name}</h3>

@@ -159,15 +159,21 @@ p {
 }
 
 /* --- 5. 通用元件：卡片 (Cards) --- */
-.news-card, .game-card, .details-section, .booking-info-card, .exp-record-card, .rental-card, .summary-card {
+/* 基礎視覺樣式，不含間距（各元件自行管理 padding / margin） */
+.card {
     background-color: var(--color-card-background);
     border: 1px solid var(--color-frame-gold);
     border-radius: var(--border-radius);
-    padding: 15px;
-    margin-bottom: 20px;
     box-shadow: var(--box-shadow);
     backdrop-filter: blur(5px);
 }
+
+/* 各卡片類型的間距設定 */
+.details-section    { padding: 15px; margin-bottom: 20px; }
+.booking-info-card  { padding: 15px; margin-bottom: 20px; }
+.exp-record-card    { padding: 15px; margin-bottom: 20px; }
+.rental-card        { padding: 15px; margin-bottom: 20px; }
+.summary-card       { padding: 15px; margin-bottom: 20px; }
 
 /* --- 6. 通用元件：表單 (Forms) --- */
 .input-group {
@@ -246,6 +252,7 @@ input[readonly] {
 /* 最新情報卡片 (由 script.js 生成) */
 .news-card {
     padding: 0;
+    margin-bottom: 20px;
     overflow: hidden; /* 確保圖片圓角生效 */
 }
 .news-card-header {
