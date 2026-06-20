@@ -306,20 +306,70 @@ function diceOpen() {
     };
 }
 
+const D6_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+
+function diceValueToDisplay(value, sides) {
+    return sides === 6 ? D6_FACES[value - 1] : value;
+}
+
 function diceRoll() {
-    const results = Array.from({ length: diceSelectedCount },
-        () => Math.floor(Math.random() * diceSelectedSides) + 1);
+    const resultArea = document.getElementById('dice-result-area');
+
+    // 建立佔位元素，先顯示滾動狀態
+    const row = document.createElement('div');
+    row.className = 'dice-results-row';
+    const isD6 = diceSelectedSides === 6;
+    const cells = Array.from({ length: diceSelectedCount }, () => {
+        const el = document.createElement('div');
+        el.className = 'dice-single rolling' + (isD6 ? ' d6-face' : '');
+        el.textContent = diceValueToDisplay(
+            Math.floor(Math.random() * diceSelectedSides) + 1,
+            diceSelectedSides
+        );
+        row.appendChild(el);
+        return el;
+    });
+    resultArea.innerHTML = '';
+    resultArea.appendChild(row);
+
+    // 快速滾動數字（老虎機效果）
+    let tick = 0;
+    const rolling = setInterval(() => {
+        cells.forEach(el => {
+            const r = Math.floor(Math.random() * diceSelectedSides) + 1;
+            el.textContent = diceValueToDisplay(r, diceSelectedSides);
+        });
+        tick++;
+        if (tick >= 10) {
+            clearInterval(rolling);
+            diceShowFinalResult(cells);
+        }
+    }, 60);
+}
+
+function diceShowFinalResult(cells) {
+    const results = cells.map(() =>
+        Math.floor(Math.random() * diceSelectedSides) + 1
+    );
     const total = results.reduce((a, b) => a + b, 0);
 
-    const diceHTML = results.map((r, i) =>
-        `<div class="dice-single" style="animation-delay:${i * 80}ms">${r}</div>`
-    ).join('');
+    cells.forEach((el, i) => {
+        el.classList.remove('rolling');
+        el.classList.add('landed');
+        el.style.animationDelay = `${i * 100}ms`;
+        el.textContent = diceValueToDisplay(results[i], diceSelectedSides);
+    });
 
-    const totalHTML = diceSelectedCount > 1
-        ? `<p class="dice-total-line">合計 <span>${total}</span></p>` : '';
+    const resultArea = document.getElementById('dice-result-area');
+    const existing = resultArea.querySelector('.dice-total-line');
+    if (existing) existing.remove();
 
-    document.getElementById('dice-result-area').innerHTML =
-        `<div class="dice-results-row">${diceHTML}</div>${totalHTML}`;
+    if (diceSelectedCount > 1) {
+        const p = document.createElement('p');
+        p.className = 'dice-total-line';
+        p.innerHTML = `合計 <span>${total}</span>`;
+        resultArea.appendChild(p);
+    }
 }
 
 function fpShowResult() {

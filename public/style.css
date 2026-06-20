@@ -1671,17 +1671,29 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .dice-single {
-    width: 72px; height: 72px;
+    width: 76px; height: 76px;
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.35);
-    border-radius: 14px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 2.2rem;
     font-weight: bold;
     color: white;
-    animation: dice-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    line-height: 1;
+}
+
+.dice-single.d6-face { font-size: 3rem; }
+
+.dice-single.rolling {
+    animation: dice-shake 0.1s infinite;
+    border-color: var(--color-frame-gold);
+    opacity: 0.7;
+}
+
+.dice-single.landed {
+    animation: dice-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 .dice-total-line {
@@ -1696,8 +1708,15 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     font-weight: bold;
 }
 
+@keyframes dice-shake {
+    0%   { transform: rotate(-6deg) scale(0.95); }
+    50%  { transform: rotate( 6deg) scale(1.02); }
+    100% { transform: rotate(-6deg) scale(0.95); }
+}
+
 @keyframes dice-pop {
-    0%   { transform: scale(0.4) rotate(-15deg); opacity: 0; }
+    0%   { transform: scale(0.3) rotate(-20deg); opacity: 0; }
+    70%  { transform: scale(1.1) rotate(3deg);   opacity: 1; }
     100% { transform: scale(1)   rotate(0deg);   opacity: 1; }
 }
 
