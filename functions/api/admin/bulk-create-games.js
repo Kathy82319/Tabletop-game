@@ -28,19 +28,13 @@ export async function onRequest(context) {
         let failCount = 0;
         const errors = [];
 
-        // --- 【▼▼▼ 核心修改：準備循序 ID ▼▼▼】 ---
-        // 1. 查詢當前最大的 game_id
         const maxIdResult = await db.prepare("SELECT MAX(CAST(game_id AS INTEGER)) as maxId FROM BoardGames").first();
         
-        // 2. 準備好下一個可用的 ID
-        // 邏輯同上，確保至少從 384 開始
         let nextGameId = 384;
          if (maxIdResult && maxIdResult.maxId && maxIdResult.maxId >= 383) {
             nextGameId = maxIdResult.maxId + 1;
         }
-        // --- 【▲▲▲ 核心修改結束 ▲▲▲】 ---
 
-        // 準備 UPSERT (存在則更新，不存在則插入) 指令
         const stmt = db.prepare(
             `INSERT INTO BoardGames (
                 game_id, name, description, image_url, image_url_2, image_url_3, tags, min_players, max_players, difficulty,
@@ -58,7 +52,6 @@ export async function onRequest(context) {
         for (let i = 0; i < games.length; i++) {
             const rawGame = games[i];
             const game = {};
-            // 使用 mapping 將中文標頭轉為英文 key
             for (const chiHeader in rawGame) {
                 if (headerMapping[chiHeader]) {
                     game[headerMapping[chiHeader]] = rawGame[chiHeader];
@@ -71,17 +64,13 @@ export async function onRequest(context) {
                 continue;
             }
 
-            // --- 【▼▼▼ ID 賦值修改 ▼▼▼】 ---
             let gameIdToUse;
-            // 如果 CSV 中提供了 ID (且為數字)，則使用它 (用於更新)
             if (game.game_id && !isNaN(Number(game.game_id)) && Number(game.game_id) > 0) {
                 gameIdToUse = Number(game.game_id);
             } else {
-                // 否則，使用我們循序產生的新 ID
                 gameIdToUse = nextGameId;
                 nextGameId++; // 為下一個迴圈準備
             }
-            // --- 【▲▲▲ ID 賦值修改結束 ▲▲▲】 ---
 
             const isVisible = ['TRUE', 'YES', 'Y', '1'].includes((game.is_visible || '').toString().trim().toUpperCase());
             const total_stock = Number(game.total_stock) || 0;

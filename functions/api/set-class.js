@@ -15,7 +15,6 @@ export async function onRequest(context) {
 
         const db = context.env.DB;
         
-        // ** 安全性檢查：只允許等級 >= 5 且目前職業為 '無' 的使用者更新 **
         const stmt = db.prepare(
             "UPDATE Users SET class = ? WHERE user_id = ? AND level >= 5 AND class = '無'"
         );

@@ -20,12 +20,9 @@ const App = {
     },
 
 async handleRouteChange() {
-        // 【修改 1】將 pageId 拆分為 pageId 和 param
-        // OLD: const pageId = window.location.hash.substring(1) || 'dashboard';
         const hash = window.location.hash.substring(1) || 'dashboard';
         const [pageId, param] = hash.split('@'); // <-- NEW
 
-        // 【修改 2】確保導覽列和頁面顯示使用的是 pageId
         ui.setActiveNav(pageId); // <-- MODIFIED
         ui.showPage(pageId);
 
@@ -47,8 +44,6 @@ async handleRouteChange() {
                             }
                         }
                     };
-                    // 【修改 3】將 param 傳遞給 init 函式
-                    // OLD: await pageModule.init(context);
                     await pageModule.init(context, param); // <-- NEW
                 }
             } catch (error) {

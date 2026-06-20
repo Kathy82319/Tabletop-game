@@ -27,7 +27,6 @@ function showManualInputInterface() {
     qrReader.style.display = 'none';
     scanResultContainer.style.display = 'block';
     
-    // 清空 user ID，讓使用者重新選擇或輸入
     userIdDisplay.value = ''; 
     document.getElementById('scan-user-search').value = '';
 
@@ -50,7 +49,6 @@ function startScanner() {
     scanResultContainer.style.display = 'none';
     qrReader.innerHTML = ''; // 清空可能存在的錯誤訊息
 
-    // 重新建立掃描器實例
     html5QrCode = new Html5Qrcode("qr-reader");
     const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
@@ -66,7 +64,6 @@ function startScanner() {
         .catch(err => {
             console.error("無法啟動掃描器", err);
             
-            // 【核心修正點 1】如果找不到裝置，強制切換到手動輸入介面
             if (err.includes('NotFoundError')) {
                 qrReader.innerHTML = `<p style="color:red; text-align:center;">
                                         ⚠ 無法啟動相機（未找到設備）。請使用手動搜尋功能。
@@ -115,7 +112,6 @@ async function handleSubmitExp() {
     try {
         const result = await api.addPoints({ userId, expValue, reason });
         ui.toast.success(result.message || '成功新增經驗值！');
-        // 重置表單
         expInput.value = '10'; // 修正：重置 exp 值為 2
         customReasonInput.value = '';
         reasonSelect.value = '消費回饋';
@@ -146,18 +142,15 @@ function setupEventListeners() {
 
     document.getElementById('submit-exp-btn').addEventListener('click', handleSubmitExp);
     
-    // 【核心修正點 2】 rescan 按鈕點擊時，強制切換到手動模式
     document.getElementById('rescan-btn').addEventListener('click', () => {
         stopScanner();
         showManualInputInterface();
     });
 
-    // 【新增】手動搜尋會員的事件監聽 (修正邏輯，當 user-id-display 有值時，啟用 submit 按鈕)
     const userSearchInput = document.getElementById('scan-user-search');
     const userSearchResults = document.getElementById('scan-user-search-results');
     const submitExpBtn = document.getElementById('submit-exp-btn');
 
-    // 監聽 User ID 欄位變動，決定是否啟用送出按鈕
     const observer = new MutationObserver(() => {
         submitExpBtn.disabled = !userIdDisplay.value;
     });
@@ -185,7 +178,6 @@ function setupEventListeners() {
 
     userSearchResults.addEventListener('click', (e) => {
         if (e.target.tagName === 'LI') {
-            // ... (原本的邏輯不變)
             stopScanner(); // 停止掃描器
             userIdDisplay.value = e.target.dataset.userId; // 帶入 User ID
             userSearchInput.value = e.target.textContent; // 讓輸入框顯示選中的人名
@@ -209,7 +201,6 @@ export const init = async (context, param) => {
     setupEventListeners();
     startScanner();
 
-    // 處理頁面切換時的掃描器生命週期 (此處邏輯不變)
     const observer = new MutationObserver((mutationsList) => {
         for (const mutation of mutationsList) {
             if (mutation.type === 'attributes' && mutation.attributeName === 'class') {

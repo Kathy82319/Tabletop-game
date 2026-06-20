@@ -14,7 +14,6 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
-    // 從 ExpHistory 表格中，只選取屬於該 user_id 的紀錄，並按日期降序排列
     const stmt = db.prepare(
       `SELECT * FROM ExpHistory 
        WHERE user_id = ? 

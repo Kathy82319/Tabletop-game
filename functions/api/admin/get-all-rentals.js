@@ -11,8 +11,6 @@ export async function onRequest(context) {
     const statusFilter = url.searchParams.get('status');
     const today = new Date().toISOString().split('T')[0];
 
-    // 【** 步驟 1: 修改 SQL 查詢 **】
-    // 我們需要明確地從租借紀錄(r)中選取客製化的逾期費用 r.late_fee_per_day
     let query = `
       SELECT
         r.rental_id, r.user_id, r.rental_date, r.due_date, r.return_date, r.status,
@@ -41,7 +39,6 @@ export async function onRequest(context) {
 
 const todayDate = new Date();
     todayDate.setHours(0, 0, 0, 0);
-    // 【修正點】取得今天的 YYYY-MM-DD 字串，用於精確比較
     const todayStr = todayDate.toISOString().split('T')[0];
 
     results = results.map(rental => {
@@ -50,25 +47,19 @@ const todayDate = new Date();
         let overdue_days = 0;
         let calculated_late_fee = 0;
 
-        // --- ▼▼▼ 這裡是核心修正 ▼▼▼ ---
         if (rental.status === 'rented') {
             const dueDateStr = rental.due_date;
 
-            // 1. 檢查是否今日到期
             if (dueDateStr === todayStr) {
                 derived_status = 'due_today';
             } 
-            // 2. 檢查是否已逾期
             else if (dueDate < todayDate) {
                 derived_status = 'overdue';
                 const diffTime = Math.abs(todayDate - dueDate);
                 overdue_days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             }
-            // (如果以上皆非，derived_status 會保持為 'rented'，這是正確的)
         }
-        // --- ▲▲▲ 修正結束 ▲▲▲ ---
         
-        // (計算逾期費用的邏輯不變)
         if (rental.late_fee_override !== null && rental.late_fee_override !== undefined) {
             calculated_late_fee = rental.late_fee_override;
         } else if (overdue_days > 0) {

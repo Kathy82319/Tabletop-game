@@ -13,7 +13,6 @@ export async function onRequest(context) {
     const user = await db.prepare("SELECT line_picture_url FROM Users WHERE user_id = ?").bind(userId).first();
     const imageUrl = user?.line_picture_url;
 
-    // --- 【安全強化】主機名稱白名單 ---
     const ALLOWED_HOSTNAMES = ['profile.line-scdn.net'];
     let isValidUrl = false;
     if (imageUrl) {

@@ -30,7 +30,6 @@ function initializeToolsPage() {
 }
 
 // ================================================================
-// 工具一：起始玩家抽籤
 // ================================================================
 
 const FP_COLORS = [
@@ -54,7 +53,6 @@ function fpOpen() {
     overlay.addEventListener('touchend',    fpOnTouchEnd,    { passive: false });
     overlay.addEventListener('touchcancel', fpOnTouchEnd,    { passive: false });
 
-    // touchstart 呼叫 preventDefault 會阻止 click，改用 touchend + stopPropagation
     const closeBtn = document.getElementById('fp-close-btn');
     closeBtn.onclick = fpClose;
     closeBtn.addEventListener('touchend', (e) => { e.stopPropagation(); fpClose(); }, { passive: false });
@@ -185,7 +183,6 @@ function fpCancelCountdown() {
 }
 
 // ================================================================
-// 工具二：沙漏計時器
 // ================================================================
 
 const TIMER_CIRCUMFERENCE = 553; // 2π × 88
@@ -283,7 +280,6 @@ function timerDone() {
 }
 
 // ================================================================
-// 工具三：骰子
 // ================================================================
 
 let diceSelectedSides = 6;
@@ -335,7 +331,6 @@ function diceValueToDisplay(value, sides) {
 function diceRoll() {
     const resultArea = document.getElementById('dice-result-area');
 
-    // 建立佔位元素，先顯示滾動狀態
     const row = document.createElement('div');
     row.className = 'dice-results-row';
     const isD6 = diceSelectedSides === 6;
@@ -352,7 +347,6 @@ function diceRoll() {
     resultArea.innerHTML = '';
     resultArea.appendChild(row);
 
-    // 快速滾動數字（老虎機效果）
     let tick = 0;
     const rolling = setInterval(() => {
         cells.forEach(el => {
@@ -417,7 +411,6 @@ function fpShowResult() {
 }
 
 // ================================================================
-// 工具四：記分板
 // ================================================================
 
 let sbPlayers      = [];   // [{ name, score }]
@@ -661,7 +654,6 @@ function sbApplyCustom(sign) {
 }
 
 // ================================================================
-// 工具五：隨機分組
 // ================================================================
 
 let teamsCount = 2;
@@ -725,7 +717,6 @@ function teamsShuffle() {
 
     teamsLastPlayers = players.slice();
 
-    // Fisher-Yates shuffle
     for (let i = players.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [players[i], players[j]] = [players[j], players[i]];
@@ -750,17 +741,13 @@ function teamsShuffle() {
     });
 
     document.getElementById('teams-reshuffle-btn').onclick = () => {
-        // 用同一批名字重新洗牌
         teamsShuffle();
     };
 }
 
 // ================================================================
-// 工具六：資源計數器
 // ================================================================
 
-// counterResDefs: [{ name, startVal, maxVal }]  (maxVal = null 代表無上限)
-// counterPlayers: [{ name, resources: [{ value, maxVal }] }]
 let counterResDefs     = [];
 let counterPlayers     = [];
 let counterLog         = [];
@@ -949,13 +936,11 @@ function counterShowSetup() {
     document.getElementById('counter-playing').style.display = 'none';
     document.getElementById('counter-log-drawer').style.display = 'none';
 
-    // 玩家清單
     const playerList = document.getElementById('counter-player-list');
     playerList.innerHTML = '';
     ['玩家 1', '玩家 2'].forEach(n => counterAddPlayerRow(n, playerList));
     document.getElementById('counter-add-player-btn').onclick = () => counterAddPlayerRow('', playerList);
 
-    // 資源定義清單（預設一個 HP）
     const resDefs = document.getElementById('counter-res-defs');
     resDefs.innerHTML = '';
     counterAddResDef({ name: 'HP', startVal: 20, maxVal: 20 }, resDefs);
@@ -1007,11 +992,9 @@ function counterAddResDef({ name, startVal, maxVal }, container) {
 }
 
 function counterStart() {
-    // 讀玩家
     const playerInputs = document.querySelectorAll('#counter-player-list .player-name-input');
     const playerNames  = Array.from(playerInputs).map((inp, i) => inp.value.trim() || `玩家 ${i + 1}`);
 
-    // 讀資源定義
     counterResDefs = Array.from(document.querySelectorAll('.counter-res-def')).map(def => ({
         name:     def.querySelector('.counter-res-name-input').value.trim() || '資源',
         startVal: parseInt(def.querySelector('.res-start').value) || 0,
@@ -1020,7 +1003,6 @@ function counterStart() {
                   : null
     }));
 
-    // 建立玩家資料
     counterPlayers = playerNames.map(name => ({
         name,
         resources: counterResDefs.map(r => ({ value: r.startVal, maxVal: r.maxVal }))
@@ -1106,7 +1088,6 @@ function counterRender() {
 }
 
 // ================================================================
-// 工具七：秘密角色分配
 // ================================================================
 
 var roleAssignments  = [];
@@ -1363,7 +1344,6 @@ function rolesShowFullReveal() {
 
 
 // ================================================================
-// 工具八：隨機輪盤
 // ================================================================
 
 var wheelOptions  = [];
@@ -1471,7 +1451,6 @@ function wheelGoPlaying() {
     spinBtn.disabled = false;
     editBtn.disabled = false;
 
-    // 設定 canvas 尺寸
     var size   = Math.min(300, window.innerWidth - 64);
     var canvas = document.getElementById('wheel-canvas');
     canvas.width  = size;
@@ -1507,7 +1486,6 @@ function wheelDraw() {
         var startA = -Math.PI / 2 + i * segRad;
         var endA   = startA + segRad;
 
-        // 扇形
         ctx.beginPath();
         ctx.moveTo(cx, cy);
         ctx.arc(cx, cy, r, startA, endA);
@@ -1518,7 +1496,6 @@ function wheelDraw() {
         ctx.lineWidth   = 2;
         ctx.stroke();
 
-        // 文字
         ctx.save();
         ctx.translate(cx, cy);
         ctx.rotate(startA + segRad / 2);
@@ -1538,7 +1515,6 @@ function wheelDraw() {
         ctx.restore();
     }
 
-    // 中心圓
     ctx.beginPath();
     ctx.arc(cx, cy, 14, 0, 2 * Math.PI);
     ctx.fillStyle   = '#1a1008';
@@ -1561,7 +1537,6 @@ function wheelSpin() {
     var segDeg    = 360 / n;
     wheelWinner   = Math.floor(Math.random() * n);
 
-    // 計算停止角度：讓 winner 扇形中心對準上方指針
     var winnerCenter = wheelWinner * segDeg + segDeg / 2;
     var currentMod   = ((wheelRotation % 360) + 360) % 360;
     var target       = ((-(winnerCenter)) % 360 + 360) % 360;
@@ -1606,7 +1581,6 @@ function wheelShowResult() {
             return;
         }
 
-        // 重置並重繪
         wheelRotation = 0;
         var wrap = document.getElementById('wheel-canvas-wrap');
         wrap.style.transition = 'none';

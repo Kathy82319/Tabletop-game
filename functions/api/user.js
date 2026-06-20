@@ -14,12 +14,10 @@ export async function onRequest(context) {
     const expToNextLevel = 10;
 
     if (user) {
-      // 1. 更新使用者的 LINE 顯示名稱與頭像
       const stmt = db.prepare('UPDATE Users SET line_display_name = ?, line_picture_url = ? WHERE user_id = ?');
       await stmt.bind(displayName, pictureUrl, userId).run();
       user = await db.prepare('SELECT * FROM Users WHERE user_id = ?').bind(userId).first();
       
-      // 2. 拉取該會員的多筆裝備、技能、稱號與成就
       const { results: assets } = await db.prepare(`
           SELECT ga.type, ga.name, ua.custom_description, ga.description as default_desc, ga.icon_url
           FROM UserAssets ua
@@ -29,7 +27,6 @@ export async function onRequest(context) {
       
       user.user_assets = assets || [];
 
-      // --- 【關鍵新增】3. 單獨拉取會員「職業」的專屬圖示網址 ---
       if (user.class && user.class !== '無') {
           const classAsset = await db.prepare(`SELECT icon_url FROM GameAssets WHERE type = 'class' AND name = ?`).bind(user.class).first();
           user.class_icon_url = classAsset ? classAsset.icon_url : null;
@@ -40,7 +37,6 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ ...user, expToNextLevel }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
     } else {
-      // 處理新會員註冊
       const newUser = {
         user_id: userId, line_display_name: displayName || '未提供名稱', line_picture_url: pictureUrl || '',
         real_name: '', class: '無', level: 1, current_exp: 0, tag: null, perk: '無特殊優惠',

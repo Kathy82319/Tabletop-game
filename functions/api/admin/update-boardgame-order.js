@@ -14,15 +14,12 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
-    // 建立一個批次更新操作
     const operations = orderedGameIds.map((gameId, index) => {
-      // display_order 從 1 開始編號
       const newOrder = index + 1;
       return db.prepare('UPDATE BoardGames SET display_order = ? WHERE game_id = ?')
                .bind(newOrder, gameId);
     });
 
-    // 執行批次操作
     await db.batch(operations);
 
     return new Response(JSON.stringify({ success: true, message: '成功更新桌遊順序！' }), {

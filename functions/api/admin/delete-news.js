@@ -8,11 +8,9 @@ export async function onRequest(context) {
 
     const { id } = await context.request.json();
     
-    // --- 【驗證區塊】 ---
     if (!id || typeof id !== 'number') {
       return new Response(JSON.stringify({ error: '缺少有效的情報 ID。' }), { status: 400 });
     }
-    // --- 【驗證區塊結束】 ---
 
     const db = context.env.DB;
     

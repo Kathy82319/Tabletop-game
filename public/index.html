@@ -14,7 +14,6 @@
 </head>
 
 
-
 <body>
 
     <main id="app-content" class="page"></main>
@@ -52,7 +51,6 @@
         </button>
     </div>
     
-
 
     <div id="page-game-details">
         <button class="details-back-button">← 返回列表</button>
@@ -425,14 +423,12 @@
 
 </div>
 
-<!-- 起始玩家抽籤覆蓋層 -->
 <div id="first-player-overlay" class="tool-overlay" style="display:none;">
     <p id="fp-status-text">請所有玩家將手指放在螢幕上</p>
     <div id="fp-countdown-display"></div>
     <button id="fp-close-btn" class="tool-overlay-close">✕ 關閉</button>
 </div>
 
-<!-- 沙漏計時器覆蓋層 -->
 <div id="timer-overlay" class="tool-overlay" style="display:none;">
     <button id="timer-close-btn" class="tool-overlay-close">✕ 關閉</button>
 
@@ -473,7 +469,6 @@
     </div>
 </div>
 
-<!-- 骰子覆蓋層 -->
 <div id="dice-overlay" class="tool-overlay" style="display:none;">
     <button id="dice-close-btn" class="tool-overlay-close">✕ 關閉</button>
     <h2 class="tool-overlay-title">骰子</h2>
@@ -507,7 +502,6 @@
     <button id="dice-roll-btn">🎲 擲骰！</button>
 </div>
 
-<!-- 記分板覆蓋層 -->
 <div id="scoreboard-overlay" class="tool-overlay" style="display:none;">
     <button id="sb-close-btn" class="tool-overlay-close">✕ 關閉</button>
 
@@ -529,7 +523,6 @@
         <button class="tool-secondary-btn" id="sb-reset-btn">重新開始</button>
     </div>
 
-    <!-- 計分紀錄抽屜 -->
     <div id="sb-log-drawer" style="display:none;">
         <div class="sb-log-header">
             <span>計分紀錄</span>
@@ -539,7 +532,6 @@
         <p id="sb-log-empty">還沒有任何計分紀錄</p>
     </div>
 
-    <!-- 自訂分數浮層 -->
     <div id="sb-custom-popup" style="display:none;">
         <p id="sb-popup-label">自訂分數</p>
         <input type="number" id="sb-popup-input" inputmode="numeric" placeholder="輸入分數">
@@ -551,7 +543,6 @@
     </div>
 </div>
 
-<!-- 隨機分組覆蓋層 -->
 <div id="teams-overlay" class="tool-overlay" style="display:none;">
     <button id="teams-close-btn" class="tool-overlay-close">✕ 關閉</button>
 
@@ -577,7 +568,6 @@
     </div>
 </div>
 
-<!-- 資源計數器覆蓋層 -->
 <div id="counter-overlay" class="tool-overlay" style="display:none;">
     <button id="counter-close-btn" class="tool-overlay-close">✕ 關閉</button>
 
@@ -606,7 +596,6 @@
         <button class="tool-secondary-btn" id="counter-reset-btn">重新開始</button>
     </div>
 
-    <!-- 自訂數值浮層 -->
     <div id="counter-custom-popup" style="display:none;">
         <p id="counter-popup-label">自訂數值</p>
         <input type="number" id="counter-popup-input" inputmode="numeric" placeholder="輸入數值">
@@ -617,7 +606,6 @@
         <button id="counter-popup-cancel">取消</button>
     </div>
 
-    <!-- 變動紀錄抽屜 -->
     <div id="counter-log-drawer" style="display:none;">
         <div class="sb-log-header">
             <span>變動紀錄</span>
@@ -628,11 +616,9 @@
     </div>
 </div>
 
-<!-- 隨機輪盤覆蓋層 -->
 <div id="wheel-overlay" class="tool-overlay" style="display:none;">
     <button id="wheel-close-btn" class="tool-overlay-close">✕ 關閉</button>
 
-    <!-- 設定 -->
     <div id="wheel-setup" class="tool-setup-panel">
         <h2 class="tool-overlay-title">隨機輪盤</h2>
         <p class="tools-section-label">選項（最少 2 個）</p>
@@ -641,7 +627,6 @@
         <button class="tool-start-btn" id="wheel-start-btn">開始轉動</button>
     </div>
 
-    <!-- 輪盤 -->
     <div id="wheel-playing" class="wheel-playing-panel" style="display:none;">
         <div class="wheel-area">
             <div class="wheel-pointer-arrow"></div>
@@ -653,7 +638,6 @@
         <button class="tool-secondary-btn" id="wheel-edit-btn">修改選項</button>
     </div>
 
-    <!-- 結果 bottom sheet -->
     <div id="wheel-result-popup" style="display:none;">
         <p class="wheel-result-label">選中了！</p>
         <div id="wheel-result-name" class="wheel-result-name">—</div>
@@ -664,11 +648,9 @@
     </div>
 </div>
 
-<!-- 秘密角色分配覆蓋層 -->
 <div id="roles-overlay" class="tool-overlay" style="display:none;">
     <button id="roles-close-btn" class="tool-overlay-close">✕ 關閉</button>
 
-    <!-- Phase 1: Setup -->
     <div id="roles-setup" class="tool-setup-panel">
         <h2 class="tool-overlay-title">秘密角色分配</h2>
 
@@ -691,7 +673,6 @@
         <button class="tool-start-btn" id="roles-start-btn">開始分配角色</button>
     </div>
 
-    <!-- Phase 2: Distributing -->
     <div id="roles-distributing" class="roles-full-phase" style="display:none;">
         <div id="roles-handoff" class="roles-handoff-wrap">
             <p class="roles-handoff-hint">請把手機交給</p>
@@ -707,7 +688,6 @@
         </div>
     </div>
 
-    <!-- Phase 3: Playing (game in progress) -->
     <div id="roles-playing" class="roles-full-phase" style="display:none;">
         <div class="roles-playing-inner">
             <div class="roles-playing-icon">🎉</div>
@@ -717,7 +697,6 @@
         <button class="tool-secondary-btn" id="roles-end-btn">遊戲結束 / 公開角色</button>
     </div>
 
-    <!-- Phase 4: Final reveal -->
     <div id="roles-final" class="roles-full-phase" style="display:none;">
         <div id="roles-unlock-panel" class="roles-unlock-panel">
             <p class="roles-unlock-hint">請主持人輸入密碼以公開所有角色</p>

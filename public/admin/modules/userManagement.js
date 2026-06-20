@@ -2,14 +2,12 @@
 import { api } from '../api.js';
 import { ui } from '../ui.js';
 
-// --- 全域變數 ---
 let allUsers = [];
 let allAssets = []; // 儲存職業、技能、裝備設定
 let allDrafts = []; // 儲存訊息草稿 (用於 CRM 發送訊息)
 let currentAssetType = 'class'; // 當前制度設定的分頁
 
 // ============================================================
-// 1. 顧客列表相關功能
 // ============================================================
 
 /**
@@ -32,11 +30,9 @@ function renderUserList(users) {
         
         const displayName = user.nickname ? `${user.line_display_name} (${user.nickname})` : user.line_display_name;
         
-        // 檢查是否需要升級福利
         const needsPerk = user.level > 1 && user.level > (user.perk_claimed_level || 0);
         const levelDisplay = needsPerk ? `${user.level} ⭐` : user.level;
 
-        // 操作按鈕
         let actionsHTML = `<button class="action-btn btn-edit-user" data-userid="${user.user_id}" style="background-color: var(--warning-color); color: #000;">編輯</button>`;
         if (needsPerk) {
             actionsHTML += ` <button class="action-btn btn-claim-perk-list" data-userid="${user.user_id}" style="background-color: var(--success-color);">✅ 福利已給</button>`;
@@ -80,10 +76,8 @@ function handleUserSearch() {
 }
 
 // ============================================================
-// 2. 會員制度設定相關功能 (新增功能)
 // ============================================================
 
-// 【修改】加入 title 與 achievement 的顯示標籤
 const typeLabels = {
     'class': { label: '職業', desc: '預設福利' },
     'skill': { label: '技能', desc: '技能說明' },
@@ -110,12 +104,10 @@ function renderAssetsList() {
     filtered.forEach(asset => {
         const row = tbody.insertRow();
         
-        // 【新增】判斷如果有圖片網址，就顯示出來
         const iconHtml = asset.icon_url 
             ? `<img src="${asset.icon_url}" style="max-height: 1.5em; vertical-align: middle; border-radius: 4px;">` 
             : '-';
 
-        // 【修改】嚴格輸出 4 個 <td>
         row.innerHTML = `
             <td style="text-align: center;">${iconHtml}</td>
             <td>${asset.name}</td>
@@ -142,7 +134,6 @@ function openEditAssetModal(assetId = null) {
             document.getElementById('edit-asset-id').value = asset.id;
             document.getElementById('edit-asset-name').value = asset.name;
             document.getElementById('edit-asset-desc').value = asset.description;
-            // 【新增】編輯時帶入圖示網址
             document.getElementById('edit-asset-icon').value = asset.icon_url || '';
             deleteBtn.style.display = 'inline-block';
             deleteBtn.onclick = () => handleAssetDelete(asset.id);
@@ -162,7 +153,6 @@ async function handleAssetSave(e) {
     button.disabled = true;
     button.textContent = '儲存中...';
 
-    // 【修改】收集資料時抓取 icon_url
     const data = {
         id: document.getElementById('edit-asset-id').value,
         type: document.getElementById('edit-asset-type').value,
@@ -199,10 +189,8 @@ async function handleAssetDelete(id) {
 }
 
 // ============================================================
-// 3. 編輯使用者 (整合下拉選單與動態欄位)
 // ============================================================
 
-// 保留職業(Class)的單選設定功能
 function setupAssetDropdown(selectId, otherInputId, type, currentValue, onSelectCallback) {
     const select = document.getElementById(selectId);
     const otherInput = document.getElementById(otherInputId);
@@ -245,10 +233,7 @@ function setupAssetDropdown(selectId, otherInputId, type, currentValue, onSelect
     };
 }
 
-// 【新增】產生動態多筆欄位
-// public/admin/modules/userManagement.js
 
-// 產生動態多筆欄位
 function addDynamicAssetRow(containerId, assetType, selectedName = '', customDescription = '') {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -276,7 +261,6 @@ function addDynamicAssetRow(containerId, assetType, selectedName = '', customDes
     const selectEl = row.querySelector('.asset-name-select');
     const descEl = row.querySelector('.asset-desc-input');
 
-    // 【新增】動態更新輸入框的浮水印 (Placeholder) 來提示預設說明
     const updatePlaceholder = () => {
         const selectedOpt = selectEl.options[selectEl.selectedIndex];
         if (selectedOpt && selectedOpt.dataset.desc) {
@@ -288,13 +272,11 @@ function addDynamicAssetRow(containerId, assetType, selectedName = '', customDes
     
     updatePlaceholder(); // 初始化執行一次
 
-    // 綁定下拉選單連動
     selectEl.addEventListener('change', () => {
         updatePlaceholder(); // 切換選項時，更新背景浮水印
         descEl.value = ''; // 【關鍵修改】切換項目時，強制清空輸入框，讓它吃最新的預設說明
     });
 
-    // 綁定移除按鈕
     row.querySelector('.btn-remove-asset').addEventListener('click', () => {
         row.remove();
     });
@@ -326,7 +308,6 @@ async function openEditUserModal(userId) {
     modal.querySelector('#edit-notes-textarea').value = user.notes || '';
     modal.querySelector('#edit-perk-input').value = user.perk || '';
 
-    // 設定職業與標籤
     setupAssetDropdown('edit-class-select', 'edit-class-other-input', 'class', user.class, (desc) => {
         document.getElementById('edit-perk-input').value = desc;
     });
@@ -348,21 +329,17 @@ async function openEditUserModal(userId) {
     }
     tagSelect.onchange = () => { tagInput.style.display = tagSelect.value === 'other' ? 'block' : 'none'; };
 
-    // 清空所有動態容器
     ['edit-title-container', 'edit-achievement-container', 'edit-skill-container', 'edit-equipment-container'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = '';
     });
 
-    // 把資料庫裡的動態資產顯示出來
     if (user.user_assets && user.user_assets.length > 0) {
         user.user_assets.forEach(asset => {
-            // 只讀取「自訂說明」，沒有就給空字串，讓 Placeholder 顯示預設說明
             const desc = asset.custom_description || ''; 
             addDynamicAssetRow(`edit-${asset.type}-container`, asset.type, asset.name, desc);
         });
     } else {
-        // 過渡期相容
         if (user.skill && user.skill !== '無') {
             addDynamicAssetRow('edit-skill-container', 'skill', user.skill, '');
         }
@@ -381,7 +358,6 @@ async function handleEditUserFormSubmit(event) {
         return val === 'other' ? form.querySelector(inpId).value.trim() : val;
     };
 
-    // 收集動態欄位內容
     const collectAssets = (containerId, type) => {
         const items = [];
         document.getElementById(containerId).querySelectorAll('.dynamic-asset-row').forEach(row => {
@@ -400,7 +376,6 @@ async function handleEditUserFormSubmit(event) {
         perk: form.querySelector('#edit-perk-input').value.trim(),
         tag: getValue('#edit-tag-select', '#edit-tag-other-input'),
         notes: form.querySelector('#edit-notes-textarea').value.trim(),
-        // 【新增】把所有動態新增的項目包裝成陣列送給後端
         user_assets: [
             ...collectAssets('edit-title-container', 'title'),
             ...collectAssets('edit-achievement-container', 'achievement'),
@@ -425,7 +400,6 @@ async function handleEditUserFormSubmit(event) {
 }
 
 // ============================================================
-// 4. CRM 詳細資料頁面 (原本遺失的功能，現已補回)
 // ============================================================
 
 /**
@@ -508,7 +482,6 @@ function renderUserDetails(data) {
     const displayName = profile.nickname || profile.line_display_name;
     document.querySelector('#user-details-modal #user-details-title').textContent = displayName;
     
-    // 產生帶有圖示與互動說明的資產標籤
     const renderAssetsHtml = (type) => {
         const items = profile.user_assets ? profile.user_assets.filter(a => a.type === type) : [];
         if (items.length === 0) return '<span style="color:#aaa;">無</span>';
@@ -519,7 +492,6 @@ function renderUserDetails(data) {
         }).join('');
     };
 
-    // 重新編排版面結構
     contentContainer.innerHTML = `
         <div class="details-grid">
             <div class="profile-summary">
@@ -597,12 +569,10 @@ function renderUserDetails(data) {
         </div>
     `;
     
-    // 渲染歷史紀錄表格
     contentContainer.querySelector('#tab-bookings').appendChild(renderHistoryTable(bookings, ['booking_date', 'num_of_people', 'status_text'], { booking_date: '預約日', num_of_people: '人數', status_text: '狀態' }));
     contentContainer.querySelector('#tab-rentals').appendChild(renderHistoryTable(rentals, ['rental_date', 'game_name', 'status'], { rental_date: '租借日', game_name: '遊戲', status: '狀態' }));
     contentContainer.querySelector('#tab-exp').appendChild(renderHistoryTable(exp_history, ['created_at', 'reason', 'exp_added'], { created_at: '日期', reason: '原因', exp_added: '經驗' }));
     
-    // 綁定分頁切換功能
     contentContainer.querySelector('.details-tabs').addEventListener('click', e => { 
         if (e.target.tagName === 'BUTTON') { 
             contentContainer.querySelector('.details-tab.active')?.classList.remove('active'); 
@@ -634,13 +604,11 @@ async function openUserDetailsModal(userId) {
 }
 
 // ============================================================
-// 5. 初始化與事件監聽
 // ============================================================
 
 function setupEventListeners() {
     const page = document.getElementById('page-users');
 
-    // 子分頁切換邏輯
     const subTabs = page.querySelectorAll('.sub-tab-btn');
     subTabs.forEach(btn => {
         btn.onclick = () => {
@@ -653,13 +621,11 @@ function setupEventListeners() {
         };
     });
 
-    // 綁定搜尋框
     const userSearchInput = document.getElementById('user-search-input');
     if (userSearchInput) {
         userSearchInput.oninput = handleUserSearch;
     }
     
-    // 綁定使用者列表點擊 (委派)
     const userTbody = document.getElementById('user-list-tbody');
     if(userTbody) {
         userTbody.onclick = async (event) => {
@@ -678,13 +644,11 @@ function setupEventListeners() {
                     init();
                 } catch (e) { ui.toast.error(e.message); }
             } else {
-                // 【重要】這就是開啟 CRM 詳細資料的觸發點
                 openUserDetailsModal(row.dataset.userId);
             }
         };
     }
 
-    // 會員制度類別切換
     const assetFilter = document.getElementById('assets-type-filter');
     if(assetFilter) {
         assetFilter.onclick = (e) => {
@@ -697,7 +661,6 @@ function setupEventListeners() {
         };
     }
 
-    // 綁定按鈕與表單
     const btnAddAsset = document.getElementById('btn-add-asset');
     if(btnAddAsset) btnAddAsset.onclick = () => openEditAssetModal();
 

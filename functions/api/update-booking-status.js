@@ -8,7 +8,6 @@ export async function onRequest(context) {
 
     const { bookingId, status } = await context.request.json();
 
-    // --- 【驗證區塊】 ---
     const errors = [];
     if (!bookingId || !Number.isInteger(bookingId)) {
         errors.push('無效的預約 ID。');
@@ -21,7 +20,6 @@ export async function onRequest(context) {
     if (errors.length > 0) {
         return new Response(JSON.stringify({ error: errors.join(' ') }), { status: 400 });
     }
-    // --- 【驗證區塊結束】 ---
 
     const db = context.env.DB;
     

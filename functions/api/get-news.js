@@ -8,7 +8,6 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
-    // 只選取 is_published 為 1 (true) 的消息，並按發布日期降序排列
     const stmt = db.prepare(
       `SELECT * FROM News 
        WHERE is_published = 1 

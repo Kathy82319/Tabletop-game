@@ -59,13 +59,11 @@ function applyFiltersAndRender() {
     if (statusFilter !== 'all') {
         
         if (statusFilter === 'rented') {
-            // "租借中" 應該包含所有未歸還的 (租借中、今日到期、已逾期)
             const activeRentalStates = ['rented', 'due_today', 'overdue'];
             filteredRentals = allRentals.filter(r => activeRentalStates.includes(r.derived_status));
         } else {
             filteredRentals = allRentals.filter(r => r.derived_status === statusFilter);
         }
-        // --- ▲▲▲ 修改結束 ▲▲▲ ---
     }
 
     if (searchTerm) {
@@ -77,7 +75,6 @@ function applyFiltersAndRender() {
     }
     renderRentalList(filteredRentals);
 }
-// --- 建立租借相關功能 ---
 
 export async function openCreateRentalModal(initialGameId) {
     createRentalModal = document.getElementById('create-rental-modal');
@@ -100,7 +97,6 @@ export async function openCreateRentalModal(initialGameId) {
     document.getElementById('user-search-results').style.display = 'none';
     
     if (initialGameId) {
-        // 【關鍵修正】使用 == 進行比較，忽略字串和數字的型別差異
         const game = allGames.find(g => g.game_id == initialGameId);
         if (game) {
             addGameToSelection(game);
@@ -129,7 +125,6 @@ function addGameToSelection(game) {
     tag.className = 'selected-game-tag';
     tag.dataset.gameId = game.game_id;
     
-    // 【修改】在標籤內加入重量輸入框 (game-weight-input)
     tag.innerHTML = `
         <span>${game.name}</span>
         <input type="number" class="game-weight-input" placeholder="重量(g)" style="width: 70px; margin-left: 8px; padding: 2px 4px; border-radius: 4px; border: none; outline: none; color: #333; font-size: 0.85rem;" min="0" required>
@@ -167,7 +162,6 @@ async function handleCreateRentalFormSubmit(event) {
         if (!confirmed) return;
     }
 
-        // 【新增】從畫面上逐一取得每個遊戲的 ID 與重量
     const gamesData = [];
     const gameElements = form.querySelectorAll('.selected-game-tag');
     gameElements.forEach(el => {
@@ -198,7 +192,6 @@ async function handleCreateRentalFormSubmit(event) {
         ui.toast.success(result.message || '租借紀錄已建立！');
         ui.hideModal('#create-rental-modal');
         
-        // 取得目前的篩選狀態並重新載入
         const currentStatus = rentalStatusFilter?.querySelector('.active')?.dataset.filter || 'all';
         init(null, currentStatus);
     } catch (error) {
@@ -225,13 +218,11 @@ function openEditRentalModal(rentalId) {
     editRentalForm.querySelector('#edit-rental-due-date').value = rental.due_date;
     editRentalForm.querySelector('#edit-rental-override-fee').value = rental.late_fee_override || '';
 
-    // 初始化 flatpickr
     flatpickr(editRentalForm.querySelector('#edit-rental-due-date'), {
         dateFormat: "Y-m-d",
         defaultDate: rental.due_date
     });
     
-    // 綁定訊息發送功能
     bindMessageSender(rental.user_id, rental.game_name);
 
     ui.showModal('#edit-rental-modal');
@@ -292,7 +283,6 @@ await api.updateRentalDetails({ rentalId, dueDate, lateFeeOverride });
 ui.toast.success('租借紀錄更新成功！');
 ui.hideModal('#edit-rental-modal');
 
-    // 取得目前的篩選狀態並重新載入，保持在目前的頁籤
     const currentStatus = rentalStatusFilter?.querySelector('.active')?.dataset.filter || 'all';
     init(null, currentStatus); 
 } catch (error) {
@@ -403,13 +393,7 @@ function setupEventListeners() {
 
 rentalStatusFilter.addEventListener('click', e => {
         if (e.target.tagName === 'BUTTON') {
-            // OLD:
-            // rentalStatusFilter.querySelector('.active')?.classList.remove('active');
-            // e.target.classList.add('active');
-            // const status = e.target.dataset.filter;
-            // init(status);
 
-            // NEW: 改為更新 hash，讓 app.js 的路由統一處理
             const status = e.target.dataset.filter;
             if (status === 'all') {
                 window.location.hash = '#rentals';
@@ -439,7 +423,6 @@ rentalStatusFilter.addEventListener('click', e => {
         }
     });
     
-    // --- 建立租借視窗的事件監聽 ---
     const gameSearchInput = document.getElementById('rental-game-search');
     const gameSearchResults = document.getElementById('game-search-results');
     
@@ -515,10 +498,8 @@ export const init = async (context, initialStatus) => {
 
     if (!rentalListTbody) return;
     
-    // 【修改 2】使用傳入的 initialStatus，若無則預設為 'all'
     const status = initialStatus || 'all';
 
-    // 【修改 3】根據 status 更新篩選按鈕的 UI
     if (rentalStatusFilter) {
         rentalStatusFilter.querySelector('.active')?.classList.remove('active');
         const newActiveButton = rentalStatusFilter.querySelector(`button[data-filter="${status}"]`);
@@ -529,7 +510,6 @@ export const init = async (context, initialStatus) => {
     
     rentalListTbody.innerHTML = '<tr><td colspan="6">正在載入租借紀錄...</td></tr>';
     try {
-        // 【修改 4】使用 status 變數來呼叫 API
         allRentals = await api.getAllRentals(status);
         applyFiltersAndRender();
         setupEventListeners();

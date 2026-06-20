@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
-    // 核心DOM元素與全域變數
     // =================================================================
     const myLiffId = "2008076323-GN1e7naW";
     let userProfile = null;
@@ -22,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let disabledDatesByAdmin = [];
  
     // =================================================================
-    // 全域事件監聽
     // =================================================================
     appContent.addEventListener('click', (event) => {
         const target = event.target;
@@ -61,7 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // =================================================================
-    // 頁面切換邏輯 (重構)
     // =================================================================
 
 function handleNavigation() {
@@ -126,7 +123,6 @@ function handleNavigation() {
     window.addEventListener('hashchange', handleNavigation);
 
     // =================================================================
-    // 首頁 (最新情報)
     // =================================================================
 function renderNews(filterCategory = 'ALL') {
     const container = document.getElementById('news-list-container');
@@ -252,7 +248,6 @@ function initializeGameDetailsPageFromHash(gameIdString) {
     }
 }    
 // =================================================================
-// LIFF 初始化 (更新版)
 // =================================================================
 
     async function initializeLiff() {
@@ -278,7 +273,6 @@ function initializeGameDetailsPageFromHash(gameIdString) {
         }
     }
     // =================================================================
-    // 個人資料頁
     // =================================================================
 async function initializeProfilePage() {
     if (!userProfile) return;
@@ -303,22 +297,18 @@ liff.getProfile().then(profile => {
         userProfile = profile;
         const pictureEl = document.getElementById('profile-picture');
         if(pictureEl) pictureEl.src = profile.pictureUrl || 'placeholder.jpg';
-        // 舊的按鈕預設不顯示
         const oldQrBtn = document.getElementById('toggle-qrcode-btn');
         if(oldQrBtn) oldQrBtn.style.display = 'none'; 
     });
 
-    // 【新增/修改】綁定 QR Code Icon 點擊按鈕
     const qrIconBtn = document.getElementById('qr-icon-btn');
     const qrContainer = document.getElementById('qrcode-container');
     if (qrIconBtn && qrContainer) {
-        // 清除舊事件避免重複綁定
         const newQrIconBtn = qrIconBtn.cloneNode(true);
         qrIconBtn.parentNode.replaceChild(newQrIconBtn, qrIconBtn);
         newQrIconBtn.addEventListener('click', () => {
             const isHidden = qrContainer.style.display === 'none';
             qrContainer.style.display = isHidden ? 'block' : 'none'; // 修改顯示方式為 block
-            // 點擊後滾動到上方，確保 QR Code 能被看見
             if(isHidden) window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     }
@@ -336,13 +326,11 @@ liff.getProfile().then(profile => {
     async function fetchGameData(forceRefresh = false) { 
         if (!forceRefresh && gameData && gameData.user_id) return gameData;
         try {
-            // 【解決方案 1：在這裡加入檢查】
             const picUrl = userProfile.pictureUrl || "https://meee.com.tw/JOqBTeG";
 
             const response = await fetch('/api/user', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // 【修改】將 userProfile.pictureUrl 改為 picUrl
                 body: JSON.stringify({ userId: userProfile.userId, displayName: userProfile.displayName, pictureUrl: picUrl }),
             });
             if (!response.ok) throw new Error('無法取得會員遊戲資料');
@@ -359,14 +347,12 @@ liff.getProfile().then(profile => {
 function updateProfileDisplay(data) {
     if (!data) return;
     
-    // 大頭貼圖片與職業小圈圈邏輯
     const pictureEl = document.getElementById('profile-picture');
     if (pictureEl) pictureEl.src = userProfile.pictureUrl || '/api/admin/get-avatar?userId=' + data.user_id;
 
     const overlayEl = document.getElementById('class-icon-overlay');
     const classIconEl = document.getElementById('user-class-icon');
     
-    // 基本資料填充
     document.getElementById('display-name').textContent = data.nickname || userProfile.displayName;
     document.getElementById('user-class').textContent = data.class || "無";
     
@@ -376,7 +362,6 @@ function updateProfileDisplay(data) {
     document.getElementById('user-level').textContent = data.level;
     document.getElementById('user-exp').textContent = `${data.current_exp} / 10`;
 
-    // --- 【修正】只保留讀取後端傳來的 class_icon_url (刪除了下面會互相衝突的舊代碼) ---
     if (data.class_icon_url && classIconEl && overlayEl) {
         classIconEl.src = data.class_icon_url; 
         overlayEl.style.display = 'block'; 
@@ -384,10 +369,8 @@ function updateProfileDisplay(data) {
         overlayEl.style.display = 'none'; 
     }
 
-    // 處理多筆動態資產 (user_assets)
     const assets = data.user_assets || [];
 
-    // 渲染帶圖示、可點擊的互動標籤 (稱號、成就)
     const renderInteractiveTags = (type) => {
         const items = assets.filter(a => a.type === type);
         if (items.length === 0) return '<span>無</span>';
@@ -395,12 +378,10 @@ function updateProfileDisplay(data) {
         return items.map(a => {
             const icon = a.icon_url ? `<img src="${a.icon_url}" style="height: 1.1em; vertical-align: middle; margin-right: 3px; border-radius: 2px;">` : '';
             const desc = a.custom_description || a.default_desc || '無說明';
-            // CSS 樣式：拿掉背景與邊框，文字顏色加深，保留虛線底線
             return `<span style="display: inline-block; padding: 2px 0; cursor: pointer; color: #333; text-decoration: underline dotted #999; text-underline-offset: 3px;" onclick="showAssetPopover('${a.name}', '${desc}')">${icon}${a.name}</span>`;
         }).join('<span style="color: #ccc; margin: 0 4px;">|</span>'); // 用直槓分隔
     };
 
-    // 渲染一般圖示標籤與條列式說明文字 (技能、裝備)
     const renderStaticTagsAndDesc = (type, tagContainerId, descContainerId) => {
         const items = assets.filter(a => a.type === type);
         const tagContainer = document.getElementById(tagContainerId);
@@ -420,7 +401,6 @@ function updateProfileDisplay(data) {
         }
         
         if(descContainer) {
-            // 說明排版：標題變粗體，內容不變粗體
             descContainer.innerHTML = items.map(a => {
                 const desc = a.custom_description || a.default_desc || '無說明';
                 return `<div style="margin-bottom: 3px;"><strong style="color: #444;">${a.name}:</strong> <span style="color: #666;">${desc}</span></div>`;
@@ -428,14 +408,12 @@ function updateProfileDisplay(data) {
         }
     };
 
-    // 寫入畫面
     if (assets.length > 0) {
         document.getElementById('user-title').innerHTML = renderInteractiveTags('title');
         document.getElementById('user-achievement').innerHTML = renderInteractiveTags('achievement');
         renderStaticTagsAndDesc('skill', 'user-skill', 'user-skill-desc');
         renderStaticTagsAndDesc('equipment', 'user-equipment', 'user-equipment-desc');
     } else {
-        // 向下相容舊版資料 保持不變
         document.getElementById('user-title').innerHTML = '<span>無</span>';
         document.getElementById('user-achievement').innerHTML = '<span>無</span>';
         document.getElementById('user-skill').innerHTML = data.skill || '無';
@@ -445,7 +423,6 @@ function updateProfileDisplay(data) {
     }
 }
 
-// 【新增】開啟小小解釋欄 (Popover)
 window.showAssetPopover = function(name, desc) {
     document.getElementById('asset-popover-title').textContent = name;
     document.getElementById('asset-popover-desc').textContent = desc;
@@ -454,7 +431,6 @@ window.showAssetPopover = function(name, desc) {
     document.getElementById('asset-popover').style.display = 'block';
 };
 
-// 【新增】關閉小小解釋欄 (Popover)
 window.closeAssetPopover = function() {
     document.getElementById('popover-backdrop').style.display = 'none';
     document.getElementById('asset-popover').style.display = 'none';
@@ -625,7 +601,6 @@ async function initializeRentalHistoryPage() {
     }
 }
     // =================================================================
-    // 編輯個人資料頁
     // =================================================================
 async function initializeEditProfilePage() {
     if (allGames.length === 0) {
@@ -752,7 +727,6 @@ async function initializeEditProfilePage() {
     };
 }
     // =================================================================
-    // 桌遊圖鑑頁
     // =================================================================
     function difficultyToStars(difficulty) {
     const levels = {
@@ -962,9 +936,7 @@ function renderGames() {
     }
 
 // =================================================================
-// 場地預約頁
 // =================================================================
-// public/script.js
 
 async function initializeBookingPage(stepId) {
     const currentStep = stepId || 'step-preference';
@@ -1130,7 +1102,6 @@ function showBookingStep(stepId) {
                 btn.addEventListener('click', () => {
                     bookingData.timeSlot = btn.textContent;
                     appContent.querySelector('#contact-summary').textContent = `${bookingData.date} 的 ${bookingData.timeSlot}`;
-                    // 導航到下一步
                     navigateTo('page-booking', 'step-contact');
                 });
             });
@@ -1204,7 +1175,6 @@ async function handleBookingConfirmation(confirmBtn) {
     }
 }
     // =================================================================
-    // 店家資訊頁
     // =================================================================
 async function initializeInfoPage() {
     try {
@@ -1234,14 +1204,11 @@ async function initializeInfoPage() {
     }
 }
     // =================================================================
-    // Tab Bar 主導航
     // =================================================================
 
     initializeLiff();
 });
 
-// --- [新增] 問卷助手邏輯 ---
-// --- 修改後的 RecWizard (支援記憶功能與複選) ---
 const RecWizard = {
     answers: {
         players: [],
@@ -1259,20 +1226,17 @@ const RecWizard = {
     },
 
     open: function() {
-        // 載入遊戲資料
         if (this.allGames.length === 0) {
             fetch('/api/get-boardgames')
                 .then(r => r.json())
                 .then(data => { 
                     this.allGames = data; 
-                    // 資料載入後，如果之前有結果，重新渲染一次結果頁
                     if (this.hasSavedState()) this.showResults();
                 });
         }
         
         document.getElementById('quiz-modal').style.display = 'flex';
         
-        // 【核心修改】檢查是否有暫存的狀態
         if (this.hasSavedState()) {
             this.loadState();
             this.showResults(); // 直接顯示結果，不重置
@@ -1328,7 +1292,6 @@ const RecWizard = {
 
         const { players, price, tag, difficulty } = this.answers;
         
-        // 篩選邏輯 (與之前相同)
         const results = this.allGames.filter(game => {
             let matchPlayers = (players.length === 0) ? true : players.some(p => (p === 7 ? game.max_players >= 7 : (game.min_players <= p && game.max_players >= p)));
             if (!matchPlayers) return false;
@@ -1353,7 +1316,6 @@ const RecWizard = {
             return true;
         });
 
-        // 渲染結果
         const container = document.getElementById('quiz-result-list');
         const countDisplay = document.getElementById('quiz-result-count');
         container.innerHTML = '';
@@ -1386,7 +1348,6 @@ const RecWizard = {
         }
     },
 
-    // --- 新增：狀態儲存與讀取 ---
     saveState: function() {
         sessionStorage.setItem('quiz_answers', JSON.stringify(this.answers));
     },
@@ -1395,32 +1356,23 @@ const RecWizard = {
         const saved = sessionStorage.getItem('quiz_answers');
         if (saved) {
             this.answers = JSON.parse(saved);
-            // 恢復按鈕的選中狀態 (如果是重開網頁的情況)
             this.restoreButtonStates();
         }
     },
 
     hasSavedState: function() {
-        // 檢查是否有儲存且不為空
         const saved = sessionStorage.getItem('quiz_answers');
         if (!saved) return false;
         const parsed = JSON.parse(saved);
-        // 檢查是否至少選了一個條件
         return parsed.players.length > 0 || parsed.price.length > 0 || parsed.tag.length > 0 || parsed.difficulty.length > 0;
     },
 
     restoreButtonStates: function() {
-        // 根據 this.answers 重新標記按鈕 (僅在必要時呼叫，例如重新整理後)
         document.querySelectorAll('.quiz-option-btn').forEach(btn => btn.classList.remove('selected'));
-        // 這裡邏輯較複雜，因為 DOM 是靜態的，通常不需要特別恢復按鈕狀態，
-        // 除非我們在 restart 以外的時候回到前面的步驟。
-        // 目前主要用途是 showResults() 直接顯示結果，所以這步可省略或做為擴充。
     }
 };
 
-// 在 DOMContentLoaded 或 initApp 中呼叫
 document.addEventListener('DOMContentLoaded', () => {
     RecWizard.init();
 });
 
-// 桌遊工具頁邏輯在 tools.js

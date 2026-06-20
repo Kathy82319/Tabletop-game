@@ -17,7 +17,6 @@ export async function onRequest(context) {
             item
         } = body;
 
-        // 後端驗證，userId 現在是可選的
         if (!bookingDate || !timeSlot || !contactName || !numOfPeople) {
             return new Response(JSON.stringify({ error: '除了會員外，所有必填欄位皆不可為空' }), { status: 400 });
         }
@@ -26,8 +25,6 @@ export async function onRequest(context) {
         const PEOPLE_PER_TABLE = 4; // 您可以根據需求調整每桌人數
         const tablesNeeded = Math.ceil(Number(numOfPeople) / PEOPLE_PER_TABLE);
 
-        // 【核心修正】修正 INSERT 語句，確保欄位與數值數量完全一致
-        // 我們明確指定要插入的 9 個欄位，並提供 8 個變數 + 1 個預設值 'confirmed'
         const stmt = db.prepare(
             `INSERT INTO Bookings (user_id, contact_name, contact_phone, booking_date, time_slot, num_of_people, tables_occupied, booking_preference, status) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')`

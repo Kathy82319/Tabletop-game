@@ -9,7 +9,6 @@ export async function onRequest(context) {
     const body = await context.request.json();
     const { userId, realName, nickname, phone, email, preferredGames, displayName, pictureUrl } = body;
 
-    // --- 【驗證區塊】 ---
     const errors = [];
     if (!userId || typeof userId !== 'string') {
         errors.push('無效的使用者 ID。');
@@ -35,7 +34,6 @@ export async function onRequest(context) {
             status: 400, headers: { 'Content-Type': 'application/json' },
         });
     }
-    // --- 【驗證區塊結束】 ---
 
     const db = context.env.DB;
     

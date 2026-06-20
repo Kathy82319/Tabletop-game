@@ -2,7 +2,6 @@
 import { api } from '../api.js';
 import { ui } from '../ui.js';
 
-// 渲染儀表板的統計數據
 const renderStats = (stats) => {
     const updateText = (id, text) => {
         const el = document.getElementById(id);
@@ -14,7 +13,6 @@ const renderStats = (stats) => {
     updateText('stat-due-today', stats.due_today_rentals_count || 0);
 };
 
-// 載入並渲染最新動態
 async function loadAndRenderActivities() {
     const container = document.getElementById('activity-feed-container');
     const badge = document.getElementById('activity-count-badge');
@@ -22,7 +20,6 @@ async function loadAndRenderActivities() {
 
     try {
         const activities = await api.getActivities(); 
-        // 【解決方案 2：在這裡定義時區選項】
         const options = {
             timeZone: 'Asia/Taipei',
             year: 'numeric',
@@ -37,7 +34,6 @@ async function loadAndRenderActivities() {
             badge.textContent = `${activities.length} 則未讀`;
             badge.style.display = 'inline-block';
             container.innerHTML = activities.map(act => {
-                // 【修改】使用 .toLocaleString('zh-TW', options)
                 const localizedTime = new Date(act.created_at).toLocaleString('zh-TW', options);
                 
                 return `
@@ -77,7 +73,6 @@ async function loadAndRenderActivities() {
     }
 }
 
-// 綁定儀表板卡片的點擊跳轉事件
 const setupEventListeners = () => {
     const dashboardGrid = document.getElementById('dashboard-grid');
     if (dashboardGrid && !dashboardGrid.dataset.listenerAttached) {
@@ -89,12 +84,8 @@ const setupEventListeners = () => {
             if (target === 'bookings') {
                 window.location.hash = '#bookings';
             } else if (target === 'rentals-rented') {
-                // 【修改 1】
-                // OLD: window.location.hash = '#rentals';
                 window.location.hash = '#rentals@rented'; // <-- NEW
             } else if (target === 'rentals-due-today') {
-                // 【修改 2】
-                // OLD: window.location.hash = '#rentals';
                 window.location.hash = '#rentals@due_today'; // <-- NEW
             }
         });
@@ -102,12 +93,10 @@ const setupEventListeners = () => {
     }
 };
 
-// 模組的初始化函式，由 app.js 呼叫
 export const init = async (context, param) => {
     const page = document.getElementById('page-dashboard');
     if (!page) return;
 
-    // 重置顯示
     const guestsEl = document.getElementById('stat-today-guests');
     if (guestsEl) guestsEl.textContent = '讀取中...';
 

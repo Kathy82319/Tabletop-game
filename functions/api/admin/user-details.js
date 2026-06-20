@@ -7,11 +7,9 @@ export async function onRequest(context) {
 
     const db = env.DB;
     try {
-        // 1. 取得基本資料
         const profile = await db.prepare('SELECT * FROM Users WHERE user_id = ?').bind(userId).first();
         if (!profile) return new Response(JSON.stringify({ error: 'User not found' }), { status: 404 });
 
-        // 2. 取得多筆動態資產 (關聯 GameAssets 以取得名稱與圖示)
         const { results: assets } = await db.prepare(`
             SELECT ga.type, ga.name, ua.custom_description, ga.description as default_desc, ga.icon_url
             FROM UserAssets ua
@@ -21,7 +19,6 @@ export async function onRequest(context) {
         
         profile.user_assets = assets || [];
 
-        // 3. 取得歷史紀錄
         const { results: bookings } = await db.prepare('SELECT * FROM Bookings WHERE user_id = ? ORDER BY booking_date DESC LIMIT 10').bind(userId).all();
         const { results: rentals } = await db.prepare(`
             SELECT Rentals.*, BoardGames.name as game_name 

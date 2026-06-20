@@ -11,7 +11,6 @@ export async function onRequest(context) {
     const url = new URL(request.url);
     const statusFilter = url.searchParams.get('status');
 
-    // 【修正核心】加上 booking_preference AS item，讓前端能順利用 booking.item 讀取到資料
     let query = "SELECT *, booking_preference AS item FROM Bookings";
     const queryParams = [];
     const conditions = [];
@@ -27,7 +26,6 @@ export async function onRequest(context) {
             queryParams.push(statusFilter);
         }
     } else {
-        // 預設情況（例如從 LIFF 前端直接呼叫時）保持不變
         conditions.push("booking_date >= date('now', 'localtime')");
         conditions.push("status = 'confirmed'");
     }

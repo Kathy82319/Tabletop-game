@@ -2,7 +2,6 @@
 import { api } from '../api.js';
 import { ui } from '../ui.js';
 
-// 模組內部狀態，快取所有紀錄
 let allExpHistory = [];
 
 /**
@@ -80,7 +79,6 @@ export const init = async (context, param) => {
     tbody.innerHTML = '<tr><td colspan="4">正在載入經驗紀錄...</td></tr>';
 
     try {
-        // 呼叫 API 取得所有經驗紀錄
         allExpHistory = await api.getExpHistory();
         renderExpHistory(allExpHistory);
         setupEventListeners();

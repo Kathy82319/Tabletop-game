@@ -11,22 +11,16 @@ export async function onRequest(context) {
         const body = await context.request.json();
         const db = context.env.DB; // <-- 將 db 宣告移到前面
 
-        // 這裡的驗證邏輯與 update-boardgame-details.js 類似
         if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
             return new Response(JSON.stringify({ error: '遊戲名稱為必填。' }), { status: 400 });
         }
 
-        // --- 【▼▼▼ 核心修改：產生新的數字 ID ▼▼▼】 ---
-        // 1. 查詢當前最大的 game_id (並確保轉換為整數比較)
         const maxIdResult = await db.prepare("SELECT MAX(CAST(game_id AS INTEGER)) as maxId FROM BoardGames").first();
         
-        // 2. 新 ID = 最大 ID + 1。
-        // 如果資料庫是空的 (maxId 為 null)，或者最大ID小於383，我們都從 384 開始
         let newGameId = 384;
         if (maxIdResult && maxIdResult.maxId && maxIdResult.maxId >= 383) {
             newGameId = maxIdResult.maxId + 1;
         }
-        // --- 【▲▲▲ 核心修改結束 ▲▲▲】 ---
 
         const for_sale_stock = (Number(body.total_stock) || 0) - (Number(body.for_rent_stock) || 0);
 

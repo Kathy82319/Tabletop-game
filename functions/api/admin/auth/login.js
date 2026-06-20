@@ -6,14 +6,12 @@ export async function onRequest(context) {
         return new Response('Invalid method', { status: 405 });
     }
     try {
-        // 【修改點 1】接收 username 而不是 userId
         const { username, password } = await context.request.json();
         if (!username || !password) {
             return new Response(JSON.stringify({ error: '缺少帳號或密碼。' }), { status: 400 });
         }
 
         const db = context.env.DB;
-        // 【修改點 2】改用 username 來查詢使用者
         const user = await db.prepare("SELECT * FROM Users WHERE username = ? AND role = 'admin'").bind(username).first();
 
         if (!user) {
@@ -24,7 +22,6 @@ export async function onRequest(context) {
             return new Response(JSON.stringify({ error: '密碼錯誤。' }), { status: 401 });
         }
 
-        // --- 產生 JWT Token (此部分不變) ---
         const secret = new TextEncoder().encode(context.env.JWT_SECRET);
         const alg = 'HS256';
         const jwt = await new jose.SignJWT({ userId: user.user_id, role: user.role })

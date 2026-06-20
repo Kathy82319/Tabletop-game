@@ -8,7 +8,6 @@ export async function onRequest(context) {
     
     const body = await context.request.json();
     
-    // --- 【驗證區塊】 ---
     const errors = [];
     if (!body.gameId) errors.push('缺少遊戲 ID。');
     if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0 || body.name.length > 100) {
@@ -42,7 +41,6 @@ export async function onRequest(context) {
     if (errors.length > 0) {
         return new Response(JSON.stringify({ error: errors.join(' ') }), { status: 400 });
     }
-    // --- 【驗證區塊結束】 ---
   
     const db = context.env.DB;
     

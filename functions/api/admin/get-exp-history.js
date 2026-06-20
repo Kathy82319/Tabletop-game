@@ -12,7 +12,6 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
 
-    // ** 關鍵修改：同時選取 b.late_fee_per_day **
     const stmt = db.prepare(`
       SELECT
         r.rental_id, r.user_id, r.game_id, r.rental_date, r.due_date,
@@ -28,7 +27,6 @@ export async function onRequest(context) {
 
     let { results } = await stmt.bind(userId).all();
 
-    // ** 關鍵修改：加入和後台一樣的計算邏輯 **
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 

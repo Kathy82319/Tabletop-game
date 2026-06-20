@@ -9,7 +9,6 @@ export async function onRequest(context) {
     const body = await context.request.json();
     const { title, category, published_date, image_url, content, is_published } = body;
 
-    // --- 【驗證區塊】 ---
     const errors = [];
     if (!title || typeof title !== 'string' || title.trim().length === 0 || title.length > 100) {
         errors.push('標題為必填，且長度不可超過 100 字。');
@@ -30,7 +29,6 @@ export async function onRequest(context) {
     if (errors.length > 0) {
         return new Response(JSON.stringify({ error: errors.join(' ') }), { status: 400 });
     }
-    // --- 【驗證區塊結束】 ---
 
     const db = context.env.DB;
     

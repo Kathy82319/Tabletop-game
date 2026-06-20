@@ -5,7 +5,6 @@ import { ui } from '../ui.js';
 let allAssets = [];
 let currentType = 'class';
 
-// 這裡定義了所有分類，共用同一套邏輯
 const typeLabels = {
     'class': { label: '職業', desc: '預設福利' },
     'skill': { label: '技能', desc: '技能說明' },
@@ -29,12 +28,10 @@ function renderList() {
     filtered.forEach(asset => {
         const row = tbody.insertRow();
         
-        // 判斷並生成圖片的 HTML
         const iconHtml = asset.icon_url 
             ? `<img src="${asset.icon_url}" style="max-height: 1.5em; vertical-align: middle; border-radius: 4px;">` 
             : '-';
 
-        // 確保這裡嚴格輸出 4 個 <td>，對應表頭的 4 個欄位
         row.innerHTML = `
             <td style="text-align: center;">${iconHtml}</td>
             <td>${asset.name}</td>
@@ -61,7 +58,6 @@ function openEditModal(assetId = null) {
         document.getElementById('edit-asset-name').value = asset.name;
         document.getElementById('edit-asset-desc').value = asset.description;
         
-        // 編輯時，將圖片網址帶入輸入框
         document.getElementById('edit-asset-icon').value = asset.icon_url || '';
         
         deleteBtn.style.display = 'inline-block';

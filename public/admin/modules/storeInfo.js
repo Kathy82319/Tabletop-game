@@ -11,18 +11,15 @@ let storeInfoForm;
 function populateStoreInfoForm(info) {
     if (!storeInfoForm) return;
 
-    // --- 基礎資訊 ---
     storeInfoForm.querySelector('#info-address').value = info.address || '';
     storeInfoForm.querySelector('#info-phone').value = info.phone || '';
     storeInfoForm.querySelector('#info-hours').value = info.opening_hours || '';
     storeInfoForm.querySelector('#info-desc').value = info.description || '';
     
-    // --- 預約頁面文字設定 ---
     storeInfoForm.querySelector('#info-booking-announcement').value = info.booking_announcement_text || '';
     storeInfoForm.querySelector('#info-booking-button').value = info.booking_button_text || '';
     storeInfoForm.querySelector('#info-booking-promo').value = info.booking_promo_text || '';
     
-    // 【修正】已移除對 info-notify-user-id 的操作
 }
 
 /**
@@ -41,7 +38,6 @@ async function handleFormSubmit(event) {
         booking_announcement_text: storeInfoForm.querySelector('#info-booking-announcement').value,
         booking_button_text: storeInfoForm.querySelector('#info-booking-button').value,
         booking_promo_text: storeInfoForm.querySelector('#info-booking-promo').value,
-        // 【修正】已移除 booking_notify_user_id
     };
 
     button.textContent = '儲存中...';

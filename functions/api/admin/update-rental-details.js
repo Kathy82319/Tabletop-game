@@ -9,7 +9,6 @@ export async function onRequest(context) {
     const body = await context.request.json();
     const { rentalId, dueDate, lateFeeOverride } = body;
 
-    // --- 【驗證區塊】 ---
     const errors = [];
     if (!rentalId || !Number.isInteger(rentalId)) {
         errors.push('缺少有效的租借 ID。');
@@ -25,7 +24,6 @@ export async function onRequest(context) {
     if (errors.length > 0) {
         return new Response(JSON.stringify({ error: errors.join(' ') }), { status: 400 });
     }
-    // --- 【驗證區塊結束】 ---
 
     const db = context.env.DB;
     const updates = [];

@@ -57,7 +57,6 @@ function openEditDraftModal(draftId = null) {
         form.querySelector('#edit-draft-title').value = draft.title;
         form.querySelector('#edit-draft-content').value = draft.content;
         
-        // 控制刪除按鈕的顯示
         deleteBtn.style.display = 'inline-block';
         deleteBtn.dataset.draftId = draftId;
     } else {

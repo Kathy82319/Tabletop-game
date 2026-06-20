@@ -5,7 +5,6 @@ export async function onRequest(context) {
     const db = env.DB;
 
     try {
-        // 這個 API 現在只處理 GET 請求
         if (request.method === 'GET') {
             const stmt = db.prepare('SELECT * FROM BoardGames ORDER BY display_order ASC, name ASC');
             const { results } = await stmt.all();
@@ -15,7 +14,6 @@ export async function onRequest(context) {
             });
         }
 
-        // 對於非 GET 請求，回傳方法不允許
         return new Response('Invalid request method.', { status: 405 });
 
     } catch (error) {

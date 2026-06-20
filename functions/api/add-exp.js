@@ -7,7 +7,6 @@ export async function onRequest(context) {
     }
     const { userId, expValue, reason } = await context.request.json();
 
-    // --- 【驗證區塊】 --- (不變)
     if (!userId || typeof userId !== 'string') {
         return new Response(JSON.stringify({ error: '無效的使用者 ID。' }), { status: 400 });
     }
@@ -18,7 +17,6 @@ export async function onRequest(context) {
     if (!reason || typeof reason !== 'string' || reason.trim().length === 0 || reason.length > 100) {
         return new Response(JSON.stringify({ error: '原因為必填，且長度不可超過 100 字。' }), { status: 400 });
     }
-    // --- 【驗證區塊結束】 ---
 
     const db = context.env.DB;
     const userStmt = db.prepare('SELECT level, current_exp, perk_claimed_level, nickname, line_display_name FROM Users WHERE user_id = ?');
@@ -27,7 +25,6 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: `找不到使用者 ID: ${userId}` }), { status: 404 });
     }
 
-    // --- 等級計算邏輯 (不變) ---
     let originalLevel = user.level;
     let perkClaimedLevel = user.perk_claimed_level || 0;
     let currentLevel = user.level;
@@ -37,7 +34,6 @@ export async function onRequest(context) {
       currentExp -= requiredExp;
       currentLevel += 1;
     }
-    // --- 等級計算結束 ---
 
     const operations = [];
     operations.push(
@@ -47,7 +43,6 @@ export async function onRequest(context) {
       db.prepare('INSERT INTO ExpHistory (user_id, exp_added, reason) VALUES (?, ?, ?)').bind(userId, exp, reason)
     );
 
-    // 【修改】調整條件：只有升級到 2 級或以上，且該等級福利未領取時才通知
     if (currentLevel > originalLevel && currentLevel > 1 && currentLevel > perkClaimedLevel) {
         const userName = user.nickname || user.line_display_name || userId.substring(0, 6);
         const activityMessage = `${userName} 已升級至 LV ${currentLevel}！請記得提供升級福利。`;

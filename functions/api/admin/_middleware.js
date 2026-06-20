@@ -5,9 +5,7 @@ async function authMiddleware(context) {
     const { request, env, next } = context;
     const url = new URL(request.url);
 
-    // 只對 /api/admin/ 路由下的請求進行權限檢查
     if (url.pathname.startsWith('/api/admin/')) {
-        // 排除登入/登出 API，否則永遠無法登入
         if (url.pathname.startsWith('/api/admin/auth/')) {
             return await next();
         }
@@ -34,12 +32,10 @@ async function authMiddleware(context) {
             context.data.user = payload; // 將驗證過的用戶資訊傳遞下去
 
         } catch (err) {
-            // Token 驗證失敗 (例如過期、偽造等)
             return new Response(JSON.stringify({ error: 'Unauthorized: Invalid token' }), { status: 401 });
         }
     }
 
-    // 如果不是 admin 路由或驗證通過，就繼續執行原本的 API
     return await next();
 }
 

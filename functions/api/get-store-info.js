@@ -7,7 +7,6 @@ export async function onRequest(context) {
     }
 
     const db = context.env.DB;
-    // 店家資訊永遠只有一筆，ID 固定為 1
     const info = await db.prepare('SELECT * FROM StoreInfo WHERE id = 1').first();
 
     if (!info) {

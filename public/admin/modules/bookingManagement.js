@@ -2,7 +2,6 @@
 import { api } from '../api.js';
 import { ui } from '../ui.js';
 
-// 模組內部狀態
 let allBookings = [];
 let calendarBookings = [];
 let currentView = 'list';
@@ -11,7 +10,6 @@ const AVAILABLE_TIME_SLOTS = ['12:00', '12:30', '13:00', '13:30', '14:00', '14:3
 let flatpickrInstance_admin = null;
 let initialEnabledDates = [];
 
-// DOM 元素
 let pageElement, bookingListTbody, calendarViewContainer, listViewContainer,
     calendarGrid, calendarMonthYear, createBookingBtn, manageDatesBtn,
     createBookingModal, createBookingForm, bookingSettingsModal;
@@ -31,7 +29,6 @@ function renderBookingList(bookings) {
         const row = bookingListTbody.insertRow();
         const statusText = { 'confirmed': '預約成功', 'checked-in': '已報到', 'cancelled': '已取消' }[booking.status] || '未知';
         
-        // 讓客戶欄位可點擊，並添加 data attribute
         row.innerHTML = `
             <td>${booking.booking_date}<br>${booking.time_slot}</td>
             <td class="compound-cell clickable-cell" data-booking-id="${booking.booking_id}" style="cursor: pointer; text-decoration: underline; color: var(--primary-color);">
