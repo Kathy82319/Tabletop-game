@@ -163,6 +163,12 @@
         .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         .form-actions { margin-top: 20px; text-align: right; }
+        .img-upload-row { display: flex; gap: 6px; align-items: center; }
+        .img-upload-row input[type="url"] { flex: 1; }
+        .img-upload-btn { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 1rem; flex-shrink: 0; transition: background 0.2s; }
+        .img-upload-btn:hover { background: #ddd; }
+        .img-upload-btn.uploading { opacity: 0.5; pointer-events: none; }
+        .img-preview { margin-top: 6px; max-width: 160px; max-height: 100px; border-radius: 4px; border: 1px solid #ddd; object-fit: cover; }
         .btn-save { background-color: var(--primary-color); }
         .btn-cancel { background-color: var(--secondary-color); }
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
@@ -1058,16 +1064,37 @@
                                 <input type="text" id="edit-game-tags">
                             </div>
                             <div class="form-group">
-                                <label for="edit-game-image">主要圖片網址</label>
-                                <input type="url" id="edit-game-image" placeholder="https://...">
+                                <label>主要圖片</label>
+                                <div class="img-upload-row">
+                                    <input type="url" id="edit-game-image" placeholder="貼上網址，或點右側上傳">
+                                    <label class="img-upload-btn" title="上傳圖片到 R2">
+                                        📁
+                                        <input type="file" accept="image/*" data-target="edit-game-image" data-preview="prev-img-1" style="display:none" class="r2-file-input">
+                                    </label>
+                                </div>
+                                <img id="prev-img-1" class="img-preview" style="display:none">
                             </div>
                             <div class="form-group">
-                                <label for="edit-game-image-2">圖片網址 2 (選填)</label>
-                                <input type="url" id="edit-game-image-2" placeholder="https://...">
+                                <label>圖片 2 (選填)</label>
+                                <div class="img-upload-row">
+                                    <input type="url" id="edit-game-image-2" placeholder="貼上網址，或點右側上傳">
+                                    <label class="img-upload-btn" title="上傳圖片到 R2">
+                                        📁
+                                        <input type="file" accept="image/*" data-target="edit-game-image-2" data-preview="prev-img-2" style="display:none" class="r2-file-input">
+                                    </label>
+                                </div>
+                                <img id="prev-img-2" class="img-preview" style="display:none">
                             </div>
                             <div class="form-group">
-                                <label for="edit-game-image-3">圖片網址 3 (選填)</label>
-                                <input type="url" id="edit-game-image-3" placeholder="https://...">
+                                <label>圖片 3 (選填)</label>
+                                <div class="img-upload-row">
+                                    <input type="url" id="edit-game-image-3" placeholder="貼上網址，或點右側上傳">
+                                    <label class="img-upload-btn" title="上傳圖片到 R2">
+                                        📁
+                                        <input type="file" accept="image/*" data-target="edit-game-image-3" data-preview="prev-img-3" style="display:none" class="r2-file-input">
+                                    </label>
+                                </div>
+                                <img id="prev-img-3" class="img-preview" style="display:none">
                             </div>
                         </div>
 
@@ -1316,6 +1343,68 @@
     </div>
 </div>
 
+<script>
+document.addEventListener('click', function(e) {
+    const urlInput = e.target.closest('[id^="edit-game-image"]');
+    if (urlInput) {
+        const previewId = urlInput.id === 'edit-game-image'   ? 'prev-img-1' :
+                          urlInput.id === 'edit-game-image-2' ? 'prev-img-2' : 'prev-img-3';
+        const preview = document.getElementById(previewId);
+        if (preview && urlInput.value) {
+            preview.src = urlInput.value;
+            preview.style.display = 'block';
+        }
+    }
+});
+
+document.addEventListener('change', async function(e) {
+    const input = e.target;
+    if (!input.classList.contains('r2-file-input')) return;
+
+    const file = input.files[0];
+    if (!file) return;
+
+    const targetId  = input.dataset.target;
+    const previewId = input.dataset.preview;
+    const urlField  = document.getElementById(targetId);
+    const preview   = document.getElementById(previewId);
+    const label     = input.closest('.img-upload-btn');
+
+    label.classList.add('uploading');
+    label.textContent = '⏳';
+
+    try {
+        const fd = new FormData();
+        fd.append('file', file);
+
+        const res  = await fetch('/api/admin/upload-image', { method: 'POST', body: fd });
+        const data = await res.json();
+
+        if (!res.ok || data.error) throw new Error(data.error || '上傳失敗');
+
+        if (urlField)  urlField.value = data.url;
+        if (preview) { preview.src = data.url; preview.style.display = 'block'; }
+
+    } catch (err) {
+        alert('上傳失敗：' + err.message);
+    } finally {
+        label.classList.remove('uploading');
+        label.innerHTML = '📁<input type="file" accept="image/*" data-target="' + targetId + '" data-preview="' + previewId + '" style="display:none" class="r2-file-input">';
+        input.value = '';
+    }
+});
+
+document.addEventListener('input', function(e) {
+    const input = e.target;
+    if (!input.id || !input.id.startsWith('edit-game-image')) return;
+    const previewId = input.id === 'edit-game-image'   ? 'prev-img-1' :
+                      input.id === 'edit-game-image-2' ? 'prev-img-2' : 'prev-img-3';
+    const preview = document.getElementById(previewId);
+    if (!preview) return;
+    if (input.value) { preview.src = input.value; preview.style.display = 'block'; }
+    else { preview.style.display = 'none'; }
+});
+</script>
 
 </body>
 </html>

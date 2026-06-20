@@ -190,6 +190,11 @@ function openEditGameModal(gameId) {
         document.getElementById('edit-game-image').value = game.image_url || '';
         document.getElementById('edit-game-image-2').value = game.image_url_2 || '';
         document.getElementById('edit-game-image-3').value = game.image_url_3 || '';
+        [['edit-game-image','prev-img-1'],['edit-game-image-2','prev-img-2'],['edit-game-image-3','prev-img-3']].forEach(([inputId, previewId]) => {
+            const url = document.getElementById(inputId).value;
+            const img = document.getElementById(previewId);
+            if (img) { img.src = url || ''; img.style.display = url ? 'block' : 'none'; }
+        });
         document.getElementById('edit-game-desc').value = game.description || '';
         document.getElementById('edit-min-players').value = game.min_players || 1;
         document.getElementById('edit-max-players').value = game.max_players || 1;
