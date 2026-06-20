@@ -417,7 +417,8 @@ function fpShowResult() {
 // ================================================================
 
 let sbPlayers      = [];   // [{ name, score }]
-let sbCustomTarget = -1;   // 目前要加分的玩家 index
+let sbLog          = [];   // [{ name, delta, newScore, ts }]
+let sbCustomTarget = -1;
 let sbIsPlaying    = false;
 
 const SB_STORAGE_KEY = 'sb_history';
@@ -464,10 +465,12 @@ function sbRenderHistory() {
 
         item.querySelector('.sb-history-continue-btn').onclick = () => {
             sbPlayers   = entry.players.map(p => ({ ...p }));
+            sbLog       = [];
             sbIsPlaying = true;
             document.getElementById('sb-setup').style.display  = 'none';
             document.getElementById('sb-playing').style.display = 'flex';
             document.getElementById('sb-reset-btn').onclick = sbShowSetup;
+            document.getElementById('sb-log-open-btn').onclick = sbOpenLog;
             sbRender();
         };
 
@@ -489,6 +492,7 @@ function sbOpen() {
 
 function sbClose() {
     sbSaveHistory();
+    sbIsPlaying = false;
     document.getElementById('scoreboard-overlay').style.display = 'none';
     document.getElementById('sb-custom-popup').style.display = 'none';
 }
@@ -529,11 +533,59 @@ function sbStart() {
         name: inp.value.trim() || `玩家 ${i + 1}`,
         score: 0
     }));
+    sbLog = [];
     sbIsPlaying = true;
     document.getElementById('sb-setup').style.display = 'none';
     document.getElementById('sb-playing').style.display = 'flex';
     document.getElementById('sb-reset-btn').onclick = sbShowSetup;
+    document.getElementById('sb-log-open-btn').onclick = sbOpenLog;
     sbRender();
+}
+
+function sbAddLog(playerIdx, delta) {
+    sbLog.unshift({
+        name:     sbPlayers[playerIdx].name,
+        delta:    delta,
+        newScore: sbPlayers[playerIdx].score,
+        ts:       Date.now()
+    });
+}
+
+function sbOpenLog() {
+    const drawer = document.getElementById('sb-log-drawer');
+    drawer.style.display = 'flex';
+    document.getElementById('sb-log-close-btn').onclick = () => {
+        drawer.style.display = 'none';
+    };
+    sbRenderLog();
+}
+
+function sbRenderLog() {
+    const list  = document.getElementById('sb-log-list');
+    const empty = document.getElementById('sb-log-empty');
+    list.innerHTML = '';
+
+    if (sbLog.length === 0) {
+        empty.style.display = 'block';
+        return;
+    }
+    empty.style.display = 'none';
+
+    sbLog.forEach(entry => {
+        const d   = new Date(entry.ts);
+        const ts  = `${d.getHours().toString().padStart(2, '0')}:` +
+                    `${d.getMinutes().toString().padStart(2, '0')}:` +
+                    `${d.getSeconds().toString().padStart(2, '0')}`;
+        const pos = entry.delta > 0;
+        const el  = document.createElement('div');
+        el.className = 'sb-log-entry';
+        el.innerHTML =
+            `<span class="sb-log-time">${ts}</span>` +
+            `<span class="sb-log-name">${entry.name}</span>` +
+            `<span class="sb-log-delta ${pos ? 'pos' : 'neg'}">${pos ? '+' : ''}${entry.delta}</span>` +
+            `<span class="sb-log-after">→ ${entry.newScore} 分</span>`;
+        list.appendChild(el);
+    });
 }
 
 function sbRender() {
@@ -569,7 +621,9 @@ function sbRender() {
             if (btn.dataset.d === 'custom') {
                 sbOpenCustomPopup(i);
             } else {
-                sbPlayers[i].score += parseInt(btn.dataset.d);
+                const delta = parseInt(btn.dataset.d);
+                sbPlayers[i].score += delta;
+                sbAddLog(i, delta);
                 sbRender();
             }
         };
@@ -594,7 +648,9 @@ function sbOpenCustomPopup(playerIdx) {
 function sbApplyCustom(sign) {
     const val = parseInt(document.getElementById('sb-popup-input').value);
     if (!isNaN(val) && val > 0 && sbCustomTarget >= 0) {
-        sbPlayers[sbCustomTarget].score += sign * val;
+        const delta = sign * val;
+        sbPlayers[sbCustomTarget].score += delta;
+        sbAddLog(sbCustomTarget, delta);
     }
     document.getElementById('sb-custom-popup').style.display = 'none';
     sbRender();

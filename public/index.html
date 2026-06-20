@@ -508,8 +508,19 @@
     </div>
 
     <div id="sb-playing" class="playing-panel" style="display:none;">
+        <button id="sb-log-open-btn" class="sb-log-open-btn">📋 計分紀錄</button>
         <div id="sb-rankings"></div>
         <button class="tool-secondary-btn" id="sb-reset-btn">重新開始</button>
+    </div>
+
+    <!-- 計分紀錄抽屜 -->
+    <div id="sb-log-drawer" style="display:none;">
+        <div class="sb-log-header">
+            <span>計分紀錄</span>
+            <button id="sb-log-close-btn">✕</button>
+        </div>
+        <div id="sb-log-list"></div>
+        <p id="sb-log-empty">還沒有任何計分紀錄</p>
     </div>
 
     <!-- 自訂分數浮層 -->
