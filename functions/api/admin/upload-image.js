@@ -27,7 +27,7 @@ export async function onRequestPost(context) {
         const key = 'games/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
 
         const buffer = await file.arrayBuffer();
-        await env.ASSETS.put(key, buffer, {
+        await env.R2_IMAGES.put(key, buffer, {
             httpMetadata: { contentType: file.type }
         });
 
