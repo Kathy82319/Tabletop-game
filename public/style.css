@@ -2590,19 +2590,22 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     width: auto;
 }
 
-.role-emoji-input {
-    width: 48px;
-    text-align: center;
+.role-emoji-select {
+    width: 56px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
     color: white;
-    font-size: 1.4rem;
-    padding: 6px 2px;
+    font-size: 1.25rem;
+    padding: 8px 2px;
+    text-align: center;
     flex-shrink: 0;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
 }
 
-.role-emoji-input:focus { outline: none; border-color: var(--color-frame-gold); }
+.role-emoji-select:focus { outline: none; border-color: var(--color-frame-gold); }
 
 .role-count-input {
     width: 52px;

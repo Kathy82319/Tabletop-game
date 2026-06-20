@@ -1180,12 +1180,21 @@ function rolesAddPlayerRow(defaultName, list) {
     list.appendChild(row);
 }
 
+var ROLE_EMOJIS = ['🎭','🐺','🔮','👥','🏹','🧙','🛡️','💀','👑','🗡️','🦊','❓','🌙','🔥','🃏'];
+
+function rolesEmojiOptions(selected) {
+    return ROLE_EMOJIS.map(function(e) {
+        return '<option value="' + e + '"' + (e === selected ? ' selected' : '') + '>' + e + '</option>';
+    }).join('');
+}
+
 function rolesAddRoleRow(opts, container) {
+    var emoji = opts.emoji || '🎭';
     var row = document.createElement('div');
     row.className = 'role-def-row-wrap';
     row.innerHTML =
         '<div class="role-def-row">' +
-            '<input type="text" class="role-emoji-input" value="' + (opts.emoji || '') + '" placeholder="🎭" maxlength="2">' +
+            '<select class="role-emoji-select">' + rolesEmojiOptions(emoji) + '</select>' +
             '<input type="text" class="player-name-input role-name-field" value="' + (opts.name || '') + '" placeholder="角色名稱">' +
             '<input type="number" class="role-count-input" value="' + (opts.count || 1) + '" min="1" max="20" inputmode="numeric">' +
             '<button class="remove-player-btn">×</button>' +
@@ -1230,7 +1239,7 @@ function rolesStart() {
 
     var pool = [];
     document.querySelectorAll('.role-def-row-wrap').forEach(function(wrap) {
-        var emoji = wrap.querySelector('.role-emoji-input').value.trim()  || '🎭';
+        var emoji = wrap.querySelector('.role-emoji-select').value || '🎭';
         var name  = wrap.querySelector('.role-name-field').value.trim()   || '未命名';
         var desc  = wrap.querySelector('.role-desc-input').value.trim();
         var count = parseInt(wrap.querySelector('.role-count-input').value) || 1;
