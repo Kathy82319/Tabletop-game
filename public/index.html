@@ -353,6 +353,28 @@
         </div>
     </div>
 
+    <div id="page-tools">
+        <h1 class="page-main-title">桌遊工具</h1>
+        <div class="tools-list">
+            <div class="card tool-card">
+                <div class="tool-card-icon">🎯</div>
+                <div class="tool-card-info">
+                    <h3>起始玩家抽籤</h3>
+                    <p>所有玩家同時把手指放上螢幕，倒數後隨機決定誰先手！</p>
+                </div>
+                <button class="cta-button tool-launch-btn" id="tool-first-player-btn">開始</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- 起始玩家抽籤：全螢幕覆蓋層（獨立於頁面切換之外） -->
+<div id="first-player-overlay" style="display:none;">
+    <p id="fp-status-text">請所有玩家將手指放在螢幕上</p>
+    <div id="fp-countdown-display"></div>
+    <button id="fp-close-btn">✕ 關閉</button>
+    <button id="fp-reset-btn" style="display:none;">🔄 重新抽籤</button>
 </div>
 
 <nav id="tab-bar">
@@ -361,6 +383,7 @@
     <button class="tab-button" data-target="page-profile">冒險者<br>資料</button>
     <button class="tab-button" data-target="page-booking">場地<br>預約</button>
     <button class="tab-button" data-target="page-info">店家<br>資訊</button>
+    <button class="tab-button" data-target="page-tools">桌遊<br>工具</button>
 </nav>
 
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>

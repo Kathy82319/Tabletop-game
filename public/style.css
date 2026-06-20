@@ -1354,3 +1354,143 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .mini-game-card-info { padding: 8px; text-align: center; }
 .mini-game-card h4 { margin: 0 0 5px 0; font-size: 0.9rem; color: #3E2723; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mini-game-card-meta { font-size: 0.75rem; color: #8D6E63; display: flex; justify-content: center; gap: 5px; }
+
+/* ===== F. 桌遊工具 (page-tools) ===== */
+.tools-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.tool-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    margin-bottom: 0;
+}
+
+.tool-card-icon {
+    font-size: 2.5rem;
+    flex-shrink: 0;
+    width: 50px;
+    text-align: center;
+}
+
+.tool-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.tool-card-info h3 {
+    margin: 0 0 4px 0;
+    border: none;
+    font-size: 1rem;
+}
+
+.tool-card-info p {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+/* ===== 起始玩家抽籤 覆蓋層 ===== */
+#first-player-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 8, 3, 0.93);
+    z-index: 2000;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#fp-status-text {
+    position: absolute;
+    top: 50px;
+    left: 0; right: 0;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1rem;
+    pointer-events: none;
+    margin: 0;
+    padding: 0 20px;
+}
+
+#fp-countdown-display {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 9rem;
+    font-weight: bold;
+    color: white;
+    pointer-events: none;
+    opacity: 0;
+    line-height: 1;
+}
+
+#fp-countdown-display.tick {
+    animation: fp-tick 0.35s ease-out;
+}
+
+@keyframes fp-tick {
+    0%   { transform: translate(-50%, -50%) scale(1.4); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+#fp-close-btn {
+    position: absolute;
+    top: 18px; right: 18px;
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 20px;
+    padding: 7px 16px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    z-index: 10;
+    font-family: var(--font-primary);
+}
+
+#fp-reset-btn {
+    position: absolute;
+    bottom: 110px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 24px;
+    padding: 12px 30px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-family: var(--font-primary);
+    white-space: nowrap;
+}
+
+.fp-circle {
+    position: absolute;
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    border: 3px solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: white;
+}
+
+.fp-circle.result {
+    animation: fp-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.fp-circle.first {
+    box-shadow: 0 0 0 5px rgba(255, 215, 0, 0.5), 0 0 35px rgba(255, 215, 0, 0.35);
+}
+
+@keyframes fp-pop {
+    0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0.4; }
+    100% { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+}
