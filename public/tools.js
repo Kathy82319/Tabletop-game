@@ -22,6 +22,8 @@ function initializeToolsPage() {
                 counterOpen();
             } else if (tool === 'roles') {
                 rolesOpen();
+            } else if (tool === 'wheel') {
+                wheelOpen();
             }
         });
     });
@@ -1356,6 +1358,260 @@ function rolesShowFullReveal() {
         rolePhase = 'setup';
         roleAssignments = [];
         rolesShowSetup();
+    };
+}
+
+
+// ================================================================
+// 工具八：隨機輪盤
+// ================================================================
+
+var wheelOptions  = [];
+var wheelRotation = 0;
+var wheelWinner   = -1;
+var wheelSpinning = false;
+var wheelPhase    = 'setup';
+
+var WHEEL_COLORS = [
+    '#e74c3c', '#e67e22', '#f1c40f', '#2ecc71',
+    '#3498db', '#9b59b6', '#e91e8c', '#1abc9c'
+];
+
+// ── 開啟 / 關閉 ───────────────────────────────────────────────
+function wheelOpen() {
+    document.getElementById('wheel-overlay').style.display = 'flex';
+    document.getElementById('wheel-close-btn').onclick = wheelClose;
+
+    if (wheelPhase === 'playing' && wheelOptions.length >= 2) {
+        document.getElementById('wheel-setup').style.display   = 'none';
+        document.getElementById('wheel-playing').style.display = 'flex';
+        document.getElementById('wheel-result-popup').style.display = 'none';
+        document.getElementById('wheel-spin-btn').disabled = false;
+        document.getElementById('wheel-edit-btn').disabled = false;
+    } else {
+        wheelPhase = 'setup';
+        wheelShowSetup();
+    }
+}
+
+function wheelClose() {
+    document.getElementById('wheel-overlay').style.display = 'none';
+}
+
+// ── Phase 1: 設定 ─────────────────────────────────────────────
+function wheelShowSetup() {
+    wheelPhase = 'setup';
+    document.getElementById('wheel-setup').style.display        = 'flex';
+    document.getElementById('wheel-playing').style.display      = 'none';
+    document.getElementById('wheel-result-popup').style.display = 'none';
+
+    var list = document.getElementById('wheel-option-list');
+    list.innerHTML = '';
+    var defaults = wheelOptions.length >= 2
+        ? wheelOptions
+        : ['選項 A', '選項 B', '選項 C', '選項 D'];
+    defaults.forEach(function(opt) { wheelAddOptionRow(opt, list); });
+
+    document.getElementById('wheel-add-btn').onclick = function() {
+        if (list.querySelectorAll('.player-input-row').length < 10) {
+            wheelAddOptionRow('', list);
+        }
+        wheelUpdateStartBtn();
+    };
+    document.getElementById('wheel-start-btn').onclick = wheelGoPlaying;
+
+    list.removeEventListener('input', wheelUpdateStartBtn);
+    list.addEventListener('input', wheelUpdateStartBtn);
+    wheelUpdateStartBtn();
+}
+
+function wheelAddOptionRow(text, list) {
+    var idx = list.querySelectorAll('.player-input-row').length + 1;
+    var row = document.createElement('div');
+    row.className = 'player-input-row';
+    row.innerHTML =
+        '<input type="text" class="player-name-input" placeholder="選項 ' + idx + '" value="' + (text || '') + '">' +
+        '<button class="remove-player-btn">×</button>';
+    row.querySelector('.remove-player-btn').onclick = function() {
+        if (list.querySelectorAll('.player-input-row').length > 2) {
+            row.remove();
+            wheelUpdateStartBtn();
+        }
+    };
+    list.appendChild(row);
+}
+
+function wheelUpdateStartBtn() {
+    var filled = Array.from(document.querySelectorAll('#wheel-option-list .player-name-input'))
+        .filter(function(el) { return el.value.trim() !== ''; }).length;
+    var btn = document.getElementById('wheel-start-btn');
+    btn.disabled      = filled < 2;
+    btn.style.opacity = filled < 2 ? '0.45' : '1';
+}
+
+// ── Phase 2: 輪盤 ─────────────────────────────────────────────
+function wheelGoPlaying() {
+    wheelOptions = Array.from(document.querySelectorAll('#wheel-option-list .player-name-input'))
+        .map(function(el, i) { return el.value.trim() || ('選項 ' + (i + 1)); })
+        .filter(function(opt) { return opt !== ''; });
+
+    if (wheelOptions.length < 2) return;
+
+    wheelPhase    = 'playing';
+    wheelRotation = 0;
+    wheelWinner   = -1;
+    wheelSpinning = false;
+
+    document.getElementById('wheel-setup').style.display        = 'none';
+    document.getElementById('wheel-playing').style.display      = 'flex';
+    document.getElementById('wheel-result-popup').style.display = 'none';
+
+    var spinBtn = document.getElementById('wheel-spin-btn');
+    var editBtn = document.getElementById('wheel-edit-btn');
+    spinBtn.disabled = false;
+    editBtn.disabled = false;
+
+    // 設定 canvas 尺寸
+    var size   = Math.min(300, window.innerWidth - 64);
+    var canvas = document.getElementById('wheel-canvas');
+    canvas.width  = size;
+    canvas.height = size;
+
+    var wrap = document.getElementById('wheel-canvas-wrap');
+    wrap.style.width      = size + 'px';
+    wrap.style.height     = size + 'px';
+    wrap.style.transition = 'none';
+    wrap.style.transform  = 'rotate(0deg)';
+
+    wheelDraw();
+
+    spinBtn.onclick = wheelSpin;
+    editBtn.onclick = function() { wheelShowSetup(); };
+}
+
+function wheelDraw() {
+    var canvas = document.getElementById('wheel-canvas');
+    var ctx    = canvas.getContext('2d');
+    var size   = canvas.width;
+    var cx     = size / 2;
+    var cy     = size / 2;
+    var r      = cx - 6;
+    var n      = wheelOptions.length;
+
+    ctx.clearRect(0, 0, size, size);
+    if (n === 0) return;
+
+    var segRad = (2 * Math.PI) / n;
+
+    for (var i = 0; i < n; i++) {
+        var startA = -Math.PI / 2 + i * segRad;
+        var endA   = startA + segRad;
+
+        // 扇形
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, startA, endA);
+        ctx.closePath();
+        ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length];
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ctx.lineWidth   = 2;
+        ctx.stroke();
+
+        // 文字
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(startA + segRad / 2);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = 'white';
+
+        var fontSize = n <= 3 ? 16 : n <= 5 ? 14 : 11;
+        ctx.font = 'bold ' + fontSize + 'px "PingFang TC", "Noto Sans TC", sans-serif';
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.shadowBlur  = 5;
+
+        var maxChars = n <= 3 ? 9 : n <= 5 ? 7 : 5;
+        var label = wheelOptions[i];
+        if (label.length > maxChars) label = label.substring(0, maxChars) + '…';
+
+        ctx.fillText(label, r - 14, Math.round(fontSize / 3));
+        ctx.restore();
+    }
+
+    // 中心圓
+    ctx.beginPath();
+    ctx.arc(cx, cy, 14, 0, 2 * Math.PI);
+    ctx.fillStyle   = '#1a1008';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(184,134,11,0.9)';
+    ctx.lineWidth   = 3;
+    ctx.stroke();
+}
+
+// ── 旋轉 ──────────────────────────────────────────────────────
+function wheelSpin() {
+    if (wheelSpinning || wheelOptions.length < 2) return;
+    wheelSpinning = true;
+
+    document.getElementById('wheel-result-popup').style.display = 'none';
+    document.getElementById('wheel-spin-btn').disabled = true;
+    document.getElementById('wheel-edit-btn').disabled = true;
+
+    var n         = wheelOptions.length;
+    var segDeg    = 360 / n;
+    wheelWinner   = Math.floor(Math.random() * n);
+
+    // 計算停止角度：讓 winner 扇形中心對準上方指針
+    var winnerCenter = wheelWinner * segDeg + segDeg / 2;
+    var currentMod   = ((wheelRotation % 360) + 360) % 360;
+    var target       = ((-(winnerCenter)) % 360 + 360) % 360;
+    var adjust       = (target - currentMod + 360) % 360;
+    if (adjust < 30) adjust += 360;
+
+    var newRotation = wheelRotation + 5 * 360 + adjust;
+    wheelRotation   = newRotation;
+
+    var wrap = document.getElementById('wheel-canvas-wrap');
+    wrap.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+    wrap.style.transform  = 'rotate(' + newRotation + 'deg)';
+
+    setTimeout(function() {
+        wheelSpinning = false;
+        document.getElementById('wheel-spin-btn').disabled = false;
+        document.getElementById('wheel-edit-btn').disabled = false;
+        wheelShowResult();
+    }, 4200);
+}
+
+// ── 結果 ──────────────────────────────────────────────────────
+function wheelShowResult() {
+    var popup = document.getElementById('wheel-result-popup');
+    document.getElementById('wheel-result-name').textContent = wheelOptions[wheelWinner];
+    popup.style.animation = 'none';
+    void popup.offsetWidth;
+    popup.style.animation = '';
+    popup.style.display   = 'flex';
+
+    document.getElementById('wheel-again-btn').onclick = function() {
+        popup.style.display = 'none';
+    };
+
+    document.getElementById('wheel-remove-btn').onclick = function() {
+        wheelOptions.splice(wheelWinner, 1);
+        popup.style.display = 'none';
+        wheelWinner = -1;
+
+        if (wheelOptions.length < 2) {
+            wheelShowSetup();
+            return;
+        }
+
+        // 重置並重繪
+        wheelRotation = 0;
+        var wrap = document.getElementById('wheel-canvas-wrap');
+        wrap.style.transition = 'none';
+        wrap.style.transform  = 'rotate(0deg)';
+        wheelDraw();
     };
 }
 

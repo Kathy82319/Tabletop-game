@@ -2865,3 +2865,98 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     color: white;
     flex-shrink: 0;
 }
+/* ================================================================
+   隨機輪盤
+   ================================================================ */
+
+.wheel-playing-panel {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding: 16px 0 30px;
+}
+
+.wheel-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.wheel-pointer-arrow {
+    width: 0;
+    height: 0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-top: 22px solid #b8860b;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+    position: relative;
+    z-index: 5;
+    margin-bottom: -3px;
+}
+
+.wheel-canvas-wrap {
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 6px 32px rgba(0,0,0,0.6), 0 0 0 3px rgba(184,134,11,0.35);
+    position: relative;
+    z-index: 1;
+}
+
+#wheel-canvas { display: block; }
+
+.wheel-spin-btn-style {
+    font-size: 1.15rem;
+    letter-spacing: 2px;
+}
+
+/* Result popup */
+#wheel-result-popup {
+    position: fixed;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 420px;
+    background: #1a1008;
+    border-top: 1px solid rgba(184,134,11,0.4);
+    border-radius: 20px 20px 0 0;
+    padding: 22px 20px 36px;
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    animation: drawer-up 0.3s ease;
+}
+
+.wheel-result-label {
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.4);
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+.wheel-result-name {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: white;
+    text-align: center;
+    word-break: break-all;
+    max-width: 320px;
+    line-height: 1.2;
+}
+
+.wheel-result-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.wheel-result-row .tool-start-btn,
+.wheel-result-row .tool-secondary-btn {
+    flex: 1;
+    font-size: 0.92rem;
+    padding: 12px 8px;
+}
