@@ -6,9 +6,14 @@
 function initializeToolsPage() {
     document.querySelectorAll('.tool-card').forEach(card => {
         card.addEventListener('click', () => {
-            if (card.dataset.tool === 'first-player') {
-                document.getElementById('first-player-overlay').style.display = 'block';
+            const tool = card.dataset.tool;
+            if (tool === 'first-player') {
+                document.getElementById('first-player-overlay').style.display = 'flex';
                 fpOpen();
+            } else if (tool === 'timer') {
+                timerOpen();
+            } else if (tool === 'dice') {
+                diceOpen();
             }
         });
     });
@@ -167,6 +172,154 @@ function fpCancelCountdown() {
     display.classList.remove('tick');
 
     fpUpdateStatus();
+}
+
+// ================================================================
+// 工具二：沙漏計時器
+// ================================================================
+
+const TIMER_CIRCUMFERENCE = 553; // 2π × 88
+
+let timerTotal    = 0;
+let timerLeft     = 0;
+let timerPaused   = false;
+let timerInterval = null;
+
+function timerOpen() {
+    document.getElementById('timer-overlay').style.display = 'flex';
+    timerShowSetup();
+
+    const closeBtn = document.getElementById('timer-close-btn');
+    closeBtn.onclick = timerClose;
+}
+
+function timerClose() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    document.getElementById('timer-overlay').style.display = 'none';
+}
+
+function timerShowSetup() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    document.getElementById('timer-setup').style.display = 'block';
+    document.getElementById('timer-running').style.display = 'none';
+
+    document.querySelectorAll('.timer-preset-btn').forEach(btn => {
+        btn.onclick = () => {
+            timerTotal = parseInt(btn.dataset.seconds);
+            timerLeft  = timerTotal;
+            timerShowRunning();
+        };
+    });
+}
+
+function timerShowRunning() {
+    document.getElementById('timer-setup').style.display = 'none';
+    const running = document.getElementById('timer-running');
+    running.style.display = 'flex';
+
+    timerPaused = false;
+    timerRender();
+
+    document.getElementById('timer-pause-btn').textContent = '暫停';
+    document.getElementById('timer-pause-btn').onclick = timerTogglePause;
+    document.getElementById('timer-reset-btn').onclick  = timerShowSetup;
+
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        if (timerPaused) return;
+        timerLeft--;
+        timerRender();
+        if (timerLeft <= 0) {
+            clearInterval(timerInterval);
+            timerDone();
+        }
+    }, 1000);
+}
+
+function timerTogglePause() {
+    timerPaused = !timerPaused;
+    document.getElementById('timer-pause-btn').textContent = timerPaused ? '繼續' : '暫停';
+}
+
+function timerRender() {
+    const mins = Math.floor(timerLeft / 60);
+    const secs = timerLeft % 60;
+    const display = document.getElementById('timer-display');
+    display.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+    display.classList.toggle('done', timerLeft === 0);
+
+    const ratio  = timerTotal > 0 ? timerLeft / timerTotal : 0;
+    const offset = TIMER_CIRCUMFERENCE * (1 - ratio);
+    const prog   = document.getElementById('timer-ring-prog');
+    prog.style.strokeDashoffset = offset;
+    prog.classList.toggle('done', timerLeft === 0);
+}
+
+function timerDone() {
+    document.getElementById('timer-display').textContent = '時間到！';
+    if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 500]);
+}
+
+// ================================================================
+// 工具三：骰子
+// ================================================================
+
+let diceSelectedSides = 6;
+let diceSelectedCount = 1;
+
+function diceOpen() {
+    document.getElementById('dice-overlay').style.display = 'flex';
+    diceSelectedSides = 6;
+    diceSelectedCount = 1;
+
+    document.querySelectorAll('.dice-type-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.sides === '6'));
+    document.querySelectorAll('.dice-count-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.count === '1'));
+
+    document.getElementById('dice-result-area').innerHTML =
+        '<p class="dice-hint">選好後點擊下方擲骰</p>';
+
+    document.querySelectorAll('.dice-type-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.dice-type-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            diceSelectedSides = parseInt(btn.dataset.sides);
+        };
+    });
+
+    document.querySelectorAll('.dice-count-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.dice-count-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            diceSelectedCount = parseInt(btn.dataset.count);
+        };
+    });
+
+    document.getElementById('dice-roll-btn').onclick = diceRoll;
+
+    const closeBtn = document.getElementById('dice-close-btn');
+    closeBtn.onclick = () => {
+        document.getElementById('dice-overlay').style.display = 'none';
+    };
+}
+
+function diceRoll() {
+    const results = Array.from({ length: diceSelectedCount },
+        () => Math.floor(Math.random() * diceSelectedSides) + 1);
+    const total = results.reduce((a, b) => a + b, 0);
+
+    const diceHTML = results.map((r, i) =>
+        `<div class="dice-single" style="animation-delay:${i * 80}ms">${r}</div>`
+    ).join('');
+
+    const totalHTML = diceSelectedCount > 1
+        ? `<p class="dice-total-line">合計 <span>${total}</span></p>` : '';
+
+    document.getElementById('dice-result-area').innerHTML =
+        `<div class="dice-results-row">${diceHTML}</div>${totalHTML}`;
 }
 
 function fpShowResult() {

@@ -364,16 +364,97 @@
                 </div>
                 <div class="tool-card-arrow">›</div>
             </div>
+            <div class="card tool-card" data-tool="timer">
+                <div class="tool-card-icon">⏳</div>
+                <div class="tool-card-info">
+                    <h3>沙漏計時器</h3>
+                    <p>快速設定倒數時間，時間到震動提醒！</p>
+                </div>
+                <div class="tool-card-arrow">›</div>
+            </div>
+            <div class="card tool-card" data-tool="dice">
+                <div class="tool-card-icon">🎲</div>
+                <div class="tool-card-info">
+                    <h3>骰子</h3>
+                    <p>支援 d4／d6／d8／d10／d12／d20，可多顆同擲！</p>
+                </div>
+                <div class="tool-card-arrow">›</div>
+            </div>
         </div>
     </div>
 
 </div>
 
-<!-- 起始玩家抽籤：全螢幕覆蓋層（獨立於頁面切換之外） -->
-<div id="first-player-overlay" style="display:none;">
+<!-- 起始玩家抽籤覆蓋層 -->
+<div id="first-player-overlay" class="tool-overlay" style="display:none;">
     <p id="fp-status-text">請所有玩家將手指放在螢幕上</p>
     <div id="fp-countdown-display"></div>
-    <button id="fp-close-btn">✕ 關閉</button>
+    <button id="fp-close-btn" class="tool-overlay-close">✕ 關閉</button>
+</div>
+
+<!-- 沙漏計時器覆蓋層 -->
+<div id="timer-overlay" class="tool-overlay" style="display:none;">
+    <button id="timer-close-btn" class="tool-overlay-close">✕ 關閉</button>
+
+    <div id="timer-setup">
+        <h2 class="tool-overlay-title">設定時間</h2>
+        <div class="timer-presets">
+            <button class="timer-preset-btn" data-seconds="30">30 秒</button>
+            <button class="timer-preset-btn" data-seconds="60">1 分</button>
+            <button class="timer-preset-btn" data-seconds="90">1.5 分</button>
+            <button class="timer-preset-btn" data-seconds="120">2 分</button>
+            <button class="timer-preset-btn" data-seconds="180">3 分</button>
+            <button class="timer-preset-btn" data-seconds="300">5 分</button>
+        </div>
+    </div>
+
+    <div id="timer-running" style="display:none;">
+        <div id="timer-ring-wrap">
+            <svg viewBox="0 0 200 200" id="timer-svg">
+                <circle class="timer-ring-bg"   cx="100" cy="100" r="88"/>
+                <circle class="timer-ring-prog" cx="100" cy="100" r="88" id="timer-ring-prog"/>
+            </svg>
+            <div id="timer-display">0:00</div>
+        </div>
+        <div class="timer-btns">
+            <button id="timer-pause-btn">暫停</button>
+            <button id="timer-reset-btn">重設</button>
+        </div>
+    </div>
+</div>
+
+<!-- 骰子覆蓋層 -->
+<div id="dice-overlay" class="tool-overlay" style="display:none;">
+    <button id="dice-close-btn" class="tool-overlay-close">✕ 關閉</button>
+    <h2 class="tool-overlay-title">骰子</h2>
+
+    <div class="dice-selector-group">
+        <p class="dice-selector-label">骰子種類</p>
+        <div class="dice-selector-row">
+            <button class="dice-type-btn active" data-sides="6">d6</button>
+            <button class="dice-type-btn" data-sides="4">d4</button>
+            <button class="dice-type-btn" data-sides="8">d8</button>
+            <button class="dice-type-btn" data-sides="10">d10</button>
+            <button class="dice-type-btn" data-sides="12">d12</button>
+            <button class="dice-type-btn" data-sides="20">d20</button>
+        </div>
+    </div>
+
+    <div class="dice-selector-group">
+        <p class="dice-selector-label">數量</p>
+        <div class="dice-selector-row">
+            <button class="dice-count-btn active" data-count="1">1</button>
+            <button class="dice-count-btn" data-count="2">2</button>
+            <button class="dice-count-btn" data-count="3">3</button>
+            <button class="dice-count-btn" data-count="4">4</button>
+        </div>
+    </div>
+
+    <div id="dice-result-area">
+        <p class="dice-hint">選好後點擊下方擲骰</p>
+    </div>
+
+    <button id="dice-roll-btn">🎲 擲骰！</button>
 </div>
 
 <nav id="tab-bar">

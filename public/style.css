@@ -1409,12 +1409,43 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     opacity: 0.7;
 }
 
-/* ===== 起始玩家抽籤 覆蓋層 ===== */
-#first-player-overlay {
+/* ===== 覆蓋層共用樣式 ===== */
+.tool-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(15, 8, 3, 0.93);
+    background: rgba(15, 8, 3, 0.95);
     z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px 30px;
+    color: white;
+    font-family: var(--font-primary);
+    overflow-y: auto;
+}
+
+.tool-overlay-close {
+    position: absolute;
+    top: 18px; right: 18px;
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 20px;
+    padding: 7px 16px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: var(--font-primary);
+}
+
+.tool-overlay-title {
+    margin: 50px 0 20px;
+    font-size: 1.4rem;
+    color: rgba(255, 255, 255, 0.9);
+    border: none;
+}
+
+/* ===== 起始玩家抽籤 覆蓋層 ===== */
+#first-player-overlay {
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
@@ -1453,34 +1484,6 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     100% { transform: translate(-50%, -50%) scale(1); }
 }
 
-#fp-close-btn {
-    position: absolute;
-    top: 18px; right: 18px;
-    background: rgba(255, 255, 255, 0.12);
-    color: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 20px;
-    padding: 7px 16px;
-    font-size: 0.85rem;
-    cursor: pointer;
-    z-index: 10;
-    font-family: var(--font-primary);
-}
-
-#fp-reset-btn {
-    position: absolute;
-    bottom: 110px; left: 50%;
-    transform: translateX(-50%);
-    background: rgba(255, 255, 255, 0.12);
-    color: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 24px;
-    padding: 12px 30px;
-    font-size: 1rem;
-    cursor: pointer;
-    font-family: var(--font-primary);
-    white-space: nowrap;
-}
 
 .fp-circle {
     position: absolute;
@@ -1509,3 +1512,206 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0.4; }
     100% { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
 }
+
+/* ===== 沙漏計時器 ===== */
+#timer-setup { width: 100%; }
+
+.timer-presets {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    width: 100%;
+    max-width: 340px;
+    margin: 0 auto;
+}
+
+.timer-preset-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 14px;
+    padding: 22px 8px;
+    font-size: 1.05rem;
+    cursor: pointer;
+    font-family: var(--font-primary);
+    transition: background 0.15s;
+}
+
+.timer-preset-btn:active { background: rgba(184, 134, 11, 0.5); }
+
+#timer-running {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    width: 100%;
+    margin-top: 30px;
+}
+
+#timer-ring-wrap {
+    position: relative;
+    width: 240px;
+    height: 240px;
+}
+
+#timer-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.timer-ring-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.1);
+    stroke-width: 10;
+}
+
+.timer-ring-prog {
+    fill: none;
+    stroke: var(--color-frame-gold);
+    stroke-width: 10;
+    stroke-linecap: round;
+    stroke-dasharray: 553;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1s linear, stroke 0.3s;
+}
+
+.timer-ring-prog.done { stroke: #e74c3c; }
+
+#timer-display {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3.6rem;
+    font-weight: bold;
+    color: white;
+    letter-spacing: 2px;
+}
+
+#timer-display.done { color: #e74c3c; }
+
+.timer-btns {
+    display: flex;
+    gap: 16px;
+}
+
+.timer-btns button {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 20px;
+    padding: 10px 28px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-family: var(--font-primary);
+}
+
+/* ===== 骰子 ===== */
+.dice-selector-group { width: 100%; max-width: 360px; }
+
+.dice-selector-label {
+    margin: 0 0 8px 0;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+}
+
+.dice-selector-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.dice-type-btn, .dice-count-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-family: var(--font-primary);
+    transition: all 0.15s;
+    min-width: 52px;
+    text-align: center;
+}
+
+.dice-type-btn.active, .dice-count-btn.active {
+    background: var(--color-frame-gold);
+    color: white;
+    border-color: var(--color-frame-gold);
+}
+
+#dice-result-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 120px;
+    width: 100%;
+}
+
+.dice-hint {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.dice-results-row {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.dice-single {
+    width: 72px; height: 72px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: white;
+    animation: dice-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.dice-total-line {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0;
+}
+
+.dice-total-line span {
+    font-size: 1.6rem;
+    color: var(--color-frame-gold);
+    font-weight: bold;
+}
+
+@keyframes dice-pop {
+    0%   { transform: scale(0.4) rotate(-15deg); opacity: 0; }
+    100% { transform: scale(1)   rotate(0deg);   opacity: 1; }
+}
+
+#dice-roll-btn {
+    background: var(--color-frame-gold);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 16px 50px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    font-family: var(--font-primary);
+    margin-top: auto;
+    transition: transform 0.1s;
+}
+
+#dice-roll-btn:active { transform: scale(0.96); }
