@@ -757,9 +757,132 @@ function teamsShuffle() {
 
 // counterResDefs: [{ name, startVal, maxVal }]  (maxVal = null 代表無上限)
 // counterPlayers: [{ name, resources: [{ value, maxVal }] }]
-let counterResDefs = [];
-let counterPlayers = [];
+let counterResDefs  = [];
+let counterPlayers  = [];
+let counterLog      = [];
+let counterIsActive = false;
 
+const COUNTER_STORAGE_KEY = 'counter_history';
+const COUNTER_MAX_HISTORY = 5;
+
+// ── localStorage ──────────────────────────────────────────────
+function counterSaveHistory() {
+    if (!counterIsActive || counterPlayers.length === 0) return;
+    const history = JSON.parse(localStorage.getItem(COUNTER_STORAGE_KEY) || '[]');
+    history.unshift({
+        ts:       Date.now(),
+        resDefs:  counterResDefs.map(r => ({ ...r })),
+        players:  counterPlayers.map(p => ({
+            name:      p.name,
+            resources: p.resources.map(r => ({ ...r }))
+        }))
+    });
+    localStorage.setItem(COUNTER_STORAGE_KEY, JSON.stringify(history.slice(0, COUNTER_MAX_HISTORY)));
+}
+
+function counterRenderHistory() {
+    const history = JSON.parse(localStorage.getItem(COUNTER_STORAGE_KEY) || '[]');
+    const section = document.getElementById('counter-history-section');
+    const list    = document.getElementById('counter-history-list');
+
+    if (history.length === 0) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    list.innerHTML = '';
+
+    history.forEach(entry => {
+        const d       = new Date(entry.ts);
+        const dateStr = `${d.getMonth() + 1}/${d.getDate()} ` +
+            `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+        const resNames = entry.resDefs.map(r => r.name).join('、');
+
+        const summary = entry.players.map(p => {
+            const parts = p.resources.map((r, i) => {
+                const def = entry.resDefs[i];
+                return r.maxVal !== null ? `${def.name} ${r.value}/${r.maxVal}` : `${def.name} ${r.value}`;
+            }).join(' · ');
+            return `${p.name}：${parts}`;
+        }).join('\n');
+
+        const item = document.createElement('div');
+        item.className = 'sb-history-item';
+        item.innerHTML = `
+            <div class="sb-history-meta">${dateStr} · ${entry.players.length} 位玩家 · ${resNames}</div>
+            <div class="sb-history-summary" style="white-space:pre-line">${summary}</div>
+            <div class="sb-history-actions">
+                <button class="sb-history-continue-btn">繼續這場</button>
+                <button class="sb-history-new-btn">同樣設定重開</button>
+            </div>`;
+
+        item.querySelector('.sb-history-continue-btn').onclick = () => {
+            counterResDefs  = entry.resDefs.map(r => ({ ...r }));
+            counterPlayers  = entry.players.map(p => ({
+                name:      p.name,
+                resources: p.resources.map(r => ({ ...r }))
+            }));
+            counterLog      = [];
+            counterIsActive = true;
+            counterGoPlaying();
+        };
+
+        item.querySelector('.sb-history-new-btn').onclick = () => {
+            const playerList = document.getElementById('counter-player-list');
+            playerList.innerHTML = '';
+            entry.players.forEach(p => counterAddPlayerRow(p.name, playerList));
+            const resDefs = document.getElementById('counter-res-defs');
+            resDefs.innerHTML = '';
+            entry.resDefs.forEach(r => counterAddResDef(r, resDefs));
+        };
+
+        list.appendChild(item);
+    });
+}
+
+// ── In-game log ───────────────────────────────────────────────
+function counterAddLog(pi, ri, delta) {
+    const r = counterPlayers[pi].resources[ri];
+    counterLog.unshift({
+        playerName: counterPlayers[pi].name,
+        resName:    counterResDefs[ri].name,
+        delta,
+        newValue:   r.value,
+        maxVal:     r.maxVal,
+        ts:         Date.now()
+    });
+}
+
+function counterOpenLog() {
+    const drawer = document.getElementById('counter-log-drawer');
+    drawer.style.display = 'flex';
+    document.getElementById('counter-log-close-btn').onclick = () => {
+        drawer.style.display = 'none';
+    };
+    const list  = document.getElementById('counter-log-list');
+    const empty = document.getElementById('counter-log-empty');
+    list.innerHTML = '';
+
+    if (counterLog.length === 0) { empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    counterLog.forEach(entry => {
+        const d  = new Date(entry.ts);
+        const ts = `${d.getHours().toString().padStart(2,'0')}:` +
+                   `${d.getMinutes().toString().padStart(2,'0')}:` +
+                   `${d.getSeconds().toString().padStart(2,'0')}`;
+        const pos   = entry.delta > 0;
+        const after = entry.maxVal !== null
+            ? `${entry.newValue}/${entry.maxVal}` : `${entry.newValue}`;
+        const el = document.createElement('div');
+        el.className = 'sb-log-entry';
+        el.innerHTML =
+            `<span class="sb-log-time">${ts}</span>` +
+            `<span class="sb-log-name">${entry.playerName} · ${entry.resName}</span>` +
+            `<span class="sb-log-delta ${pos ? 'pos' : 'neg'}">${pos ? '+' : ''}${entry.delta}</span>` +
+            `<span class="sb-log-after">→ ${after}</span>`;
+        list.appendChild(el);
+    });
+}
+
+// ── 開啟 / 關閉 ───────────────────────────────────────────────
 function counterOpen() {
     document.getElementById('counter-overlay').style.display = 'flex';
     document.getElementById('counter-close-btn').onclick = counterClose;
@@ -767,12 +890,28 @@ function counterOpen() {
 }
 
 function counterClose() {
+    counterSaveHistory();
+    counterIsActive = false;
     document.getElementById('counter-overlay').style.display = 'none';
+    document.getElementById('counter-log-drawer').style.display = 'none';
+}
+
+function counterGoPlaying() {
+    document.getElementById('counter-setup').style.display   = 'none';
+    document.getElementById('counter-playing').style.display = 'flex';
+    document.getElementById('counter-log-drawer').style.display = 'none';
+    document.getElementById('counter-reset-btn').onclick    = counterShowSetup;
+    document.getElementById('counter-log-open-btn').onclick = counterOpenLog;
+    counterRender();
 }
 
 function counterShowSetup() {
-    document.getElementById('counter-setup').style.display  = 'flex';
+    counterSaveHistory();
+    counterIsActive = false;
+
+    document.getElementById('counter-setup').style.display   = 'flex';
     document.getElementById('counter-playing').style.display = 'none';
+    document.getElementById('counter-log-drawer').style.display = 'none';
 
     // 玩家清單
     const playerList = document.getElementById('counter-player-list');
@@ -792,6 +931,7 @@ function counterShowSetup() {
     };
 
     document.getElementById('counter-start-btn').onclick = counterStart;
+    counterRenderHistory();
 }
 
 function counterAddPlayerRow(defaultName, list) {
@@ -850,10 +990,9 @@ function counterStart() {
         resources: counterResDefs.map(r => ({ value: r.startVal, maxVal: r.maxVal }))
     }));
 
-    document.getElementById('counter-setup').style.display  = 'none';
-    document.getElementById('counter-playing').style.display = 'flex';
-    document.getElementById('counter-reset-btn').onclick = counterShowSetup;
-    counterRender();
+    counterLog      = [];
+    counterIsActive = true;
+    counterGoPlaying();
 }
 
 function counterBarColor(ratio) {
@@ -911,9 +1050,11 @@ function counterRender() {
 
     container.querySelectorAll('.counter-res-ctrl-btn').forEach(btn => {
         btn.onclick = () => {
-            const pi = parseInt(btn.dataset.pi);
-            const ri = parseInt(btn.dataset.ri);
-            counterPlayers[pi].resources[ri].value += parseInt(btn.dataset.d);
+            const pi    = parseInt(btn.dataset.pi);
+            const ri    = parseInt(btn.dataset.ri);
+            const delta = parseInt(btn.dataset.d);
+            counterPlayers[pi].resources[ri].value += delta;
+            counterAddLog(pi, ri, delta);
             counterRender();
         };
     });

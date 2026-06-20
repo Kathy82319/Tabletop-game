@@ -577,11 +577,27 @@
         <button class="add-player-btn" id="counter-add-res-btn">＋ 新增項目</button>
 
         <button class="tool-start-btn" id="counter-start-btn">開始</button>
+
+        <div id="counter-history-section" style="display:none;">
+            <p class="sb-history-title">最近紀錄</p>
+            <div id="counter-history-list"></div>
+        </div>
     </div>
 
     <div id="counter-playing" class="playing-panel" style="display:none;">
+        <button id="counter-log-open-btn" class="sb-log-open-btn">📋 變動紀錄</button>
         <div id="counter-cards"></div>
         <button class="tool-secondary-btn" id="counter-reset-btn">重新開始</button>
+    </div>
+
+    <!-- 變動紀錄抽屜 -->
+    <div id="counter-log-drawer" style="display:none;">
+        <div class="sb-log-header">
+            <span>變動紀錄</span>
+            <button id="counter-log-close-btn">✕</button>
+        </div>
+        <div id="counter-log-list"></div>
+        <p id="counter-log-empty">還沒有任何變動紀錄</p>
     </div>
 </div>
 

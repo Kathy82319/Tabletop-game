@@ -2216,6 +2216,35 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     margin: 0;
 }
 
+/* 資源計數器：共用記分板同款 drawer / history 樣式，補上 ID 別名 */
+#counter-log-drawer {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    max-height: 65%;
+    background: #160e04;
+    border-radius: 20px 20px 0 0;
+    border-top: 1px solid rgba(184, 134, 11, 0.35);
+    display: flex;
+    flex-direction: column;
+    animation: drawer-up 0.25s ease-out;
+    z-index: 10;
+}
+
+#counter-log-empty {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 0.85rem;
+    padding: 30px;
+    margin: 0;
+}
+
+#counter-history-section {
+    width: 100%;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 /* 記分板歷史紀錄 */
 #sb-history-section {
     width: 100%;
