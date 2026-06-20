@@ -416,8 +416,70 @@ function fpShowResult() {
 // 工具四：記分板
 // ================================================================
 
-let sbPlayers = [];         // [{ name, score }]
-let sbCustomTarget = -1;    // 目前要加分的玩家 originalIndex
+let sbPlayers      = [];   // [{ name, score }]
+let sbCustomTarget = -1;   // 目前要加分的玩家 index
+let sbIsPlaying    = false;
+
+const SB_STORAGE_KEY = 'sb_history';
+const SB_MAX_HISTORY = 5;
+
+function sbSaveHistory() {
+    if (!sbIsPlaying || sbPlayers.length === 0) return;
+    const history = JSON.parse(localStorage.getItem(SB_STORAGE_KEY) || '[]');
+    history.unshift({ ts: Date.now(), players: sbPlayers.map(p => ({ ...p })) });
+    localStorage.setItem(SB_STORAGE_KEY, JSON.stringify(history.slice(0, SB_MAX_HISTORY)));
+}
+
+function sbLoadHistory() {
+    return JSON.parse(localStorage.getItem(SB_STORAGE_KEY) || '[]');
+}
+
+function sbRenderHistory() {
+    const history = sbLoadHistory();
+    const section = document.getElementById('sb-history-section');
+    const list    = document.getElementById('sb-history-list');
+
+    if (history.length === 0) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    list.innerHTML = '';
+
+    history.forEach((entry) => {
+        const d = new Date(entry.ts);
+        const dateStr = `${d.getMonth() + 1}/${d.getDate()} ` +
+            `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+        const sorted  = [...entry.players].sort((a, b) => b.score - a.score);
+        const summary = sorted.map((p, i) =>
+            `${i === 0 ? '👑' : i + 1}. ${p.name} ${p.score} 分`
+        ).join('\n');
+
+        const item = document.createElement('div');
+        item.className = 'sb-history-item';
+        item.innerHTML = `
+            <div class="sb-history-meta">${dateStr} · ${entry.players.length} 位玩家</div>
+            <div class="sb-history-summary" style="white-space:pre-line">${summary}</div>
+            <div class="sb-history-actions">
+                <button class="sb-history-continue-btn">繼續這場</button>
+                <button class="sb-history-new-btn">同樣玩家重開</button>
+            </div>`;
+
+        item.querySelector('.sb-history-continue-btn').onclick = () => {
+            sbPlayers   = entry.players.map(p => ({ ...p }));
+            sbIsPlaying = true;
+            document.getElementById('sb-setup').style.display  = 'none';
+            document.getElementById('sb-playing').style.display = 'flex';
+            document.getElementById('sb-reset-btn').onclick = sbShowSetup;
+            sbRender();
+        };
+
+        item.querySelector('.sb-history-new-btn').onclick = () => {
+            const list = document.getElementById('sb-player-list');
+            list.innerHTML = '';
+            entry.players.forEach(p => sbAddPlayerRow(p.name, list));
+        };
+
+        list.appendChild(item);
+    });
+}
 
 function sbOpen() {
     document.getElementById('scoreboard-overlay').style.display = 'flex';
@@ -426,11 +488,15 @@ function sbOpen() {
 }
 
 function sbClose() {
+    sbSaveHistory();
     document.getElementById('scoreboard-overlay').style.display = 'none';
     document.getElementById('sb-custom-popup').style.display = 'none';
 }
 
 function sbShowSetup() {
+    sbSaveHistory();
+    sbIsPlaying = false;
+
     document.getElementById('sb-setup').style.display = 'flex';
     document.getElementById('sb-playing').style.display = 'none';
     document.getElementById('sb-custom-popup').style.display = 'none';
@@ -441,6 +507,7 @@ function sbShowSetup() {
 
     document.getElementById('sb-add-btn').onclick = () => sbAddPlayerRow('', list);
     document.getElementById('sb-start-btn').onclick = sbStart;
+    sbRenderHistory();
 }
 
 function sbAddPlayerRow(defaultName, list) {
@@ -462,6 +529,7 @@ function sbStart() {
         name: inp.value.trim() || `玩家 ${i + 1}`,
         score: 0
     }));
+    sbIsPlaying = true;
     document.getElementById('sb-setup').style.display = 'none';
     document.getElementById('sb-playing').style.display = 'flex';
     document.getElementById('sb-reset-btn').onclick = sbShowSetup;
