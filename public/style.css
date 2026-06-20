@@ -1365,16 +1365,24 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .tool-card {
     display: flex;
     align-items: center;
-    gap: 15px;
-    padding: 15px;
+    gap: 16px;
+    padding: 18px 16px;
     margin-bottom: 0;
+    cursor: pointer;
+    transition: transform 0.12s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.tool-card:active {
+    transform: scale(0.97);
 }
 
 .tool-card-icon {
-    font-size: 2.5rem;
+    font-size: 2.4rem;
     flex-shrink: 0;
-    width: 50px;
+    width: 48px;
     text-align: center;
+    line-height: 1;
 }
 
 .tool-card-info {
@@ -1383,15 +1391,22 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .tool-card-info h3 {
-    margin: 0 0 4px 0;
+    margin: 0 0 5px 0;
     border: none;
-    font-size: 1rem;
+    font-size: 1.05rem;
 }
 
 .tool-card-info p {
     margin: 0;
-    font-size: 0.8rem;
-    line-height: 1.4;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+.tool-card-arrow {
+    font-size: 1.5rem;
+    color: var(--color-frame-gold);
+    flex-shrink: 0;
+    opacity: 0.7;
 }
 
 /* ===== 起始玩家抽籤 覆蓋層 ===== */

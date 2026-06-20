@@ -1428,13 +1428,14 @@ document.addEventListener('DOMContentLoaded', () => {
 // =================================================================
 
 function initializeToolsPage() {
-    const btn = document.getElementById('tool-first-player-btn');
-    if (btn) {
-        btn.addEventListener('click', () => {
-            document.getElementById('first-player-overlay').style.display = 'block';
-            fpOpen();
+    document.querySelectorAll('.tool-card').forEach(card => {
+        card.addEventListener('click', () => {
+            if (card.dataset.tool === 'first-player') {
+                document.getElementById('first-player-overlay').style.display = 'block';
+                fpOpen();
+            }
         });
-    }
+    });
 }
 
 // ---- 起始玩家抽籤 ----
@@ -1456,13 +1457,14 @@ function fpOpen() {
     fpResetState();
 
     const overlay = document.getElementById('first-player-overlay');
-
     overlay.addEventListener('touchstart',  fpOnTouchStart,  { passive: false });
     overlay.addEventListener('touchend',    fpOnTouchEnd,    { passive: false });
     overlay.addEventListener('touchcancel', fpOnTouchEnd,    { passive: false });
 
-    document.getElementById('fp-close-btn').onclick = fpClose;
-    document.getElementById('fp-reset-btn').onclick = fpResetState;
+    // touchstart 呼叫 preventDefault 會阻止 click，改用 touchend + stopPropagation
+    const closeBtn = document.getElementById('fp-close-btn');
+    closeBtn.onclick = fpClose;
+    closeBtn.addEventListener('touchend', (e) => { e.stopPropagation(); fpClose(); }, { passive: false });
 }
 
 function fpClose() {
@@ -1493,7 +1495,6 @@ function fpResetState() {
     display.classList.remove('tick');
 
     document.getElementById('fp-status-text').textContent = '請所有玩家將手指放在螢幕上';
-    document.getElementById('fp-reset-btn').style.display = 'none';
 }
 
 function fpOnTouchStart(e) {
@@ -1596,7 +1597,6 @@ function fpShowResult() {
 
     document.getElementById('fp-countdown-display').style.opacity = '0';
     document.getElementById('fp-status-text').textContent = '🎉 數字越小越先手！';
-    document.getElementById('fp-reset-btn').style.display = 'block';
 
     // 隨機打亂順序
     const ids = Object.keys(fpTouches).sort(() => Math.random() - 0.5);
