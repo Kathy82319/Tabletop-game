@@ -567,13 +567,16 @@
 
     <div id="counter-setup" class="tool-setup-panel">
         <h2 class="tool-overlay-title">資源計數器</h2>
+
+        <p class="tools-section-label">玩家</p>
         <div id="counter-player-list" class="player-list"></div>
-        <button class="add-player-btn" id="counter-add-btn">＋ 新增玩家</button>
-        <div class="counter-start-group">
-            <p class="tools-section-label">起始數值</p>
-            <input type="number" id="counter-start-val" class="tools-number-input" value="0" inputmode="numeric">
-        </div>
-        <button class="tool-start-btn" id="counter-start-btn">開始計數</button>
+        <button class="add-player-btn" id="counter-add-player-btn">＋ 新增玩家</button>
+
+        <p class="tools-section-label" style="margin-top:12px">追蹤項目（最多 4 種）</p>
+        <div id="counter-res-defs"></div>
+        <button class="add-player-btn" id="counter-add-res-btn">＋ 新增項目</button>
+
+        <button class="tool-start-btn" id="counter-start-btn">開始</button>
     </div>
 
     <div id="counter-playing" class="playing-panel" style="display:none;">

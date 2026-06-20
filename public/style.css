@@ -2330,55 +2330,148 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 /* ================================================================
    資源計數器
    ================================================================ */
-.counter-start-group {
+
+/* Setup：資源定義列 */
+.counter-res-def {
     width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 16px;
+    flex-direction: column;
+    gap: 8px;
 }
 
+.counter-res-def-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.counter-res-name-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 0.95rem;
+    font-family: var(--font-primary);
+    padding: 8px 12px;
+}
+
+.counter-res-name-input:focus { outline: none; border-color: var(--color-frame-gold); }
+
+.counter-res-def-bottom {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.counter-res-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+}
+
+.counter-res-field label {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.35);
+    white-space: nowrap;
+}
+
+.counter-res-num-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: white;
+    font-size: 0.95rem;
+    font-family: var(--font-primary);
+    text-align: center;
+    padding: 7px 4px;
+    -moz-appearance: textfield;
+    min-width: 0;
+}
+
+.counter-res-num-input::-webkit-outer-spin-button,
+.counter-res-num-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.counter-res-num-input:focus { outline: none; border-color: var(--color-frame-gold); }
+
+/* Playing：玩家卡片 */
 #counter-cards {
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-}
-
-.counter-card {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 16px;
-    padding: 16px 18px;
-    display: flex;
-    align-items: center;
     gap: 14px;
 }
 
-.counter-name {
-    flex: 1;
-    font-size: 1rem;
-    color: rgba(255, 255, 255, 0.9);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.counter-player-card {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 14px 16px;
+    position: relative;
+    transition: opacity 0.3s;
 }
 
-.counter-controls {
+.counter-player-card.eliminated {
+    opacity: 0.5;
+    border-color: rgba(231, 76, 60, 0.4);
+}
+
+.counter-player-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
+    justify-content: space-between;
+    margin-bottom: 12px;
 }
 
-.counter-btn {
-    width: 52px; height: 52px;
-    border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.08);
+.counter-player-name-label {
+    font-size: 1rem;
     color: white;
-    font-size: 1.7rem;
+    font-weight: bold;
+}
+
+.counter-eliminated-badge {
+    background: rgba(231, 76, 60, 0.25);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.4);
+    border-radius: 12px;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+}
+
+/* 每個資源列 */
+.counter-res-row {
+    margin-bottom: 10px;
+}
+
+.counter-res-row:last-child { margin-bottom: 0; }
+
+.counter-res-row-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+.counter-res-label-text {
+    flex: 1;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.counter-res-ctrl-btn {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.07);
+    color: white;
+    font-size: 1.2rem;
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     font-family: var(--font-primary);
@@ -2386,12 +2479,35 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     flex-shrink: 0;
 }
 
-.counter-btn:active { background: rgba(184, 134, 11, 0.4); border-color: var(--color-frame-gold); }
+.counter-res-ctrl-btn:active {
+    background: rgba(184, 134, 11, 0.4);
+    border-color: var(--color-frame-gold);
+}
 
-.counter-value {
-    font-size: 2rem;
+.counter-res-value-display {
+    font-size: 1.15rem;
     font-weight: bold;
     color: white;
-    min-width: 52px;
+    min-width: 60px;
     text-align: center;
+    flex-shrink: 0;
+}
+
+.counter-res-max-text {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.25);
+}
+
+/* 進度條 */
+.counter-progress-track {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.counter-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease, background-color 0.3s ease;
 }

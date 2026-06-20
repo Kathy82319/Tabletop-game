@@ -755,7 +755,10 @@ function teamsShuffle() {
 // 工具六：資源計數器
 // ================================================================
 
-let counterPlayers = [];  // [{ name, value }]
+// counterResDefs: [{ name, startVal, maxVal }]  (maxVal = null 代表無上限)
+// counterPlayers: [{ name, resources: [{ value, maxVal }] }]
+let counterResDefs = [];
+let counterPlayers = [];
 
 function counterOpen() {
     document.getElementById('counter-overlay').style.display = 'flex';
@@ -768,20 +771,30 @@ function counterClose() {
 }
 
 function counterShowSetup() {
-    document.getElementById('counter-setup').style.display = 'flex';
+    document.getElementById('counter-setup').style.display  = 'flex';
     document.getElementById('counter-playing').style.display = 'none';
-    document.getElementById('counter-start-val').value = '0';
 
-    const list = document.getElementById('counter-player-list');
-    list.innerHTML = '';
-    ['玩家 1', '玩家 2'].forEach(name => counterAddPlayerRow(name, list));
+    // 玩家清單
+    const playerList = document.getElementById('counter-player-list');
+    playerList.innerHTML = '';
+    ['玩家 1', '玩家 2'].forEach(n => counterAddPlayerRow(n, playerList));
+    document.getElementById('counter-add-player-btn').onclick = () => counterAddPlayerRow('', playerList);
 
-    document.getElementById('counter-add-btn').onclick = () => counterAddPlayerRow('', list);
+    // 資源定義清單（預設一個 HP）
+    const resDefs = document.getElementById('counter-res-defs');
+    resDefs.innerHTML = '';
+    counterAddResDef({ name: 'HP', startVal: 20, maxVal: 20 }, resDefs);
+
+    document.getElementById('counter-add-res-btn').onclick = () => {
+        if (resDefs.querySelectorAll('.counter-res-def').length < 4) {
+            counterAddResDef({ name: '', startVal: 0, maxVal: null }, resDefs);
+        }
+    };
+
     document.getElementById('counter-start-btn').onclick = counterStart;
 }
 
 function counterAddPlayerRow(defaultName, list) {
-    list = list || document.getElementById('counter-player-list');
     const idx = list.querySelectorAll('.player-input-row').length + 1;
     const row = document.createElement('div');
     row.className = 'player-input-row';
@@ -793,12 +806,48 @@ function counterAddPlayerRow(defaultName, list) {
     list.appendChild(row);
 }
 
+function counterAddResDef({ name, startVal, maxVal }, container) {
+    const def = document.createElement('div');
+    def.className = 'counter-res-def';
+    def.innerHTML = `
+        <div class="counter-res-def-top">
+            <input type="text" class="counter-res-name-input" placeholder="名稱（HP、金幣、VP…）" value="${name}">
+            <button class="remove-player-btn">×</button>
+        </div>
+        <div class="counter-res-def-bottom">
+            <div class="counter-res-field">
+                <label>起始</label>
+                <input type="number" class="counter-res-num-input res-start" value="${startVal}" inputmode="numeric">
+            </div>
+            <div class="counter-res-field">
+                <label>上限</label>
+                <input type="number" class="counter-res-num-input res-max" value="${maxVal ?? ''}" placeholder="無" inputmode="numeric">
+            </div>
+        </div>`;
+    def.querySelector('.remove-player-btn').onclick = () => {
+        if (container.querySelectorAll('.counter-res-def').length > 1) def.remove();
+    };
+    container.appendChild(def);
+}
+
 function counterStart() {
-    const startVal = parseInt(document.getElementById('counter-start-val').value) || 0;
-    const inputs   = document.querySelectorAll('#counter-player-list .player-name-input');
-    counterPlayers = Array.from(inputs).map((inp, i) => ({
-        name:  inp.value.trim() || `玩家 ${i + 1}`,
-        value: startVal
+    // 讀玩家
+    const playerInputs = document.querySelectorAll('#counter-player-list .player-name-input');
+    const playerNames  = Array.from(playerInputs).map((inp, i) => inp.value.trim() || `玩家 ${i + 1}`);
+
+    // 讀資源定義
+    counterResDefs = Array.from(document.querySelectorAll('.counter-res-def')).map(def => ({
+        name:     def.querySelector('.counter-res-name-input').value.trim() || '資源',
+        startVal: parseInt(def.querySelector('.res-start').value) || 0,
+        maxVal:   def.querySelector('.res-max').value !== ''
+                  ? parseInt(def.querySelector('.res-max').value)
+                  : null
+    }));
+
+    // 建立玩家資料
+    counterPlayers = playerNames.map(name => ({
+        name,
+        resources: counterResDefs.map(r => ({ value: r.startVal, maxVal: r.maxVal }))
     }));
 
     document.getElementById('counter-setup').style.display  = 'none';
@@ -807,30 +856,65 @@ function counterStart() {
     counterRender();
 }
 
+function counterBarColor(ratio) {
+    if (ratio > 0.6) return '#2ecc71';
+    if (ratio > 0.3) return '#f1c40f';
+    return '#e74c3c';
+}
+
+function counterIsEliminated(player) {
+    return player.resources.some(r => r.maxVal !== null && r.value <= 0);
+}
+
 function counterRender() {
     const container = document.getElementById('counter-cards');
     container.innerHTML = '';
 
-    counterPlayers.forEach((p, i) => {
+    counterPlayers.forEach((player, pi) => {
+        const eliminated = counterIsEliminated(player);
         const card = document.createElement('div');
-        card.className = 'counter-card';
+        card.className = 'counter-player-card' + (eliminated ? ' eliminated' : '');
+
+        const resRows = counterResDefs.map((def, ri) => {
+            const res   = player.resources[ri];
+            const hasMax = res.maxVal !== null;
+            const ratio  = hasMax ? Math.max(0, res.value) / res.maxVal : 1;
+            const color  = hasMax ? counterBarColor(ratio) : 'rgba(255,255,255,0.5)';
+            const valDisplay = hasMax
+                ? `<span style="color:${color}">${res.value}</span><span class="counter-res-max-text"> / ${res.maxVal}</span>`
+                : `<span>${res.value}</span>`;
+            const bar = hasMax
+                ? `<div class="counter-progress-track">
+                     <div class="counter-progress-fill" style="width:${Math.max(0,ratio*100).toFixed(1)}%;background:${color}"></div>
+                   </div>`
+                : '';
+            return `
+                <div class="counter-res-row">
+                    <div class="counter-res-row-top">
+                        <span class="counter-res-label-text">${def.name}</span>
+                        <button class="counter-res-ctrl-btn" data-pi="${pi}" data-ri="${ri}" data-d="-1">−</button>
+                        <span class="counter-res-value-display">${valDisplay}</span>
+                        <button class="counter-res-ctrl-btn" data-pi="${pi}" data-ri="${ri}" data-d="1">+</button>
+                    </div>
+                    ${bar}
+                </div>`;
+        }).join('');
+
         card.innerHTML = `
-            <span class="counter-name">${p.name}</span>
-            <div class="counter-controls">
-                <button class="counter-btn counter-minus" data-i="${i}">−</button>
-                <span class="counter-value" id="cv-${i}">${p.value}</span>
-                <button class="counter-btn counter-plus"  data-i="${i}">+</button>
-            </div>`;
+            <div class="counter-player-header">
+                <span class="counter-player-name-label">${player.name}</span>
+                ${eliminated ? '<span class="counter-eliminated-badge">陣亡</span>' : ''}
+            </div>
+            ${resRows}`;
         container.appendChild(card);
     });
 
-    container.querySelectorAll('.counter-minus').forEach(btn =>
-        btn.onclick = () => { counterPlayers[btn.dataset.i].value--; counterUpdateDisplay(btn.dataset.i); });
-    container.querySelectorAll('.counter-plus').forEach(btn =>
-        btn.onclick = () => { counterPlayers[btn.dataset.i].value++; counterUpdateDisplay(btn.dataset.i); });
-}
-
-function counterUpdateDisplay(i) {
-    const el = document.getElementById(`cv-${i}`);
-    if (el) el.textContent = counterPlayers[i].value;
+    container.querySelectorAll('.counter-res-ctrl-btn').forEach(btn => {
+        btn.onclick = () => {
+            const pi = parseInt(btn.dataset.pi);
+            const ri = parseInt(btn.dataset.ri);
+            counterPlayers[pi].resources[ri].value += parseInt(btn.dataset.d);
+            counterRender();
+        };
+    });
 }
