@@ -1195,7 +1195,7 @@ function rolesAddRoleRow(opts, container) {
     row.innerHTML =
         '<div class="role-def-row">' +
             '<select class="role-emoji-select">' + rolesEmojiOptions(emoji) + '</select>' +
-            '<input type="text" class="player-name-input role-name-field" value="' + (opts.name || '') + '" placeholder="角色名稱">' +
+            '<input type="text" class="role-name-field" value="' + (opts.name || '') + '" placeholder="角色名稱">' +
             '<input type="number" class="role-count-input" value="' + (opts.count || 1) + '" min="1" max="20" inputmode="numeric">' +
             '<button class="remove-player-btn">×</button>' +
         '</div>' +

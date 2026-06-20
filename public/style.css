@@ -2577,29 +2577,22 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .role-def-row {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     gap: 6px;
     margin-bottom: 4px;
     width: 100%;
-    flex-wrap: nowrap;
-}
-
-.role-def-row .player-name-input {
-    flex: 1;
-    min-width: 0;
-    width: auto;
 }
 
 .role-emoji-select {
-    width: 56px;
+    flex: 0 0 48px;
+    width: 48px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
     color: white;
     font-size: 1.25rem;
-    padding: 8px 2px;
+    padding: 0;
     text-align: center;
-    flex-shrink: 0;
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
@@ -2607,8 +2600,26 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .role-emoji-select:focus { outline: none; border-color: var(--color-frame-gold); }
 
+.role-name-field {
+    flex: 1 1 0;
+    min-width: 0;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 0.95rem;
+    font-family: var(--font-primary);
+    padding: 10px 10px;
+}
+
+.role-name-field::placeholder { color: rgba(255,255,255,0.3); }
+.role-name-field:focus { outline: none; border-color: var(--color-frame-gold); }
+
 .role-count-input {
-    width: 52px;
+    flex: 0 0 44px;
+    width: 44px;
+    min-width: 44px;
+    max-width: 44px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
@@ -2616,9 +2627,8 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     font-size: 1rem;
     font-family: var(--font-primary);
     text-align: center;
-    padding: 8px 4px;
+    padding: 10px 4px;
     -moz-appearance: textfield;
-    flex-shrink: 0;
 }
 
 .role-count-input::-webkit-outer-spin-button,
@@ -2627,7 +2637,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .role-count-input:focus { outline: none; border-color: var(--color-frame-gold); }
 
 .role-desc-input {
-    flex: 1;
+    width: 100%;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
@@ -2635,8 +2645,8 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     font-size: 0.82rem;
     font-family: var(--font-primary);
     padding: 7px 10px;
-    margin: -2px 0 6px 56px;
-    width: calc(100% - 56px);
+    margin-bottom: 6px;
+    box-sizing: border-box;
 }
 
 .role-desc-input::placeholder { color: rgba(255,255,255,0.2); }
