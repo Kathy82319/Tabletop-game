@@ -23,11 +23,12 @@ export async function onRequestPost(context) {
         const ext = extMap[file.type] || 'jpg';
         const key = `games/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
-        await env.ASSETS.put(key, file.stream(), {
+        const buffer = await file.arrayBuffer();
+        await env.ASSETS.put(key, buffer, {
             httpMetadata: { contentType: file.type }
         });
 
-        const url = `${env.R2_PUBLIC_URL}/${key}`;
+        const url = `https://pub-f37fbf2e23fb45e9a3705973776f12e4.r2.dev/${key}`;
         return Response.json({ url });
 
     } catch (err) {
