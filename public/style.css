@@ -360,6 +360,8 @@ input[readonly] {
     flex-direction: column;
     gap: 10px;
     padding: 10px;
+    min-width: 0;       /* 防止圖片原始尺寸撐開 Grid 欄寬，導致右欄跑出螢幕 */
+    margin-bottom: 0;   /* 覆蓋通用卡片的 margin-bottom：Grid gap 已處理間距 */
 }
 .game-image {
     width: 100%;
