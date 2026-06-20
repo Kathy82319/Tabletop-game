@@ -1336,7 +1336,7 @@ function rolesShowFinal() {
 
 function rolesShowFullReveal() {
     document.getElementById('roles-unlock-panel').style.display = 'none';
-    document.getElementById('roles-full-reveal').style.display  = 'flex';
+    document.getElementById('roles-full-reveal').style.display  = 'block';
 
     var list = document.getElementById('roles-reveal-list');
     list.innerHTML = '';
