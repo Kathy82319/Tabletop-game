@@ -1539,6 +1539,67 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .timer-preset-btn:active { background: rgba(184, 134, 11, 0.5); }
 
+.timer-custom {
+    width: 100%;
+    max-width: 340px;
+    margin: 20px auto 0;
+}
+
+.timer-custom-label {
+    margin: 0 0 8px 0;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+    letter-spacing: 0.05em;
+}
+
+.timer-custom-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.timer-custom-row input[type="number"] {
+    width: 60px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    color: white;
+    font-size: 1.3rem;
+    font-family: var(--font-primary);
+    text-align: center;
+    padding: 10px 4px;
+    -moz-appearance: textfield;
+}
+
+.timer-custom-row input[type="number"]::-webkit-outer-spin-button,
+.timer-custom-row input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+
+.timer-custom-row input[type="number"]:focus {
+    outline: none;
+    border-color: var(--color-frame-gold);
+}
+
+.timer-custom-unit {
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+#timer-custom-start {
+    background: var(--color-frame-gold);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 0.95rem;
+    font-family: var(--font-primary);
+    cursor: pointer;
+    margin-left: 6px;
+}
+
 #timer-running {
     display: flex;
     flex-direction: column;
@@ -1734,3 +1795,424 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 #dice-roll-btn:active { transform: scale(0.96); }
+
+/* ================================================================
+   共用：工具 Setup 面板
+   ================================================================ */
+.tool-setup-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 380px;
+}
+
+.playing-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 420px;
+    padding-top: 60px;
+}
+
+/* 玩家名稱輸入清單 */
+.player-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.player-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.player-name-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    color: white;
+    font-size: 1rem;
+    font-family: var(--font-primary);
+    padding: 12px 14px;
+}
+
+.player-name-input:focus {
+    outline: none;
+    border-color: var(--color-frame-gold);
+}
+
+.remove-player-btn {
+    width: 36px; height: 36px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 1.2rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-family: var(--font-primary);
+    display: flex; align-items: center; justify-content: center;
+}
+
+.add-player-btn {
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.9rem;
+    font-family: var(--font-primary);
+    padding: 10px;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 16px;
+}
+
+.tool-start-btn {
+    background: var(--color-frame-gold);
+    color: white;
+    border: none;
+    border-radius: 24px;
+    padding: 14px 40px;
+    font-size: 1.05rem;
+    cursor: pointer;
+    font-family: var(--font-primary);
+    width: 100%;
+}
+
+.tool-secondary-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 10px 28px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-family: var(--font-primary);
+    margin-top: 20px;
+}
+
+/* 共用 option 按鈕 (隊數 / 起始值 selector 等) */
+.tools-section-label {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+    margin: 0 0 8px 0;
+}
+
+.tools-option-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.tools-option-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 10px 22px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-family: var(--font-primary);
+    transition: all 0.15s;
+}
+
+.tools-option-btn.active {
+    background: var(--color-frame-gold);
+    color: white;
+    border-color: var(--color-frame-gold);
+}
+
+.tools-number-input {
+    width: 80px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    color: white;
+    font-size: 1.2rem;
+    font-family: var(--font-primary);
+    text-align: center;
+    padding: 8px 4px;
+    -moz-appearance: textfield;
+}
+
+.tools-number-input::-webkit-outer-spin-button,
+.tools-number-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.tools-number-input:focus { outline: none; border-color: var(--color-frame-gold); }
+
+/* ================================================================
+   記分板
+   ================================================================ */
+#sb-rankings {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sb-player-card {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sb-player-card.sb-first {
+    border-color: var(--color-frame-gold);
+    background: rgba(184, 134, 11, 0.1);
+}
+
+.sb-card-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sb-rank {
+    font-size: 1.3rem;
+    width: 30px;
+    text-align: center;
+    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.sb-player-card.sb-first .sb-rank { color: var(--color-frame-gold); }
+
+.sb-name {
+    flex: 1;
+    font-size: 1rem;
+    color: white;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sb-score {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+    min-width: 48px;
+    text-align: right;
+}
+
+.sb-score-unit {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.35);
+    margin-left: 2px;
+}
+
+.sb-card-btns {
+    display: flex;
+    gap: 6px;
+}
+
+.sb-btn {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.88rem;
+    padding: 8px 4px;
+    cursor: pointer;
+    font-family: var(--font-primary);
+}
+
+.sb-btn:active { background: rgba(184, 134, 11, 0.35); }
+
+.sb-btn.sb-custom-btn {
+    color: var(--color-frame-gold);
+    border-color: rgba(184, 134, 11, 0.35);
+}
+
+/* 記分板自訂分數浮層 */
+#sb-custom-popup {
+    position: fixed;
+    left: 50%; bottom: 0;
+    transform: translateX(-50%);
+    width: 100%; max-width: 420px;
+    background: #1a1008;
+    border-top: 1px solid rgba(184, 134, 11, 0.4);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px 30px;
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+#sb-popup-label {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0;
+}
+
+#sb-popup-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 12px;
+    color: white;
+    font-size: 1.6rem;
+    font-family: var(--font-primary);
+    text-align: center;
+    padding: 12px;
+    -moz-appearance: textfield;
+}
+
+#sb-popup-input::-webkit-outer-spin-button,
+#sb-popup-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+#sb-popup-input:focus { outline: none; border-color: var(--color-frame-gold); }
+
+.sb-popup-btns {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+}
+
+.sb-popup-btns button {
+    flex: 1;
+    border: none;
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-family: var(--font-primary);
+    font-weight: bold;
+}
+
+#sb-popup-minus { background: rgba(231, 76, 60, 0.25); color: #e74c3c; border: 1px solid rgba(231,76,60,0.4); }
+#sb-popup-plus  { background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid rgba(46,204,113,0.35); }
+
+#sb-popup-cancel {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: var(--font-primary);
+    padding: 4px;
+}
+
+/* ================================================================
+   隨機分組
+   ================================================================ */
+.teams-count-group { width: 100%; }
+
+#teams-result-cards {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.teams-result-card {
+    border: 2px solid;
+    border-radius: 14px;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.teams-result-header {
+    font-size: 1rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    letter-spacing: 0.05em;
+}
+
+.teams-result-members {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.teams-result-members span {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* ================================================================
+   資源計數器
+   ================================================================ */
+.counter-start-group {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+#counter-cards {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.counter-card {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.counter-name {
+    flex: 1;
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.counter-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.counter-btn {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    font-size: 1.7rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-primary);
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.counter-btn:active { background: rgba(184, 134, 11, 0.4); border-color: var(--color-frame-gold); }
+
+.counter-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: white;
+    min-width: 52px;
+    text-align: center;
+}

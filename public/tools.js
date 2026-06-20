@@ -14,6 +14,12 @@ function initializeToolsPage() {
                 timerOpen();
             } else if (tool === 'dice') {
                 diceOpen();
+            } else if (tool === 'scoreboard') {
+                sbOpen();
+            } else if (tool === 'teams') {
+                teamsOpen();
+            } else if (tool === 'counter') {
+                counterOpen();
             }
         });
     });
@@ -212,6 +218,16 @@ function timerShowSetup() {
             timerShowRunning();
         };
     });
+
+    document.getElementById('timer-custom-start').onclick = () => {
+        const mins = parseInt(document.getElementById('timer-custom-min').value) || 0;
+        const secs = parseInt(document.getElementById('timer-custom-sec').value) || 0;
+        const total = mins * 60 + secs;
+        if (total <= 0) return;
+        timerTotal = total;
+        timerLeft  = total;
+        timerShowRunning();
+    };
 }
 
 function timerShowRunning() {
@@ -394,4 +410,303 @@ function fpShowResult() {
             if (isFirst) tp.el.classList.add('first');
         }, index * 120);
     });
+}
+
+// ================================================================
+// 工具四：記分板
+// ================================================================
+
+let sbPlayers = [];         // [{ name, score }]
+let sbCustomTarget = -1;    // 目前要加分的玩家 originalIndex
+
+function sbOpen() {
+    document.getElementById('scoreboard-overlay').style.display = 'flex';
+    document.getElementById('sb-close-btn').onclick = sbClose;
+    sbShowSetup();
+}
+
+function sbClose() {
+    document.getElementById('scoreboard-overlay').style.display = 'none';
+    document.getElementById('sb-custom-popup').style.display = 'none';
+}
+
+function sbShowSetup() {
+    document.getElementById('sb-setup').style.display = 'flex';
+    document.getElementById('sb-playing').style.display = 'none';
+    document.getElementById('sb-custom-popup').style.display = 'none';
+
+    const list = document.getElementById('sb-player-list');
+    list.innerHTML = '';
+    ['玩家 1', '玩家 2', '玩家 3', '玩家 4'].forEach(name => sbAddPlayerRow(name, list));
+
+    document.getElementById('sb-add-btn').onclick = () => sbAddPlayerRow('', list);
+    document.getElementById('sb-start-btn').onclick = sbStart;
+}
+
+function sbAddPlayerRow(defaultName, list) {
+    list = list || document.getElementById('sb-player-list');
+    const idx = list.querySelectorAll('.player-input-row').length + 1;
+    const row = document.createElement('div');
+    row.className = 'player-input-row';
+    row.innerHTML = `<input type="text" class="player-name-input" placeholder="玩家 ${idx}" value="${defaultName}">
+                     <button class="remove-player-btn">×</button>`;
+    row.querySelector('.remove-player-btn').onclick = () => {
+        if (list.querySelectorAll('.player-input-row').length > 2) row.remove();
+    };
+    list.appendChild(row);
+}
+
+function sbStart() {
+    const inputs = document.querySelectorAll('#sb-player-list .player-name-input');
+    sbPlayers = Array.from(inputs).map((inp, i) => ({
+        name: inp.value.trim() || `玩家 ${i + 1}`,
+        score: 0
+    }));
+    document.getElementById('sb-setup').style.display = 'none';
+    document.getElementById('sb-playing').style.display = 'flex';
+    document.getElementById('sb-reset-btn').onclick = sbShowSetup;
+    sbRender();
+}
+
+function sbRender() {
+    const ranked = sbPlayers
+        .map((p, i) => ({ ...p, idx: i }))
+        .sort((a, b) => b.score - a.score);
+
+    const container = document.getElementById('sb-rankings');
+    container.innerHTML = '';
+
+    ranked.forEach((p, rank) => {
+        const card = document.createElement('div');
+        card.className = 'sb-player-card' + (rank === 0 ? ' sb-first' : '');
+        card.innerHTML = `
+            <div class="sb-card-top">
+                <span class="sb-rank">${rank === 0 ? '👑' : rank + 1}</span>
+                <span class="sb-name">${p.name}</span>
+                <span class="sb-score">${p.score}<span class="sb-score-unit"> 分</span></span>
+            </div>
+            <div class="sb-card-btns">
+                <button class="sb-btn" data-idx="${p.idx}" data-d="-10">-10</button>
+                <button class="sb-btn" data-idx="${p.idx}" data-d="-1">-1</button>
+                <button class="sb-btn" data-idx="${p.idx}" data-d="1">+1</button>
+                <button class="sb-btn" data-idx="${p.idx}" data-d="10">+10</button>
+                <button class="sb-btn sb-custom-btn" data-idx="${p.idx}" data-d="custom">自訂</button>
+            </div>`;
+        container.appendChild(card);
+    });
+
+    container.querySelectorAll('.sb-btn').forEach(btn => {
+        btn.onclick = () => {
+            const i = parseInt(btn.dataset.idx);
+            if (btn.dataset.d === 'custom') {
+                sbOpenCustomPopup(i);
+            } else {
+                sbPlayers[i].score += parseInt(btn.dataset.d);
+                sbRender();
+            }
+        };
+    });
+}
+
+function sbOpenCustomPopup(playerIdx) {
+    sbCustomTarget = playerIdx;
+    const popup = document.getElementById('sb-custom-popup');
+    document.getElementById('sb-popup-label').textContent = `為「${sbPlayers[playerIdx].name}」加分或扣分`;
+    document.getElementById('sb-popup-input').value = '';
+    popup.style.display = 'flex';
+    setTimeout(() => document.getElementById('sb-popup-input').focus(), 50);
+
+    document.getElementById('sb-popup-plus').onclick = () => sbApplyCustom(1);
+    document.getElementById('sb-popup-minus').onclick = () => sbApplyCustom(-1);
+    document.getElementById('sb-popup-cancel').onclick = () => {
+        popup.style.display = 'none';
+    };
+}
+
+function sbApplyCustom(sign) {
+    const val = parseInt(document.getElementById('sb-popup-input').value);
+    if (!isNaN(val) && val > 0 && sbCustomTarget >= 0) {
+        sbPlayers[sbCustomTarget].score += sign * val;
+    }
+    document.getElementById('sb-custom-popup').style.display = 'none';
+    sbRender();
+}
+
+// ================================================================
+// 工具五：隨機分組
+// ================================================================
+
+let teamsCount = 2;
+let teamsLastPlayers = [];
+
+const TEAM_COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f'];
+const TEAM_NAMES  = ['A 隊', 'B 隊', 'C 隊', 'D 隊'];
+
+function teamsOpen() {
+    document.getElementById('teams-overlay').style.display = 'flex';
+    document.getElementById('teams-close-btn').onclick = teamsClose;
+    teamsShowSetup();
+}
+
+function teamsClose() {
+    document.getElementById('teams-overlay').style.display = 'none';
+}
+
+function teamsShowSetup() {
+    document.getElementById('teams-setup').style.display = 'flex';
+    document.getElementById('teams-result').style.display = 'none';
+
+    const list = document.getElementById('teams-player-list');
+    list.innerHTML = '';
+
+    const defaults = teamsLastPlayers.length >= 2
+        ? teamsLastPlayers
+        : ['玩家 1', '玩家 2', '玩家 3', '玩家 4'];
+    defaults.forEach(name => teamsAddPlayerRow(name, list));
+
+    document.getElementById('teams-add-btn').onclick = () => teamsAddPlayerRow('', list);
+    document.getElementById('teams-go-btn').onclick   = teamsShuffle;
+
+    document.querySelectorAll('.tools-option-btn[data-teams]').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.teams) === teamsCount);
+        btn.onclick = () => {
+            document.querySelectorAll('.tools-option-btn[data-teams]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            teamsCount = parseInt(btn.dataset.teams);
+        };
+    });
+}
+
+function teamsAddPlayerRow(defaultName, list) {
+    list = list || document.getElementById('teams-player-list');
+    const idx = list.querySelectorAll('.player-input-row').length + 1;
+    const row = document.createElement('div');
+    row.className = 'player-input-row';
+    row.innerHTML = `<input type="text" class="player-name-input" placeholder="玩家 ${idx}" value="${defaultName}">
+                     <button class="remove-player-btn">×</button>`;
+    row.querySelector('.remove-player-btn').onclick = () => {
+        if (list.querySelectorAll('.player-input-row').length > 2) row.remove();
+    };
+    list.appendChild(row);
+}
+
+function teamsShuffle() {
+    const inputs = document.querySelectorAll('#teams-player-list .player-name-input');
+    let players = Array.from(inputs).map((inp, i) => inp.value.trim() || `玩家 ${i + 1}`);
+    if (players.length < teamsCount) return;
+
+    teamsLastPlayers = players.slice();
+
+    // Fisher-Yates shuffle
+    for (let i = players.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [players[i], players[j]] = [players[j], players[i]];
+    }
+
+    const teams = Array.from({ length: teamsCount }, () => []);
+    players.forEach((p, i) => teams[i % teamsCount].push(p));
+
+    document.getElementById('teams-setup').style.display = 'none';
+    const resultDiv = document.getElementById('teams-result');
+    resultDiv.style.display = 'flex';
+
+    const cardsContainer = document.getElementById('teams-result-cards');
+    cardsContainer.innerHTML = '';
+    teams.forEach((team, i) => {
+        const card = document.createElement('div');
+        card.className = 'teams-result-card';
+        card.style.borderColor = TEAM_COLORS[i];
+        card.innerHTML = `<div class="teams-result-header" style="color:${TEAM_COLORS[i]}">${TEAM_NAMES[i]}</div>
+                          <div class="teams-result-members">${team.map(p => `<span>${p}</span>`).join('')}</div>`;
+        cardsContainer.appendChild(card);
+    });
+
+    document.getElementById('teams-reshuffle-btn').onclick = () => {
+        // 用同一批名字重新洗牌
+        teamsShuffle();
+    };
+}
+
+// ================================================================
+// 工具六：資源計數器
+// ================================================================
+
+let counterPlayers = [];  // [{ name, value }]
+
+function counterOpen() {
+    document.getElementById('counter-overlay').style.display = 'flex';
+    document.getElementById('counter-close-btn').onclick = counterClose;
+    counterShowSetup();
+}
+
+function counterClose() {
+    document.getElementById('counter-overlay').style.display = 'none';
+}
+
+function counterShowSetup() {
+    document.getElementById('counter-setup').style.display = 'flex';
+    document.getElementById('counter-playing').style.display = 'none';
+    document.getElementById('counter-start-val').value = '0';
+
+    const list = document.getElementById('counter-player-list');
+    list.innerHTML = '';
+    ['玩家 1', '玩家 2'].forEach(name => counterAddPlayerRow(name, list));
+
+    document.getElementById('counter-add-btn').onclick = () => counterAddPlayerRow('', list);
+    document.getElementById('counter-start-btn').onclick = counterStart;
+}
+
+function counterAddPlayerRow(defaultName, list) {
+    list = list || document.getElementById('counter-player-list');
+    const idx = list.querySelectorAll('.player-input-row').length + 1;
+    const row = document.createElement('div');
+    row.className = 'player-input-row';
+    row.innerHTML = `<input type="text" class="player-name-input" placeholder="玩家 ${idx}" value="${defaultName}">
+                     <button class="remove-player-btn">×</button>`;
+    row.querySelector('.remove-player-btn').onclick = () => {
+        if (list.querySelectorAll('.player-input-row').length > 1) row.remove();
+    };
+    list.appendChild(row);
+}
+
+function counterStart() {
+    const startVal = parseInt(document.getElementById('counter-start-val').value) || 0;
+    const inputs   = document.querySelectorAll('#counter-player-list .player-name-input');
+    counterPlayers = Array.from(inputs).map((inp, i) => ({
+        name:  inp.value.trim() || `玩家 ${i + 1}`,
+        value: startVal
+    }));
+
+    document.getElementById('counter-setup').style.display  = 'none';
+    document.getElementById('counter-playing').style.display = 'flex';
+    document.getElementById('counter-reset-btn').onclick = counterShowSetup;
+    counterRender();
+}
+
+function counterRender() {
+    const container = document.getElementById('counter-cards');
+    container.innerHTML = '';
+
+    counterPlayers.forEach((p, i) => {
+        const card = document.createElement('div');
+        card.className = 'counter-card';
+        card.innerHTML = `
+            <span class="counter-name">${p.name}</span>
+            <div class="counter-controls">
+                <button class="counter-btn counter-minus" data-i="${i}">−</button>
+                <span class="counter-value" id="cv-${i}">${p.value}</span>
+                <button class="counter-btn counter-plus"  data-i="${i}">+</button>
+            </div>`;
+        container.appendChild(card);
+    });
+
+    container.querySelectorAll('.counter-minus').forEach(btn =>
+        btn.onclick = () => { counterPlayers[btn.dataset.i].value--; counterUpdateDisplay(btn.dataset.i); });
+    container.querySelectorAll('.counter-plus').forEach(btn =>
+        btn.onclick = () => { counterPlayers[btn.dataset.i].value++; counterUpdateDisplay(btn.dataset.i); });
+}
+
+function counterUpdateDisplay(i) {
+    const el = document.getElementById(`cv-${i}`);
+    if (el) el.textContent = counterPlayers[i].value;
 }
