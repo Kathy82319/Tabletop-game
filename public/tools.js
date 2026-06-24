@@ -602,10 +602,11 @@ function fpShowTeamResult() {
 // ================================================================
 // ================================================================
 
-let sbPlayers      = [];   // [{ name, score }]
-let sbLog          = [];   // [{ name, delta, newScore, ts }]
-let sbCustomTarget = -1;
-let sbIsPlaying    = false;
+let sbPlayers   = [];   // [{ name, score }]
+let sbLog       = [];   // [{ round, changes: [{name, delta, newScore, note}], ts }]
+let sbIsPlaying = false;
+let sbGameName  = '';
+let sbRoundNum  = 0;
 
 const SB_STORAGE_KEY = 'sb_history';
 const SB_MAX_HISTORY = 5;
@@ -613,7 +614,7 @@ const SB_MAX_HISTORY = 5;
 function sbSaveHistory() {
     if (!sbIsPlaying || sbPlayers.length === 0) return;
     const history = JSON.parse(localStorage.getItem(SB_STORAGE_KEY) || '[]');
-    history.unshift({ ts: Date.now(), players: sbPlayers.map(p => ({ ...p })) });
+    history.unshift({ ts: Date.now(), gameName: sbGameName, players: sbPlayers.map(p => ({ ...p })) });
     localStorage.setItem(SB_STORAGE_KEY, JSON.stringify(history.slice(0, SB_MAX_HISTORY)));
 }
 
@@ -638,11 +639,12 @@ function sbRenderHistory() {
         const summary = sorted.map((p, i) =>
             `${i === 0 ? '👑' : i + 1}. ${p.name} ${p.score} 分`
         ).join('\n');
+        const gameLabel = entry.gameName || '未命名遊戲';
 
         const item = document.createElement('div');
         item.className = 'sb-history-item';
         item.innerHTML = `
-            <div class="sb-history-meta">${dateStr} · ${entry.players.length} 位玩家</div>
+            <div class="sb-history-meta">${gameLabel} · ${dateStr}</div>
             <div class="sb-history-summary" style="white-space:pre-line">${summary}</div>
             <div class="sb-history-actions">
                 <button class="sb-history-continue-btn">繼續這場</button>
@@ -651,19 +653,18 @@ function sbRenderHistory() {
 
         item.querySelector('.sb-history-continue-btn').onclick = () => {
             sbPlayers   = entry.players.map(p => ({ ...p }));
+            sbGameName  = entry.gameName || '';
+            sbRoundNum  = 0;
             sbLog       = [];
             sbIsPlaying = true;
-            document.getElementById('sb-setup').style.display  = 'none';
-            document.getElementById('sb-playing').style.display = 'flex';
-            document.getElementById('sb-reset-btn').onclick = sbShowSetup;
-            document.getElementById('sb-log-open-btn').onclick = sbOpenLog;
-            sbRender();
+            sbShowPlaying();
         };
 
         item.querySelector('.sb-history-new-btn').onclick = () => {
-            const list = document.getElementById('sb-player-list');
-            list.innerHTML = '';
-            entry.players.forEach(p => sbAddPlayerRow(p.name, list));
+            const playerList = document.getElementById('sb-player-list');
+            playerList.innerHTML = '';
+            entry.players.forEach(p => sbAddPlayerRow(p.name, playerList));
+            if (entry.gameName) document.getElementById('sb-game-name-input').value = entry.gameName;
         };
 
         list.appendChild(item);
@@ -680,24 +681,37 @@ function sbClose() {
     sbSaveHistory();
     sbIsPlaying = false;
     document.getElementById('scoreboard-overlay').style.display = 'none';
-    document.getElementById('sb-custom-popup').style.display = 'none';
 }
 
 function sbShowSetup() {
     sbSaveHistory();
     sbIsPlaying = false;
 
-    document.getElementById('sb-setup').style.display = 'flex';
-    document.getElementById('sb-playing').style.display = 'none';
-    document.getElementById('sb-custom-popup').style.display = 'none';
+    document.getElementById('sb-setup').style.display       = 'flex';
+    document.getElementById('sb-playing').style.display     = 'none';
+    document.getElementById('sb-round-input').style.display = 'none';
+    document.getElementById('sb-log-drawer').style.display  = 'none';
 
     const list = document.getElementById('sb-player-list');
     list.innerHTML = '';
     ['玩家 1', '玩家 2', '玩家 3', '玩家 4'].forEach(name => sbAddPlayerRow(name, list));
+    document.getElementById('sb-game-name-input').value = '';
 
-    document.getElementById('sb-add-btn').onclick = () => sbAddPlayerRow('', list);
+    document.getElementById('sb-add-btn').onclick   = () => sbAddPlayerRow('', list);
     document.getElementById('sb-start-btn').onclick = sbStart;
     sbRenderHistory();
+}
+
+function sbShowPlaying() {
+    document.getElementById('sb-setup').style.display       = 'none';
+    document.getElementById('sb-playing').style.display     = 'flex';
+    document.getElementById('sb-round-input').style.display = 'none';
+
+    document.getElementById('sb-game-title').textContent = sbGameName;
+    document.getElementById('sb-reset-btn').onclick      = sbShowSetup;
+    document.getElementById('sb-log-open-btn').onclick   = sbOpenLog;
+    document.getElementById('sb-add-round-btn').onclick  = sbOpenRound;
+    sbRender();
 }
 
 function sbAddPlayerRow(defaultName, list) {
@@ -715,34 +729,70 @@ function sbAddPlayerRow(defaultName, list) {
 
 function sbStart() {
     const inputs = document.querySelectorAll('#sb-player-list .player-name-input');
-    sbPlayers = Array.from(inputs).map((inp, i) => ({
+    sbPlayers  = Array.from(inputs).map((inp, i) => ({
         name: inp.value.trim() || `玩家 ${i + 1}`,
         score: 0
     }));
-    sbLog = [];
+    sbGameName = document.getElementById('sb-game-name-input').value.trim();
+    sbRoundNum = 0;
+    sbLog      = [];
     sbIsPlaying = true;
-    document.getElementById('sb-setup').style.display = 'none';
-    document.getElementById('sb-playing').style.display = 'flex';
-    document.getElementById('sb-reset-btn').onclick = sbShowSetup;
-    document.getElementById('sb-log-open-btn').onclick = sbOpenLog;
-    sbRender();
+    sbShowPlaying();
 }
 
-function sbAddLog(playerIdx, delta) {
-    sbLog.unshift({
-        name:     sbPlayers[playerIdx].name,
-        delta:    delta,
-        newScore: sbPlayers[playerIdx].score,
-        ts:       Date.now()
+function sbOpenRound() {
+    document.getElementById('sb-playing').style.display     = 'none';
+    document.getElementById('sb-round-input').style.display = 'flex';
+    document.getElementById('sb-round-title').textContent   = `第 ${sbRoundNum + 1} 輪`;
+
+    const rowsDiv = document.getElementById('sb-round-rows');
+    rowsDiv.innerHTML = '';
+
+    sbPlayers.forEach((p, idx) => {
+        const row = document.createElement('div');
+        row.className  = 'sb-round-row';
+        row.dataset.idx = idx;
+        row.innerHTML = `
+            <div class="sb-round-row-info">
+                <span class="sb-round-row-name">${p.name}</span>
+                <span class="sb-round-row-cur">${p.score} 分</span>
+            </div>
+            <input type="number" class="sb-round-delta" inputmode="numeric" placeholder="本輪得分（可為負數）">
+            <input type="text"   class="sb-round-note"  placeholder="備註（選填）">`;
+        rowsDiv.appendChild(row);
     });
+
+    document.getElementById('sb-round-confirm-btn').onclick = sbConfirmRound;
+    document.getElementById('sb-round-cancel-btn').onclick  = () => {
+        document.getElementById('sb-round-input').style.display = 'none';
+        document.getElementById('sb-playing').style.display     = 'flex';
+    };
+}
+
+function sbConfirmRound() {
+    const rows    = document.querySelectorAll('#sb-round-rows .sb-round-row');
+    const changes = [];
+
+    rows.forEach(row => {
+        const idx   = parseInt(row.dataset.idx);
+        const delta = parseInt(row.querySelector('.sb-round-delta').value) || 0;
+        const note  = row.querySelector('.sb-round-note').value.trim();
+        sbPlayers[idx].score += delta;
+        changes.push({ name: sbPlayers[idx].name, delta, newScore: sbPlayers[idx].score, note });
+    });
+
+    sbRoundNum++;
+    sbLog.unshift({ round: sbRoundNum, changes, ts: Date.now() });
+
+    document.getElementById('sb-round-input').style.display = 'none';
+    document.getElementById('sb-playing').style.display     = 'flex';
+    sbRender();
 }
 
 function sbOpenLog() {
     const drawer = document.getElementById('sb-log-drawer');
     drawer.style.display = 'flex';
-    document.getElementById('sb-log-close-btn').onclick = () => {
-        drawer.style.display = 'none';
-    };
+    document.getElementById('sb-log-close-btn').onclick = () => { drawer.style.display = 'none'; };
     sbRenderLog();
 }
 
@@ -751,26 +801,33 @@ function sbRenderLog() {
     const empty = document.getElementById('sb-log-empty');
     list.innerHTML = '';
 
-    if (sbLog.length === 0) {
-        empty.style.display = 'block';
-        return;
-    }
+    if (sbLog.length === 0) { empty.style.display = 'block'; return; }
     empty.style.display = 'none';
 
     sbLog.forEach(entry => {
-        const d   = new Date(entry.ts);
-        const ts  = `${d.getHours().toString().padStart(2, '0')}:` +
-                    `${d.getMinutes().toString().padStart(2, '0')}:` +
-                    `${d.getSeconds().toString().padStart(2, '0')}`;
-        const pos = entry.delta > 0;
-        const el  = document.createElement('div');
-        el.className = 'sb-log-entry';
-        el.innerHTML =
-            `<span class="sb-log-time">${ts}</span>` +
-            `<span class="sb-log-name">${entry.name}</span>` +
-            `<span class="sb-log-delta ${pos ? 'pos' : 'neg'}">${pos ? '+' : ''}${entry.delta}</span>` +
-            `<span class="sb-log-after">→ ${entry.newScore} 分</span>`;
-        list.appendChild(el);
+        const d  = new Date(entry.ts);
+        const ts = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+
+        const rows = entry.changes.map(c => {
+            const pos      = c.delta >= 0;
+            const noteHtml = c.note ? `<span class="sb-log-note">${c.note}</span>` : '';
+            return `<div class="sb-log-entry">
+                <span class="sb-log-name">${c.name}</span>
+                <span class="sb-log-delta ${pos ? 'pos' : 'neg'}">${pos ? '+' : ''}${c.delta}</span>
+                <span class="sb-log-after">→ ${c.newScore} 分</span>
+                ${noteHtml}
+            </div>`;
+        }).join('');
+
+        const block = document.createElement('div');
+        block.className = 'sb-log-round';
+        block.innerHTML = `
+            <div class="sb-log-round-header">
+                <span>第 ${entry.round} 輪</span>
+                <span class="sb-log-time">${ts}</span>
+            </div>
+            ${rows}`;
+        list.appendChild(block);
     });
 }
 
@@ -790,56 +847,9 @@ function sbRender() {
                 <span class="sb-rank">${rank === 0 ? '👑' : rank + 1}</span>
                 <span class="sb-name">${p.name}</span>
                 <span class="sb-score">${p.score}<span class="sb-score-unit"> 分</span></span>
-            </div>
-            <div class="sb-card-btns">
-                <button class="sb-btn" data-idx="${p.idx}" data-d="-10">-10</button>
-                <button class="sb-btn" data-idx="${p.idx}" data-d="-1">-1</button>
-                <button class="sb-btn" data-idx="${p.idx}" data-d="1">+1</button>
-                <button class="sb-btn" data-idx="${p.idx}" data-d="10">+10</button>
-                <button class="sb-btn sb-custom-btn" data-idx="${p.idx}" data-d="custom">自訂</button>
             </div>`;
         container.appendChild(card);
     });
-
-    container.querySelectorAll('.sb-btn').forEach(btn => {
-        btn.onclick = () => {
-            const i = parseInt(btn.dataset.idx);
-            if (btn.dataset.d === 'custom') {
-                sbOpenCustomPopup(i);
-            } else {
-                const delta = parseInt(btn.dataset.d);
-                sbPlayers[i].score += delta;
-                sbAddLog(i, delta);
-                sbRender();
-            }
-        };
-    });
-}
-
-function sbOpenCustomPopup(playerIdx) {
-    sbCustomTarget = playerIdx;
-    const popup = document.getElementById('sb-custom-popup');
-    document.getElementById('sb-popup-label').textContent = `為「${sbPlayers[playerIdx].name}」加分或扣分`;
-    document.getElementById('sb-popup-input').value = '';
-    popup.style.display = 'flex';
-    setTimeout(() => document.getElementById('sb-popup-input').focus(), 50);
-
-    document.getElementById('sb-popup-plus').onclick = () => sbApplyCustom(1);
-    document.getElementById('sb-popup-minus').onclick = () => sbApplyCustom(-1);
-    document.getElementById('sb-popup-cancel').onclick = () => {
-        popup.style.display = 'none';
-    };
-}
-
-function sbApplyCustom(sign) {
-    const val = parseInt(document.getElementById('sb-popup-input').value);
-    if (!isNaN(val) && val > 0 && sbCustomTarget >= 0) {
-        const delta = sign * val;
-        sbPlayers[sbCustomTarget].score += delta;
-        sbAddLog(sbCustomTarget, delta);
-    }
-    document.getElementById('sb-custom-popup').style.display = 'none';
-    sbRender();
 }
 
 // ================================================================
