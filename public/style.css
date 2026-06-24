@@ -1530,6 +1530,35 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     width: 100%;
 }
 
+.fp-custom-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fp-num-input {
+    width: 56px;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 1rem;
+    text-align: center;
+    font-family: var(--font-primary);
+    -moz-appearance: textfield;
+}
+
+.fp-num-input::-webkit-outer-spin-button,
+.fp-num-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+
+.fp-num-input:focus {
+    outline: none;
+    border-color: var(--color-frame-gold);
+}
+
 /* 抽人模式：浮動「再抽一次」按鈕 */
 .fp-again-float {
     position: absolute;

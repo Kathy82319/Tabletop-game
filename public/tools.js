@@ -35,9 +35,9 @@ const FP_COLORS = [
     '#9b59b6', '#1abc9c', '#e67e22', '#e91e63',
     '#00bcd4', '#8bc34a'
 ];
-const FP_TEAM_COLORS  = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f'];
-const FP_TEAM_NAMES   = ['A 隊', 'B 隊', 'C 隊', 'D 隊'];
-const FP_TEAM_LETTERS = ['A', 'B', 'C', 'D'];
+const FP_TEAM_COLORS  = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c', '#e91e63'];
+const FP_TEAM_NAMES   = ['A 隊', 'B 隊', 'C 隊', 'D 隊', 'E 隊', 'F 隊', 'G 隊', 'H 隊'];
+const FP_TEAM_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
 let fpTouches      = {};
 let fpPhase        = 'waiting';  // 'waiting' | 'countdown' | 'result'
@@ -72,25 +72,49 @@ function fpOpen() {
         };
     });
 
+    const pickInput = document.getElementById('fp-pick-input');
+    pickInput.value = fpPickCount;
     document.querySelectorAll('[data-fp-pick]').forEach(btn => {
-        btn.classList.toggle('active', parseInt(btn.dataset.fpPick) === 1);
+        btn.classList.toggle('active', parseInt(btn.dataset.fpPick) === fpPickCount);
         btn.onclick = (e) => {
             e.stopPropagation();
             fpPickCount = parseInt(btn.dataset.fpPick);
+            pickInput.value = fpPickCount;
             document.querySelectorAll('[data-fp-pick]').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         };
     });
+    pickInput.oninput = () => {
+        const v = parseInt(pickInput.value);
+        if (!isNaN(v) && v >= 1) {
+            fpPickCount = v;
+            document.querySelectorAll('[data-fp-pick]').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.fpPick) === v);
+            });
+        }
+    };
 
+    const teamInput = document.getElementById('fp-team-input');
+    teamInput.value = fpTeamCount;
     document.querySelectorAll('[data-fp-teams]').forEach(btn => {
-        btn.classList.toggle('active', parseInt(btn.dataset.fpTeams) === 2);
+        btn.classList.toggle('active', parseInt(btn.dataset.fpTeams) === fpTeamCount);
         btn.onclick = (e) => {
             e.stopPropagation();
             fpTeamCount = parseInt(btn.dataset.fpTeams);
+            teamInput.value = fpTeamCount;
             document.querySelectorAll('[data-fp-teams]').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         };
     });
+    teamInput.oninput = () => {
+        const v = parseInt(teamInput.value);
+        if (!isNaN(v) && v >= 2) {
+            fpTeamCount = v;
+            document.querySelectorAll('[data-fp-teams]').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.fpTeams) === v);
+            });
+        }
+    };
 
     document.getElementById('fp-start-btn').onclick = (e) => {
         e.stopPropagation();
