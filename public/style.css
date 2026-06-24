@@ -1422,7 +1422,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .tools-ext-label {
     font-size: 0.78rem;
-    color: rgba(255, 255, 255, 0.35);
+    color: rgba(255, 255, 255, 0.55);
     margin: 0;
     letter-spacing: 0.05em;
 }
@@ -1431,8 +1431,8 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     display: flex;
     align-items: center;
     gap: 12px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 12px;
     padding: 12px 14px;
     text-decoration: none;
@@ -1440,7 +1440,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .tools-ext-card:active {
-    background: rgba(255, 255, 255, 0.09);
+    background: rgba(255, 255, 255, 0.14);
 }
 
 .tools-ext-info {
@@ -1453,12 +1453,12 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .tools-ext-name {
     font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.85);
+    color: rgba(255, 255, 255, 0.92);
 }
 
 .tools-ext-url {
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.5);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1466,7 +1466,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .tools-ext-arrow {
     font-size: 1rem;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--color-frame-gold);
     flex-shrink: 0;
 }
 
