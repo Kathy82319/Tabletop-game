@@ -35,25 +35,89 @@ const FP_COLORS = [
     '#9b59b6', '#1abc9c', '#e67e22', '#e91e63',
     '#00bcd4', '#8bc34a'
 ];
+const FP_TEAM_COLORS  = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f'];
+const FP_TEAM_NAMES   = ['A 隊', 'B 隊', 'C 隊', 'D 隊'];
+const FP_TEAM_LETTERS = ['A', 'B', 'C', 'D'];
 
-let fpTouches      = {};         // identifier -> { x, y, colorIdx, el }
+let fpTouches      = {};
 let fpPhase        = 'waiting';  // 'waiting' | 'countdown' | 'result'
 let fpColorSeq     = 0;
 let fpStabTimer    = null;
 let fpCountTimer   = null;
 let fpCountVal     = 3;
+let fpMode         = 'pick';     // 'pick' | 'team'
+let fpPickCount    = 1;
+let fpTeamCount    = 2;
 
 function fpOpen() {
-    fpResetState();
+    fpMode      = 'pick';
+    fpPickCount = 1;
+    fpTeamCount = 2;
 
-    const overlay = document.getElementById('first-player-overlay');
-    overlay.addEventListener('touchstart',  fpOnTouchStart,  { passive: false });
-    overlay.addEventListener('touchend',    fpOnTouchEnd,    { passive: false });
-    overlay.addEventListener('touchcancel', fpOnTouchEnd,    { passive: false });
+    document.getElementById('fp-setup').style.display          = 'flex';
+    document.getElementById('fp-status-text').style.display    = 'none';
+    document.getElementById('fp-countdown-display').style.display = 'none';
+    document.getElementById('fp-again-btn').style.display      = 'none';
+    document.getElementById('fp-result-panel').style.display   = 'none';
+
+    document.querySelectorAll('[data-fp-mode]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.fpMode === 'pick');
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            fpMode = btn.dataset.fpMode;
+            document.querySelectorAll('[data-fp-mode]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('fp-pick-options').style.display = fpMode === 'pick' ? 'flex' : 'none';
+            document.getElementById('fp-team-options').style.display = fpMode === 'team' ? 'flex' : 'none';
+        };
+    });
+
+    document.querySelectorAll('[data-fp-pick]').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.fpPick) === 1);
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            fpPickCount = parseInt(btn.dataset.fpPick);
+            document.querySelectorAll('[data-fp-pick]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        };
+    });
+
+    document.querySelectorAll('[data-fp-teams]').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.fpTeams) === 2);
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            fpTeamCount = parseInt(btn.dataset.fpTeams);
+            document.querySelectorAll('[data-fp-teams]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        };
+    });
+
+    document.getElementById('fp-start-btn').onclick = (e) => {
+        e.stopPropagation();
+        fpStartTouchPhase();
+    };
 
     const closeBtn = document.getElementById('fp-close-btn');
     closeBtn.onclick = fpClose;
     closeBtn.addEventListener('touchend', (e) => { e.stopPropagation(); fpClose(); }, { passive: false });
+}
+
+function fpStartTouchPhase() {
+    document.getElementById('fp-setup').style.display             = 'none';
+    document.getElementById('fp-status-text').style.display       = 'block';
+    document.getElementById('fp-countdown-display').style.display = 'block';
+    document.getElementById('fp-again-btn').style.display         = 'none';
+    document.getElementById('fp-result-panel').style.display      = 'none';
+
+    fpResetState();
+
+    const overlay = document.getElementById('first-player-overlay');
+    overlay.removeEventListener('touchstart',  fpOnTouchStart);
+    overlay.removeEventListener('touchend',    fpOnTouchEnd);
+    overlay.removeEventListener('touchcancel', fpOnTouchEnd);
+    overlay.addEventListener('touchstart',  fpOnTouchStart,  { passive: false });
+    overlay.addEventListener('touchend',    fpOnTouchEnd,    { passive: false });
+    overlay.addEventListener('touchcancel', fpOnTouchEnd,    { passive: false });
 }
 
 function fpClose() {
@@ -65,13 +129,17 @@ function fpClose() {
     overlay.removeEventListener('touchend',    fpOnTouchEnd);
     overlay.removeEventListener('touchcancel', fpOnTouchEnd);
     overlay.style.display = 'none';
+
+    Object.values(fpTouches).forEach(tp => tp.el && tp.el.remove());
+    fpTouches = {};
 }
 
 function fpResetState() {
     clearTimeout(fpStabTimer);
     clearInterval(fpCountTimer);
 
-    Object.values(fpTouches).forEach(tp => tp.el.remove());
+    Object.values(fpTouches).forEach(tp => tp.el && tp.el.remove());
+    document.querySelectorAll('.fp-circle').forEach(el => el.remove());
 
     fpTouches  = {};
     fpPhase    = 'waiting';
@@ -386,26 +454,95 @@ function diceShowFinalResult(cells) {
 
 function fpShowResult() {
     fpPhase = 'result';
-
     document.getElementById('fp-countdown-display').style.opacity = '0';
-    document.getElementById('fp-status-text').textContent = '🎉 數字越小越先手！';
+
+    if (fpMode === 'pick') {
+        fpShowPickResult();
+    } else {
+        fpShowTeamResult();
+    }
+}
+
+function fpShowPickResult() {
+    const pick = Math.min(fpPickCount, Object.keys(fpTouches).length);
+    document.getElementById('fp-status-text').textContent =
+        pick === 1 ? '🎉 先手玩家！' : `🎉 選出 ${pick} 位玩家！`;
 
     const ids = Object.keys(fpTouches).sort(() => Math.random() - 0.5);
+    const selectedSet = new Set(ids.slice(0, pick));
 
     ids.forEach((id, index) => {
-        const tp      = fpTouches[id];
-        const rank    = index + 1;
-        const color   = FP_COLORS[tp.colorIdx];
-        const isFirst = rank === 1;
-
+        const tp = fpTouches[id];
+        const isSelected = selectedSet.has(id);
         setTimeout(() => {
-            tp.el.textContent = rank;
-            tp.el.style.backgroundColor = color;
-            tp.el.style.borderColor = color;
             tp.el.classList.add('result');
-            if (isFirst) tp.el.classList.add('first');
+            if (isSelected) {
+                tp.el.textContent = '★';
+                tp.el.style.backgroundColor = FP_COLORS[tp.colorIdx];
+                tp.el.style.borderColor     = FP_COLORS[tp.colorIdx];
+                tp.el.classList.add('fp-selected');
+            } else {
+                tp.el.classList.add('fp-dimmed');
+            }
         }, index * 120);
     });
+
+    const agBtn = document.getElementById('fp-again-btn');
+    setTimeout(() => {
+        agBtn.style.display = 'block';
+        agBtn.onclick = (e) => {
+            e.stopPropagation();
+            agBtn.style.display = 'none';
+            fpResetState();
+        };
+    }, ids.length * 120 + 400);
+}
+
+function fpShowTeamResult() {
+    document.getElementById('fp-status-text').textContent = '分組完成！';
+
+    const ids = Object.keys(fpTouches).sort(() => Math.random() - 0.5);
+    const teamColorIdxMap = {};
+    for (let k = 0; k < fpTeamCount; k++) teamColorIdxMap[k] = [];
+
+    ids.forEach((id, i) => {
+        const teamIdx = i % fpTeamCount;
+        const tp = fpTouches[id];
+        teamColorIdxMap[teamIdx].push(tp.colorIdx);
+
+        setTimeout(() => {
+            tp.el.classList.add('result');
+            tp.el.textContent           = FP_TEAM_LETTERS[teamIdx];
+            tp.el.style.backgroundColor = FP_TEAM_COLORS[teamIdx];
+            tp.el.style.borderColor     = FP_TEAM_COLORS[teamIdx];
+            tp.el.style.color           = 'white';
+        }, i * 120);
+    });
+
+    setTimeout(() => {
+        const cardsDiv = document.getElementById('fp-result-cards');
+        cardsDiv.innerHTML = '';
+
+        for (let k = 0; k < fpTeamCount; k++) {
+            const card = document.createElement('div');
+            card.className = 'fp-team-card';
+            card.style.borderColor = FP_TEAM_COLORS[k];
+
+            const dots = teamColorIdxMap[k].map(ci =>
+                `<span class="fp-team-dot" style="background:${FP_COLORS[ci]}"></span>`
+            ).join('');
+
+            card.innerHTML = `<div class="fp-team-name" style="color:${FP_TEAM_COLORS[k]}">${FP_TEAM_NAMES[k]}</div>
+                              <div class="fp-team-dots">${dots}</div>`;
+            cardsDiv.appendChild(card);
+        }
+
+        document.getElementById('fp-result-again-btn').onclick = () => {
+            fpStartTouchPhase();
+        };
+
+        document.getElementById('fp-result-panel').style.display = 'flex';
+    }, ids.length * 120 + 800);
 }
 
 // ================================================================

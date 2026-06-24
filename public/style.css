@@ -1508,9 +1508,89 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     box-shadow: 0 0 0 5px rgba(255, 215, 0, 0.5), 0 0 35px rgba(255, 215, 0, 0.35);
 }
 
+.fp-circle.fp-selected {
+    box-shadow: 0 0 0 5px rgba(255, 215, 0, 0.55), 0 0 40px rgba(255, 215, 0, 0.4);
+}
+
+.fp-circle.fp-dimmed {
+    opacity: 0.2;
+}
+
 @keyframes fp-pop {
     0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0.4; }
     100% { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+}
+
+#fp-pick-options,
+#fp-team-options {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+/* 抽人模式：浮動「再抽一次」按鈕 */
+.fp-again-float {
+    position: absolute;
+    bottom: 64px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    white-space: nowrap;
+}
+
+/* 分組結果面板 */
+#fp-result-panel {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.88);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 10;
+    padding: 24px;
+}
+
+#fp-result-cards {
+    width: 100%;
+    max-width: 340px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.fp-team-card {
+    border: 2px solid;
+    border-radius: 14px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.fp-team-name {
+    font-size: 1rem;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    min-width: 40px;
+}
+
+.fp-team-dots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.fp-team-dot {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
 }
 
 /* ===== 沙漏計時器 ===== */

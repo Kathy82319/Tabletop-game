@@ -357,8 +357,8 @@
             <div class="card tool-card" data-tool="first-player">
                 <div class="tool-card-icon">🎯</div>
                 <div class="tool-card-info">
-                    <h3>起始玩家抽籤</h3>
-                    <p>所有玩家同時把手指放上螢幕，倒數後隨機決定誰先手！</p>
+                    <h3>起始玩家 / 分組</h3>
+                    <p>大家手指放螢幕，隨機抽出先手玩家或隨機分組！</p>
                 </div>
                 <div class="tool-card-arrow">›</div>
             </div>
@@ -416,9 +416,50 @@
 </div>
 
 <div id="first-player-overlay" class="tool-overlay" style="display:none;">
-    <p id="fp-status-text">請所有玩家將手指放在螢幕上</p>
-    <div id="fp-countdown-display"></div>
     <button id="fp-close-btn" class="tool-overlay-close">✕ 關閉</button>
+
+    <!-- 設定畫面 -->
+    <div id="fp-setup" class="tool-setup-panel">
+        <h2 class="tool-overlay-title">起始玩家 / 分組</h2>
+
+        <p class="tools-section-label">模式</p>
+        <div class="tools-option-row">
+            <button class="tools-option-btn active" data-fp-mode="pick">抽人</button>
+            <button class="tools-option-btn" data-fp-mode="team">分組</button>
+        </div>
+
+        <div id="fp-pick-options">
+            <p class="tools-section-label">取幾人？</p>
+            <div class="tools-option-row">
+                <button class="tools-option-btn active" data-fp-pick="1">取 1 人</button>
+                <button class="tools-option-btn" data-fp-pick="2">取 2 人</button>
+                <button class="tools-option-btn" data-fp-pick="3">取 3 人</button>
+            </div>
+        </div>
+
+        <div id="fp-team-options" style="display:none;">
+            <p class="tools-section-label">分成幾隊？</p>
+            <div class="tools-option-row">
+                <button class="tools-option-btn active" data-fp-teams="2">2 隊</button>
+                <button class="tools-option-btn" data-fp-teams="3">3 隊</button>
+                <button class="tools-option-btn" data-fp-teams="4">4 隊</button>
+            </div>
+        </div>
+
+        <button class="tool-start-btn" id="fp-start-btn">把手機放平，開始！</button>
+    </div>
+
+    <!-- 放手指階段（元素為 absolute，不影響 setup 排版） -->
+    <p id="fp-status-text"></p>
+    <div id="fp-countdown-display"></div>
+    <button id="fp-again-btn" class="tool-secondary-btn fp-again-float" style="display:none">再抽一次</button>
+
+    <!-- 分組結果面板 -->
+    <div id="fp-result-panel" style="display:none;">
+        <h2 class="tool-overlay-title">分組結果</h2>
+        <div id="fp-result-cards"></div>
+        <button class="tool-secondary-btn" id="fp-result-again-btn">再抽一次</button>
+    </div>
 </div>
 
 <div id="timer-overlay" class="tool-overlay" style="display:none;">
