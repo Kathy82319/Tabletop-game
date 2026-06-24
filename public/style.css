@@ -1409,6 +1409,67 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     opacity: 0.7;
 }
 
+/* ===== 推薦網站區塊 ===== */
+.tools-ext-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    width: 100%;
+}
+
+.tools-ext-label {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.35);
+    margin: 0;
+    letter-spacing: 0.05em;
+}
+
+.tools-ext-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px 14px;
+    text-decoration: none;
+    transition: background 0.15s;
+}
+
+.tools-ext-card:active {
+    background: rgba(255, 255, 255, 0.09);
+}
+
+.tools-ext-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.tools-ext-name {
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.tools-ext-url {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tools-ext-arrow {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.3);
+    flex-shrink: 0;
+}
+
 /* ===== 覆蓋層共用樣式 ===== */
 .tool-overlay {
     position: fixed;
