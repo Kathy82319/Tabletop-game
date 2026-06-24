@@ -50,7 +50,7 @@ let fpPickCount    = 1;
 let fpTeamCount    = 2;
 
 function fpOpen() {
-    fpMode      = 'pick';
+    fpMode      = 'order';
     fpPickCount = 1;
     fpTeamCount = 2;
 
@@ -61,14 +61,14 @@ function fpOpen() {
     document.getElementById('fp-result-panel').style.display   = 'none';
 
     document.querySelectorAll('[data-fp-mode]').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.fpMode === 'pick');
+        btn.classList.toggle('active', btn.dataset.fpMode === 'order');
         btn.onclick = (e) => {
             e.stopPropagation();
             fpMode = btn.dataset.fpMode;
             document.querySelectorAll('[data-fp-mode]').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById('fp-pick-options').style.display = fpMode === 'pick' ? 'flex' : 'none';
-            document.getElementById('fp-team-options').style.display = fpMode === 'team' ? 'flex' : 'none';
+            document.getElementById('fp-pick-options').style.display = fpMode === 'pick'  ? 'flex' : 'none';
+            document.getElementById('fp-team-options').style.display = fpMode === 'team'  ? 'flex' : 'none';
         };
     });
 
@@ -480,11 +480,41 @@ function fpShowResult() {
     fpPhase = 'result';
     document.getElementById('fp-countdown-display').style.opacity = '0';
 
-    if (fpMode === 'pick') {
+    if (fpMode === 'order') {
+        fpShowOrderResult();
+    } else if (fpMode === 'pick') {
         fpShowPickResult();
     } else {
         fpShowTeamResult();
     }
+}
+
+function fpShowOrderResult() {
+    document.getElementById('fp-status-text').textContent = '🎉 數字越小越先手！';
+
+    const ids = Object.keys(fpTouches).sort(() => Math.random() - 0.5);
+    ids.forEach((id, index) => {
+        const tp    = fpTouches[id];
+        const rank  = index + 1;
+        const color = FP_COLORS[tp.colorIdx];
+        setTimeout(() => {
+            tp.el.textContent = rank;
+            tp.el.style.backgroundColor = color;
+            tp.el.style.borderColor     = color;
+            tp.el.classList.add('result');
+            if (rank === 1) tp.el.classList.add('first');
+        }, index * 120);
+    });
+
+    const agBtn = document.getElementById('fp-again-btn');
+    setTimeout(() => {
+        agBtn.style.display = 'block';
+        agBtn.onclick = (e) => {
+            e.stopPropagation();
+            agBtn.style.display = 'none';
+            fpResetState();
+        };
+    }, ids.length * 120 + 400);
 }
 
 function fpShowPickResult() {
