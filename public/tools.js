@@ -16,8 +16,6 @@ function initializeToolsPage() {
                 diceOpen();
             } else if (tool === 'scoreboard') {
                 sbOpen();
-            } else if (tool === 'teams') {
-                teamsOpen();
             } else if (tool === 'counter') {
                 counterOpen();
             } else if (tool === 'roles') {
@@ -651,98 +649,6 @@ function sbApplyCustom(sign) {
     }
     document.getElementById('sb-custom-popup').style.display = 'none';
     sbRender();
-}
-
-// ================================================================
-// ================================================================
-
-let teamsCount = 2;
-let teamsLastPlayers = [];
-
-const TEAM_COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f'];
-const TEAM_NAMES  = ['A 隊', 'B 隊', 'C 隊', 'D 隊'];
-
-function teamsOpen() {
-    document.getElementById('teams-overlay').style.display = 'flex';
-    document.getElementById('teams-close-btn').onclick = teamsClose;
-    teamsShowSetup();
-}
-
-function teamsClose() {
-    document.getElementById('teams-overlay').style.display = 'none';
-}
-
-function teamsShowSetup() {
-    document.getElementById('teams-setup').style.display = 'flex';
-    document.getElementById('teams-result').style.display = 'none';
-
-    const list = document.getElementById('teams-player-list');
-    list.innerHTML = '';
-
-    const defaults = teamsLastPlayers.length >= 2
-        ? teamsLastPlayers
-        : ['玩家 1', '玩家 2', '玩家 3', '玩家 4'];
-    defaults.forEach(name => teamsAddPlayerRow(name, list));
-
-    document.getElementById('teams-add-btn').onclick = () => teamsAddPlayerRow('', list);
-    document.getElementById('teams-go-btn').onclick   = teamsShuffle;
-
-    document.querySelectorAll('.tools-option-btn[data-teams]').forEach(btn => {
-        btn.classList.toggle('active', parseInt(btn.dataset.teams) === teamsCount);
-        btn.onclick = () => {
-            document.querySelectorAll('.tools-option-btn[data-teams]').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            teamsCount = parseInt(btn.dataset.teams);
-        };
-    });
-}
-
-function teamsAddPlayerRow(defaultName, list) {
-    list = list || document.getElementById('teams-player-list');
-    const idx = list.querySelectorAll('.player-input-row').length + 1;
-    const row = document.createElement('div');
-    row.className = 'player-input-row';
-    row.innerHTML = `<input type="text" class="player-name-input" placeholder="玩家 ${idx}" value="${defaultName}">
-                     <button class="remove-player-btn">×</button>`;
-    row.querySelector('.remove-player-btn').onclick = () => {
-        if (list.querySelectorAll('.player-input-row').length > 2) row.remove();
-    };
-    list.appendChild(row);
-}
-
-function teamsShuffle() {
-    const inputs = document.querySelectorAll('#teams-player-list .player-name-input');
-    let players = Array.from(inputs).map((inp, i) => inp.value.trim() || `玩家 ${i + 1}`);
-    if (players.length < teamsCount) return;
-
-    teamsLastPlayers = players.slice();
-
-    for (let i = players.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [players[i], players[j]] = [players[j], players[i]];
-    }
-
-    const teams = Array.from({ length: teamsCount }, () => []);
-    players.forEach((p, i) => teams[i % teamsCount].push(p));
-
-    document.getElementById('teams-setup').style.display = 'none';
-    const resultDiv = document.getElementById('teams-result');
-    resultDiv.style.display = 'flex';
-
-    const cardsContainer = document.getElementById('teams-result-cards');
-    cardsContainer.innerHTML = '';
-    teams.forEach((team, i) => {
-        const card = document.createElement('div');
-        card.className = 'teams-result-card';
-        card.style.borderColor = TEAM_COLORS[i];
-        card.innerHTML = `<div class="teams-result-header" style="color:${TEAM_COLORS[i]}">${TEAM_NAMES[i]}</div>
-                          <div class="teams-result-members">${team.map(p => `<span>${p}</span>`).join('')}</div>`;
-        cardsContainer.appendChild(card);
-    });
-
-    document.getElementById('teams-reshuffle-btn').onclick = () => {
-        teamsShuffle();
-    };
 }
 
 // ================================================================
