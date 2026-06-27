@@ -349,7 +349,7 @@ function renderContribHistory(list) {
             <td>${record.contribution_value}</td>
             <td>
                 <button class="action-btn btn-delete-contrib"
-                    data-id="${record.contribution_id}"
+                    data-id="${record.id}"
                     style="background:var(--danger-color);color:#fff;padding:4px 10px;">刪除</button>
             </td>
         `;

@@ -7,7 +7,7 @@ export async function onRequest(context) {
     if (request.method === 'GET') {
       const { results } = await db.prepare(`
         SELECT
-          ch.contribution_id,
+          ch.id,
           ch.user_id,
           u.line_display_name,
           u.nickname,
@@ -28,9 +28,9 @@ export async function onRequest(context) {
     if (request.method === 'DELETE') {
       const { contribution_id } = await request.json();
       if (!contribution_id)
-        return new Response(JSON.stringify({ error: '缺少 contribution_id' }), { status: 400 });
+        return new Response(JSON.stringify({ error: '缺少 id' }), { status: 400 });
 
-      await db.prepare('DELETE FROM ContributionHistory WHERE contribution_id = ?')
+      await db.prepare('DELETE FROM ContributionHistory WHERE id = ?')
               .bind(contribution_id).run();
 
       return new Response(JSON.stringify({ success: true }), {
