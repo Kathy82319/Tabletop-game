@@ -9,6 +9,9 @@ let currentTags = [];
 
 const AUTO_TAGS = ['販售', '可租借'];
 
+let currentForSaleStock = 0;
+let currentForRentStock = 0;
+
 let gameListTbody, gameSearchInput, editGameModal, editGameForm, inventoryStockFilter;
 let btnDownloadTemplate, btnImportCSV, btnAddNewProduct, importCSVModal, importCSVForm;
 
@@ -25,6 +28,21 @@ function renderTagChips() {
 
     container.querySelectorAll('.tag-chip').forEach(c => c.remove());
 
+    // 唯讀 auto-tags（依當前庫存顯示，不可刪除）
+    if (currentForSaleStock > 0) {
+        const chip = document.createElement('span');
+        chip.className = 'tag-chip sale-tag';
+        chip.textContent = '販售';
+        container.insertBefore(chip, textInput);
+    }
+    if (currentForRentStock > 0) {
+        const chip = document.createElement('span');
+        chip.className = 'tag-chip rent-tag';
+        chip.textContent = '可租借';
+        container.insertBefore(chip, textInput);
+    }
+
+    // 使用者自訂 tags
     currentTags.forEach(tag => {
         const chip = document.createElement('span');
         chip.className = 'tag-chip';
@@ -47,11 +65,13 @@ function removeTag(tag) {
     renderTagChips();
 }
 
-function initTagChips(existingTagsStr) {
+function initTagChips(existingTagsStr, forSaleStock = 0, forRentStock = 0) {
     currentTags = (existingTagsStr || '')
         .split(',')
         .map(t => t.trim())
         .filter(t => t && !AUTO_TAGS.includes(t));
+    currentForSaleStock = forSaleStock;
+    currentForRentStock = forRentStock;
     renderTagChips();
 }
 
@@ -99,6 +119,10 @@ function updateBackupStock() {
         backupEl.value = backup;
         backupEl.style.color = backup < 0 ? 'var(--danger-color)' : '';
     }
+    // 庫存變動時同步更新介紹 tab 的 auto-tag chips
+    currentForSaleStock = sale;
+    currentForRentStock = rent;
+    renderTagChips();
 }
 
 // --- Modal Tab Management ---
@@ -295,7 +319,7 @@ function openEditGameModal(gameId) {
         document.getElementById('edit-late-fee').value = game.late_fee_per_day || 50;
         document.getElementById('edit-supplementary-info').value = game.supplementary_info || '';
 
-        initTagChips(game.tags || '');
+        initTagChips(game.tags || '', forSaleStock, game.for_rent_stock || 0);
         updateBackupStock();
 
     } else {

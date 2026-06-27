@@ -769,9 +769,14 @@ async function initializeEditProfilePage() {
         appContent.querySelector('#game-difficulty').textContent = difficultyToStars(game.difficulty);
 
         const tagsContainer = appContent.querySelector('#game-tags-container');
-        const tags = (game.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+        const _autoTags = [
+            ...(Number(game.for_sale_stock) > 0 ? ['販售'] : []),
+            ...(Number(game.for_rent_stock) > 0 ? ['可租借'] : [])
+        ];
+        const _userTags = (game.tags || '').split(',').map(t => t.trim()).filter(t => t && !['販售', '可租借'].includes(t));
+        const tags = [..._autoTags, ..._userTags];
         if (tags.length > 0) {
-            tagsContainer.innerHTML = tags.map(tag => `<span class="game-tag">${tag}</span>`).join('');
+            tagsContainer.innerHTML = tags.map(tag => `<span class="game-tag${tag === '販售' ? ' sale-tag' : tag === '可租借' ? ' rent-tag' : ''}">${tag}</span>`).join('');
             tagsContainer.style.display = 'block';
         } else {
             tagsContainer.style.display = 'none';
@@ -813,7 +818,16 @@ function renderGames() {
         let filteredGames = allGames.filter(g => g.is_visible === 1);
         const keyword = activeFilters.keyword.toLowerCase().trim();
         if (keyword) { filteredGames = filteredGames.filter(g => g.name.toLowerCase().includes(keyword) || g.description.toLowerCase().includes(keyword)); }
-        if (activeFilters.tag) { filteredGames = filteredGames.filter(g => (g.tags || '').split(',').map(t => t.trim()).includes(activeFilters.tag)); }
+        if (activeFilters.tag) {
+            filteredGames = filteredGames.filter(g => {
+                const autoTags = [
+                    ...(Number(g.for_sale_stock) > 0 ? ['販售'] : []),
+                    ...(Number(g.for_rent_stock) > 0 ? ['可租借'] : [])
+                ];
+                const userTags = (g.tags || '').split(',').map(t => t.trim()).filter(t => t && !['販售', '可租借'].includes(t));
+                return [...autoTags, ...userTags].includes(activeFilters.tag);
+            });
+        }
         if (filteredGames.length === 0) {
             container.innerHTML = '<p>找不到符合條件的遊戲。</p>';
             return;
@@ -829,7 +843,11 @@ function renderGames() {
                         <span>⭐ 難度: ${game.difficulty}</span>
                     </div>
                     <div class="game-tags">
-                        ${(game.tags || '').split(',').map(t => t.trim()).filter(Boolean).map(tag => `<span class="game-tag">${tag}</span>`).join('')}
+                        ${[
+                            ...(Number(game.for_sale_stock) > 0 ? ['販售'] : []),
+                            ...(Number(game.for_rent_stock) > 0 ? ['可租借'] : []),
+                            ...(game.tags || '').split(',').map(t => t.trim()).filter(t => t && !['販售', '可租借'].includes(t))
+                        ].map(tag => `<span class="game-tag${tag === '販售' ? ' sale-tag' : tag === '可租借' ? ' rent-tag' : ''}">${tag}</span>`).join('')}
                     </div>
                 </div>
             </div>
@@ -847,7 +865,14 @@ function renderGames() {
         if(!filterContainer || !primaryTagsContainer || !secondaryTagsContainer) return;
         
         const primaryTagsList = ["家庭", "兒童", "派對", "陣營", "小品", "策略"];
-        const allTags = [...new Set(allGames.flatMap(g => (g.tags || '').split(',')).map(t => t.trim()).filter(Boolean))];
+        const allTags = [...new Set(allGames.flatMap(g => {
+            const autoTags = [
+                ...(Number(g.for_sale_stock) > 0 ? ['販售'] : []),
+                ...(Number(g.for_rent_stock) > 0 ? ['可租借'] : [])
+            ];
+            const userTags = (g.tags || '').split(',').map(t => t.trim()).filter(t => t && !['販售', '可租借'].includes(t));
+            return [...autoTags, ...userTags];
+        }))];
         
         primaryTagsContainer.innerHTML = '';
         secondaryTagsContainer.innerHTML = '';
