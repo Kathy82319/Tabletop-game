@@ -125,10 +125,15 @@
             display: flex;
             gap: 24px;
             align-items: flex-start;
+            justify-content: center;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
         }
         #scan-user-panel {
             flex: 1;
-            min-width: 280px;
+            min-width: 260px;
+            max-width: 420px;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 16px;
@@ -139,13 +144,13 @@
         #scan-user-panel .panel-section-title { font-weight: 600; margin: 10px 0 4px; font-size: 0.82rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.04em; }
         #scan-user-panel .asset-chip { display: inline-block; background: #e9ecef; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; margin: 2px; }
         #scan-form-panel {
-            width: 500px;
+            width: 480px;
             flex-shrink: 0;
         }
         @media (max-width: 900px) {
-            #scan-container { flex-direction: column-reverse; }
+            #scan-container { flex-direction: column-reverse; padding: 0; }
             #scan-form-panel { width: 100%; }
-            #scan-user-panel { width: 100%; min-width: unset; }
+            #scan-user-panel { width: 100%; min-width: unset; max-width: unset; }
         }
         :root {
             --primary-color: #007bff; --secondary-color: #6c757d; --danger-color: #dc3545;
