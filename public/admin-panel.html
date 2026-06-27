@@ -55,13 +55,16 @@
         .inline-val:hover { border-color: var(--border-color); background: var(--light-gray); }
         .inline-val.editing { border-color: var(--primary-color); background: white; }
         .inline-edit-input { width: 48px; padding: 0 2px; border: none; outline: none; font-size: 0.88rem; text-align: center; background: transparent; }
+        /* 庫存管理表格：固定欄寬讓標題與內容對齊 */
+        #inventory-table { table-layout: fixed; }
+        #inventory-table th:nth-child(1) { width: 60px; }
+        #inventory-table th:nth-child(3) { width: 215px; }
+        #inventory-table th:nth-child(4) { width: 145px; }
+        #inventory-table th:nth-child(5) { width: 130px; }
         /* 庫存欄 */
-        .stock-cell { min-width: 190px; }
         .stock-layout { display: flex; align-items: stretch; }
         .stock-total-col { display: flex; flex-direction: column; align-items: center; justify-content: center; padding-right: 10px; margin-right: 10px; border-right: 1px solid #dee2e6; min-width: 60px; text-align: center; }
         .stock-detail-col { display: flex; flex-direction: column; gap: 5px; justify-content: center; }
-        /* 定價欄 */
-        .price-cell { min-width: 130px; }
         /* 共用 field row */
         .field-row { display: flex; align-items: center; gap: 6px; }
         .field-label { font-size: 0.78rem; color: var(--text-light); min-width: 30px; white-space: nowrap; }
@@ -684,10 +687,10 @@
         </div>
     </div>
 
-    <table>
+    <table id="inventory-table">
         <thead>
             <tr>
-                <th style="width: 50px;">順序</th>
+                <th>順序</th>
                 <th>遊戲 (ID / 標籤)</th>
                 <th>庫存</th>
                 <th>定價</th>
