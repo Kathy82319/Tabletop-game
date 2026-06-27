@@ -22,7 +22,6 @@ export async function onRequestPost(context) {
         return Response.json({ error: '請輸入暱稱' }, { status: 400 });
     }
 
-    // 同一個 LINE user 在同一局只能加入一次
     if (line_user_id) {
         const existing = await env.DB.prepare(
             `SELECT player_id FROM ScoreboardPlayers WHERE session_id = ? AND line_user_id = ?`
@@ -36,6 +35,10 @@ export async function onRequestPost(context) {
     const result = await env.DB.prepare(
         `INSERT INTO ScoreboardPlayers (session_id, line_user_id, nickname, score) VALUES (?, ?, ?, 0)`
     ).bind(session_id, line_user_id || null, nickname.trim()).run();
+
+    await env.DB.prepare(
+        `INSERT INTO ScoreboardEvents (session_id, event_type, nickname) VALUES (?, 'join', ?)`
+    ).bind(session_id, nickname.trim()).run();
 
     return Response.json({ player_id: result.meta.last_row_id });
 }

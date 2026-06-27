@@ -31,9 +31,19 @@ export async function onRequestDelete(context) {
         return Response.json({ error: '至少需要保留 1 位玩家' }, { status: 400 });
     }
 
+    const player = await env.DB.prepare(
+        `SELECT nickname FROM ScoreboardPlayers WHERE player_id = ? AND session_id = ?`
+    ).bind(player_id, session_id).first();
+
     await env.DB.prepare(
         `DELETE FROM ScoreboardPlayers WHERE player_id = ? AND session_id = ?`
     ).bind(player_id, session_id).run();
+
+    if (player) {
+        await env.DB.prepare(
+            `INSERT INTO ScoreboardEvents (session_id, event_type, nickname) VALUES (?, 'leave', ?)`
+        ).bind(session_id, player.nickname).run();
+    }
 
     return Response.json({ ok: true });
 }

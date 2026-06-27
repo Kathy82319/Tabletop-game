@@ -602,6 +602,7 @@ function fpShowTeamResult() {
 let sbSessionId   = null;
 let sbOwnerLineId = null;
 let sbPlayers     = [];
+let sbEvents      = [];
 let sbGameName    = '';
 let sbPollTimer   = null;
 
@@ -755,6 +756,7 @@ function sbShowPlaying() {
     document.getElementById('sb-game-title').textContent        = sbGameName;
     document.getElementById('sb-reset-btn').onclick             = sbShowSetup;
     document.getElementById('sb-show-qr-btn').onclick           = sbOpenQrModal;
+    document.getElementById('sb-log-btn').onclick               = sbOpenLog;
     document.getElementById('sb-add-player-btn').style.display  = isOwner ? 'block' : 'none';
     document.getElementById('sb-add-player-btn').onclick        = sbOpenAddPlayerPopup;
 
@@ -778,8 +780,10 @@ async function sbFetchAndRender(containerId, isPlaying) {
         const res  = await fetch(`/api/scoreboard/${sbSessionId}`);
         const data = await res.json();
         sbPlayers = data.players || [];
+        sbEvents  = data.events  || [];
         if (isPlaying) {
             sbRenderRankings(containerId);
+            sbRenderLogIfOpen();
         } else {
             sbRenderWaiting(containerId);
         }
@@ -804,9 +808,9 @@ function sbRenderRankings(containerId) {
     const isOwner = sbOwnerLineId === window.userProfile?.userId;
 
     container.innerHTML = '';
-    sbPlayers.forEach((p, rank) => {
+    sbPlayers.forEach((p) => {
         const card = document.createElement('div');
-        card.className = 'sb-player-card' + (rank === 0 ? ' sb-first' : '');
+        card.className = 'sb-player-card';
         if (isOwner) card.style.cursor = 'pointer';
 
         const removeBtn = isOwner
@@ -815,7 +819,6 @@ function sbRenderRankings(containerId) {
 
         card.innerHTML = `
             <div class="sb-card-top">
-                <span class="sb-rank">${rank === 0 ? '👑' : rank + 1}</span>
                 <span class="sb-name">${p.nickname}</span>
                 <span class="sb-score">${p.score}<span class="sb-score-unit"> 分</span></span>
                 ${removeBtn}
@@ -832,6 +835,62 @@ function sbRenderRankings(containerId) {
             }
         }
         container.appendChild(card);
+    });
+}
+
+// ── 紀錄抽屜 ──────────────────────────────────────────────────
+function sbOpenLog() {
+    const drawer = document.getElementById('sb-log-drawer');
+    drawer.style.display = 'flex';
+    document.getElementById('sb-log-close-btn').onclick = () => {
+        drawer.style.display = 'none';
+    };
+    sbRenderLog();
+}
+
+function sbRenderLogIfOpen() {
+    const drawer = document.getElementById('sb-log-drawer');
+    if (drawer && drawer.style.display !== 'none') sbRenderLog();
+}
+
+function sbRenderLog() {
+    const list  = document.getElementById('sb-log-list');
+    const empty = document.getElementById('sb-log-empty');
+    if (!list) return;
+
+    if (sbEvents.length === 0) {
+        list.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+    }
+    empty.style.display = 'none';
+    list.innerHTML = '';
+
+    sbEvents.forEach(ev => {
+        const d  = new Date(ev.created_at);
+        const ts = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+        const el = document.createElement('div');
+        el.className = 'sb-log-entry';
+
+        if (ev.event_type === 'score') {
+            const pos = ev.delta >= 0;
+            el.innerHTML =
+                `<span class="sb-log-time">${ts}</span>` +
+                `<span class="sb-log-name">${ev.nickname}</span>` +
+                `<span class="sb-log-delta ${pos ? 'pos' : 'neg'}">${pos ? '+' : ''}${ev.delta}</span>` +
+                `<span class="sb-log-after">→ ${ev.new_score} 分</span>`;
+        } else if (ev.event_type === 'join') {
+            el.innerHTML =
+                `<span class="sb-log-time">${ts}</span>` +
+                `<span class="sb-log-name">${ev.nickname}</span>` +
+                `<span class="sb-log-delta" style="color:rgba(255,255,255,0.4);">加入</span>`;
+        } else if (ev.event_type === 'leave') {
+            el.innerHTML =
+                `<span class="sb-log-time">${ts}</span>` +
+                `<span class="sb-log-name">${ev.nickname}</span>` +
+                `<span class="sb-log-delta" style="color:rgba(255,255,255,0.3);">離開</span>`;
+        }
+        list.appendChild(el);
     });
 }
 

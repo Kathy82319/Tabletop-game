@@ -11,8 +11,12 @@ export async function onRequestGet(context) {
     }
 
     const { results: players } = await env.DB.prepare(
-        `SELECT player_id, nickname, score, joined_at FROM ScoreboardPlayers WHERE session_id = ? ORDER BY score DESC`
+        `SELECT player_id, nickname, score, joined_at FROM ScoreboardPlayers WHERE session_id = ? ORDER BY joined_at ASC`
     ).bind(session_id).all();
 
-    return Response.json({ session, players });
+    const { results: events } = await env.DB.prepare(
+        `SELECT event_type, nickname, delta, new_score, created_at FROM ScoreboardEvents WHERE session_id = ? ORDER BY created_at DESC LIMIT 50`
+    ).bind(session_id).all();
+
+    return Response.json({ session, players, events });
 }

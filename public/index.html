@@ -606,11 +606,24 @@
     <div id="sb-playing" class="playing-panel" style="display:none;">
         <div class="sb-playing-header">
             <span id="sb-game-title" class="sb-game-title"></span>
-            <button id="sb-show-qr-btn" class="sb-log-open-btn" title="顯示 QR code">📱</button>
+            <div style="display:flex; gap:6px;">
+                <button id="sb-log-btn" class="sb-log-open-btn" title="紀錄">📋</button>
+                <button id="sb-show-qr-btn" class="sb-log-open-btn" title="顯示 QR code">📱</button>
+            </div>
         </div>
         <div id="sb-rankings"></div>
         <button id="sb-add-player-btn" class="tool-secondary-btn" style="display:none; margin-top:8px;">＋ 新增玩家</button>
         <button class="tool-secondary-btn" id="sb-reset-btn" style="margin-top:8px;">新局</button>
+    </div>
+
+    <!-- 紀錄抽屜 -->
+    <div id="sb-log-drawer" style="display:none;">
+        <div class="sb-log-header">
+            <span>遊戲紀錄</span>
+            <button id="sb-log-close-btn">✕</button>
+        </div>
+        <div id="sb-log-list"></div>
+        <p id="sb-log-empty" style="text-align:center; color:rgba(255,255,255,0.3); padding:20px;">還沒有任何紀錄</p>
     </div>
 
     <!-- 分數輸入彈窗 -->
@@ -618,7 +631,7 @@
         <div class="sb-score-popup-inner">
             <p id="sb-popup-player-name" class="sb-popup-player-name"></p>
             <p id="sb-popup-current-score" class="sb-popup-current-score"></p>
-            <input type="number" id="sb-popup-input" class="sb-popup-input" inputmode="numeric" placeholder="輸入分數">
+            <input type="text" id="sb-popup-input" class="sb-popup-input" inputmode="numeric" pattern="[0-9]*" placeholder="輸入分數">
             <div class="sb-popup-btns">
                 <button id="sb-popup-minus" class="sb-popup-btn sb-popup-minus">－ 減分</button>
                 <button id="sb-popup-plus"  class="sb-popup-btn sb-popup-plus">＋ 加分</button>
