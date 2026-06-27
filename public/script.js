@@ -261,7 +261,8 @@ function initializeGameDetailsPageFromHash(gameIdString) {
                 return; 
             }
             userProfile = await liff.getProfile();
-            
+            window.userProfile = userProfile;
+
             if (!location.hash) {
                 history.replaceState({ page: 'page-home', data: null }, '', '#page-home');
             }
