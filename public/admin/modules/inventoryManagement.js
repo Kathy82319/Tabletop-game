@@ -7,7 +7,7 @@ let allGamesData = [];
 let context = null;
 let currentTags = [];
 
-const AUTO_TAGS = ['販售', '可租借'];
+const AUTO_TAGS = ['販售', '可租借', '租借'];
 
 let currentForSaleStock = 0;
 let currentForRentStock = 0;

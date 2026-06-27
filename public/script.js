@@ -773,7 +773,7 @@ async function initializeEditProfilePage() {
             ...(Number(game.for_sale_stock) > 0 ? ['販售'] : []),
             ...(Number(game.for_rent_stock) > 0 ? ['可租借'] : [])
         ];
-        const _userTags = (game.tags || '').split(',').map(t => t.trim()).filter(t => t && !['販售', '可租借'].includes(t));
+        const _userTags = (game.tags || '').split(',').map(t => t.trim()).filter(t => t && !['販售', '可租借', '租借'].includes(t));
         const tags = [..._autoTags, ..._userTags];
         if (tags.length > 0) {
             tagsContainer.innerHTML = tags.map(tag => `<span class="game-tag${tag === '販售' ? ' sale-tag' : tag === '可租借' ? ' rent-tag' : ''}">${tag}</span>`).join('');
@@ -824,7 +824,7 @@ function renderGames() {
                     ...(Number(g.for_sale_stock) > 0 ? ['販售'] : []),
                     ...(Number(g.for_rent_stock) > 0 ? ['可租借'] : [])
                 ];
-                const userTags = (g.tags || '').split(',').map(t => t.trim()).filter(t => t && !['販售', '可租借'].includes(t));
+                const userTags = (g.tags || '').split(',').map(t => t.trim()).filter(t => t && !['販售', '可租借', '租借'].includes(t));
                 return [...autoTags, ...userTags].includes(activeFilters.tag);
             });
         }
@@ -846,7 +846,7 @@ function renderGames() {
                         ${[
                             ...(Number(game.for_sale_stock) > 0 ? ['販售'] : []),
                             ...(Number(game.for_rent_stock) > 0 ? ['可租借'] : []),
-                            ...(game.tags || '').split(',').map(t => t.trim()).filter(t => t && !['販售', '可租借'].includes(t))
+                            ...(game.tags || '').split(',').map(t => t.trim()).filter(t => t && !['販售', '可租借', '租借'].includes(t))
                         ].map(tag => `<span class="game-tag${tag === '販售' ? ' sale-tag' : tag === '可租借' ? ' rent-tag' : ''}">${tag}</span>`).join('')}
                     </div>
                 </div>
@@ -870,7 +870,7 @@ function renderGames() {
                 ...(Number(g.for_sale_stock) > 0 ? ['販售'] : []),
                 ...(Number(g.for_rent_stock) > 0 ? ['可租借'] : [])
             ];
-            const userTags = (g.tags || '').split(',').map(t => t.trim()).filter(t => t && !['販售', '可租借'].includes(t));
+            const userTags = (g.tags || '').split(',').map(t => t.trim()).filter(t => t && !['販售', '可租借', '租借'].includes(t));
             return [...autoTags, ...userTags];
         }))];
         
