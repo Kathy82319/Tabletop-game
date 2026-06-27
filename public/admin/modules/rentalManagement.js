@@ -6,10 +6,48 @@ let allRentals = [];
 let allDrafts = [];
 let allGames = [];
 let selectedRentalGames = new Map();
+let rentalSearchChips = [];
 
 let rentalListTbody, rentalSearchInput, rentalStatusFilter,
     editRentalModal, editRentalForm, sortDueDateBtn,
     createRentalModal, createRentalForm;
+
+function escapeHtml(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function rentalMatchesTerm(rental, term) {
+    const t = term.toLowerCase();
+    return (rental.game_name || '').toLowerCase().includes(t) ||
+           (rental.nickname || '').toLowerCase().includes(t) ||
+           (rental.line_display_name || '').toLowerCase().includes(t);
+}
+
+function renderRentalSearchChips() {
+    const container = document.getElementById('rental-search-container');
+    if (!container || !rentalSearchInput) return;
+    container.querySelectorAll('.search-chip').forEach(c => c.remove());
+    rentalSearchChips.forEach(chip => {
+        const el = document.createElement('span');
+        el.className = 'search-chip';
+        el.innerHTML = `${escapeHtml(chip)}<button type="button" class="chip-remove" data-chip="${escapeHtml(chip)}">&times;</button>`;
+        container.insertBefore(el, rentalSearchInput);
+    });
+}
+
+function addRentalSearchChip(term) {
+    const normalized = term.trim();
+    if (!normalized || rentalSearchChips.includes(normalized)) return;
+    rentalSearchChips.push(normalized);
+    renderRentalSearchChips();
+    applyFiltersAndRender();
+}
+
+function removeRentalSearchChip(term) {
+    rentalSearchChips = rentalSearchChips.filter(c => c !== term);
+    renderRentalSearchChips();
+    applyFiltersAndRender();
+}
 
 function getStatusClass(status) {
     switch (status) {
@@ -53,24 +91,22 @@ function renderRentalList(rentals) {
     });
 }
 function applyFiltersAndRender() {
-    const searchTerm = rentalSearchInput.value.toLowerCase().trim();
+    const inputText = rentalSearchInput.value.trim();
+    const allTerms = [...rentalSearchChips, ...(inputText ? [inputText] : [])];
     const statusFilter = rentalStatusFilter.querySelector('.active').dataset.filter;
+
     let filteredRentals = allRentals;
     if (statusFilter !== 'all') {
-        
         if (statusFilter === 'rented') {
-            const activeRentalStates = ['rented', 'due_today', 'overdue'];
-            filteredRentals = allRentals.filter(r => activeRentalStates.includes(r.derived_status));
+            filteredRentals = allRentals.filter(r => ['rented', 'due_today', 'overdue'].includes(r.derived_status));
         } else {
             filteredRentals = allRentals.filter(r => r.derived_status === statusFilter);
         }
     }
 
-    if (searchTerm) {
+    if (allTerms.length > 0) {
         filteredRentals = filteredRentals.filter(r =>
-            (r.game_name || '').toLowerCase().includes(searchTerm) ||
-            (r.nickname || '').toLowerCase().includes(searchTerm) ||
-            (r.line_display_name || '').toLowerCase().includes(searchTerm)
+            allTerms.every(term => rentalMatchesTerm(r, term))
         );
     }
     renderRentalList(filteredRentals);
@@ -391,6 +427,24 @@ function setupEventListeners() {
 
     rentalSearchInput.addEventListener('input', applyFiltersAndRender);
 
+    rentalSearchInput.addEventListener('keydown', (e) => {
+        if ((e.key === ' ' || e.key === 'Enter') && rentalSearchInput.value.trim()) {
+            e.preventDefault();
+            addRentalSearchChip(rentalSearchInput.value.trim());
+            rentalSearchInput.value = '';
+        } else if (e.key === 'Backspace' && rentalSearchInput.value === '' && rentalSearchChips.length > 0) {
+            removeRentalSearchChip(rentalSearchChips[rentalSearchChips.length - 1]);
+        }
+    });
+
+    document.getElementById('rental-search-container')?.addEventListener('click', (e) => {
+        if (e.target.classList.contains('chip-remove')) {
+            removeRentalSearchChip(e.target.dataset.chip);
+        } else {
+            rentalSearchInput.focus();
+        }
+    });
+
 rentalStatusFilter.addEventListener('click', e => {
         if (e.target.tagName === 'BUTTON') {
 
@@ -511,6 +565,8 @@ export const init = async (context, initialStatus) => {
     rentalListTbody.innerHTML = '<tr><td colspan="6">正在載入租借紀錄...</td></tr>';
     try {
         allRentals = await api.getAllRentals(status);
+        allRentals.sort((a, b) => b.rental_id - a.rental_id);
+        renderRentalSearchChips();
         applyFiltersAndRender();
         setupEventListeners();
     } catch (error) {

@@ -717,7 +717,9 @@
                 <h2>桌遊租借總表</h2>
             </div>
             <div class="filter-bar">
-                <input type="text" id="rental-search-input" placeholder="依遊戲或會員名稱搜尋..." style="flex-grow: 1; padding: 8px;">
+                <div id="rental-search-container" class="search-chip-container">
+                    <input type="text" id="rental-search-input" placeholder="搜尋遊戲名稱或租借人，按空白鍵/Enter 加入篩選條件...">
+                </div>
                 <div id="rental-status-filter" class="filter-group">
                     <button class="active" data-filter="all">全部顯示</button>
                     <button data-filter="rented">租借中</button>
