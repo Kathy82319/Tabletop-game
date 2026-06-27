@@ -699,6 +699,17 @@ async function sbCreate() {
         sbSessionId   = data.session_id;
         sbOwnerLineId = lineId;
         sbGameName    = gameName;
+
+        // 自動把創建者加入為玩家
+        await fetch(`/api/scoreboard/${sbSessionId}/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nickname:     window.userProfile?.displayName || '主持人',
+                line_user_id: lineId
+            })
+        });
+
         sbShowPlaying();
         sbOpenQrModal();
     } finally {
@@ -739,9 +750,13 @@ function sbShowPlaying() {
     document.getElementById('sb-qr-panel').style.display = 'none';
     document.getElementById('sb-playing').style.display  = 'flex';
 
-    document.getElementById('sb-game-title').textContent = sbGameName;
-    document.getElementById('sb-reset-btn').onclick      = sbShowSetup;
-    document.getElementById('sb-show-qr-btn').onclick    = sbOpenQrModal;
+    const isOwner = sbOwnerLineId === window.userProfile?.userId;
+
+    document.getElementById('sb-game-title').textContent        = sbGameName;
+    document.getElementById('sb-reset-btn').onclick             = sbShowSetup;
+    document.getElementById('sb-show-qr-btn').onclick           = sbOpenQrModal;
+    document.getElementById('sb-add-player-btn').style.display  = isOwner ? 'block' : 'none';
+    document.getElementById('sb-add-player-btn').onclick        = sbOpenAddPlayerPopup;
 
     sbStartPolling('sb-rankings', true);
 }
@@ -793,17 +808,88 @@ function sbRenderRankings(containerId) {
         const card = document.createElement('div');
         card.className = 'sb-player-card' + (rank === 0 ? ' sb-first' : '');
         if (isOwner) card.style.cursor = 'pointer';
+
+        const removeBtn = isOwner
+            ? `<button class="sb-remove-btn" title="移除玩家">×</button>`
+            : '';
+
         card.innerHTML = `
             <div class="sb-card-top">
                 <span class="sb-rank">${rank === 0 ? '👑' : rank + 1}</span>
                 <span class="sb-name">${p.nickname}</span>
                 <span class="sb-score">${p.score}<span class="sb-score-unit"> 分</span></span>
+                ${removeBtn}
             </div>`;
+
         if (isOwner) {
             card.onclick = () => sbOpenScorePopup(p);
+            const btn = card.querySelector('.sb-remove-btn');
+            if (btn) {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    sbRemovePlayer(p);
+                };
+            }
         }
         container.appendChild(card);
     });
+}
+
+// ── 移除玩家 ──────────────────────────────────────────────────
+async function sbRemovePlayer(player) {
+    if (sbPlayers.length <= 1) {
+        alert('至少需要保留 1 位玩家');
+        return;
+    }
+    if (!confirm(`確定要移除「${player.nickname}」嗎？`)) return;
+
+    try {
+        const res = await fetch(`/api/scoreboard/${sbSessionId}/remove-player`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ player_id: player.player_id, owner_line_id: sbOwnerLineId })
+        });
+        const data = await res.json();
+        if (data.error) { alert(data.error); return; }
+        await sbFetchAndRender('sb-rankings', true);
+    } catch (e) {
+        alert('移除失敗，請重試');
+    }
+}
+
+// ── 手動新增玩家 ──────────────────────────────────────────────
+function sbOpenAddPlayerPopup() {
+    document.getElementById('sb-add-player-input').value = '';
+    document.getElementById('sb-add-player-popup').style.display = 'flex';
+    setTimeout(() => document.getElementById('sb-add-player-input').focus(), 50);
+
+    document.getElementById('sb-add-player-confirm').onclick = sbConfirmAddPlayer;
+    document.getElementById('sb-add-player-cancel').onclick  = sbCloseAddPlayerPopup;
+    document.getElementById('sb-add-player-input').onkeydown = (e) => {
+        if (e.key === 'Enter') sbConfirmAddPlayer();
+    };
+}
+
+function sbCloseAddPlayerPopup() {
+    document.getElementById('sb-add-player-popup').style.display = 'none';
+}
+
+async function sbConfirmAddPlayer() {
+    const nickname = document.getElementById('sb-add-player-input').value.trim();
+    if (!nickname) {
+        document.getElementById('sb-add-player-input').focus();
+        return;
+    }
+    sbCloseAddPlayerPopup();
+
+    try {
+        await fetch(`/api/scoreboard/${sbSessionId}/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nickname, line_user_id: null })
+        });
+        await sbFetchAndRender('sb-rankings', true);
+    } catch (e) { /* 下次 polling 會同步 */ }
 }
 
 // ── 分數彈窗 ──────────────────────────────────────────────────

@@ -609,7 +609,8 @@
             <button id="sb-show-qr-btn" class="sb-log-open-btn" title="顯示 QR code">📱</button>
         </div>
         <div id="sb-rankings"></div>
-        <button class="tool-secondary-btn" id="sb-reset-btn" style="margin-top:12px;">新局</button>
+        <button id="sb-add-player-btn" class="tool-secondary-btn" style="display:none; margin-top:8px;">＋ 新增玩家</button>
+        <button class="tool-secondary-btn" id="sb-reset-btn" style="margin-top:8px;">新局</button>
     </div>
 
     <!-- 分數輸入彈窗 -->
@@ -623,6 +624,18 @@
                 <button id="sb-popup-plus"  class="sb-popup-btn sb-popup-plus">＋ 加分</button>
             </div>
             <button id="sb-popup-cancel" class="sb-popup-cancel">取消</button>
+        </div>
+    </div>
+
+    <!-- 手動新增玩家彈窗 -->
+    <div id="sb-add-player-popup" class="sb-score-popup" style="display:none;">
+        <div class="sb-score-popup-inner">
+            <p class="sb-popup-player-name">新增玩家</p>
+            <input type="text" id="sb-add-player-input" class="sb-popup-input" style="font-size:1.2rem;" placeholder="輸入玩家名稱">
+            <div class="sb-popup-btns">
+                <button id="sb-add-player-cancel" class="sb-popup-btn" style="background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.15);">取消</button>
+                <button id="sb-add-player-confirm" class="sb-popup-btn sb-popup-plus">確認新增</button>
+            </div>
         </div>
     </div>
 </div>
