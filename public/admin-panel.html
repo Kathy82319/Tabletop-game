@@ -31,6 +31,23 @@
             line-height: 1;
             padding: 0;
         }
+        /* --- 庫存管理：Modal 分頁 --- */
+        .modal-tab-nav { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; }
+        .modal-tab-btn { background: none; border: none; padding: 8px 16px; cursor: pointer; font-size: 0.95rem; color: var(--text-light); border-bottom: 3px solid transparent; margin-bottom: -1px; }
+        .modal-tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); font-weight: 600; }
+        .modal-tab-content { display: none; }
+        .modal-tab-content.active { display: block; }
+        /* --- 庫存管理：標籤 Chip 輸入 --- */
+        .tag-chip-container { border: 1px solid var(--border-color); border-radius: 4px; padding: 5px 8px; display: flex; flex-wrap: wrap; gap: 4px; min-height: 38px; cursor: text; background: white; }
+        .tag-chip-container:focus-within { outline: 2px solid var(--primary-color); outline-offset: -2px; }
+        .tag-chip { display: inline-flex; align-items: center; background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 12px; font-size: 0.82rem; gap: 4px; white-space: nowrap; }
+        .tag-chip .tag-remove { background: none; border: none; color: #6c757d; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0; }
+        .tag-chip .tag-remove:hover { color: var(--danger-color); }
+        .tag-chip-text-input { border: none; outline: none; flex: 1; min-width: 80px; font-size: 0.9rem; padding: 2px 4px; background: transparent; }
+        /* --- 庫存管理：列表標籤顯示 --- */
+        .game-tag-chip { display: inline-block; background: #e9ecef; color: #495057; padding: 2px 7px; border-radius: 10px; font-size: 0.75rem; margin-right: 3px; margin-bottom: 2px; }
+        .game-tag-chip.sale-tag { background: #fff3cd; color: #856404; font-weight: 500; }
+        .game-tag-chip.rent-tag { background: #d1e7dd; color: #0a3622; font-weight: 500; }
         /* --- 行事曆樣式 --- */
         .calendar-header {
             display: flex;
@@ -647,28 +664,17 @@
             <button data-filter="in_stock">有庫存</button>
             <button data-filter="out_of_stock">無庫存</button>
         </div>
-        <div id="inventory-visibility-filter" class="filter-group">
-            <button class="active" data-filter="all">全部狀態</button>
-            <button data-filter="visible">已上架</button>
-            <button data-filter="hidden">未上架</button>
-        </div>
     </div>
 
-    <div id="batch-actions-toolbar" style="display: none; background-color: #e9ecef; padding: 10px; margin-bottom: 1rem; border-radius: 8px;">
-        <span id="batch-selection-count" style="margin-right: 15px; font-weight: bold;"></span>
-        <button id="batch-publish-btn" class="action-btn" style="background-color: var(--success-color);">批次上架</button>
-        <button id="batch-unpublish-btn" class="action-btn" style="background-color: var(--secondary-color);">批次下架</button>
-    </div>
     <table>
         <thead>
             <tr>
-                <th style="width: 20px;"><input type="checkbox" id="select-all-games-checkbox"></th>
                 <th style="width: 50px;">順序</th>
                 <th>遊戲 (ID / 標籤)</th>
                 <th>總庫存</th>
+                <th>販售庫存</th>
                 <th>租借庫存</th>
                 <th>售價 / 租金</th>
-                <th>上架</th>
                 <th>操作</th>
             </tr>
         </thead>
@@ -1258,93 +1264,114 @@
             <form id="edit-game-form">
                 <div class="modal-body">
                     <input type="hidden" id="edit-game-id">
-                    <div class="edit-game-grid">
-                        
-                        <div>
-                            <div class="form-group">
-                                <label for="edit-game-name">遊戲名稱</label>
-                                <input type="text" id="edit-game-name" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="edit-game-id-display">遊戲 ID (不可修改)</label>
-                                <input type="text" id="edit-game-id-display" readonly style="background: #e9ecef;">
-                            </div>
-                            <div class="form-group">
-                                <label for="edit-game-tags">標籤 (以逗號分隔)</label>
-                                <input type="text" id="edit-game-tags">
-                            </div>
-                            <div class="form-group">
-                                <label>主要圖片</label>
-                                <div class="img-upload-row">
-                                    <input type="url" id="edit-game-image" placeholder="貼上網址，或點右側上傳">
-                                    <label class="img-upload-btn" title="上傳圖片到 R2">
-                                        📁
-                                        <input type="file" accept="image/*" data-target="edit-game-image" data-preview="prev-img-1" style="display:none" class="r2-file-input">
-                                    </label>
+                    <div class="modal-tab-nav">
+                        <button type="button" class="modal-tab-btn active" data-modal-tab="intro">介紹</button>
+                        <button type="button" class="modal-tab-btn" data-modal-tab="stock">庫存</button>
+                    </div>
+
+                    <!-- 介紹 Tab -->
+                    <div id="modal-tab-intro" class="modal-tab-content active">
+                        <div class="edit-game-grid">
+                            <div>
+                                <div class="form-group">
+                                    <label for="edit-game-name">遊戲名稱</label>
+                                    <input type="text" id="edit-game-name" required>
                                 </div>
-                                <img id="prev-img-1" class="img-preview" style="display:none">
-                            </div>
-                            <div class="form-group">
-                                <label>圖片 2 (選填)</label>
-                                <div class="img-upload-row">
-                                    <input type="url" id="edit-game-image-2" placeholder="貼上網址，或點右側上傳">
-                                    <label class="img-upload-btn" title="上傳圖片到 R2">
-                                        📁
-                                        <input type="file" accept="image/*" data-target="edit-game-image-2" data-preview="prev-img-2" style="display:none" class="r2-file-input">
-                                    </label>
+                                <div class="form-group">
+                                    <label for="edit-game-id-display">遊戲 ID (不可修改)</label>
+                                    <input type="text" id="edit-game-id-display" readonly style="background: #e9ecef;">
                                 </div>
-                                <img id="prev-img-2" class="img-preview" style="display:none">
-                            </div>
-                            <div class="form-group">
-                                <label>圖片 3 (選填)</label>
-                                <div class="img-upload-row">
-                                    <input type="url" id="edit-game-image-3" placeholder="貼上網址，或點右側上傳">
-                                    <label class="img-upload-btn" title="上傳圖片到 R2">
-                                        📁
-                                        <input type="file" accept="image/*" data-target="edit-game-image-3" data-preview="prev-img-3" style="display:none" class="r2-file-input">
-                                    </label>
+                                <div class="form-group">
+                                    <label>標籤 <small style="color:var(--text-light);">（Enter 新增，× 移除）</small></label>
+                                    <div class="tag-chip-container" id="tag-chip-container">
+                                        <input type="text" class="tag-chip-text-input" id="tag-chip-text-input" placeholder="輸入標籤後按 Enter">
+                                    </div>
+                                    <input type="hidden" id="edit-game-tags">
                                 </div>
-                                <img id="prev-img-3" class="img-preview" style="display:none">
+                                <div class="form-group">
+                                    <label>主要圖片</label>
+                                    <div class="img-upload-row">
+                                        <input type="url" id="edit-game-image" placeholder="貼上網址，或點右側上傳">
+                                        <label class="img-upload-btn" title="上傳圖片到 R2">
+                                            📁
+                                            <input type="file" accept="image/*" data-target="edit-game-image" data-preview="prev-img-1" style="display:none" class="r2-file-input">
+                                        </label>
+                                    </div>
+                                    <img id="prev-img-1" class="img-preview" style="display:none">
+                                </div>
+                                <div class="form-group">
+                                    <label>圖片 2 (選填)</label>
+                                    <div class="img-upload-row">
+                                        <input type="url" id="edit-game-image-2" placeholder="貼上網址，或點右側上傳">
+                                        <label class="img-upload-btn" title="上傳圖片到 R2">
+                                            📁
+                                            <input type="file" accept="image/*" data-target="edit-game-image-2" data-preview="prev-img-2" style="display:none" class="r2-file-input">
+                                        </label>
+                                    </div>
+                                    <img id="prev-img-2" class="img-preview" style="display:none">
+                                </div>
+                                <div class="form-group">
+                                    <label>圖片 3 (選填)</label>
+                                    <div class="img-upload-row">
+                                        <input type="url" id="edit-game-image-3" placeholder="貼上網址，或點右側上傳">
+                                        <label class="img-upload-btn" title="上傳圖片到 R2">
+                                            📁
+                                            <input type="file" accept="image/*" data-target="edit-game-image-3" data-preview="prev-img-3" style="display:none" class="r2-file-input">
+                                        </label>
+                                    </div>
+                                    <img id="prev-img-3" class="img-preview" style="display:none">
+                                </div>
+                            </div>
+                            <div>
+                                <div class="sub-grid-3">
+                                    <div class="form-group"><label for="edit-min-players">最少人數</label><input type="number" id="edit-min-players" min="1"></div>
+                                    <div class="form-group"><label for="edit-max-players">最多人數</label><input type="number" id="edit-max-players" min="1"></div>
+                                    <div class="form-group"><label for="edit-difficulty">難度</label><select id="edit-difficulty"><option>簡單</option><option>普通</option><option>困難</option><option>專家</option></select></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-play-time">遊戲時間</label>
+                                    <select id="edit-play-time">
+                                        <option value="30分鐘">30分鐘</option>
+                                        <option value="30~90分鐘">30~90分鐘</option>
+                                        <option value="90分鐘以上">90分鐘以上</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-game-desc">遊戲介紹</label>
+                                    <textarea id="edit-game-desc" rows="5"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-supplementary-info">補充說明 (配件、注意事項等)</label>
+                                    <textarea id="edit-supplementary-info" rows="4"></textarea>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div>
-                            <div class="sub-grid-3">
-                                <div class="form-group"><label for="edit-min-players">最少人數</label><input type="number" id="edit-min-players" min="1"></div>
-                                <div class="form-group"><label for="edit-max-players">最多人數</label><input type="number" id="edit-max-players" min="1"></div>
-                                <div class="form-group"><label for="edit-difficulty">難度</label><select id="edit-difficulty"><option>簡單</option><option>普通</option><option>困難</option><option>專家</option></select></div>
-                            </div>
-<div class="form-group">
-    <label for="edit-play-time">遊戲時間</label>
-    <select id="edit-play-time">
-        <option value="30分鐘">30分鐘</option>
-        <option value="30~90分鐘">30~90分鐘</option>
-        <option value="90分鐘以上">90分鐘以上</option>
-    </select>
-</div>                            
-                            <div class="sub-grid">
+                    <!-- 庫存 Tab -->
+                    <div id="modal-tab-stock" class="modal-tab-content">
+                        <fieldset style="border:1px solid var(--border-color); border-radius:8px; padding:12px; margin-bottom:16px;">
+                            <legend style="font-weight:600; padding:0 6px;">庫存數量</legend>
+                            <div class="sub-grid" style="margin-bottom:10px;">
                                 <div class="form-group"><label for="edit-total-stock">總庫存</label><input type="number" id="edit-total-stock" min="0"></div>
-                                <div class="form-group"><label for="edit-for-rent-stock">可租借庫存</label><input type="number" id="edit-for-rent-stock" min="0"></div>
+                                <div class="form-group"><label for="edit-backup-stock">備用 / 損壞 <small style="color:var(--text-light);">(自動計算)</small></label><input type="number" id="edit-backup-stock" readonly style="background:#e9ecef;"></div>
                             </div>
                             <div class="sub-grid">
+                                <div class="form-group"><label for="edit-for-sale-stock">販售庫存</label><input type="number" id="edit-for-sale-stock" min="0"></div>
+                                <div class="form-group"><label for="edit-for-rent-stock">租借庫存</label><input type="number" id="edit-for-rent-stock" min="0"></div>
+                            </div>
+                        </fieldset>
+                        <fieldset style="border:1px solid var(--border-color); border-radius:8px; padding:12px;">
+                            <legend style="font-weight:600; padding:0 6px;">定價</legend>
+                            <div class="sub-grid" style="margin-bottom:10px;">
                                 <div class="form-group"><label for="edit-sale-price">售價</label><input type="number" id="edit-sale-price" min="0"></div>
                                 <div class="form-group"><label for="edit-rent-price">租金</label><input type="number" id="edit-rent-price" min="0"></div>
                             </div>
-                             <div class="sub-grid">
+                            <div class="sub-grid">
                                 <div class="form-group"><label for="edit-deposit">押金</label><input type="number" id="edit-deposit" min="0"></div>
                                 <div class="form-group"><label for="edit-late-fee">每日逾期費</label><input type="number" id="edit-late-fee" min="0"></div>
                             </div>
-                            <div class="form-group"><label style="display: flex; align-items: center; margin-top: 10px;"><input type="checkbox" id="edit-is-visible" style="width: auto; margin-right: 10px;">是否上架 (顯示於 LIFF)</label></div>
-                        </div>
-
-                        <div class="form-group grid-span-2">
-                            <label for="edit-game-desc">遊戲介紹</label>
-                            <textarea id="edit-game-desc" rows="4"></textarea>
-                        </div>
-                        <div class="form-group grid-span-2">
-                            <label for="edit-supplementary-info">補充說明 (配件、注意事項等)</label>
-                            <textarea id="edit-supplementary-info" rows="4"></textarea>
-                        </div>
+                        </fieldset>
                     </div>
                 </div>
                 <div class="form-actions">
@@ -1506,7 +1533,7 @@
                     <p style="font-size: 0.9rem; color: var(--text-light);">
                         請確保 CSV 檔案的欄位標題與模板一致。<br>
                         - <b>遊戲ID (game_id)</b>: 留空會自動生成，填入既有 ID 則會更新該筆資料。<br>
-                        - <b>是否上架</b>: 填入 TRUE 或 1 代表上架。
+                        - <b>販售庫存 / 可租借庫存</b>: 有數字即會自動顯示對應標籤；總庫存歸零則自動下架。
                     </p>
                 </div>
                 <div class="form-actions">

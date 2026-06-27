@@ -16,7 +16,7 @@ export async function onRequest(context) {
 
     const numberFields = {
         min_players: { min: 1, max: 100 }, max_players: { min: 1, max: 100 },
-        total_stock: { min: 0, max: 999 }, for_rent_stock: { min: 0, max: 999 },
+        total_stock: { min: 0, max: 999 }, for_sale_stock: { min: 0, max: 999 }, for_rent_stock: { min: 0, max: 999 },
         sale_price: { min: 0, max: 99999 }, rent_price: { min: 0, max: 99999 },
         deposit: { min: 0, max: 99999 }, late_fee_per_day: { min: 0, max: 9999 }
     };
@@ -28,9 +28,9 @@ export async function onRequest(context) {
             errors.push(`欄位 ${field} 必須是 ${limits.min} 到 ${limits.max} 之間的整數。`);
         }
     }
-    
-    if (Number(body.for_rent_stock) > Number(body.total_stock)) {
-        errors.push('可租借庫存不能大於總庫存。');
+
+    if (Number(body.for_sale_stock) + Number(body.for_rent_stock) > Number(body.total_stock)) {
+        errors.push(`販售庫存 (${body.for_sale_stock}) + 租借庫存 (${body.for_rent_stock}) 不可超過總庫存 (${body.total_stock})。`);
     }
     
     const allowedDifficulties = ['簡單', '普通', '困難', '專家'];
@@ -53,16 +53,16 @@ export async function onRequest(context) {
          is_visible = ?, supplementary_info = ?
        WHERE game_id = ?`
     );
-    const for_sale_stock = (Number(body.total_stock) || 0) - (Number(body.for_rent_stock) || 0);
+    const is_visible = Number(body.total_stock) > 0 ? 1 : 0;
 
     const result = await stmt.bind(
         body.name, body.description || '', body.image_url || '', body.image_url_2 || '', body.image_url_3 || '', body.tags || '',
-        Number(body.min_players), Number(body.max_players), body.difficulty, 
+        Number(body.min_players), Number(body.max_players), body.difficulty,
         body.play_time || '30~90分鐘',
-        Number(body.total_stock), Number(body.for_rent_stock), for_sale_stock,
+        Number(body.total_stock), Number(body.for_rent_stock), Number(body.for_sale_stock) || 0,
         Number(body.sale_price), Number(body.rent_price),
         Number(body.deposit), Number(body.late_fee_per_day),
-        body.is_visible ? 1 : 0, body.supplementary_info || '',
+        is_visible, body.supplementary_info || '',
         body.gameId
     ).run();
 

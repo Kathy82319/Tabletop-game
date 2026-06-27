@@ -22,27 +22,35 @@ export async function onRequest(context) {
             newGameId = maxIdResult.maxId + 1;
         }
 
-        const for_sale_stock = (Number(body.total_stock) || 0) - (Number(body.for_rent_stock) || 0);
+        const total_stock = Number(body.total_stock) || 0;
+        const for_rent_stock = Number(body.for_rent_stock) || 0;
+        const for_sale_stock = Number(body.for_sale_stock) || 0;
+
+        if (for_sale_stock + for_rent_stock > total_stock) {
+            return new Response(JSON.stringify({ error: `販售庫存 + 租借庫存不可超過總庫存。` }), { status: 400 });
+        }
+
+        const is_visible = total_stock > 0 ? 1 : 0;
 
         const stmt = db.prepare(
           `INSERT INTO BoardGames (
              game_id, name, description, image_url, image_url_2, image_url_3, tags,
-             min_players, max_players, difficulty, play_time,  -- 【修改 1】這裡加 play_time
+             min_players, max_players, difficulty, play_time,
              total_stock, for_rent_stock, for_sale_stock,
              sale_price, rent_price, deposit, late_fee_per_day,
              is_visible, supplementary_info, display_order
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 999)` 
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 999)`
         );
 
         await stmt.bind(
             newGameId,
             body.name, body.description || '', body.image_url || '', body.image_url_2 || '', body.image_url_3 || '', body.tags || '',
-            Number(body.min_players) || 1, Number(body.max_players) || 4, body.difficulty || '普通', 
-            body.play_time || '30~90分鐘', // 【修改 3】這裡綁定 play_time
-            Number(body.total_stock) || 0, Number(body.for_rent_stock) || 0, for_sale_stock,
+            Number(body.min_players) || 1, Number(body.max_players) || 4, body.difficulty || '普通',
+            body.play_time || '30~90分鐘',
+            total_stock, for_rent_stock, for_sale_stock,
             Number(body.sale_price) || 0, Number(body.rent_price) || 0,
             Number(body.deposit) || 0, Number(body.late_fee_per_day) || 50,
-            body.is_visible ? 1 : 0, body.supplementary_info || ''
+            is_visible, body.supplementary_info || ''
         ).run();
 
         return new Response(JSON.stringify({ success: true, gameId: newGameId }), {
