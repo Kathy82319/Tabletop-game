@@ -770,27 +770,6 @@
             </table>
         </div>
 
-        <!-- 編輯經驗紀錄 Modal -->
-        <div id="edit-exp-modal" class="modal-overlay" style="display:none;">
-            <div class="modal-content" style="max-width:420px;">
-                <h3 style="margin-top:0;">編輯紀錄</h3>
-                <input type="hidden" id="edit-exp-id">
-                <div class="form-group">
-                    <label>原因</label>
-                    <input type="text" id="edit-exp-reason" style="width:100%; padding:8px; border:1px solid var(--border-color); border-radius:4px; box-sizing:border-box;">
-                </div>
-                <div class="form-group">
-                    <label>經驗值</label>
-                    <input type="number" id="edit-exp-value" min="1" max="1000" style="width:100%; padding:8px; border:1px solid var(--border-color); border-radius:4px; box-sizing:border-box;">
-                </div>
-                <p style="color:var(--warning-color); font-size:0.85rem; margin:0 0 1rem;">⚠ 修改經驗值不會自動調整使用者等級</p>
-                <div style="display:flex; gap:10px; justify-content:flex-end;">
-                    <button id="edit-exp-cancel-btn" class="action-btn" style="background:var(--text-light); color:#fff;">取消</button>
-                    <button id="edit-exp-save-btn" class="action-btn" style="background:var(--primary-color); color:#fff;">儲存</button>
-                </div>
-            </div>
-        </div>
-
         <!-- 轉盤抽獎 Modal -->
         <div id="wheel-draw-modal" class="modal-overlay" style="display:none;">
             <div class="modal-content" style="max-width:800px; width:94vw; max-height:92vh; overflow-y:auto;">

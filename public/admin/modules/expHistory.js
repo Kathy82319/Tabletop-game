@@ -31,22 +31,13 @@ function renderExpHistory(list) {
             <td>${new Date(record.created_at).toLocaleString()}</td>
             <td>${record.reason}</td>
             <td>${record.exp_added}</td>
-            <td style="white-space:nowrap;">
-                <button class="action-btn btn-edit-exp"
-                    data-id="${record.history_id}"
-                    data-reason="${escapeAttr(record.reason)}"
-                    data-exp="${record.exp_added}"
-                    style="background:var(--warning-color);color:#000;padding:4px 10px;margin-right:4px;">編輯</button>
+            <td>
                 <button class="action-btn btn-delete-exp"
                     data-id="${record.history_id}"
                     style="background:var(--danger-color);color:#fff;padding:4px 10px;">刪除</button>
             </td>
         `;
     });
-}
-
-function escapeAttr(str) {
-    return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // ── 篩選 ─────────────────────────────────────────────────────────────────────
@@ -331,33 +322,7 @@ function openWheelModal() {
     };
 }
 
-// ── 編輯 / 刪除 ───────────────────────────────────────────────────────────────
-
-function openEditModal(historyId, reason, expAdded) {
-    document.getElementById('edit-exp-id').value = historyId;
-    document.getElementById('edit-exp-reason').value = reason;
-    document.getElementById('edit-exp-value').value = expAdded;
-    document.getElementById('edit-exp-modal').style.display = 'flex';
-}
-
-async function handleSaveEdit() {
-    const history_id = document.getElementById('edit-exp-id').value;
-    const reason = document.getElementById('edit-exp-reason').value.trim();
-    const exp_added = parseInt(document.getElementById('edit-exp-value').value, 10);
-
-    if (!reason) return ui.toast.error('原因不可為空');
-    if (isNaN(exp_added) || exp_added <= 0) return ui.toast.error('經驗值必須為正整數');
-
-    try {
-        await api.updateExpRecord({ history_id, reason, exp_added });
-        ui.toast.success('修改成功');
-        document.getElementById('edit-exp-modal').style.display = 'none';
-        allExpHistory = await api.getExpHistory();
-        applyFilterAndRender();
-    } catch (e) {
-        ui.toast.error('修改失敗：' + e.message);
-    }
-}
+// ── 刪除 ─────────────────────────────────────────────────────────────────────
 
 async function handleDeleteRecord(historyId) {
     if (!confirm('確定要刪除這筆紀錄嗎？\n刪除後將自動反扣使用者的 EXP 並重新計算等級。')) return;
@@ -386,15 +351,8 @@ function setupEventListeners() {
     document.getElementById('exp-spin-btn').addEventListener('click', openWheelModal);
 
     document.getElementById('exp-history-tbody').addEventListener('click', e => {
-        const editBtn = e.target.closest('.btn-edit-exp');
         const deleteBtn = e.target.closest('.btn-delete-exp');
-        if (editBtn) openEditModal(editBtn.dataset.id, editBtn.dataset.reason, editBtn.dataset.exp);
-        else if (deleteBtn) handleDeleteRecord(deleteBtn.dataset.id);
-    });
-
-    document.getElementById('edit-exp-save-btn').addEventListener('click', handleSaveEdit);
-    document.getElementById('edit-exp-cancel-btn').addEventListener('click', () => {
-        document.getElementById('edit-exp-modal').style.display = 'none';
+        if (deleteBtn) handleDeleteRecord(deleteBtn.dataset.id);
     });
 
     document.getElementById('wheel-draw-close-btn').addEventListener('click', () => {

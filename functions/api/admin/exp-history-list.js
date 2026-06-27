@@ -25,22 +25,6 @@ export async function onRequest(context) {
       });
     }
 
-    if (request.method === 'PUT') {
-      const { history_id, reason, exp_added } = await request.json();
-      if (!history_id) return new Response(JSON.stringify({ error: '缺少 history_id' }), { status: 400 });
-      if (!reason || typeof reason !== 'string' || reason.trim().length === 0)
-        return new Response(JSON.stringify({ error: '原因不可為空' }), { status: 400 });
-      const exp = Number(exp_added);
-      if (isNaN(exp) || exp <= 0)
-        return new Response(JSON.stringify({ error: '經驗值必須為正整數' }), { status: 400 });
-
-      await db.prepare('UPDATE ExpHistory SET reason = ?, exp_added = ? WHERE history_id = ?')
-              .bind(reason.trim(), exp, history_id).run();
-      return new Response(JSON.stringify({ success: true }), {
-        status: 200, headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
     if (request.method === 'DELETE') {
       const { history_id } = await request.json();
       if (!history_id) return new Response(JSON.stringify({ error: '缺少 history_id' }), { status: 400 });
