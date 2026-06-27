@@ -202,13 +202,56 @@ function openWheelModal() {
         drawCountInput.value = 1;
         spinBtn.textContent = '🎡 開始抽獎！';
         spinBtn.disabled = false;
+        fastBtn.textContent = '⚡ 快轉';
 
         renderNameList();
         drawWheelCanvas(canvas, remainingSegments.map(s => s.name), 0);
     }
 
+    const fastBtn = document.getElementById('wheel-draw-fast-btn');
+
+    function finishAllAtOnce() {
+        if (wheelSpinning) return;
+
+        if (drawnCount > 0 && drawnCount >= totalToDraw) {
+            resetDraw();
+            return;
+        }
+
+        if (drawnCount === 0) {
+            totalToDraw = Math.min(
+                Math.max(1, parseInt(drawCountInput.value, 10) || 1),
+                remainingSegments.length
+            );
+            drawCountInput.disabled = true;
+        }
+
+        const numToDraw = Math.min(totalToDraw - drawnCount, remainingSegments.length);
+        for (let i = 0; i < numToDraw; i++) {
+            const idx = Math.floor(Math.random() * remainingSegments.length);
+            const winner = remainingSegments.splice(idx, 1)[0];
+            winners.push(winner.name);
+            drawnCount++;
+        }
+
+        resultEl.style.display = 'none';
+        winnersSection.style.display = 'block';
+        winnersList.textContent = winners.join('、');
+
+        renderNameList();
+        if (remainingSegments.length > 0) {
+            drawWheelCanvas(canvas, remainingSegments.map(s => s.name), 0);
+        }
+
+        spinBtn.textContent = '🔄 重新開始';
+        spinBtn.disabled = false;
+        fastBtn.textContent = '🔄 重新開始';
+    }
+
     resetDraw();
     modal.style.display = 'flex';
+
+    fastBtn.onclick = finishAllAtOnce;
 
     spinBtn.onclick = () => {
         if (wheelSpinning) return;
@@ -317,10 +360,11 @@ async function handleSaveEdit() {
 }
 
 async function handleDeleteRecord(historyId) {
-    if (!confirm('確定要刪除這筆紀錄嗎？\n注意：刪除後不會自動調整使用者的 EXP 與等級。')) return;
+    if (!confirm('確定要刪除這筆紀錄嗎？\n刪除後將自動反扣使用者的 EXP 並重新計算等級。')) return;
     try {
-        await api.deleteExpRecord(historyId);
-        ui.toast.success('已刪除');
+        const result = await api.deleteExpRecord(historyId);
+        const lvlMsg = result.newLevel !== undefined ? `（等級更新為 Lv.${result.newLevel}）` : '';
+        ui.toast.success('已刪除，EXP 已自動調整' + lvlMsg);
         allExpHistory = await api.getExpHistory();
         applyFilterAndRender();
     } catch (e) {

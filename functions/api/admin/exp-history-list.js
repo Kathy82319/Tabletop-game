@@ -44,8 +44,23 @@ export async function onRequest(context) {
     if (request.method === 'DELETE') {
       const { history_id } = await request.json();
       if (!history_id) return new Response(JSON.stringify({ error: '缺少 history_id' }), { status: 400 });
-      await db.prepare('DELETE FROM ExpHistory WHERE history_id = ?').bind(history_id).run();
-      return new Response(JSON.stringify({ success: true }), {
+
+      const record = await db.prepare('SELECT user_id, exp_added FROM ExpHistory WHERE history_id = ?').bind(history_id).first();
+      if (!record) return new Response(JSON.stringify({ error: '找不到紀錄' }), { status: 404 });
+
+      const user = await db.prepare('SELECT level, current_exp FROM Users WHERE user_id = ?').bind(record.user_id).first();
+      if (!user) return new Response(JSON.stringify({ error: '找不到使用者' }), { status: 404 });
+
+      const totalExp = Math.max(0, (user.level - 1) * 10 + user.current_exp - record.exp_added);
+      const newLevel = 1 + Math.floor(totalExp / 10);
+      const newCurrentExp = totalExp % 10;
+
+      await db.batch([
+        db.prepare('DELETE FROM ExpHistory WHERE history_id = ?').bind(history_id),
+        db.prepare('UPDATE Users SET level = ?, current_exp = ? WHERE user_id = ?').bind(newLevel, newCurrentExp, record.user_id)
+      ]);
+
+      return new Response(JSON.stringify({ success: true, newLevel, newCurrentExp }), {
         status: 200, headers: { 'Content-Type': 'application/json' }
       });
     }
