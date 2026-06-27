@@ -15,6 +15,67 @@ function stopScanner() {
 }
 
 /**
+ * 載入並渲染左側使用者資料面板
+ */
+async function loadScanUserPanel(userId) {
+    const panel = document.getElementById('scan-user-panel');
+    panel.style.display = 'block';
+    panel.innerHTML = '<p style="text-align:center;color:#999;">讀取中...</p>';
+    try {
+        const data = await api.getUserDetails(userId);
+        renderScanUserPanel(data);
+    } catch (e) {
+        panel.innerHTML = `<p style="color:red;">載入失敗：${e.message}</p>`;
+    }
+}
+
+function renderScanUserPanel(data) {
+    const panel = document.getElementById('scan-user-panel');
+    const { profile, exp_history } = data;
+    const displayName = profile.nickname || profile.line_display_name;
+
+    const chips = (type) => {
+        const items = (profile.user_assets || []).filter(a => a.type === type);
+        if (!items.length) return '<span style="color:#aaa">無</span>';
+        return items.map(a => {
+            const icon = a.icon_url ? `<img src="${a.icon_url}" style="height:1.1em;vertical-align:middle;margin-right:3px;border-radius:2px;">` : '';
+            return `<span class="asset-chip">${icon}${a.name}</span>`;
+        }).join('');
+    };
+
+    const recentExp = (exp_history || []).slice(0, 5).map(e =>
+        `<tr><td>${new Date(e.created_at).toLocaleDateString()}</td><td>${e.reason}</td><td style="color:var(--success-color);font-weight:bold;">+${e.exp_added}</td></tr>`
+    ).join('');
+
+    panel.innerHTML = `
+        <div style="text-align:center;margin-bottom:12px;">
+            <img src="/api/admin/get-avatar?userId=${profile.user_id}"
+                 style="width:64px;height:64px;border-radius:50%;border:2px solid var(--border-color);object-fit:cover;display:block;margin:0 auto 8px;">
+            <strong style="font-size:1.05rem;">${displayName}</strong><br>
+            <span class="tag-display">${profile.tag || '無'}</span>
+        </div>
+        ${profile.notes ? `<div style="background:#fffbe6;border:1px solid #ffe58f;border-radius:6px;padding:8px;margin-bottom:10px;white-space:pre-wrap;">${profile.notes}</div>` : ''}
+        <table style="width:100%;margin-bottom:10px;">
+            <tr><td><strong>姓名</strong></td><td>${profile.real_name || '未設定'}</td></tr>
+            <tr><td><strong>電話</strong></td><td>${profile.phone || '未設定'}</td></tr>
+            <tr><td><strong>Email</strong></td><td>${profile.email || '未設定'}</td></tr>
+            <tr><td><strong>等級</strong></td><td>${profile.level}（${profile.current_exp}/10 EXP）</td></tr>
+            <tr><td><strong>職業</strong></td><td>${profile.class || '無'}</td></tr>
+        </table>
+        <p class="panel-section-title">稱號 / 成就</p>
+        <div style="margin-bottom:6px;">${chips('title')} ${chips('achievement')}</div>
+        <p class="panel-section-title">技能 / 裝備</p>
+        <div style="margin-bottom:10px;">${chips('skill')} ${chips('equipment')}</div>
+        ${recentExp ? `
+        <p class="panel-section-title">最近經驗紀錄</p>
+        <table style="width:100%;">
+            <thead><tr><th style="text-align:left;">日期</th><th style="text-align:left;">原因</th><th>EXP</th></tr></thead>
+            <tbody>${recentExp}</tbody>
+        </table>` : ''}
+    `;
+}
+
+/**
  * 顯示手動輸入介面並更新按鈕狀態
  */
 function showManualInputInterface() {
@@ -57,7 +118,8 @@ function startScanner() {
         userIdDisplay.value = decodedText;
         qrReader.style.display = 'none';
         scanResultContainer.style.display = 'block';
-        document.getElementById('submit-exp-btn').disabled = false; // 掃碼成功啟用送出
+        document.getElementById('submit-exp-btn').disabled = false;
+        loadScanUserPanel(decodedText);
     };
 
     html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
@@ -145,6 +207,9 @@ function setupEventListeners() {
     document.getElementById('rescan-btn').addEventListener('click', () => {
         stopScanner();
         showManualInputInterface();
+        const panel = document.getElementById('scan-user-panel');
+        panel.style.display = 'none';
+        panel.innerHTML = '';
     });
 
     const userSearchInput = document.getElementById('scan-user-search');
@@ -178,13 +243,14 @@ function setupEventListeners() {
 
     userSearchResults.addEventListener('click', (e) => {
         if (e.target.tagName === 'LI') {
-            stopScanner(); // 停止掃描器
-            userIdDisplay.value = e.target.dataset.userId; // 帶入 User ID
-            userSearchInput.value = e.target.textContent; // 讓輸入框顯示選中的人名
-            document.getElementById('qr-reader').style.display = 'none'; // 隱藏掃描區域
-            document.getElementById('scan-result').style.display = 'block'; // 顯示結果區域
-            userSearchResults.style.display = 'none'; // 隱藏搜尋結果
-            submitExpBtn.disabled = false; // 啟用送出按鈕
+            stopScanner();
+            userIdDisplay.value = e.target.dataset.userId;
+            userSearchInput.value = e.target.textContent;
+            document.getElementById('qr-reader').style.display = 'none';
+            document.getElementById('scan-result').style.display = 'block';
+            userSearchResults.style.display = 'none';
+            submitExpBtn.disabled = false;
+            loadScanUserPanel(e.target.dataset.userId);
         }
     });
         
