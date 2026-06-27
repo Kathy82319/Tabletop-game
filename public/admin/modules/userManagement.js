@@ -69,7 +69,8 @@ function handleUserSearch() {
             (user.nickname || '').toLowerCase().includes(searchTerm) ||
             (user.real_name || '').toLowerCase().includes(searchTerm) ||
             (user.class || '').toLowerCase().includes(searchTerm) ||
-            (user.tag || '').toLowerCase().includes(searchTerm)
+            (user.tag || '').toLowerCase().includes(searchTerm) ||
+            (user.phone || '').includes(searchTerm)
         )
         : allUsers;
     renderUserList(filteredUsers);

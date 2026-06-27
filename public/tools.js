@@ -757,10 +757,12 @@ function sbOpenRound() {
                 <span class="sb-round-row-name">${p.name}</span>
                 <span class="sb-round-row-cur">${p.score} 分</span>
             </div>
-            <input type="number" class="sb-round-delta" inputmode="numeric" placeholder="本輪得分（可為負數）">
+            <input type="number" class="sb-round-delta" inputmode="decimal" placeholder="本輪得分（可為負數）">
             <input type="text"   class="sb-round-note"  placeholder="備註（選填）">`;
         rowsDiv.appendChild(row);
     });
+
+    rowsDiv.querySelector('.sb-round-delta')?.focus();
 
     document.getElementById('sb-round-confirm-btn').onclick = sbConfirmRound;
     document.getElementById('sb-round-cancel-btn').onclick  = () => {

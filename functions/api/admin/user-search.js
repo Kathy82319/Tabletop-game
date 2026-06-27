@@ -18,9 +18,9 @@ export async function onRequest(context) {
     const query = `%${searchTerm}%`;
 
     const stmt = db.prepare(
-      `SELECT user_id, line_display_name, nickname, phone 
-       FROM Users 
-       WHERE line_display_name LIKE ?1 OR nickname LIKE ?1 OR user_id LIKE ?1
+      `SELECT user_id, line_display_name, nickname, phone
+       FROM Users
+       WHERE line_display_name LIKE ?1 OR nickname LIKE ?1 OR user_id LIKE ?1 OR phone LIKE ?1
        LIMIT 10`
     );
 
