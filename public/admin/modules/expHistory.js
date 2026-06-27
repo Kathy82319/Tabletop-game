@@ -4,6 +4,8 @@ import { ui } from '../ui.js';
 
 let allExpHistory = [];
 let filteredHistory = [];
+let allContribHistory = [];
+let filteredContribHistory = [];
 let wheelRotation = 0;
 let wheelSpinning = false;
 let wheelAnimId = null;
@@ -322,6 +324,132 @@ function openWheelModal() {
     };
 }
 
+// ── 貢獻度紀錄 ───────────────────────────────────────────────────────────────
+
+function renderContribHistory(list) {
+    const tbody = document.getElementById('contrib-history-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">沒有符合條件的紀錄。</td></tr>';
+        return;
+    }
+
+    list.forEach(record => {
+        const row = tbody.insertRow();
+        const displayName = record.nickname || record.line_display_name || '未知使用者';
+        row.innerHTML = `
+            <td class="compound-cell" style="text-align:left;">
+                <div class="main-info">${displayName}</div>
+                <div class="sub-info">${record.user_id}</div>
+            </td>
+            <td>${new Date(record.created_at).toLocaleString()}</td>
+            <td>${record.class_name}</td>
+            <td>${record.contribution_value}</td>
+            <td>
+                <button class="action-btn btn-delete-contrib"
+                    data-id="${record.contribution_id}"
+                    style="background:var(--danger-color);color:#fff;padding:4px 10px;">刪除</button>
+            </td>
+        `;
+    });
+}
+
+function applyContribFilterAndRender() {
+    const userTerm = document.getElementById('contrib-user-filter-input').value.toLowerCase().trim();
+    const classFilter = document.getElementById('contrib-class-filter').value;
+
+    filteredContribHistory = allContribHistory.filter(record => {
+        if (userTerm) {
+            const match = (record.line_display_name || '').toLowerCase().includes(userTerm) ||
+                          (record.nickname || '').toLowerCase().includes(userTerm) ||
+                          (record.user_id || '').toLowerCase().includes(userTerm);
+            if (!match) return false;
+        }
+        if (classFilter && record.class_name !== classFilter) return false;
+        return true;
+    });
+
+    renderContribHistory(filteredContribHistory);
+}
+
+function clearContribFilters() {
+    document.getElementById('contrib-user-filter-input').value = '';
+    document.getElementById('contrib-class-filter').value = '';
+    filteredContribHistory = [...allContribHistory];
+    renderContribHistory(filteredContribHistory);
+}
+
+function populateClassFilter(data) {
+    const select = document.getElementById('contrib-class-filter');
+    const classes = [...new Set(data.map(r => r.class_name))].sort();
+    select.innerHTML = '<option value="">所有職業</option>';
+    classes.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        select.appendChild(opt);
+    });
+}
+
+async function loadContribHistory() {
+    const tbody = document.getElementById('contrib-history-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="5">正在載入...</td></tr>';
+    try {
+        allContribHistory = await api.getContributionHistory();
+        filteredContribHistory = [...allContribHistory];
+        populateClassFilter(allContribHistory);
+        renderContribHistory(filteredContribHistory);
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" style="color:red;">載入失敗: ${e.message}</td></tr>`;
+    }
+}
+
+async function handleDeleteContrib(contribId) {
+    if (!confirm('確定要刪除這筆貢獻度紀錄嗎？')) return;
+    try {
+        await api.deleteContributionRecord(contribId);
+        ui.toast.success('已刪除');
+        allContribHistory = await api.getContributionHistory();
+        populateClassFilter(allContribHistory);
+        applyContribFilterAndRender();
+    } catch (e) {
+        ui.toast.error('刪除失敗：' + e.message);
+    }
+}
+
+// ── 分頁切換 ──────────────────────────────────────────────────────────────────
+
+function setupTabSwitching() {
+    let contribLoaded = false;
+
+    document.querySelectorAll('.exp-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.exp-tab-btn').forEach(b => {
+                b.style.color = 'var(--text-light)';
+                b.style.borderBottomColor = 'transparent';
+                b.style.fontWeight = 'normal';
+                b.classList.remove('active');
+            });
+            btn.style.color = 'var(--primary-color)';
+            btn.style.borderBottomColor = 'var(--primary-color)';
+            btn.style.fontWeight = 'bold';
+            btn.classList.add('active');
+
+            const tab = btn.dataset.tab;
+            document.getElementById('exp-tab-content').style.display = tab === 'exp' ? '' : 'none';
+            document.getElementById('contribution-tab-content').style.display = tab === 'contribution' ? '' : 'none';
+
+            if (tab === 'contribution' && !contribLoaded) {
+                contribLoaded = true;
+                loadContribHistory();
+            }
+        });
+    });
+}
+
 // ── 刪除 ─────────────────────────────────────────────────────────────────────
 
 async function handleDeleteRecord(historyId) {
@@ -354,6 +482,17 @@ function setupEventListeners() {
         const deleteBtn = e.target.closest('.btn-delete-exp');
         if (deleteBtn) handleDeleteRecord(deleteBtn.dataset.id);
     });
+
+    document.getElementById('contrib-user-filter-input').addEventListener('input', applyContribFilterAndRender);
+    document.getElementById('contrib-class-filter').addEventListener('change', applyContribFilterAndRender);
+    document.getElementById('contrib-clear-filter-btn').addEventListener('click', clearContribFilters);
+
+    document.getElementById('contrib-history-tbody').addEventListener('click', e => {
+        const deleteBtn = e.target.closest('.btn-delete-contrib');
+        if (deleteBtn) handleDeleteContrib(deleteBtn.dataset.id);
+    });
+
+    setupTabSwitching();
 
     document.getElementById('wheel-draw-close-btn').addEventListener('click', () => {
         document.getElementById('wheel-draw-modal').style.display = 'none';

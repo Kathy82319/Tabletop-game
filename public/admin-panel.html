@@ -747,27 +747,65 @@
             <div class="page-header">
                 <h2>經驗紀錄查詢</h2>
             </div>
-            <div class="filter-bar" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:1rem;">
-                <input type="search" id="exp-user-filter-input" placeholder="搜尋使用者名稱 / LINE ID..." style="flex:1; min-width:160px; padding:8px;">
-                <input type="date" id="exp-date-start" style="padding:8px; border:1px solid var(--border-color); border-radius:4px;">
-                <span style="color:var(--text-light);">至</span>
-                <input type="date" id="exp-date-end" style="padding:8px; border:1px solid var(--border-color); border-radius:4px;">
-                <input type="number" id="exp-min-exp" placeholder="最低EXP" min="1" style="width:100px; padding:8px; border:1px solid var(--border-color); border-radius:4px;">
-                <button id="exp-clear-filter-btn" class="action-btn" style="background:var(--text-light); color:#fff;">清除篩選</button>
-                <button id="exp-spin-btn" class="action-btn" style="background:var(--primary-color); color:#fff;" disabled>🎡 轉盤抽獎</button>
+            <!-- 分頁標籤 -->
+            <div style="display:flex; gap:0; border-bottom:2px solid var(--border-color); margin-bottom:1.2rem;">
+                <button class="exp-tab-btn active" data-tab="exp"
+                    style="padding:8px 20px; border:none; background:none; cursor:pointer; font-size:0.95rem; font-weight:bold; color:var(--primary-color); border-bottom:2px solid var(--primary-color); margin-bottom:-2px;">
+                    經驗紀錄
+                </button>
+                <button class="exp-tab-btn" data-tab="contribution"
+                    style="padding:8px 20px; border:none; background:none; cursor:pointer; font-size:0.95rem; color:var(--text-light); border-bottom:2px solid transparent; margin-bottom:-2px;">
+                    貢獻度紀錄
+                </button>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>使用者</th>
-                        <th>日期</th>
-                        <th>原因</th>
-                        <th>經驗值</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="exp-history-tbody"></tbody>
-            </table>
+
+            <!-- 經驗紀錄 Tab -->
+            <div id="exp-tab-content">
+                <div class="filter-bar" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:1rem;">
+                    <input type="search" id="exp-user-filter-input" placeholder="搜尋使用者名稱 / LINE ID..." style="flex:1; min-width:160px; padding:8px;">
+                    <input type="date" id="exp-date-start" style="padding:8px; border:1px solid var(--border-color); border-radius:4px;">
+                    <span style="color:var(--text-light);">至</span>
+                    <input type="date" id="exp-date-end" style="padding:8px; border:1px solid var(--border-color); border-radius:4px;">
+                    <input type="number" id="exp-min-exp" placeholder="最低EXP" min="1" style="width:100px; padding:8px; border:1px solid var(--border-color); border-radius:4px;">
+                    <button id="exp-clear-filter-btn" class="action-btn" style="background:var(--text-light); color:#fff;">清除篩選</button>
+                    <button id="exp-spin-btn" class="action-btn" style="background:var(--primary-color); color:#fff;" disabled>🎡 轉盤抽獎</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>使用者</th>
+                            <th>日期</th>
+                            <th>原因</th>
+                            <th>經驗值</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="exp-history-tbody"></tbody>
+                </table>
+            </div>
+
+            <!-- 貢獻度紀錄 Tab -->
+            <div id="contribution-tab-content" style="display:none;">
+                <div class="filter-bar" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:1rem;">
+                    <input type="search" id="contrib-user-filter-input" placeholder="搜尋使用者名稱 / LINE ID..." style="flex:1; min-width:160px; padding:8px;">
+                    <select id="contrib-class-filter" style="padding:8px; border:1px solid var(--border-color); border-radius:4px;">
+                        <option value="">所有職業</option>
+                    </select>
+                    <button id="contrib-clear-filter-btn" class="action-btn" style="background:var(--text-light); color:#fff;">清除篩選</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>使用者</th>
+                            <th>日期</th>
+                            <th>職業</th>
+                            <th>貢獻值</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contrib-history-tbody"></tbody>
+                </table>
+            </div>
         </div>
 
         <!-- 轉盤抽獎 Modal -->

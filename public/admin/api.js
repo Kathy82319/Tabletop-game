@@ -69,6 +69,8 @@ bulkCreateGames: (data) => request('/api/admin/bulk-create-games', { method: 'PO
     getExpHistory: () => request('/api/admin/exp-history-list'),
     deleteExpRecord: (history_id) => request('/api/admin/exp-history-list', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ history_id }) }),
     addPoints: (data) => request('/api/add-exp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+    getContributionHistory: () => request('/api/admin/contribution-history'),
+    deleteContributionRecord: (contribution_id) => request('/api/admin/contribution-history', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contribution_id }) }),
     getContributionStats: () => request('/api/admin/contribution-stats'),
     
     getAllNews: () => request('/api/admin/get-all-news'),
