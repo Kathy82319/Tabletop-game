@@ -4,6 +4,7 @@ import { api } from '../api.js';
 import { ui } from '../ui.js';
 
 let html5QrCode = null;
+let cachedClasses = [];
 
 /**
  * 停止掃描器
@@ -12,6 +13,38 @@ function stopScanner() {
     if (html5QrCode && html5QrCode.isScanning) {
         html5QrCode.stop().catch(err => console.error("停止掃描失敗", err));
     }
+}
+
+/**
+ * 取得職業清單（快取）
+ */
+async function getClasses() {
+    if (cachedClasses.length === 0) {
+        try {
+            const assets = await api.getGameAssets();
+            cachedClasses = assets.filter(a => a.type === 'class').map(a => a.name);
+        } catch (e) {
+            console.error('載入職業失敗', e);
+        }
+    }
+    return cachedClasses;
+}
+
+/**
+ * 填充職業下拉選單並自動選取
+ */
+async function populateClassSelect(selectedClass) {
+    const select = document.getElementById('contribution-class-select');
+    if (!select) return;
+    const classes = await getClasses();
+    select.innerHTML = '<option value="">-- 選擇職業 --</option>';
+    classes.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        if (name === selectedClass) opt.selected = true;
+        select.appendChild(opt);
+    });
 }
 
 /**
@@ -24,6 +57,7 @@ async function loadScanUserPanel(userId) {
     try {
         const data = await api.getUserDetails(userId);
         renderScanUserPanel(data);
+        populateClassSelect(data.profile.class || '');
     } catch (e) {
         panel.innerHTML = `<p style="color:red;">載入失敗：${e.message}</p>`;
     }
@@ -171,14 +205,18 @@ async function handleSubmitExp() {
     button.textContent = '新增中...';
     statusContainer.textContent = '';
 
+    const contributionClass = document.getElementById('contribution-class-select')?.value || '';
+    const contributionValue = parseInt(document.getElementById('contribution-value-input')?.value, 10) || 0;
+
     try {
-        const result = await api.addPoints({ userId, expValue, reason });
+        const result = await api.addPoints({ userId, expValue, reason, contributionClass, contributionValue });
         ui.toast.success(result.message || '成功新增經驗值！');
-        expInput.value = '10'; // 修正：重置 exp 值為 2
+        expInput.value = '10';
         customReasonInput.value = '';
         reasonSelect.value = '消費回饋';
         customReasonInput.style.display = 'none';
-        startScanner(); // 自動開始下一次掃描/初始化
+        document.getElementById('contribution-value-input').value = '5';
+        startScanner();
     } catch (error) {
         ui.toast.error(`新增失敗: ${error.message}`);
     } finally {
@@ -210,6 +248,10 @@ function setupEventListeners() {
         const panel = document.getElementById('scan-user-panel');
         panel.style.display = 'none';
         panel.innerHTML = '';
+        const classSelect = document.getElementById('contribution-class-select');
+        if (classSelect) classSelect.innerHTML = '<option value="">-- 選擇職業 --</option>';
+        const contribInput = document.getElementById('contribution-value-input');
+        if (contribInput) contribInput.value = '5';
     });
 
     const userSearchInput = document.getElementById('scan-user-search');

@@ -73,6 +73,89 @@ async function loadAndRenderActivities() {
     }
 }
 
+let contributionChartInstance = null;
+
+async function loadContributionChart() {
+    const canvas = document.getElementById('contribution-chart');
+    const emptyMsg = document.getElementById('contribution-chart-empty');
+    if (!canvas) return;
+
+    try {
+        const data = await api.getContributionStats();
+        if (!data || data.length === 0) {
+            canvas.style.display = 'none';
+            if (emptyMsg) emptyMsg.style.display = 'block';
+            return;
+        }
+
+        const total = data.reduce((sum, d) => sum + d.total, 0);
+        const labels = data.map(d => d.class_name);
+        const values = data.map(d => d.total);
+        const percentages = data.map(d => ((d.total / total) * 100).toFixed(1));
+
+        const colors = [
+            '#4e79a7','#f28e2b','#e15759','#76b7b2',
+            '#59a14f','#edc948','#b07aa1','#ff9da7'
+        ];
+
+        if (contributionChartInstance) contributionChartInstance.destroy();
+
+        contributionChartInstance = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: '貢獻度',
+                    data: values,
+                    backgroundColor: labels.map((_, i) => colors[i % colors.length]),
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => {
+                                const pct = percentages[ctx.dataIndex];
+                                return ` ${ctx.parsed.y} 點（佔 ${pct}%）`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 }
+                    },
+                    x: {
+                        ticks: { font: { size: 13 } }
+                    }
+                }
+            },
+            plugins: [{
+                id: 'percentageLabels',
+                afterDatasetsDraw(chart) {
+                    const { ctx } = chart;
+                    chart.data.datasets.forEach((dataset, i) => {
+                        chart.getDatasetMeta(i).data.forEach((bar, idx) => {
+                            const pct = percentages[idx];
+                            ctx.fillStyle = '#444';
+                            ctx.font = 'bold 12px sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.fillText(`${pct}%`, bar.x, bar.y - 6);
+                        });
+                    });
+                }
+            }]
+        });
+    } catch (error) {
+        console.error('貢獻度圖表載入失敗', error);
+    }
+}
+
 const setupEventListeners = () => {
     const dashboardGrid = document.getElementById('dashboard-grid');
     if (dashboardGrid && !dashboardGrid.dataset.listenerAttached) {
@@ -103,7 +186,10 @@ export const init = async (context, param) => {
     try {
         const stats = await api.getDashboardStats();
         renderStats(stats);
-        await loadAndRenderActivities(); // 確保動態在數據之後載入
+        await Promise.all([
+            loadAndRenderActivities(),
+            loadContributionChart()
+        ]);
         setupEventListeners();
     } catch (error) {
         console.error('獲取儀表板數據失敗:', error);

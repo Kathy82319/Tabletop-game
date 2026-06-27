@@ -68,6 +68,7 @@ bulkCreateGames: (data) => request('/api/admin/bulk-create-games', { method: 'PO
 
     getExpHistory: () => request('/api/admin/exp-history-list'),
     addPoints: (data) => request('/api/add-exp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+    getContributionStats: () => request('/api/admin/contribution-stats'),
     
     getAllNews: () => request('/api/admin/get-all-news'),
     createNews: (data) => request('/api/admin/create-news', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),

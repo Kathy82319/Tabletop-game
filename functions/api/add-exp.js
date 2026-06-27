@@ -5,7 +5,7 @@ export async function onRequest(context) {
     if (context.request.method !== 'POST') {
       return new Response('Invalid request method.', { status: 405 });
     }
-    const { userId, expValue, reason } = await context.request.json();
+    const { userId, expValue, reason, contributionValue, contributionClass } = await context.request.json();
 
     if (!userId || typeof userId !== 'string') {
         return new Response(JSON.stringify({ error: '無效的使用者 ID。' }), { status: 400 });
@@ -48,6 +48,14 @@ export async function onRequest(context) {
         const activityMessage = `${userName} 已升級至 LV ${currentLevel}！請記得提供升級福利。`;
         operations.push(
             db.prepare('INSERT INTO Activities (message, is_read) VALUES (?, 0)').bind(activityMessage)
+        );
+    }
+
+    const contrib = Number(contributionValue);
+    if (contributionClass && !isNaN(contrib) && contrib > 0) {
+        operations.push(
+            db.prepare('INSERT INTO ContributionHistory (user_id, class_name, contribution_value) VALUES (?, ?, ?)')
+              .bind(userId, contributionClass, contrib)
         );
     }
 
