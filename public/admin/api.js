@@ -67,6 +67,8 @@ bulkCreateGames: (data) => request('/api/admin/bulk-create-games', { method: 'PO
     saveBookingSettings: (body) => request('/api/admin/booking-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
 
     getExpHistory: () => request('/api/admin/exp-history-list'),
+    updateExpRecord: (data) => request('/api/admin/exp-history-list', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+    deleteExpRecord: (history_id) => request('/api/admin/exp-history-list', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ history_id }) }),
     addPoints: (data) => request('/api/add-exp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
     getContributionStats: () => request('/api/admin/contribution-stats'),
     

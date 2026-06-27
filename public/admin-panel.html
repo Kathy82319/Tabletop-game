@@ -747,8 +747,14 @@
             <div class="page-header">
                 <h2>經驗紀錄查詢</h2>
             </div>
-            <div class="filter-bar">
-                <input type="search" id="exp-user-filter-input" placeholder="依使用者名稱或 LINE ID 搜尋..." style="width: 100%; box-sizing: border-box; padding: 8px;">
+            <div class="filter-bar" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:1rem;">
+                <input type="search" id="exp-user-filter-input" placeholder="搜尋使用者名稱 / LINE ID..." style="flex:1; min-width:160px; padding:8px;">
+                <input type="date" id="exp-date-start" style="padding:8px; border:1px solid var(--border-color); border-radius:4px;">
+                <span style="color:var(--text-light);">至</span>
+                <input type="date" id="exp-date-end" style="padding:8px; border:1px solid var(--border-color); border-radius:4px;">
+                <input type="number" id="exp-min-exp" placeholder="最低EXP" min="1" style="width:100px; padding:8px; border:1px solid var(--border-color); border-radius:4px;">
+                <button id="exp-clear-filter-btn" class="action-btn" style="background:var(--text-light); color:#fff;">清除篩選</button>
+                <button id="exp-spin-btn" class="action-btn" style="background:var(--primary-color); color:#fff;" disabled>🎡 轉盤抽獎</button>
             </div>
             <table>
                 <thead>
@@ -757,11 +763,50 @@
                         <th>日期</th>
                         <th>原因</th>
                         <th>經驗值</th>
+                        <th>操作</th>
                     </tr>
                 </thead>
                 <tbody id="exp-history-tbody"></tbody>
             </table>
         </div>
+
+        <!-- 編輯經驗紀錄 Modal -->
+        <div id="edit-exp-modal" class="modal-overlay" style="display:none;">
+            <div class="modal-content" style="max-width:420px;">
+                <h3 style="margin-top:0;">編輯紀錄</h3>
+                <input type="hidden" id="edit-exp-id">
+                <div class="form-group">
+                    <label>原因</label>
+                    <input type="text" id="edit-exp-reason" style="width:100%; padding:8px; border:1px solid var(--border-color); border-radius:4px; box-sizing:border-box;">
+                </div>
+                <div class="form-group">
+                    <label>經驗值</label>
+                    <input type="number" id="edit-exp-value" min="1" max="1000" style="width:100%; padding:8px; border:1px solid var(--border-color); border-radius:4px; box-sizing:border-box;">
+                </div>
+                <p style="color:var(--warning-color); font-size:0.85rem; margin:0 0 1rem;">⚠ 修改經驗值不會自動調整使用者等級</p>
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button id="edit-exp-cancel-btn" class="action-btn" style="background:var(--text-light); color:#fff;">取消</button>
+                    <button id="edit-exp-save-btn" class="action-btn" style="background:var(--primary-color); color:#fff;">儲存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 轉盤抽獎 Modal -->
+        <div id="wheel-draw-modal" class="modal-overlay" style="display:none;">
+            <div class="modal-content" style="max-width:400px; text-align:center;">
+                <h3 style="margin-top:0;">🎡 轉盤抽獎</h3>
+                <div style="position:relative; display:inline-block;">
+                    <div style="position:absolute; top:-14px; left:50%; transform:translateX(-50%); font-size:1.6rem; line-height:1; z-index:1; color:#e15759;">▼</div>
+                    <canvas id="wheel-draw-canvas" width="320" height="320" style="border-radius:50%; box-shadow:0 4px 16px rgba(0,0,0,0.15); display:block;"></canvas>
+                </div>
+                <div id="wheel-draw-result" style="display:none; margin-top:1rem; padding:12px; background:var(--success-color); color:#fff; border-radius:8px; font-size:1.1rem; font-weight:bold;"></div>
+                <div style="display:flex; gap:10px; justify-content:center; margin-top:1rem;">
+                    <button id="wheel-draw-close-btn" class="action-btn" style="background:var(--text-light); color:#fff;">關閉</button>
+                    <button id="wheel-draw-spin-btn" class="action-btn" style="background:var(--primary-color); color:#fff; min-width:120px;">🎡 開始抽獎！</button>
+                </div>
+            </div>
+        </div>
+
         <div id="page-news" class="page">
             <div class="page-header">
                 <h2>情報管理</h2>

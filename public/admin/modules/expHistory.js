@@ -3,87 +3,302 @@ import { api } from '../api.js';
 import { ui } from '../ui.js';
 
 let allExpHistory = [];
+let filteredHistory = [];
+let wheelRotation = 0;
+let wheelSpinning = false;
+let wheelAnimId = null;
 
-/**
- * 渲染經驗紀錄列表
- * @param {Array} historyList 要顯示的紀錄
- */
-function renderExpHistory(historyList) {
+// ── 渲染 ─────────────────────────────────────────────────────────────────────
+
+function renderExpHistory(list) {
     const tbody = document.getElementById('exp-history-tbody');
     if (!tbody) return;
-
     tbody.innerHTML = '';
-    if (historyList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4">沒有符合條件的紀錄。</td></tr>';
+
+    if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">沒有符合條件的紀錄。</td></tr>';
         return;
     }
 
-    historyList.forEach(record => {
+    list.forEach(record => {
         const row = tbody.insertRow();
         const displayName = record.nickname || record.line_display_name || '未知使用者';
-        
         row.innerHTML = `
-            <td class="compound-cell" style="text-align: left;">
+            <td class="compound-cell" style="text-align:left;">
                 <div class="main-info">${displayName}</div>
                 <div class="sub-info">${record.user_id}</div>
             </td>
             <td>${new Date(record.created_at).toLocaleString()}</td>
             <td>${record.reason}</td>
             <td>${record.exp_added}</td>
+            <td style="white-space:nowrap;">
+                <button class="action-btn btn-edit-exp"
+                    data-id="${record.history_id}"
+                    data-reason="${escapeAttr(record.reason)}"
+                    data-exp="${record.exp_added}"
+                    style="background:var(--warning-color);color:#000;padding:4px 10px;margin-right:4px;">編輯</button>
+                <button class="action-btn btn-delete-exp"
+                    data-id="${record.history_id}"
+                    style="background:var(--danger-color);color:#fff;padding:4px 10px;">刪除</button>
+            </td>
         `;
     });
 }
 
-/**
- * 根據搜尋條件篩選並重新渲染列表
- */
-function applyFilterAndRender() {
-    const searchInput = document.getElementById('exp-user-filter-input');
-    const searchTerm = searchInput.value.toLowerCase().trim();
-
-    if (!searchTerm) {
-        renderExpHistory(allExpHistory);
-        return;
-    }
-
-    const filtered = allExpHistory.filter(record => 
-        (record.line_display_name && record.line_display_name.toLowerCase().includes(searchTerm)) ||
-        (record.nickname && record.nickname.toLowerCase().includes(searchTerm)) ||
-        (record.user_id && record.user_id.toLowerCase().includes(searchTerm))
-    );
-
-    renderExpHistory(filtered);
+function escapeAttr(str) {
+    return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-/**
- * 綁定事件監聽器
- */
+// ── 篩選 ─────────────────────────────────────────────────────────────────────
+
+function applyFilterAndRender() {
+    const userTerm = document.getElementById('exp-user-filter-input').value.toLowerCase().trim();
+    const dateStart = document.getElementById('exp-date-start').value;
+    const dateEnd = document.getElementById('exp-date-end').value;
+    const minExp = parseInt(document.getElementById('exp-min-exp').value, 10);
+
+    filteredHistory = allExpHistory.filter(record => {
+        if (userTerm) {
+            const match = (record.line_display_name || '').toLowerCase().includes(userTerm) ||
+                          (record.nickname || '').toLowerCase().includes(userTerm) ||
+                          (record.user_id || '').toLowerCase().includes(userTerm);
+            if (!match) return false;
+        }
+        if (dateStart && new Date(record.created_at) < new Date(dateStart)) return false;
+        if (dateEnd) {
+            const end = new Date(dateEnd);
+            end.setHours(23, 59, 59, 999);
+            if (new Date(record.created_at) > end) return false;
+        }
+        if (!isNaN(minExp) && minExp > 0 && record.exp_added < minExp) return false;
+        return true;
+    });
+
+    renderExpHistory(filteredHistory);
+    updateSpinBtn();
+}
+
+function clearFilters() {
+    document.getElementById('exp-user-filter-input').value = '';
+    document.getElementById('exp-date-start').value = '';
+    document.getElementById('exp-date-end').value = '';
+    document.getElementById('exp-min-exp').value = '';
+    filteredHistory = [...allExpHistory];
+    renderExpHistory(filteredHistory);
+    updateSpinBtn();
+}
+
+function updateSpinBtn() {
+    const btn = document.getElementById('exp-spin-btn');
+    if (!btn) return;
+    const count = getUniqueUsers().length;
+    btn.disabled = count < 2;
+    btn.title = count < 2 ? '需要至少 2 位使用者' : `從 ${count} 位使用者中抽獎`;
+}
+
+function getUniqueUsers() {
+    const seen = new Set();
+    return filteredHistory.filter(r => {
+        if (seen.has(r.user_id)) return false;
+        seen.add(r.user_id);
+        return true;
+    });
+}
+
+// ── 轉盤 ─────────────────────────────────────────────────────────────────────
+
+const WHEEL_COLORS = [
+    '#4e79a7','#f28e2b','#e15759','#76b7b2',
+    '#59a14f','#edc948','#b07aa1','#ff9da7',
+    '#9c755f','#bab0ac'
+];
+
+function drawWheelCanvas(canvas, segments, rotation) {
+    const ctx = canvas.getContext('2d');
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const r = cx - 8;
+    const arc = (2 * Math.PI) / segments.length;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    segments.forEach((seg, i) => {
+        const start = rotation + i * arc - Math.PI / 2;
+        const end = start + arc;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, start, end);
+        ctx.closePath();
+        ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length];
+        ctx.fill();
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(start + arc / 2);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = 'white';
+        ctx.font = `bold ${segments.length > 8 ? 11 : 13}px sans-serif`;
+        const label = seg.length > 8 ? seg.substring(0, 7) + '…' : seg;
+        ctx.fillText(label, r - 10, 5);
+        ctx.restore();
+    });
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, 14, 0, 2 * Math.PI);
+    ctx.fillStyle = 'white';
+    ctx.fill();
+}
+
+function openWheelModal() {
+    const users = getUniqueUsers();
+    if (users.length < 2) return;
+
+    const segments = users.map(u => u.nickname || u.line_display_name || u.user_id);
+    const modal = document.getElementById('wheel-draw-modal');
+    const canvas = document.getElementById('wheel-draw-canvas');
+    const resultEl = document.getElementById('wheel-draw-result');
+    const spinBtn = document.getElementById('wheel-draw-spin-btn');
+
+    resultEl.style.display = 'none';
+    spinBtn.disabled = false;
+    spinBtn.textContent = '🎡 開始抽獎！';
+    wheelRotation = 0;
+    wheelSpinning = false;
+    if (wheelAnimId) cancelAnimationFrame(wheelAnimId);
+
+    drawWheelCanvas(canvas, segments, wheelRotation);
+    modal.style.display = 'flex';
+
+    spinBtn.onclick = () => {
+        if (wheelSpinning) return;
+        wheelSpinning = true;
+        spinBtn.disabled = true;
+        resultEl.style.display = 'none';
+
+        const totalSpins = (5 + Math.random() * 5) * 2 * Math.PI;
+        const extraAngle = Math.random() * 2 * Math.PI;
+        const targetRotation = wheelRotation + totalSpins + extraAngle;
+        const duration = 4000;
+        const startRot = wheelRotation;
+        const startTime = performance.now();
+
+        const easeOut = t => 1 - Math.pow(1 - t, 3);
+
+        const animate = (now) => {
+            const t = Math.min((now - startTime) / duration, 1);
+            wheelRotation = startRot + (targetRotation - startRot) * easeOut(t);
+            drawWheelCanvas(canvas, segments, wheelRotation);
+
+            if (t < 1) {
+                wheelAnimId = requestAnimationFrame(animate);
+            } else {
+                wheelSpinning = false;
+                const arc = (2 * Math.PI) / segments.length;
+                const idx = Math.floor((((-wheelRotation / arc) % segments.length) + segments.length) % segments.length);
+                const winner = segments[idx];
+                resultEl.textContent = '🎉 抽中：' + winner;
+                resultEl.style.display = 'block';
+                spinBtn.textContent = '再抽一次';
+                spinBtn.disabled = false;
+            }
+        };
+
+        wheelAnimId = requestAnimationFrame(animate);
+    };
+}
+
+// ── 編輯 / 刪除 ───────────────────────────────────────────────────────────────
+
+function openEditModal(historyId, reason, expAdded) {
+    document.getElementById('edit-exp-id').value = historyId;
+    document.getElementById('edit-exp-reason').value = reason;
+    document.getElementById('edit-exp-value').value = expAdded;
+    document.getElementById('edit-exp-modal').style.display = 'flex';
+}
+
+async function handleSaveEdit() {
+    const history_id = document.getElementById('edit-exp-id').value;
+    const reason = document.getElementById('edit-exp-reason').value.trim();
+    const exp_added = parseInt(document.getElementById('edit-exp-value').value, 10);
+
+    if (!reason) return ui.toast.error('原因不可為空');
+    if (isNaN(exp_added) || exp_added <= 0) return ui.toast.error('經驗值必須為正整數');
+
+    try {
+        await api.updateExpRecord({ history_id, reason, exp_added });
+        ui.toast.success('修改成功');
+        document.getElementById('edit-exp-modal').style.display = 'none';
+        allExpHistory = await api.getExpHistory();
+        applyFilterAndRender();
+    } catch (e) {
+        ui.toast.error('修改失敗：' + e.message);
+    }
+}
+
+async function handleDeleteRecord(historyId) {
+    if (!confirm('確定要刪除這筆紀錄嗎？\n注意：刪除後不會自動調整使用者的 EXP 與等級。')) return;
+    try {
+        await api.deleteExpRecord(historyId);
+        ui.toast.success('已刪除');
+        allExpHistory = await api.getExpHistory();
+        applyFilterAndRender();
+    } catch (e) {
+        ui.toast.error('刪除失敗：' + e.message);
+    }
+}
+
+// ── 事件綁定 ──────────────────────────────────────────────────────────────────
+
 function setupEventListeners() {
     const page = document.getElementById('page-exp-history');
     if (page.dataset.initialized) return;
 
-    const searchInput = document.getElementById('exp-user-filter-input');
-    searchInput.addEventListener('input', applyFilterAndRender);
+    document.getElementById('exp-user-filter-input').addEventListener('input', applyFilterAndRender);
+    document.getElementById('exp-date-start').addEventListener('change', applyFilterAndRender);
+    document.getElementById('exp-date-end').addEventListener('change', applyFilterAndRender);
+    document.getElementById('exp-min-exp').addEventListener('input', applyFilterAndRender);
+    document.getElementById('exp-clear-filter-btn').addEventListener('click', clearFilters);
+    document.getElementById('exp-spin-btn').addEventListener('click', openWheelModal);
+
+    document.getElementById('exp-history-tbody').addEventListener('click', e => {
+        const editBtn = e.target.closest('.btn-edit-exp');
+        const deleteBtn = e.target.closest('.btn-delete-exp');
+        if (editBtn) openEditModal(editBtn.dataset.id, editBtn.dataset.reason, editBtn.dataset.exp);
+        else if (deleteBtn) handleDeleteRecord(deleteBtn.dataset.id);
+    });
+
+    document.getElementById('edit-exp-save-btn').addEventListener('click', handleSaveEdit);
+    document.getElementById('edit-exp-cancel-btn').addEventListener('click', () => {
+        document.getElementById('edit-exp-modal').style.display = 'none';
+    });
+
+    document.getElementById('wheel-draw-close-btn').addEventListener('click', () => {
+        document.getElementById('wheel-draw-modal').style.display = 'none';
+        if (wheelAnimId) cancelAnimationFrame(wheelAnimId);
+    });
 
     page.dataset.initialized = 'true';
 }
 
-/**
- * 模組初始化函式
- */
-export const init = async (context, param) => {
-    const page = document.getElementById('page-exp-history');
-    const tbody = document.getElementById('exp-history-tbody');
-    if (!page || !tbody) return;
-    
-    tbody.innerHTML = '<tr><td colspan="4">正在載入經驗紀錄...</td></tr>';
+// ── Init ─────────────────────────────────────────────────────────────────────
 
+export const init = async () => {
+    const tbody = document.getElementById('exp-history-tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="5">正在載入經驗紀錄...</td></tr>';
     try {
         allExpHistory = await api.getExpHistory();
-        renderExpHistory(allExpHistory);
+        filteredHistory = [...allExpHistory];
+        renderExpHistory(filteredHistory);
+        updateSpinBtn();
         setupEventListeners();
-    } catch (error) {
-        console.error('載入經驗紀錄失敗:', error);
-        tbody.innerHTML = `<tr><td colspan="4" style="color:red;">載入失敗: ${error.message}</td></tr>`;
+    } catch (e) {
+        console.error('載入經驗紀錄失敗:', e);
+        tbody.innerHTML = `<tr><td colspan="5" style="color:red;">載入失敗: ${e.message}</td></tr>`;
     }
 };
