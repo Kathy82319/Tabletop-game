@@ -51,13 +51,21 @@
         .game-tag-chip.sale-tag { background: #fff3cd; color: #856404; font-weight: 500; }
         .game-tag-chip.rent-tag { background: #d1e7dd; color: #0a3622; font-weight: 500; }
         /* --- Inline Edit --- */
-        .stock-inline-grid { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; margin-bottom: 4px; }
-        .stock-label { font-size: 0.78rem; color: var(--text-light); white-space: nowrap; }
-        .inline-val { display: inline-block; min-width: 30px; padding: 1px 5px; border-radius: 4px; font-size: 0.88rem; text-align: center; cursor: pointer; border: 1px solid transparent; transition: border-color 0.15s, background 0.15s; }
+        .inline-val { display: inline-block; min-width: 34px; padding: 1px 5px; border-radius: 4px; font-size: 0.88rem; text-align: center; cursor: pointer; border: 1px solid transparent; transition: border-color 0.15s, background 0.15s; }
         .inline-val:hover { border-color: var(--border-color); background: var(--light-gray); }
         .inline-val.editing { border-color: var(--primary-color); background: white; }
-        .inline-edit-input { width: 46px; padding: 0 2px; border: none; outline: none; font-size: 0.88rem; text-align: center; background: transparent; }
-        .stock-cell, .price-cell { min-width: 130px; }
+        .inline-edit-input { width: 48px; padding: 0 2px; border: none; outline: none; font-size: 0.88rem; text-align: center; background: transparent; }
+        /* 庫存欄 */
+        .stock-cell { min-width: 190px; }
+        .stock-layout { display: flex; align-items: stretch; }
+        .stock-total-col { display: flex; flex-direction: column; align-items: center; justify-content: center; padding-right: 10px; margin-right: 10px; border-right: 1px solid #dee2e6; min-width: 60px; text-align: center; }
+        .stock-detail-col { display: flex; flex-direction: column; gap: 5px; justify-content: center; }
+        /* 定價欄 */
+        .price-cell { min-width: 130px; }
+        /* 共用 field row */
+        .field-row { display: flex; align-items: center; gap: 6px; }
+        .field-label { font-size: 0.78rem; color: var(--text-light); min-width: 30px; white-space: nowrap; }
+        .backup-val { font-size: 0.88rem; min-width: 34px; text-align: center; padding: 1px 5px; }
         /* --- 行事曆樣式 --- */
         .calendar-header {
             display: flex;

@@ -268,7 +268,7 @@ function updateRowStockDisplay(gameId) {
 
     const backup = Number(game.total_stock) - Number(game.for_sale_stock) - Number(game.for_rent_stock);
     const backupEl = row.querySelector('.backup-display');
-    if (backupEl) backupEl.textContent = `備用 ${backup}`;
+    if (backupEl) backupEl.textContent = backup;
 
     const tagsArea = row.querySelector('.tags-area');
     if (tagsArea) {
@@ -356,39 +356,58 @@ function renderGameList(games) {
         const saleStock = game.for_sale_stock ?? (Number(game.total_stock) - Number(game.for_rent_stock));
         const backup = Number(game.total_stock) - Number(saleStock) - Number(game.for_rent_stock);
 
-        const stockGrid = document.createElement('div');
-        stockGrid.className = 'stock-inline-grid';
-        stockGrid.appendChild(makeStockLabel('總'));
-        stockGrid.appendChild(makeInlineVal('total_stock', game.game_id, game.total_stock));
-        stockGrid.appendChild(makeStockLabel('販'));
-        stockGrid.appendChild(makeInlineVal('for_sale_stock', game.game_id, saleStock));
-        stockGrid.appendChild(makeStockLabel('租'));
-        stockGrid.appendChild(makeInlineVal('for_rent_stock', game.game_id, game.for_rent_stock));
+        const stockLayout = document.createElement('div');
+        stockLayout.className = 'stock-layout';
 
-        const backupDiv = document.createElement('div');
-        backupDiv.className = 'backup-display sub-info';
-        backupDiv.textContent = `備用 ${backup}`;
+        // 左欄：總數量（垂直置中）
+        const totalCol = document.createElement('div');
+        totalCol.className = 'stock-total-col';
+        const totalLabel = document.createElement('div');
+        totalLabel.className = 'field-label';
+        totalLabel.textContent = '總數量';
+        totalCol.appendChild(totalLabel);
+        totalCol.appendChild(makeInlineVal('total_stock', game.game_id, game.total_stock));
 
-        cellStock.appendChild(stockGrid);
-        cellStock.appendChild(backupDiv);
+        // 右欄：販售 / 租借 / 備用
+        const detailCol = document.createElement('div');
+        detailCol.className = 'stock-detail-col';
+
+        const makeFieldRow = (labelText, contentEl) => {
+            const r = document.createElement('div');
+            r.className = 'field-row';
+            const lbl = document.createElement('span');
+            lbl.className = 'field-label';
+            lbl.textContent = labelText;
+            r.appendChild(lbl);
+            r.appendChild(contentEl);
+            return r;
+        };
+
+        const backupSpan = document.createElement('span');
+        backupSpan.className = 'backup-display backup-val';
+        backupSpan.textContent = backup;
+
+        detailCol.appendChild(makeFieldRow('販售', makeInlineVal('for_sale_stock', game.game_id, saleStock)));
+        detailCol.appendChild(makeFieldRow('租借', makeInlineVal('for_rent_stock', game.game_id, game.for_rent_stock)));
+        detailCol.appendChild(makeFieldRow('備用', backupSpan));
+
+        stockLayout.appendChild(totalCol);
+        stockLayout.appendChild(detailCol);
+        cellStock.appendChild(stockLayout);
 
         // 定價（inline edit）
         cellPrice.className = 'price-cell';
-
-        const priceGrid1 = document.createElement('div');
-        priceGrid1.className = 'stock-inline-grid';
-        priceGrid1.appendChild(makeStockLabel('售$'));
-        priceGrid1.appendChild(makeInlineVal('sale_price', game.game_id, game.sale_price));
-        priceGrid1.appendChild(makeStockLabel('租$'));
-        priceGrid1.appendChild(makeInlineVal('rent_price', game.game_id, game.rent_price));
-
-        const priceGrid2 = document.createElement('div');
-        priceGrid2.className = 'stock-inline-grid';
-        priceGrid2.appendChild(makeStockLabel('押$'));
-        priceGrid2.appendChild(makeInlineVal('deposit', game.game_id, game.deposit));
-
-        cellPrice.appendChild(priceGrid1);
-        cellPrice.appendChild(priceGrid2);
+        [['售價', 'sale_price', game.sale_price], ['租金', 'rent_price', game.rent_price], ['押金', 'deposit', game.deposit]]
+            .forEach(([label, field, value]) => {
+                const r = document.createElement('div');
+                r.className = 'field-row';
+                const lbl = document.createElement('span');
+                lbl.className = 'field-label';
+                lbl.textContent = label;
+                r.appendChild(lbl);
+                r.appendChild(makeInlineVal(field, game.game_id, value));
+                cellPrice.appendChild(r);
+            });
 
         // 操作
         cellActions.className = 'actions-cell';
