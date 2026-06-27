@@ -11,6 +11,7 @@ const AUTO_TAGS = ['販售', '可租借', '租借'];
 
 let currentForSaleStock = 0;
 let currentForRentStock = 0;
+let searchChips = [];
 
 let gameListTbody, gameSearchInput, editGameModal, editGameForm, inventoryStockFilter;
 let btnDownloadTemplate, btnImportCSV, btnAddNewProduct, importCSVModal, importCSVForm;
@@ -423,12 +424,50 @@ function renderGameList(games) {
     });
 }
 
+// --- Search Chips ---
+
+function gameMatchesTerm(game, term) {
+    const t = term.toLowerCase();
+    if ((game.name || '').toLowerCase().includes(t)) return true;
+    if (Number(game.for_sale_stock) > 0 && '販售'.includes(t)) return true;
+    if (Number(game.for_rent_stock) > 0 && '可租借'.includes(t)) return true;
+    return (game.tags || '').split(',').some(tag => tag.trim().toLowerCase().includes(t) && tag.trim() !== '');
+}
+
+function renderSearchChips() {
+    const container = document.getElementById('game-search-container');
+    if (!container || !gameSearchInput) return;
+    container.querySelectorAll('.search-chip').forEach(c => c.remove());
+    searchChips.forEach(chip => {
+        const el = document.createElement('span');
+        el.className = 'search-chip';
+        el.innerHTML = `${escapeHtml(chip)}<button type="button" class="chip-remove" data-chip="${escapeHtml(chip)}">&times;</button>`;
+        container.insertBefore(el, gameSearchInput);
+    });
+}
+
+function addSearchChip(term) {
+    const normalized = term.trim();
+    if (!normalized || searchChips.includes(normalized)) return;
+    searchChips.push(normalized);
+    renderSearchChips();
+    applyGameFiltersAndRender();
+}
+
+function removeSearchChip(term) {
+    searchChips = searchChips.filter(c => c !== term);
+    renderSearchChips();
+    applyGameFiltersAndRender();
+}
+
 function applyGameFiltersAndRender() {
     if (!allGamesData || !gameSearchInput || !inventoryStockFilter) return;
 
-    const searchTerm = gameSearchInput.value.toLowerCase().trim();
-    let filteredGames = searchTerm
-        ? allGamesData.filter(game => (game.name || '').toLowerCase().includes(searchTerm))
+    const inputText = gameSearchInput.value.trim();
+    const allTerms = [...searchChips, ...(inputText ? [inputText] : [])];
+
+    let filteredGames = allTerms.length > 0
+        ? allGamesData.filter(game => allTerms.every(term => gameMatchesTerm(game, term)))
         : [...allGamesData];
 
     const stockFilterEl = inventoryStockFilter.querySelector('.active');
@@ -681,6 +720,24 @@ function setupEventListeners() {
     if (pageElement.dataset.initialized) return;
 
     gameSearchInput.addEventListener('input', applyGameFiltersAndRender);
+
+    gameSearchInput.addEventListener('keydown', (e) => {
+        if ((e.key === ' ' || e.key === 'Enter') && gameSearchInput.value.trim()) {
+            e.preventDefault();
+            addSearchChip(gameSearchInput.value.trim());
+            gameSearchInput.value = '';
+        } else if (e.key === 'Backspace' && gameSearchInput.value === '' && searchChips.length > 0) {
+            removeSearchChip(searchChips[searchChips.length - 1]);
+        }
+    });
+
+    document.getElementById('game-search-container')?.addEventListener('click', (e) => {
+        if (e.target.classList.contains('chip-remove')) {
+            removeSearchChip(e.target.dataset.chip);
+        } else {
+            gameSearchInput.focus();
+        }
+    });
 
     inventoryStockFilter.addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON') {
