@@ -147,6 +147,148 @@ function resetModalTabs() {
     editGameModal.querySelectorAll('.modal-tab-content').forEach((content, i) => content.classList.toggle('active', i === 0));
 }
 
+// --- Inline Edit ---
+
+function makeInlineVal(field, gameId, value) {
+    const span = document.createElement('span');
+    span.className = 'inline-val';
+    span.dataset.field = field;
+    span.dataset.gameId = gameId;
+    span.textContent = value;
+    return span;
+}
+
+function makeStockLabel(text) {
+    const s = document.createElement('span');
+    s.className = 'stock-label';
+    s.textContent = text;
+    return s;
+}
+
+async function saveInlineEdit(span, gameId, field, originalValue, newRawValue) {
+    const newValue = Number(newRawValue);
+    span.classList.remove('editing');
+
+    if (newValue === Number(originalValue)) {
+        span.textContent = originalValue;
+        return;
+    }
+
+    const game = allGamesData.find(g => g.game_id == gameId);
+    if (!game) { span.textContent = originalValue; return; }
+
+    const prevValue = game[field];
+    game[field] = newValue; // optimistic update
+
+    const total = Number(game.total_stock);
+    const sale = Number(game.for_sale_stock);
+    const rent = Number(game.for_rent_stock);
+
+    if (sale + rent > total) {
+        game[field] = prevValue;
+        span.textContent = originalValue;
+        ui.toast.error(`販售 (${sale}) + 租借 (${rent}) 不可超過總庫存 (${total})`);
+        return;
+    }
+
+    span.textContent = newValue;
+
+    try {
+        const result = await api.patchGameStock({
+            gameId,
+            total_stock: Number(game.total_stock),
+            for_sale_stock: Number(game.for_sale_stock),
+            for_rent_stock: Number(game.for_rent_stock),
+            sale_price: Number(game.sale_price),
+            rent_price: Number(game.rent_price),
+            deposit: Number(game.deposit)
+        });
+
+        game.is_visible = result.is_visible;
+
+        if (['total_stock', 'for_sale_stock', 'for_rent_stock'].includes(field)) {
+            updateRowStockDisplay(gameId);
+        }
+
+        ui.toast.success('已儲存');
+    } catch (error) {
+        game[field] = prevValue;
+        span.textContent = originalValue;
+        ui.toast.error(`儲存失敗：${error.message}`);
+    }
+}
+
+function activateInlineEdit(span) {
+    if (span.querySelector('input')) return;
+
+    const gameId = span.dataset.gameId;
+    const field = span.dataset.field;
+    const originalValue = span.textContent;
+
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.value = originalValue;
+    input.min = '0';
+    input.className = 'inline-edit-input';
+
+    span.textContent = '';
+    span.classList.add('editing');
+    span.appendChild(input);
+    input.focus();
+    input.select();
+
+    let committed = false;
+
+    input.addEventListener('blur', () => {
+        if (committed) return;
+        committed = true;
+        saveInlineEdit(span, gameId, field, originalValue, input.value);
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (committed) return;
+            committed = true;
+            saveInlineEdit(span, gameId, field, originalValue, input.value);
+        }
+        if (e.key === 'Escape') {
+            committed = true;
+            span.classList.remove('editing');
+            span.textContent = originalValue;
+        }
+    });
+}
+
+function updateRowStockDisplay(gameId) {
+    const game = allGamesData.find(g => g.game_id == gameId);
+    if (!game) return;
+    const row = gameListTbody.querySelector(`tr[data-game-id="${gameId}"]`);
+    if (!row) return;
+
+    const backup = Number(game.total_stock) - Number(game.for_sale_stock) - Number(game.for_rent_stock);
+    const backupEl = row.querySelector('.backup-display');
+    if (backupEl) backupEl.textContent = `備用 ${backup}`;
+
+    const tagsArea = row.querySelector('.tags-area');
+    if (tagsArea) {
+        tagsArea.querySelectorAll('.auto-tag').forEach(t => t.remove());
+        const anchor = tagsArea.firstChild;
+        if (Number(game.for_rent_stock) > 0) {
+            const t = document.createElement('span');
+            t.className = 'game-tag-chip rent-tag auto-tag';
+            t.textContent = '可租借';
+            tagsArea.insertBefore(t, anchor);
+        }
+        if (Number(game.for_sale_stock) > 0) {
+            const t = document.createElement('span');
+            t.className = 'game-tag-chip sale-tag auto-tag';
+            t.textContent = '販售';
+            tagsArea.insertBefore(t, tagsArea.firstChild);
+        }
+    }
+}
+
 // --- Render ---
 
 function renderGameList(games) {
@@ -160,12 +302,11 @@ function renderGameList(games) {
 
         const cellOrder = row.insertCell();
         const cellGame = row.insertCell();
-        const cellTotalStock = row.insertCell();
-        const cellSaleStock = row.insertCell();
-        const cellRentStock = row.insertCell();
+        const cellStock = row.insertCell();
         const cellPrice = row.insertCell();
         const cellActions = row.insertCell();
 
+        // 順序 / drag
         cellOrder.className = 'drag-handle-cell';
         const handleSpan = document.createElement('span');
         handleSpan.className = 'drag-handle';
@@ -173,6 +314,7 @@ function renderGameList(games) {
         cellOrder.appendChild(handleSpan);
         cellOrder.append(document.createTextNode(game.display_order || 'N/A'));
 
+        // 遊戲 名稱 / ID / 標籤
         cellGame.className = 'compound-cell';
         cellGame.style.textAlign = 'left';
 
@@ -182,50 +324,73 @@ function renderGameList(games) {
         const idDiv = document.createElement('div');
         idDiv.className = 'sub-info';
         idDiv.textContent = `ID: ${game.game_id}`;
-        const tagsDiv = document.createElement('div');
-        tagsDiv.className = 'sub-info';
-        tagsDiv.style.marginTop = '5px';
+        const tagsArea = document.createElement('div');
+        tagsArea.className = 'sub-info tags-area';
+        tagsArea.style.marginTop = '5px';
 
-        // Auto-tags based on stock
         if (Number(game.for_sale_stock) > 0) {
             const t = document.createElement('span');
-            t.className = 'game-tag-chip sale-tag';
+            t.className = 'game-tag-chip sale-tag auto-tag';
             t.textContent = '販售';
-            tagsDiv.appendChild(t);
+            tagsArea.appendChild(t);
         }
         if (Number(game.for_rent_stock) > 0) {
             const t = document.createElement('span');
-            t.className = 'game-tag-chip rent-tag';
+            t.className = 'game-tag-chip rent-tag auto-tag';
             t.textContent = '可租借';
-            tagsDiv.appendChild(t);
+            tagsArea.appendChild(t);
         }
-        // User-defined tags
         (game.tags || '').split(',').map(t => t.trim()).filter(t => t && !AUTO_TAGS.includes(t)).forEach(tag => {
-            const tagSpan = document.createElement('span');
-            tagSpan.className = 'game-tag-chip';
-            tagSpan.textContent = tag;
-            tagsDiv.appendChild(tagSpan);
+            const s = document.createElement('span');
+            s.className = 'game-tag-chip';
+            s.textContent = tag;
+            tagsArea.appendChild(s);
         });
 
         cellGame.appendChild(nameDiv);
         cellGame.appendChild(idDiv);
-        cellGame.appendChild(tagsDiv);
+        cellGame.appendChild(tagsArea);
 
+        // 庫存（inline edit）
+        cellStock.className = 'stock-cell';
         const saleStock = game.for_sale_stock ?? (Number(game.total_stock) - Number(game.for_rent_stock));
-        cellTotalStock.textContent = game.total_stock;
-        cellSaleStock.textContent = saleStock;
-        cellRentStock.textContent = game.for_rent_stock;
+        const backup = Number(game.total_stock) - Number(saleStock) - Number(game.for_rent_stock);
 
-        cellPrice.className = 'compound-cell';
-        const saleDiv = document.createElement('div');
-        saleDiv.className = 'main-info';
-        saleDiv.textContent = `$${game.sale_price}`;
-        const rentDiv = document.createElement('div');
-        rentDiv.className = 'sub-info';
-        rentDiv.textContent = `租金: $${game.rent_price}`;
-        cellPrice.appendChild(saleDiv);
-        cellPrice.appendChild(rentDiv);
+        const stockGrid = document.createElement('div');
+        stockGrid.className = 'stock-inline-grid';
+        stockGrid.appendChild(makeStockLabel('總'));
+        stockGrid.appendChild(makeInlineVal('total_stock', game.game_id, game.total_stock));
+        stockGrid.appendChild(makeStockLabel('販'));
+        stockGrid.appendChild(makeInlineVal('for_sale_stock', game.game_id, saleStock));
+        stockGrid.appendChild(makeStockLabel('租'));
+        stockGrid.appendChild(makeInlineVal('for_rent_stock', game.game_id, game.for_rent_stock));
 
+        const backupDiv = document.createElement('div');
+        backupDiv.className = 'backup-display sub-info';
+        backupDiv.textContent = `備用 ${backup}`;
+
+        cellStock.appendChild(stockGrid);
+        cellStock.appendChild(backupDiv);
+
+        // 定價（inline edit）
+        cellPrice.className = 'price-cell';
+
+        const priceGrid1 = document.createElement('div');
+        priceGrid1.className = 'stock-inline-grid';
+        priceGrid1.appendChild(makeStockLabel('售$'));
+        priceGrid1.appendChild(makeInlineVal('sale_price', game.game_id, game.sale_price));
+        priceGrid1.appendChild(makeStockLabel('租$'));
+        priceGrid1.appendChild(makeInlineVal('rent_price', game.game_id, game.rent_price));
+
+        const priceGrid2 = document.createElement('div');
+        priceGrid2.className = 'stock-inline-grid';
+        priceGrid2.appendChild(makeStockLabel('押$'));
+        priceGrid2.appendChild(makeInlineVal('deposit', game.game_id, game.deposit));
+
+        cellPrice.appendChild(priceGrid1);
+        cellPrice.appendChild(priceGrid2);
+
+        // 操作
         cellActions.className = 'actions-cell';
         cellActions.innerHTML = `
             <div style="display: flex; gap: 5px; justify-content: center;">
@@ -509,7 +674,9 @@ function setupEventListeners() {
         if (!row) return;
         const gameId = row.dataset.gameId;
 
-        if (target.classList.contains('btn-edit-game')) {
+        if (target.classList.contains('inline-val') && !target.querySelector('input')) {
+            activateInlineEdit(target);
+        } else if (target.classList.contains('btn-edit-game')) {
             openEditGameModal(gameId);
         } else if (target.classList.contains('btn-rent')) {
             if (context && context.openCreateRentalModal) {
@@ -556,7 +723,7 @@ export const init = async (ctx, param) => {
     importCSVForm = document.getElementById('import-csv-form');
 
     if (!gameListTbody) return;
-    gameListTbody.innerHTML = '<tr><td colspan="7">正在載入庫存資料...</td></tr>';
+    gameListTbody.innerHTML = '<tr><td colspan="5">正在載入庫存資料...</td></tr>';
 
     try {
         allGamesData = await api.getProducts();
@@ -565,6 +732,6 @@ export const init = async (ctx, param) => {
         initializeGameDragAndDrop();
     } catch (error) {
         console.error('獲取庫存列表失敗:', error);
-        gameListTbody.innerHTML = `<tr><td colspan="7">${error.message}</td></tr>`;
+        gameListTbody.innerHTML = `<tr><td colspan="5">${error.message}</td></tr>`;
     }
 };
