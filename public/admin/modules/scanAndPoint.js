@@ -6,6 +6,103 @@ import { ui } from '../ui.js';
 let html5QrCode = null;
 let cachedClasses = [];
 
+// ── 常用顧客（localStorage）──────────────────────────────────────────────────
+
+const PINNED_KEY = 'scan_pinned_users';
+
+function getPinned() {
+    try { return JSON.parse(localStorage.getItem(PINNED_KEY) || '[]'); } catch { return []; }
+}
+function savePinned(list) {
+    localStorage.setItem(PINNED_KEY, JSON.stringify(list));
+}
+function isPinned(userId) {
+    return getPinned().some(u => u.user_id === userId);
+}
+function togglePin(userId, name) {
+    let list = getPinned();
+    if (isPinned(userId)) {
+        list = list.filter(u => u.user_id !== userId);
+    } else {
+        list.unshift({ user_id: userId, name });
+    }
+    savePinned(list);
+    renderPinnedList();
+    updatePinBtn(userId);
+}
+
+function renderPinnedList() {
+    const ul = document.getElementById('scan-pinned-list');
+    if (!ul) return;
+    const list = getPinned();
+    if (list.length === 0) {
+        ul.innerHTML = '<li class="quick-empty">尚無常用顧客</li>';
+        return;
+    }
+    ul.innerHTML = list.map(u => `
+        <li data-user-id="${u.user_id}" data-name="${u.name}" class="quick-user-item">
+            <span class="quick-user-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.name}</span>
+            <button class="quick-unpin-btn" data-user-id="${u.user_id}" title="取消釘選">✕</button>
+        </li>
+    `).join('');
+}
+
+async function loadRecentList() {
+    const ul = document.getElementById('scan-recent-list');
+    if (!ul) return;
+    try {
+        const users = await api.getRecentPointedUsers();
+        if (!users.length) {
+            ul.innerHTML = '<li class="quick-empty">尚無紀錄</li>';
+            return;
+        }
+        ul.innerHTML = users.map(u => {
+            const name = u.nickname || u.line_display_name || u.user_id;
+            return `<li data-user-id="${u.user_id}" data-name="${name}" class="quick-user-item">${name}</li>`;
+        }).join('');
+    } catch {
+        ul.innerHTML = '<li class="quick-empty">載入失敗</li>';
+    }
+}
+
+function updatePinBtn(userId) {
+    const btn = document.getElementById('scan-pin-btn');
+    if (!btn) return;
+    const pinned = isPinned(userId);
+    btn.textContent = pinned ? '★ 已釘選' : '☆ 釘選';
+    btn.style.color = pinned ? '#f28e2b' : 'var(--text-light)';
+}
+
+function setupQuickPanelEvents() {
+    const handler = (e) => {
+        const unpinBtn = e.target.closest('.quick-unpin-btn');
+        if (unpinBtn) {
+            e.stopPropagation();
+            const userId = unpinBtn.dataset.userId;
+            const list = getPinned().filter(u => u.user_id !== userId);
+            savePinned(list);
+            renderPinnedList();
+            updatePinBtn(userId);
+            return;
+        }
+        const item = e.target.closest('.quick-user-item');
+        if (item) {
+            const userId = item.dataset.userId;
+            const name = item.dataset.name;
+            stopScanner();
+            document.getElementById('user-id-display').value = userId;
+            document.getElementById('scan-user-search').value = name;
+            document.getElementById('qr-reader').style.display = 'none';
+            document.getElementById('scan-result').style.display = 'block';
+            document.getElementById('submit-exp-btn').disabled = false;
+            loadScanUserPanel(userId);
+        }
+    };
+
+    document.getElementById('scan-pinned-list')?.addEventListener('click', handler);
+    document.getElementById('scan-recent-list')?.addEventListener('click', handler);
+}
+
 /**
  * 停止掃描器
  */
@@ -58,6 +155,10 @@ async function loadScanUserPanel(userId) {
         const data = await api.getUserDetails(userId);
         renderScanUserPanel(data);
         populateClassSelect(data.profile.class || '');
+        panel.addEventListener('click', (e) => {
+            const pinBtn = e.target.closest('#scan-pin-btn');
+            if (pinBtn) togglePin(pinBtn.dataset.userId, pinBtn.dataset.name);
+        }, { once: true });
     } catch (e) {
         panel.innerHTML = `<p style="color:red;">載入失敗：${e.message}</p>`;
     }
@@ -81,8 +182,13 @@ function renderScanUserPanel(data) {
         `<tr><td>${new Date(e.created_at).toLocaleDateString()}</td><td>${e.reason}</td><td style="color:var(--success-color);font-weight:bold;">+${e.exp_added}</td></tr>`
     ).join('');
 
+    const pinned = isPinned(profile.user_id);
     panel.innerHTML = `
-        <div style="text-align:center;margin-bottom:12px;">
+        <div style="text-align:center;margin-bottom:12px;position:relative;">
+            <button id="scan-pin-btn" data-user-id="${profile.user_id}" data-name="${displayName}"
+                style="position:absolute;top:0;right:0;background:none;border:none;cursor:pointer;font-size:0.82rem;color:${pinned ? '#f28e2b' : 'var(--text-light)'};">
+                ${pinned ? '★ 已釘選' : '☆ 釘選'}
+            </button>
             <img src="/api/admin/get-avatar?userId=${profile.user_id}"
                  style="width:64px;height:64px;border-radius:50%;border:2px solid var(--border-color);object-fit:cover;display:block;margin:0 auto 8px;">
             <strong style="font-size:1.05rem;">${displayName}</strong><br>
@@ -299,6 +405,7 @@ function setupEventListeners() {
         }
     });
         
+    setupQuickPanelEvents();
     page.dataset.initialized = 'true';
 }
 
@@ -310,6 +417,8 @@ export const init = async (context, param) => {
     if (!page) return;
 
     setupEventListeners();
+    renderPinnedList();
+    loadRecentList();
     startScanner();
 
     const observer = new MutationObserver((mutationsList) => {

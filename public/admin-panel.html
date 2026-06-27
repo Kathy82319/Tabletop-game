@@ -124,16 +124,16 @@
         }
         #scan-container {
             display: flex;
-            gap: 24px;
+            gap: 20px;
             align-items: flex-start;
             justify-content: center;
-            max-width: 1200px;
+            max-width: 1500px;
             margin: 0 auto;
             padding: 0 24px;
-        } 
+        }
         #scan-user-panel {
             flex: 1;
-            min-width: 300px;
+            min-width: 280px;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 16px;
@@ -144,8 +144,67 @@
         #scan-user-panel .panel-section-title { font-weight: 600; margin: 10px 0 4px; font-size: 0.82rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.04em; }
         #scan-user-panel .asset-chip { display: inline-block; background: #e9ecef; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; margin: 2px; }
         #scan-form-panel {
-            width: 500px;
+            width: 480px;
             flex-shrink: 0;
+        }
+        #scan-quick-panel {
+            width: 210px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .quick-section {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .quick-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: var(--light-gray);
+            font-weight: 600;
+            font-size: 0.82rem;
+            color: var(--text-dark);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .quick-user-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        .quick-user-list li {
+            padding: 7px 12px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            font-size: 0.83rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 4px;
+        }
+        .quick-user-list li:hover { background: var(--light-gray); }
+        .quick-user-list li:last-child { border-bottom: none; }
+        .quick-user-list .quick-empty { color: var(--text-light); cursor: default; font-style: italic; }
+        .quick-user-list .quick-empty:hover { background: none; }
+        .quick-unpin-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #ccc;
+            font-size: 0.9rem;
+            padding: 0;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        .quick-unpin-btn:hover { color: var(--danger-color); }
+        @media (max-width: 1100px) {
+            #scan-quick-panel { display: none; }
         }
         @media (max-width: 900px) {
             #scan-container { flex-direction: column-reverse; padding: 0; }
@@ -947,6 +1006,24 @@
                     <button id="rescan-btn" type="button" class="action-btn btn-cancel" style="flex-grow: 1; margin-right: 10px;">重新掃描/手動輸入</button>
                     <button id="submit-exp-btn" type="button" class="action-btn btn-save" style="flex-grow: 1;">確認新增</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- 右側快速面板 -->
+        <div id="scan-quick-panel">
+            <div class="quick-section">
+                <div class="quick-section-header">
+                    <span>⭐ 常用顧客</span>
+                </div>
+                <ul id="scan-pinned-list" class="quick-user-list">
+                    <li class="quick-empty">尚無常用顧客</li>
+                </ul>
+            </div>
+            <div class="quick-section">
+                <div class="quick-section-header">🕐 近期加點</div>
+                <ul id="scan-recent-list" class="quick-user-list">
+                    <li class="quick-empty">載入中...</li>
+                </ul>
             </div>
         </div>
     </div>
