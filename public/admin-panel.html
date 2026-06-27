@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">   
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* --- 【新增】租借視窗中已選遊戲標籤的樣式 --- */
         .selected-game-tag {
@@ -129,14 +128,15 @@
             justify-content: center;
             max-width: 1600px;
             margin: 0 auto;
-            padding: 0 40px;
+            padding: 0 18x;
         }
         #scan-user-panel {
             flex: 1;
-            min-width: 300px;
+            min-width: 260px;
+            max-width: 420px;
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 16px;
+            padding: 24px;
             background: white;
             font-size: 0.88rem;
         }
@@ -144,13 +144,13 @@
         #scan-user-panel .panel-section-title { font-weight: 600; margin: 10px 0 4px; font-size: 0.82rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.04em; }
         #scan-user-panel .asset-chip { display: inline-block; background: #e9ecef; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; margin: 2px; }
         #scan-form-panel {
-            width: 500px;
+            width: 480px;
             flex-shrink: 0;
         }
         @media (max-width: 900px) {
             #scan-container { flex-direction: column-reverse; padding: 0; }
             #scan-form-panel { width: 100%; }
-            #scan-user-panel { width: 100%; min-width: unset; }
+            #scan-user-panel { width: 100%; min-width: unset; max-width: unset; }
         }
         :root {
             --primary-color: #007bff; --secondary-color: #6c757d; --danger-color: #dc3545;
@@ -507,14 +507,6 @@
                 </div>
         </div>
 
-<div id="contribution-chart-section" style="margin-top: 2rem; background:white; border-radius:8px; padding:1.5rem; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-    <h2 style="margin-top:0; font-size:1.2rem; color:var(--text-dark);">職業貢獻度分佈</h2>
-    <div style="position:relative; height:320px;">
-        <canvas id="contribution-chart"></canvas>
-    </div>
-    <p id="contribution-chart-empty" style="text-align:center; color:var(--text-light); display:none;">尚無貢獻度資料</p>
-</div>
-
 <div id="activity-feed-section" style="margin-top: 2rem;">
     <h2 class="page-header" style="justify-content: flex-start; gap: 1rem; align-items: center;">
         <span>最新動態</span>
@@ -848,17 +840,6 @@
                 <div class="form-group">
                     <label for="exp-input">經驗值點數</label>
                     <input type="number" id="exp-input" value="2" min="1" max="1000" required>
-                </div>
-
-                <div class="form-group">
-                    <label>職業貢獻值</label>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <select id="contribution-class-select" style="flex:1; padding:8px; border:1px solid var(--border-color); border-radius:4px;">
-                            <option value="">-- 選擇職業 --</option>
-                        </select>
-                        <input type="number" id="contribution-value-input" value="5" min="1" max="9999"
-                               style="width:80px; padding:8px; border:1px solid var(--border-color); border-radius:4px;">
-                    </div>
                 </div>
 
                 <div id="scan-status-container" style="color: red; margin-bottom: 10px;"></div>
