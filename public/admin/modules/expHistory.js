@@ -157,35 +157,90 @@ function openWheelModal() {
     const users = getUniqueUsers();
     if (users.length < 2) return;
 
-    const segments = users.map(u => u.nickname || u.line_display_name || u.user_id);
     const modal = document.getElementById('wheel-draw-modal');
     const canvas = document.getElementById('wheel-draw-canvas');
     const resultEl = document.getElementById('wheel-draw-result');
     const spinBtn = document.getElementById('wheel-draw-spin-btn');
+    const nameListEl = document.getElementById('wheel-name-list');
+    const winnersSection = document.getElementById('wheel-winners-section');
+    const winnersList = document.getElementById('wheel-winners-list');
+    const drawCountInput = document.getElementById('wheel-draw-count');
 
-    resultEl.style.display = 'none';
-    spinBtn.disabled = false;
-    spinBtn.textContent = '🎡 開始抽獎！';
-    wheelRotation = 0;
-    wheelSpinning = false;
-    if (wheelAnimId) cancelAnimationFrame(wheelAnimId);
+    let remainingSegments = [];
+    let winners = [];
+    let drawnCount = 0;
+    let totalToDraw = 1;
 
-    drawWheelCanvas(canvas, segments, wheelRotation);
+    function renderNameList() {
+        nameListEl.innerHTML = [
+            ...winners.map(w =>
+                `<li style="padding:8px 12px; border-bottom:1px solid #c8e6c9; background:#e8f5e9; color:#2e7d32; font-weight:bold;">🏆 ${w}</li>`
+            ),
+            ...remainingSegments.map(s =>
+                `<li style="padding:8px 12px; border-bottom:1px solid var(--border-color);">${s.name}</li>`
+            )
+        ].join('');
+    }
+
+    function resetDraw() {
+        remainingSegments = users.map(u => ({
+            name: u.nickname || u.line_display_name || u.user_id,
+            userId: u.user_id
+        }));
+        winners = [];
+        drawnCount = 0;
+        totalToDraw = 1;
+        wheelRotation = 0;
+        wheelSpinning = false;
+        if (wheelAnimId) cancelAnimationFrame(wheelAnimId);
+
+        resultEl.style.display = 'none';
+        winnersSection.style.display = 'none';
+        winnersList.textContent = '';
+        drawCountInput.disabled = false;
+        drawCountInput.max = users.length;
+        drawCountInput.value = 1;
+        spinBtn.textContent = '🎡 開始抽獎！';
+        spinBtn.disabled = false;
+
+        renderNameList();
+        drawWheelCanvas(canvas, remainingSegments.map(s => s.name), 0);
+    }
+
+    resetDraw();
     modal.style.display = 'flex';
 
     spinBtn.onclick = () => {
         if (wheelSpinning) return;
+
+        // "重新開始" 狀態
+        if (drawnCount > 0 && drawnCount >= totalToDraw) {
+            resetDraw();
+            return;
+        }
+
+        // 第一次點擊：讀取抽取人數
+        if (drawnCount === 0) {
+            totalToDraw = Math.min(
+                Math.max(1, parseInt(drawCountInput.value, 10) || 1),
+                remainingSegments.length
+            );
+            drawCountInput.disabled = true;
+        }
+
+        if (remainingSegments.length === 0) return;
+
         wheelSpinning = true;
         spinBtn.disabled = true;
         resultEl.style.display = 'none';
 
+        const segments = remainingSegments.map(s => s.name);
         const totalSpins = (5 + Math.random() * 5) * 2 * Math.PI;
         const extraAngle = Math.random() * 2 * Math.PI;
         const targetRotation = wheelRotation + totalSpins + extraAngle;
         const duration = 4000;
         const startRot = wheelRotation;
         const startTime = performance.now();
-
         const easeOut = t => 1 - Math.pow(1 - t, 3);
 
         const animate = (now) => {
@@ -199,11 +254,33 @@ function openWheelModal() {
                 wheelSpinning = false;
                 const arc = (2 * Math.PI) / segments.length;
                 const idx = Math.floor((((-wheelRotation / arc) % segments.length) + segments.length) % segments.length);
-                const winner = segments[idx];
-                resultEl.textContent = '🎉 抽中：' + winner;
+                const winner = remainingSegments[idx];
+
+                drawnCount++;
+                winners.push(winner.name);
+                remainingSegments.splice(idx, 1);
+                wheelRotation = 0;
+
+                resultEl.textContent = totalToDraw > 1
+                    ? `🎉 第 ${drawnCount} 位：${winner.name}`
+                    : `🎉 抽中：${winner.name}`;
                 resultEl.style.display = 'block';
-                spinBtn.textContent = '再抽一次';
-                spinBtn.disabled = false;
+
+                winnersSection.style.display = 'block';
+                winnersList.textContent = winners.join('、');
+
+                renderNameList();
+                if (remainingSegments.length > 0) {
+                    drawWheelCanvas(canvas, remainingSegments.map(s => s.name), 0);
+                }
+
+                if (drawnCount < totalToDraw && remainingSegments.length > 0) {
+                    spinBtn.textContent = `▶ 繼續抽第 ${drawnCount + 1} 位`;
+                    spinBtn.disabled = false;
+                } else {
+                    spinBtn.textContent = '🔄 重新開始';
+                    spinBtn.disabled = false;
+                }
             }
         };
 
