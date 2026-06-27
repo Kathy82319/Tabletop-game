@@ -210,7 +210,10 @@ async function handleSubmitExp() {
 
     try {
         const result = await api.addPoints({ userId, expValue, reason, contributionClass, contributionValue });
-        ui.toast.success(result.message || '成功新增經驗值！');
+        const contribMsg = (contributionClass && contributionValue > 0)
+            ? `　貢獻值 +${contributionValue}（${contributionClass}）`
+            : '';
+        ui.toast.success((result.message || `成功新增 ${expValue} 點經驗值。`) + contribMsg);
         expInput.value = '10';
         customReasonInput.value = '';
         reasonSelect.value = '消費回饋';
