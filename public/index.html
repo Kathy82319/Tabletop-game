@@ -589,13 +589,17 @@
         </div>
     </div>
 
-    <!-- QR code 等待畫面 -->
-    <div id="sb-qr-panel" class="tool-setup-panel" style="display:none;">
-        <h2 class="tool-overlay-title" id="sb-qr-game-name"></h2>
-        <p class="sb-qr-hint">請玩家掃描 QR code 加入</p>
-        <div id="sb-qrcode" style="display:flex; justify-content:center; margin: 12px 0;"></div>
-        <div id="sb-waiting-players" class="sb-waiting-players"></div>
-        <button class="tool-start-btn" id="sb-start-scoring-btn" style="margin-top:16px;">開始計分 →</button>
+    <!-- QR code 浮層（蓋在計分板上，可關閉） -->
+    <div id="sb-qr-panel" class="sb-qr-modal" style="display:none;">
+        <div class="sb-qr-modal-inner">
+            <div class="sb-qr-modal-header">
+                <span id="sb-qr-game-name" class="sb-game-title"></span>
+                <button id="sb-qr-close-btn" class="sb-log-open-btn">✕</button>
+            </div>
+            <p class="sb-qr-hint">請玩家掃描 QR code 加入</p>
+            <div id="sb-qrcode" style="display:flex; justify-content:center; margin: 12px 0;"></div>
+            <div id="sb-waiting-players" class="sb-waiting-players"></div>
+        </div>
     </div>
 
     <!-- 計分進行畫面 -->

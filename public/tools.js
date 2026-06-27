@@ -699,20 +699,21 @@ async function sbCreate() {
         sbSessionId   = data.session_id;
         sbOwnerLineId = lineId;
         sbGameName    = gameName;
-        sbShowQrPanel();
+        sbShowPlaying();
+        sbOpenQrModal();
     } finally {
         btn.disabled = false;
         btn.textContent = '建立並產生 QR code';
     }
 }
 
-// ── QR code 等待畫面 ──────────────────────────────────────────
-function sbShowQrPanel() {
-    document.getElementById('sb-setup').style.display    = 'none';
-    document.getElementById('sb-qr-panel').style.display = 'flex';
-    document.getElementById('sb-playing').style.display  = 'none';
+// ── QR code 浮層（蓋在計分板上）─────────────────────────────
+function sbOpenQrModal() {
+    const panel = document.getElementById('sb-qr-panel');
+    panel.style.display = 'flex';
 
     document.getElementById('sb-qr-game-name').textContent = sbGameName;
+    document.getElementById('sb-qr-close-btn').onclick = sbCloseQrModal;
 
     const qrDiv = document.getElementById('sb-qrcode');
     qrDiv.innerHTML = '';
@@ -722,9 +723,13 @@ function sbShowQrPanel() {
         height: 180
     });
 
-    document.getElementById('sb-start-scoring-btn').onclick = sbShowPlaying;
-
     sbStartPolling('sb-waiting-players', false);
+}
+
+function sbCloseQrModal() {
+    sbStopPolling();
+    document.getElementById('sb-qr-panel').style.display = 'none';
+    sbStartPolling('sb-rankings', true);
 }
 
 // ── 計分進行畫面 ──────────────────────────────────────────────
@@ -736,7 +741,7 @@ function sbShowPlaying() {
 
     document.getElementById('sb-game-title').textContent = sbGameName;
     document.getElementById('sb-reset-btn').onclick      = sbShowSetup;
-    document.getElementById('sb-show-qr-btn').onclick    = sbShowQrPanel;
+    document.getElementById('sb-show-qr-btn').onclick    = sbOpenQrModal;
 
     sbStartPolling('sb-rankings', true);
 }

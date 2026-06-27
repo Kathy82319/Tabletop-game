@@ -2581,6 +2581,37 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     margin: 0;
 }
 
+/* ── 記分板：QR 浮層 ────────────────────────────────────────── */
+.sb-qr-modal {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 150;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.sb-qr-modal-inner {
+    width: 100%;
+    max-width: 420px;
+    background: #1a1008;
+    border-top: 1px solid rgba(184, 134, 11, 0.4);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.sb-qr-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
 /* ── 記分板：QR 等待區 ──────────────────────────────────────── */
 .sb-qr-hint {
     color: rgba(255, 255, 255, 0.5);
