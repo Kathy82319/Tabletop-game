@@ -397,6 +397,8 @@ function renderGameList(games) {
 
         // 定價（inline edit）
         cellPrice.className = 'price-cell';
+        const priceInner = document.createElement('div');
+        priceInner.className = 'price-inner';
         [['售價', 'sale_price', game.sale_price], ['租金', 'rent_price', game.rent_price], ['押金', 'deposit', game.deposit]]
             .forEach(([label, field, value]) => {
                 const r = document.createElement('div');
@@ -406,8 +408,9 @@ function renderGameList(games) {
                 lbl.textContent = label;
                 r.appendChild(lbl);
                 r.appendChild(makeInlineVal(field, game.game_id, value));
-                cellPrice.appendChild(r);
+                priceInner.appendChild(r);
             });
+        cellPrice.appendChild(priceInner);
 
         // 操作
         cellActions.className = 'actions-cell';
