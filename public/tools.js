@@ -598,75 +598,20 @@ function fpShowTeamResult() {
 // ================================================================
 // ================================================================
 
-let sbPlayers   = [];   // [{ name, score }]
-let sbLog       = [];   // [{ round, changes: [{name, delta, newScore, note}], ts }]
-let sbIsPlaying = false;
-let sbGameName  = '';
-let sbRoundNum  = 0;
+// ── 記分板狀態 ────────────────────────────────────────────────
+let sbSessionId   = null;
+let sbOwnerLineId = null;
+let sbPlayers     = [];
+let sbGameName    = '';
+let sbPollTimer   = null;
 
-const SB_STORAGE_KEY = 'sb_history';
-const SB_MAX_HISTORY = 5;
+const LIFF_ID = '2008076323-GN1e7naW';
 
-function sbSaveHistory() {
-    if (!sbIsPlaying || sbPlayers.length === 0) return;
-    const history = JSON.parse(localStorage.getItem(SB_STORAGE_KEY) || '[]');
-    history.unshift({ ts: Date.now(), gameName: sbGameName, players: sbPlayers.map(p => ({ ...p })) });
-    localStorage.setItem(SB_STORAGE_KEY, JSON.stringify(history.slice(0, SB_MAX_HISTORY)));
+function sbGetJoinUrl(sessionId) {
+    return `https://liff.line.me/${LIFF_ID}?liff.state=${encodeURIComponent('#page-scoreboard-join@' + sessionId)}`;
 }
 
-function sbLoadHistory() {
-    return JSON.parse(localStorage.getItem(SB_STORAGE_KEY) || '[]');
-}
-
-function sbRenderHistory() {
-    const history = sbLoadHistory();
-    const section = document.getElementById('sb-history-section');
-    const list    = document.getElementById('sb-history-list');
-
-    if (history.length === 0) { section.style.display = 'none'; return; }
-    section.style.display = 'block';
-    list.innerHTML = '';
-
-    history.forEach((entry) => {
-        const d = new Date(entry.ts);
-        const dateStr = `${d.getMonth() + 1}/${d.getDate()} ` +
-            `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-        const sorted  = [...entry.players].sort((a, b) => b.score - a.score);
-        const summary = sorted.map((p, i) =>
-            `${i === 0 ? '👑' : i + 1}. ${p.name} ${p.score} 分`
-        ).join('\n');
-        const gameLabel = entry.gameName || '未命名遊戲';
-
-        const item = document.createElement('div');
-        item.className = 'sb-history-item';
-        item.innerHTML = `
-            <div class="sb-history-meta">${gameLabel} · ${dateStr}</div>
-            <div class="sb-history-summary" style="white-space:pre-line">${summary}</div>
-            <div class="sb-history-actions">
-                <button class="sb-history-continue-btn">繼續這場</button>
-                <button class="sb-history-new-btn">同樣玩家重開</button>
-            </div>`;
-
-        item.querySelector('.sb-history-continue-btn').onclick = () => {
-            sbPlayers   = entry.players.map(p => ({ ...p }));
-            sbGameName  = entry.gameName || '';
-            sbRoundNum  = 0;
-            sbLog       = [];
-            sbIsPlaying = true;
-            sbShowPlaying();
-        };
-
-        item.querySelector('.sb-history-new-btn').onclick = () => {
-            const playerList = document.getElementById('sb-player-list');
-            playerList.innerHTML = '';
-            entry.players.forEach(p => sbAddPlayerRow(p.name, playerList));
-            if (entry.gameName) document.getElementById('sb-game-name-input').value = entry.gameName;
-        };
-
-        list.appendChild(item);
-    });
-}
-
+// ── 開啟 / 關閉 ───────────────────────────────────────────────
 function sbOpen() {
     document.getElementById('scoreboard-overlay').style.display = 'flex';
     document.getElementById('sb-close-btn').onclick = sbClose;
@@ -674,180 +619,353 @@ function sbOpen() {
 }
 
 function sbClose() {
-    sbSaveHistory();
-    sbIsPlaying = false;
+    sbStopPolling();
     document.getElementById('scoreboard-overlay').style.display = 'none';
 }
 
+// ── 設定畫面 ──────────────────────────────────────────────────
 function sbShowSetup() {
-    sbSaveHistory();
-    sbIsPlaying = false;
+    sbStopPolling();
+    document.getElementById('sb-setup').style.display    = 'flex';
+    document.getElementById('sb-qr-panel').style.display = 'none';
+    document.getElementById('sb-playing').style.display  = 'none';
+    document.getElementById('sb-score-popup').style.display = 'none';
 
-    document.getElementById('sb-setup').style.display       = 'flex';
-    document.getElementById('sb-playing').style.display     = 'none';
-    document.getElementById('sb-round-input').style.display = 'none';
-    document.getElementById('sb-log-drawer').style.display  = 'none';
-
-    const list = document.getElementById('sb-player-list');
-    list.innerHTML = '';
-    ['玩家 1', '玩家 2', '玩家 3', '玩家 4'].forEach(name => sbAddPlayerRow(name, list));
     document.getElementById('sb-game-name-input').value = '';
+    document.getElementById('sb-create-btn').onclick = sbCreate;
 
-    document.getElementById('sb-add-btn').onclick   = () => sbAddPlayerRow('', list);
-    document.getElementById('sb-start-btn').onclick = sbStart;
-    sbRenderHistory();
+    sbLoadRecentSessions();
 }
 
+async function sbLoadRecentSessions() {
+    const lineId = window.userProfile?.userId;
+    if (!lineId) return;
+
+    const section = document.getElementById('sb-history-section');
+    const list    = document.getElementById('sb-history-list');
+
+    try {
+        const res  = await fetch(`/api/scoreboard/my-history?line_user_id=${encodeURIComponent(lineId)}`);
+        const data = await res.json();
+        const owned = (data.history || []).filter(h => h.is_owner);
+        if (owned.length === 0) { section.style.display = 'none'; return; }
+
+        section.style.display = 'block';
+        list.innerHTML = '';
+        owned.slice(0, 3).forEach(entry => {
+            const d = new Date(entry.created_at);
+            const dateStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+            const item = document.createElement('div');
+            item.className = 'sb-history-item';
+            item.innerHTML = `
+                <div class="sb-history-meta">${entry.game_name} · ${dateStr} · ${entry.player_count} 人</div>
+                <div class="sb-history-actions">
+                    <button class="sb-history-continue-btn">繼續這場</button>
+                </div>`;
+            item.querySelector('.sb-history-continue-btn').onclick = () => {
+                sbSessionId   = entry.session_id;
+                sbOwnerLineId = lineId;
+                sbGameName    = entry.game_name;
+                sbShowPlaying();
+            };
+            list.appendChild(item);
+        });
+    } catch (e) {
+        section.style.display = 'none';
+    }
+}
+
+// ── 建立 Session ──────────────────────────────────────────────
+async function sbCreate() {
+    const lineId   = window.userProfile?.userId;
+    const gameName = document.getElementById('sb-game-name-input').value.trim();
+    if (!gameName) {
+        document.getElementById('sb-game-name-input').focus();
+        return;
+    }
+    if (!lineId) return;
+
+    const btn = document.getElementById('sb-create-btn');
+    btn.disabled = true;
+    btn.textContent = '建立中...';
+
+    try {
+        const res  = await fetch('/api/scoreboard/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ game_name: gameName, owner_line_id: lineId })
+        });
+        const data = await res.json();
+        sbSessionId   = data.session_id;
+        sbOwnerLineId = lineId;
+        sbGameName    = gameName;
+        sbShowQrPanel();
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '建立並產生 QR code';
+    }
+}
+
+// ── QR code 等待畫面 ──────────────────────────────────────────
+function sbShowQrPanel() {
+    document.getElementById('sb-setup').style.display    = 'none';
+    document.getElementById('sb-qr-panel').style.display = 'flex';
+    document.getElementById('sb-playing').style.display  = 'none';
+
+    document.getElementById('sb-qr-game-name').textContent = sbGameName;
+
+    const qrDiv = document.getElementById('sb-qrcode');
+    qrDiv.innerHTML = '';
+    new QRCode(qrDiv, {
+        text:   sbGetJoinUrl(sbSessionId),
+        width:  180,
+        height: 180
+    });
+
+    document.getElementById('sb-start-scoring-btn').onclick = sbShowPlaying;
+
+    sbStartPolling('sb-waiting-players', false);
+}
+
+// ── 計分進行畫面 ──────────────────────────────────────────────
 function sbShowPlaying() {
-    document.getElementById('sb-setup').style.display       = 'none';
-    document.getElementById('sb-playing').style.display     = 'flex';
-    document.getElementById('sb-round-input').style.display = 'none';
+    sbStopPolling();
+    document.getElementById('sb-setup').style.display    = 'none';
+    document.getElementById('sb-qr-panel').style.display = 'none';
+    document.getElementById('sb-playing').style.display  = 'flex';
 
     document.getElementById('sb-game-title').textContent = sbGameName;
     document.getElementById('sb-reset-btn').onclick      = sbShowSetup;
-    document.getElementById('sb-log-open-btn').onclick   = sbOpenLog;
-    document.getElementById('sb-add-round-btn').onclick  = sbOpenRound;
-    sbRender();
+    document.getElementById('sb-show-qr-btn').onclick    = sbShowQrPanel;
+
+    sbStartPolling('sb-rankings', true);
 }
 
-function sbAddPlayerRow(defaultName, list) {
-    list = list || document.getElementById('sb-player-list');
-    const idx = list.querySelectorAll('.player-input-row').length + 1;
-    const row = document.createElement('div');
-    row.className = 'player-input-row';
-    row.innerHTML = `<input type="text" class="player-name-input" placeholder="玩家 ${idx}" value="${defaultName}">
-                     <button class="remove-player-btn">×</button>`;
-    row.querySelector('.remove-player-btn').onclick = () => {
-        if (list.querySelectorAll('.player-input-row').length > 2) row.remove();
-    };
-    list.appendChild(row);
+// ── Polling ───────────────────────────────────────────────────
+function sbStartPolling(containerId, isPlaying) {
+    sbStopPolling();
+    sbFetchAndRender(containerId, isPlaying);
+    sbPollTimer = setInterval(() => sbFetchAndRender(containerId, isPlaying), 5000);
 }
 
-function sbStart() {
-    const inputs = document.querySelectorAll('#sb-player-list .player-name-input');
-    sbPlayers  = Array.from(inputs).map((inp, i) => ({
-        name: inp.value.trim() || `玩家 ${i + 1}`,
-        score: 0
-    }));
-    sbGameName = document.getElementById('sb-game-name-input').value.trim();
-    sbRoundNum = 0;
-    sbLog      = [];
-    sbIsPlaying = true;
-    sbShowPlaying();
+function sbStopPolling() {
+    if (sbPollTimer) { clearInterval(sbPollTimer); sbPollTimer = null; }
 }
 
-function sbOpenRound() {
-    document.getElementById('sb-playing').style.display     = 'none';
-    document.getElementById('sb-round-input').style.display = 'flex';
-    document.getElementById('sb-round-title').textContent   = `第 ${sbRoundNum + 1} 輪`;
-
-    const rowsDiv = document.getElementById('sb-round-rows');
-    rowsDiv.innerHTML = '';
-
-    sbPlayers.forEach((p, idx) => {
-        const row = document.createElement('div');
-        row.className  = 'sb-round-row';
-        row.dataset.idx = idx;
-        row.innerHTML = `
-            <div class="sb-round-row-info">
-                <span class="sb-round-row-name">${p.name}</span>
-                <span class="sb-round-row-cur">${p.score} 分</span>
-            </div>
-            <input type="number" class="sb-round-delta" inputmode="decimal" placeholder="本輪得分（可為負數）">
-            <input type="text"   class="sb-round-note"  placeholder="備註（選填）">`;
-        rowsDiv.appendChild(row);
-    });
-
-    rowsDiv.querySelector('.sb-round-delta')?.focus();
-
-    document.getElementById('sb-round-confirm-btn').onclick = sbConfirmRound;
-    document.getElementById('sb-round-cancel-btn').onclick  = () => {
-        document.getElementById('sb-round-input').style.display = 'none';
-        document.getElementById('sb-playing').style.display     = 'flex';
-    };
+async function sbFetchAndRender(containerId, isPlaying) {
+    if (!sbSessionId) return;
+    try {
+        const res  = await fetch(`/api/scoreboard/${sbSessionId}`);
+        const data = await res.json();
+        sbPlayers = data.players || [];
+        if (isPlaying) {
+            sbRenderRankings(containerId);
+        } else {
+            sbRenderWaiting(containerId);
+        }
+    } catch (e) { /* 網路暫時失敗，等下一輪 */ }
 }
 
-function sbConfirmRound() {
-    const rows    = document.querySelectorAll('#sb-round-rows .sb-round-row');
-    const changes = [];
-
-    rows.forEach(row => {
-        const idx   = parseInt(row.dataset.idx);
-        const delta = parseInt(row.querySelector('.sb-round-delta').value) || 0;
-        const note  = row.querySelector('.sb-round-note').value.trim();
-        sbPlayers[idx].score += delta;
-        changes.push({ name: sbPlayers[idx].name, delta, newScore: sbPlayers[idx].score, note });
-    });
-
-    sbRoundNum++;
-    sbLog.unshift({ round: sbRoundNum, changes, ts: Date.now() });
-
-    document.getElementById('sb-round-input').style.display = 'none';
-    document.getElementById('sb-playing').style.display     = 'flex';
-    sbRender();
+function sbRenderWaiting(containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    if (sbPlayers.length === 0) {
+        el.innerHTML = '<p class="sb-waiting-empty">等待玩家掃碼加入...</p>';
+        return;
+    }
+    el.innerHTML = sbPlayers.map(p =>
+        `<div class="sb-waiting-player">${p.nickname}</div>`
+    ).join('');
 }
 
-function sbOpenLog() {
-    const drawer = document.getElementById('sb-log-drawer');
-    drawer.style.display = 'flex';
-    document.getElementById('sb-log-close-btn').onclick = () => { drawer.style.display = 'none'; };
-    sbRenderLog();
-}
+function sbRenderRankings(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const isOwner = sbOwnerLineId === window.userProfile?.userId;
 
-function sbRenderLog() {
-    const list  = document.getElementById('sb-log-list');
-    const empty = document.getElementById('sb-log-empty');
-    list.innerHTML = '';
-
-    if (sbLog.length === 0) { empty.style.display = 'block'; return; }
-    empty.style.display = 'none';
-
-    sbLog.forEach(entry => {
-        const d  = new Date(entry.ts);
-        const ts = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-
-        const rows = entry.changes.map(c => {
-            const pos      = c.delta >= 0;
-            const noteHtml = c.note ? `<span class="sb-log-note">${c.note}</span>` : '';
-            return `<div class="sb-log-entry">
-                <span class="sb-log-name">${c.name}</span>
-                <span class="sb-log-delta ${pos ? 'pos' : 'neg'}">${pos ? '+' : ''}${c.delta}</span>
-                <span class="sb-log-after">→ ${c.newScore} 分</span>
-                ${noteHtml}
-            </div>`;
-        }).join('');
-
-        const block = document.createElement('div');
-        block.className = 'sb-log-round';
-        block.innerHTML = `
-            <div class="sb-log-round-header">
-                <span>第 ${entry.round} 輪</span>
-                <span class="sb-log-time">${ts}</span>
-            </div>
-            ${rows}`;
-        list.appendChild(block);
-    });
-}
-
-function sbRender() {
-    const ranked = sbPlayers
-        .map((p, i) => ({ ...p, idx: i }))
-        .sort((a, b) => b.score - a.score);
-
-    const container = document.getElementById('sb-rankings');
     container.innerHTML = '';
-
-    ranked.forEach((p, rank) => {
+    sbPlayers.forEach((p, rank) => {
         const card = document.createElement('div');
         card.className = 'sb-player-card' + (rank === 0 ? ' sb-first' : '');
+        if (isOwner) card.style.cursor = 'pointer';
         card.innerHTML = `
             <div class="sb-card-top">
                 <span class="sb-rank">${rank === 0 ? '👑' : rank + 1}</span>
-                <span class="sb-name">${p.name}</span>
+                <span class="sb-name">${p.nickname}</span>
                 <span class="sb-score">${p.score}<span class="sb-score-unit"> 分</span></span>
             </div>`;
+        if (isOwner) {
+            card.onclick = () => sbOpenScorePopup(p);
+        }
         container.appendChild(card);
     });
+}
+
+// ── 分數彈窗 ──────────────────────────────────────────────────
+function sbOpenScorePopup(player) {
+    document.getElementById('sb-popup-player-name').textContent    = player.nickname;
+    document.getElementById('sb-popup-current-score').textContent  = `目前：${player.score} 分`;
+    document.getElementById('sb-popup-input').value = '';
+    document.getElementById('sb-score-popup').style.display = 'flex';
+
+    setTimeout(() => document.getElementById('sb-popup-input').focus(), 50);
+
+    document.getElementById('sb-popup-plus').onclick  = () => sbApplyScore(player.player_id, 1);
+    document.getElementById('sb-popup-minus').onclick = () => sbApplyScore(player.player_id, -1);
+    document.getElementById('sb-popup-cancel').onclick = sbCloseScorePopup;
+}
+
+function sbCloseScorePopup() {
+    document.getElementById('sb-score-popup').style.display = 'none';
+}
+
+async function sbApplyScore(playerId, sign) {
+    const val = parseInt(document.getElementById('sb-popup-input').value);
+    if (isNaN(val) || val <= 0) {
+        document.getElementById('sb-popup-input').focus();
+        return;
+    }
+    const delta = sign * val;
+    sbCloseScorePopup();
+
+    try {
+        await fetch(`/api/scoreboard/${sbSessionId}/score`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ player_id: playerId, delta, owner_line_id: sbOwnerLineId })
+        });
+        await sbFetchAndRender('sb-rankings', true);
+    } catch (e) { /* 下一次 polling 會自動同步 */ }
+}
+
+// ── 玩家加入頁（掃 QR code 後）────────────────────────────────
+let sjSessionId  = null;
+let sjPlayerId   = null;
+let sjPollTimer  = null;
+
+async function initializeScoreboardJoinPage(sessionId) {
+    sjSessionId = sessionId;
+    sjPlayerId  = null;
+    if (sjPollTimer) { clearInterval(sjPollTimer); sjPollTimer = null; }
+
+    document.getElementById('sj-nickname-panel').style.display = 'block';
+    document.getElementById('sj-view-panel').style.display     = 'none';
+
+    // 先拉 session 資料顯示遊戲名稱
+    try {
+        const res  = await fetch(`/api/scoreboard/${sessionId}`);
+        const data = await res.json();
+        if (data.error) { document.getElementById('sj-game-name').textContent = '找不到此記分板'; return; }
+        document.getElementById('sj-game-name').textContent = data.session.game_name;
+    } catch (e) {
+        document.getElementById('sj-game-name').textContent = '載入失敗，請重試';
+        return;
+    }
+
+    document.getElementById('sj-join-btn').onclick = sjJoin;
+    document.getElementById('sj-nickname-input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') sjJoin();
+    });
+}
+
+async function sjJoin() {
+    const nickname = document.getElementById('sj-nickname-input').value.trim();
+    const errorEl  = document.getElementById('sj-join-error');
+    errorEl.style.display = 'none';
+
+    if (!nickname) {
+        errorEl.textContent = '請輸入暱稱';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    const lineId = window.userProfile?.userId || null;
+    const btn    = document.getElementById('sj-join-btn');
+    btn.disabled = true;
+
+    try {
+        const res  = await fetch(`/api/scoreboard/${sjSessionId}/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nickname, line_user_id: lineId })
+        });
+        const data = await res.json();
+        if (data.error) {
+            errorEl.textContent = data.error;
+            errorEl.style.display = 'block';
+            return;
+        }
+        sjPlayerId = data.player_id;
+        sjShowView();
+    } catch (e) {
+        errorEl.textContent = '加入失敗，請重試';
+        errorEl.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function sjShowView() {
+    document.getElementById('sj-nickname-panel').style.display = 'none';
+    document.getElementById('sj-view-panel').style.display     = 'block';
+
+    sjFetchAndRender();
+    sjPollTimer = setInterval(sjFetchAndRender, 5000);
+}
+
+async function sjFetchAndRender() {
+    try {
+        const res  = await fetch(`/api/scoreboard/${sjSessionId}`);
+        const data = await res.json();
+        document.getElementById('sj-view-game-name').textContent = data.session?.game_name || '';
+        const players = data.players || [];
+        const container = document.getElementById('sj-rankings');
+        container.innerHTML = '';
+        players.forEach((p, rank) => {
+            const card = document.createElement('div');
+            card.className = 'sb-player-card' + (rank === 0 ? ' sb-first' : '');
+            card.innerHTML = `
+                <div class="sb-card-top">
+                    <span class="sb-rank">${rank === 0 ? '👑' : rank + 1}</span>
+                    <span class="sb-name">${p.nickname}</span>
+                    <span class="sb-score">${p.score}<span class="sb-score-unit"> 分</span></span>
+                </div>`;
+            container.appendChild(card);
+        });
+    } catch (e) { /* 等下次 */ }
+}
+
+// ── 冒險者過往遊戲紀錄頁 ──────────────────────────────────────
+async function initializeGameHistoryPage() {
+    const lineId    = window.userProfile?.userId;
+    const container = document.getElementById('game-history-container');
+    if (!lineId) { container.innerHTML = '<p style="text-align:center; padding:20px;">請先登入</p>'; return; }
+
+    try {
+        const res  = await fetch(`/api/scoreboard/my-history?line_user_id=${encodeURIComponent(lineId)}`);
+        const data = await res.json();
+        const list = data.history || [];
+
+        if (list.length === 0) {
+            container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--color-text-secondary);">還沒有遊戲紀錄</p>';
+            return;
+        }
+
+        container.innerHTML = '';
+        list.forEach(entry => {
+            const d = new Date(entry.created_at);
+            const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+            const badge   = entry.is_owner ? '<span class="sb-owner-badge">建立者</span>' : '';
+            const item    = document.createElement('div');
+            item.className = 'sb-history-item';
+            item.innerHTML = `
+                <div class="sb-history-meta">${entry.game_name} ${badge} · ${dateStr}</div>
+                <div class="sb-history-summary">暱稱：${entry.nickname} · 分數：${entry.score} 分 · ${entry.player_count} 位玩家</div>`;
+            container.appendChild(item);
+        });
+    } catch (e) {
+        container.innerHTML = '<p style="text-align:center; padding:20px; color:#e74c3c;">載入失敗</p>';
+    }
 }
 
 // ================================================================

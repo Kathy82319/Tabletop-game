@@ -94,6 +94,8 @@ function handleNavigation() {
         'page-news-details': () => initializeNewsDetailsPageFromHash(data),
         'page-game-details': () => initializeGameDetailsPageFromHash(data),
         'page-tools': initializeToolsPage,
+        'page-scoreboard-join': () => initializeScoreboardJoinPage(data),
+        'page-game-history': initializeGameHistoryPage,
     };
 
     if (pageInitializers[pageId]) {
@@ -292,6 +294,7 @@ async function initializeProfilePage() {
         document.getElementById('my-bookings-btn').addEventListener('click', () => navigateTo('page-my-bookings'));
         document.getElementById('my-exp-history-btn').addEventListener('click', () => navigateTo('page-my-exp-history'));
         document.getElementById('rental-history-btn').addEventListener('click', () => navigateTo('page-rental-history'));
+        document.getElementById('game-history-btn').addEventListener('click', () => navigateTo('page-game-history'));
 
 liff.getProfile().then(profile => {
         userProfile = profile;

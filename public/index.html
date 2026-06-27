@@ -202,6 +202,7 @@
        <button class="cta-button" id="my-bookings-btn">預約的<br>冒險旅程</button>
        <button class="cta-button" id="my-exp-history-btn">經驗<br>成長紀錄</button>
        <button class="cta-button" id="rental-history-btn">桌遊<br>租借紀錄</button>
+       <button class="cta-button" id="game-history-btn">過往<br>遊戲紀錄</button>
     </div>
 </div>
 
@@ -229,6 +230,31 @@
     <div id="past-rentals-container" style="display: none; margin-top: 20px;">
         <h2 style="text-align: center; font-size: 1.5rem;">過往的租借</h2>
     </div>
+</div>
+
+<!-- 玩家掃 QR code 後的加入＆觀看頁面 -->
+<div id="page-scoreboard-join">
+    <div id="sj-nickname-panel" style="padding: 24px 16px; text-align: center;">
+        <h1 style="margin-bottom: 8px;">加入記分板</h1>
+        <p id="sj-game-name" style="color: var(--color-text-secondary); margin-bottom: 24px;"></p>
+        <input type="text" id="sj-nickname-input" class="sb-game-name-input" placeholder="輸入你的暱稱" style="margin-bottom: 16px;">
+        <button class="tool-start-btn" id="sj-join-btn">加入</button>
+        <p id="sj-join-error" style="color:#e74c3c; margin-top:12px; display:none;"></p>
+    </div>
+    <div id="sj-view-panel" style="display:none; padding: 16px;">
+        <div class="sb-playing-header">
+            <span id="sj-view-game-name" class="sb-game-title"></span>
+        </div>
+        <div id="sj-rankings"></div>
+        <p style="text-align:center; color:var(--color-text-secondary); font-size:0.85em; margin-top:16px;">每 5 秒自動更新</p>
+    </div>
+</div>
+
+<!-- 冒險者過往遊戲紀錄頁面 -->
+<div id="page-game-history">
+    <button class="details-back-button">← 返回個人資料</button>
+    <h1 style="text-align: center;">過往遊戲紀錄</h1>
+    <div id="game-history-container"><p style="text-align:center; padding:20px;">讀取中...</p></div>
 </div>
 
 <div id="page-edit-profile">
@@ -551,49 +577,49 @@
 <div id="scoreboard-overlay" class="tool-overlay" style="display:none;">
     <button id="sb-close-btn" class="tool-overlay-close">✕ 關閉</button>
 
-    <!-- 設定畫面 -->
+    <!-- 設定畫面：輸入遊戲名稱 -->
     <div id="sb-setup" class="tool-setup-panel">
         <h2 class="tool-overlay-title">記分板</h2>
-        <input type="text" id="sb-game-name-input" class="sb-game-name-input" placeholder="遊戲名稱（選填）">
-        <div id="sb-player-list" class="player-list"></div>
-        <button class="add-player-btn" id="sb-add-btn">＋ 新增玩家</button>
-        <button class="tool-start-btn" id="sb-start-btn">開始記分</button>
+        <input type="text" id="sb-game-name-input" class="sb-game-name-input" placeholder="遊戲名稱">
+        <button class="tool-start-btn" id="sb-create-btn">建立並產生 QR code</button>
 
         <div id="sb-history-section" style="display:none;">
-            <p class="sb-history-title">最近紀錄</p>
+            <p class="sb-history-title">繼續最近的對局</p>
             <div id="sb-history-list"></div>
         </div>
     </div>
 
-    <!-- 進行畫面 -->
+    <!-- QR code 等待畫面 -->
+    <div id="sb-qr-panel" class="tool-setup-panel" style="display:none;">
+        <h2 class="tool-overlay-title" id="sb-qr-game-name"></h2>
+        <p class="sb-qr-hint">請玩家掃描 QR code 加入</p>
+        <div id="sb-qrcode" style="display:flex; justify-content:center; margin: 12px 0;"></div>
+        <div id="sb-waiting-players" class="sb-waiting-players"></div>
+        <button class="tool-start-btn" id="sb-start-scoring-btn" style="margin-top:16px;">開始計分 →</button>
+    </div>
+
+    <!-- 計分進行畫面 -->
     <div id="sb-playing" class="playing-panel" style="display:none;">
         <div class="sb-playing-header">
             <span id="sb-game-title" class="sb-game-title"></span>
-            <button id="sb-log-open-btn" class="sb-log-open-btn">📋</button>
+            <button id="sb-show-qr-btn" class="sb-log-open-btn" title="顯示 QR code">📱</button>
         </div>
         <div id="sb-rankings"></div>
-        <button class="tool-start-btn" id="sb-add-round-btn">📝 記錄本輪分數</button>
-        <button class="tool-secondary-btn" id="sb-reset-btn">重新開始</button>
+        <button class="tool-secondary-btn" id="sb-reset-btn" style="margin-top:12px;">新局</button>
     </div>
 
-    <!-- 本輪記分輸入面板 -->
-    <div id="sb-round-input" class="playing-panel" style="display:none;">
-        <div class="sb-round-header">
-            <span id="sb-round-title">第 1 輪</span>
-            <button id="sb-round-cancel-btn" class="sb-round-cancel-btn">✕ 取消</button>
+    <!-- 分數輸入彈窗 -->
+    <div id="sb-score-popup" class="sb-score-popup" style="display:none;">
+        <div class="sb-score-popup-inner">
+            <p id="sb-popup-player-name" class="sb-popup-player-name"></p>
+            <p id="sb-popup-current-score" class="sb-popup-current-score"></p>
+            <input type="number" id="sb-popup-input" class="sb-popup-input" inputmode="numeric" placeholder="輸入分數">
+            <div class="sb-popup-btns">
+                <button id="sb-popup-minus" class="sb-popup-btn sb-popup-minus">－ 減分</button>
+                <button id="sb-popup-plus"  class="sb-popup-btn sb-popup-plus">＋ 加分</button>
+            </div>
+            <button id="sb-popup-cancel" class="sb-popup-cancel">取消</button>
         </div>
-        <div id="sb-round-rows"></div>
-        <button class="tool-start-btn" id="sb-round-confirm-btn">確認計算</button>
-    </div>
-
-    <!-- 計分紀錄抽屜 -->
-    <div id="sb-log-drawer" style="display:none;">
-        <div class="sb-log-header">
-            <span>計分紀錄</span>
-            <button id="sb-log-close-btn">✕</button>
-        </div>
-        <div id="sb-log-list"></div>
-        <p id="sb-log-empty">還沒有任何計分紀錄</p>
     </div>
 </div>
 

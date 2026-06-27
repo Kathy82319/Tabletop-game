@@ -2544,6 +2544,90 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     margin: 0;
 }
 
+/* ── 記分板：分數彈窗 ──────────────────────────────────────── */
+#sb-score-popup {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 200;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.sb-score-popup-inner {
+    width: 100%;
+    max-width: 420px;
+    background: #1a1008;
+    border-top: 1px solid rgba(184, 134, 11, 0.4);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+#sb-popup-player-name {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: white;
+    margin: 0;
+}
+
+#sb-popup-current-score {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0;
+}
+
+/* ── 記分板：QR 等待區 ──────────────────────────────────────── */
+.sb-qr-hint {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    text-align: center;
+    margin: 0;
+}
+
+.sb-waiting-players {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    min-height: 32px;
+    padding: 4px 0;
+}
+
+.sb-waiting-player {
+    background: rgba(46, 204, 113, 0.15);
+    border: 1px solid rgba(46, 204, 113, 0.35);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.9rem;
+    color: #2ecc71;
+}
+
+.sb-waiting-empty {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.9rem;
+    text-align: center;
+    width: 100%;
+    margin: 0;
+}
+
+/* ── 記分板：過往紀錄標籤 ───────────────────────────────────── */
+.sb-owner-badge {
+    display: inline-block;
+    background: rgba(184, 134, 11, 0.2);
+    border: 1px solid rgba(184, 134, 11, 0.4);
+    border-radius: 10px;
+    padding: 1px 8px;
+    font-size: 0.75rem;
+    color: var(--color-frame-gold);
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
 /* 資源計數器：共用記分板同款 drawer / history 樣式，補上 ID 別名 */
 #counter-log-drawer {
     position: absolute;
