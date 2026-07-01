@@ -391,7 +391,6 @@
 
             <!-- 建立糾團表單 -->
             <div id="gather-create-view" style="display:none;">
-                <button class="details-back-button" id="gather-create-back">← 返回</button>
                 <h2 style="text-align:center;">發起糾團</h2>
                 <form id="gather-create-form">
                     <div class="input-group">
@@ -399,16 +398,58 @@
                         <input type="date" id="gc-date" required>
                     </div>
                     <div class="input-group">
-                        <label>開始 / 結束時間</label>
-                        <div style="display:flex; gap:8px;">
-                            <input type="time" id="gc-start-time" required style="flex:1;">
-                            <span style="line-height:42px;">–</span>
-                            <input type="time" id="gc-end-time" required style="flex:1;">
+                        <label>開始 / 預計結束時間</label>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <select id="gc-start-time" required class="gc-select" style="flex:1;">
+                                <option value="">請選擇開始時間</option>
+                                <option value="12:00">12:00</option>
+                                <option value="12:30">12:30</option>
+                                <option value="13:00">13:00</option>
+                                <option value="13:30">13:30</option>
+                                <option value="14:00">14:00</option>
+                                <option value="14:30">14:30</option>
+                                <option value="15:00">15:00</option>
+                                <option value="15:30">15:30</option>
+                                <option value="16:00">16:00</option>
+                                <option value="16:30">16:30</option>
+                                <option value="17:00">17:00</option>
+                                <option value="17:30">17:30</option>
+                                <option value="18:00">18:00</option>
+                                <option value="18:30">18:30</option>
+                                <option value="19:00">19:00</option>
+                                <option value="19:30">19:30</option>
+                                <option value="20:00">20:00</option>
+                                <option value="20:30">20:30</option>
+                                <option value="21:00">21:00</option>
+                            </select>
+                            <span>–</span>
+                            <input type="time" id="gc-end-time" required class="gc-time-input" style="flex:1;">
                         </div>
                     </div>
                     <div class="input-group">
                         <label>報名截止時間</label>
-                        <input type="datetime-local" id="gc-deadline" required>
+                        <div class="gc-deadline-row">
+                            <input type="date" id="gc-deadline-date" required>
+                            <select id="gc-deadline-hour" required class="gc-select">
+                                <option value="">時</option>
+                                <option value="08">08:00</option>
+                                <option value="09">09:00</option>
+                                <option value="10">10:00</option>
+                                <option value="11">11:00</option>
+                                <option value="12">12:00</option>
+                                <option value="13">13:00</option>
+                                <option value="14">14:00</option>
+                                <option value="15">15:00</option>
+                                <option value="16">16:00</option>
+                                <option value="17">17:00</option>
+                                <option value="18">18:00</option>
+                                <option value="19">19:00</option>
+                                <option value="20">20:00</option>
+                                <option value="21">21:00</option>
+                                <option value="22">22:00</option>
+                                <option value="23">23:00</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="input-group">
                         <label>人數上限</label>
@@ -416,6 +457,7 @@
                             <button type="button" class="gather-limit-btn active" data-limit="yes">有限制</button>
                             <button type="button" class="gather-limit-btn" data-limit="no">不限制</button>
                         </div>
+                        <p class="gather-limit-hint"><strong>有限制</strong>：先報名先贏，達到人數上限後自動截止。<br><strong>不限制</strong>：需團主自行挑選人員，選擇足夠人數後才可開始，未選中的報名者將由系統婉拒。</p>
                         <input type="number" id="gc-max-participants" min="1" max="50" placeholder="最多幾人（不含團主）" style="margin-top:8px;">
                     </div>
                     <div class="input-group">
@@ -440,7 +482,6 @@
 
             <!-- 我的糾團 -->
             <div id="gather-my-view" style="display:none;">
-                <button class="details-back-button" id="gather-my-back">← 返回</button>
                 <h2 style="text-align:center;">我的糾團</h2>
                 <h3 class="gather-section-title">我發起的</h3>
                 <div id="gather-my-organized-container"></div>
@@ -450,7 +491,6 @@
 
             <!-- 糾團詳情 -->
             <div id="gather-detail-view" style="display:none;">
-                <button class="details-back-button" id="gather-detail-back">← 返回</button>
                 <div id="gather-detail-content"></div>
             </div>
         </div><!-- /booking-tab-gather -->

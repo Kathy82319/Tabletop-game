@@ -3821,4 +3821,42 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     width: 100%;
     margin-top: 4px;
 }
+#gather-create-form input[type="date"],
+#gather-create-form input[type="time"],
+#gather-create-form .gc-select {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-text-primary);
+    font-size: 1rem;
+    font-family: inherit;
+    -webkit-appearance: none;
+    appearance: none;
+    box-sizing: border-box;
+}
+#gather-create-form input[type="date"]:focus,
+#gather-create-form input[type="time"]:focus,
+#gather-create-form .gc-select:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px rgba(184,134,11,0.2);
+}
+.gc-deadline-row {
+    display: flex;
+    gap: 8px;
+}
+.gc-deadline-row input[type="date"] { flex: 3; }
+.gc-deadline-row .gc-select { flex: 2; }
+.gather-limit-hint {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    margin: 8px 0 0;
+    line-height: 1.6;
+    background: rgba(255,255,255,0.04);
+    border-radius: 6px;
+    padding: 8px 10px;
+    border-left: 3px solid var(--color-accent);
+}
 

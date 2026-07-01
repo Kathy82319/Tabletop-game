@@ -435,14 +435,31 @@ const GatherModule = (() => {
                     return;
                 }
 
+                const eventDate = document.getElementById('gc-date').value;
+                const startTime = document.getElementById('gc-start-time').value;
+                const endTime = document.getElementById('gc-end-time').value;
+                const deadlineDate = document.getElementById('gc-deadline-date').value;
+                const deadlineHour = document.getElementById('gc-deadline-hour').value;
+
+                if (endTime && startTime && endTime <= startTime) {
+                    statusEl.textContent = '預計結束時間必須晚於開始時間';
+                    statusEl.style.color = '#e74c3c';
+                    return;
+                }
+                if (deadlineDate >= eventDate) {
+                    statusEl.textContent = '報名截止日期必須早於活動日期（不能同天）';
+                    statusEl.style.color = '#e74c3c';
+                    return;
+                }
+
                 const hasLimit = document.querySelector('.gather-limit-btn.active')?.dataset.limit === 'yes';
                 const maxPart = hasLimit ? parseInt(document.getElementById('gc-max-participants').value) : null;
 
                 const payload = {
-                    event_date: document.getElementById('gc-date').value,
-                    start_time: document.getElementById('gc-start-time').value,
-                    end_time: document.getElementById('gc-end-time').value,
-                    deadline: document.getElementById('gc-deadline').value.replace('T', ' '),
+                    event_date: eventDate,
+                    start_time: startTime,
+                    end_time: endTime,
+                    deadline: `${deadlineDate} ${deadlineHour}:00:00`,
                     max_participants: maxPart || null,
                     games,
                     note: document.getElementById('gc-note').value.trim() || null,
@@ -531,7 +548,7 @@ const GatherModule = (() => {
                     scope.querySelector(`#${tabBtn.dataset.tab}`)?.classList.add('active');
                     const titleEl = document.getElementById('booking-page-title');
                     if (titleEl) titleEl.textContent = tabBtn.dataset.tab === 'booking-tab-gather' ? '揪團桌遊' : '場地預約';
-                    if (tabBtn.dataset.tab === 'booking-tab-gather') loadList();
+                    if (tabBtn.dataset.tab === 'booking-tab-gather') { backToMain(); loadList(); }
                 }
 
                 // 揪團卡片點擊
@@ -552,9 +569,6 @@ const GatherModule = (() => {
         };
         bindOnce('gather-create-btn', showCreateForm);
         bindOnce('gather-my-btn', showMyGatherings);
-        bindOnce('gather-create-back', () => { backToMain(); loadList(); });
-        bindOnce('gather-my-back', backToMain);
-        bindOnce('gather-detail-back', backToMain);
 
         initCreateForm();
 
