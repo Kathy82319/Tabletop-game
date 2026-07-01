@@ -396,7 +396,7 @@ function setupEventListeners() {
         const searchTerm = e.target.value.trim();
         createBookingForm.querySelector('#booking-user-id').value = '';
         if (searchTerm.length < 1) { userSearchResults.style.display = 'none'; return; }
-        try { const users = await api.searchUsers(searchTerm); userSearchResults.innerHTML = users.map(u => `<li data-user-id="${u.user_id}" data-name="${u.nickname || u.line_display_name}" data-phone="${u.phone || ''}">${u.nickname || u.line_display_name} (${u.user_id})</li>`).join(''); userSearchResults.style.display = users.length > 0 ? 'block' : 'none'; }
+        try { const users = await api.searchUsers(searchTerm); userSearchResults.innerHTML = users.map(u => `<li data-user-id="${u.user_id}" data-name="${u.nickname || u.line_display_name}" data-phone="${u.phone || ''}">${u.nickname || u.line_display_name}${u.phone ? ' | ' + u.phone : ''} (${u.user_id})</li>`).join(''); userSearchResults.style.display = users.length > 0 ? 'block' : 'none'; }
         catch (error) { console.error('搜尋使用者失敗', error); }
     });
     userSearchResults.addEventListener('click', (e) => {
