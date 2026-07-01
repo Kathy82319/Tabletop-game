@@ -17,6 +17,7 @@ const App = {
         'store-info': './modules/storeInfo.js',
         'scan': './modules/scanAndPoint.js',
         'membership-settings': './modules/membershipSettings.js',
+        'scoreboards': './modules/scoreboardManagement.js',
     },
 
 async handleRouteChange() {

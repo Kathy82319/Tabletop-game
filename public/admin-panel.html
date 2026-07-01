@@ -26,6 +26,7 @@
             <a href="#drafts">訊息草稿</a>
             <a href="#store-info">店家資訊</a>
             <a href="#scan">掃碼加點</a>
+            <a href="#scoreboards">記分板紀錄</a>
         </nav>
     
 <main class="main-content">
@@ -406,6 +407,57 @@
         </div>
     </div>
 </div>
+
+<div id="page-scoreboards" class="page">
+    <div class="page-header">
+        <h2>記分板紀錄</h2>
+    </div>
+
+    <div class="filter-bar" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:1rem;">
+        <input type="search" id="sb-admin-search" placeholder="搜尋遊戲名稱 / 建立者..." style="flex:1; min-width:180px; padding:8px;">
+        <button id="sb-admin-clear-btn" class="action-btn" style="background:var(--text-light); color:#fff;">清除篩選</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>遊戲名稱</th>
+                <th>建立者</th>
+                <th>建立時間</th>
+                <th>玩家數</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="sb-admin-tbody"></tbody>
+    </table>
+
+    <!-- 場次詳細 Modal -->
+    <div id="sb-admin-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:8px; width:90%; max-width:640px; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border-color);">
+                <h3 id="sb-admin-modal-title" style="margin:0;"></h3>
+                <button id="sb-admin-modal-close" class="action-btn btn-cancel" style="padding:4px 12px;">✕ 關閉</button>
+            </div>
+            <div style="overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px;">
+                <div>
+                    <h4 style="margin:0 0 8px; color:var(--text-dark);">最終分數</h4>
+                    <table>
+                        <thead><tr><th>暱稱</th><th>分數</th><th>加入時間</th></tr></thead>
+                        <tbody id="sb-admin-modal-players"></tbody>
+                    </table>
+                </div>
+                <div>
+                    <h4 style="margin:0 0 8px; color:var(--text-dark);">遊戲紀錄</h4>
+                    <table>
+                        <thead><tr><th>時間</th><th>玩家</th><th>異動</th><th>結果</th></tr></thead>
+                        <tbody id="sb-admin-modal-events"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
     </main>
 
 <div id="booking-details-modal" class="modal-overlay">
