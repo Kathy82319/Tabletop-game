@@ -409,6 +409,45 @@ const GatherModule = (() => {
             });
         });
 
+        // 結束時間動態過濾：只顯示晚於開始時間的選項
+        const allTimes = [
+            '12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30',
+            '16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30',
+            '20:00','20:30','21:00'
+        ];
+        const startTimeEl = document.getElementById('gc-start-time');
+        const endTimeEl = document.getElementById('gc-end-time');
+        function updateEndTimeOptions() {
+            const start = startTimeEl?.value;
+            const currentEnd = endTimeEl?.value;
+            if (!endTimeEl) return;
+            endTimeEl.innerHTML = '<option value="">請選擇結束時間</option>';
+            allTimes.forEach(t => {
+                if (!start || t > start) {
+                    const opt = document.createElement('option');
+                    opt.value = t;
+                    opt.textContent = t;
+                    if (t === currentEnd) opt.selected = true;
+                    endTimeEl.appendChild(opt);
+                }
+            });
+        }
+        if (startTimeEl) startTimeEl.addEventListener('change', updateEndTimeOptions);
+        updateEndTimeOptions();
+
+        // 截止日期最大值：不能晚於活動日期
+        const gcDateEl = document.getElementById('gc-date');
+        const gcDeadlineDateEl = document.getElementById('gc-deadline-date');
+        if (gcDateEl) {
+            gcDateEl.addEventListener('change', () => {
+                const eventDate = gcDateEl.value;
+                if (gcDeadlineDateEl) {
+                    gcDeadlineDateEl.max = eventDate || '';
+                    if (gcDeadlineDateEl.value > eventDate) gcDeadlineDateEl.value = '';
+                }
+            });
+        }
+
         form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const statusEl = document.getElementById('gather-create-status');
@@ -446,8 +485,8 @@ const GatherModule = (() => {
                     statusEl.style.color = '#e74c3c';
                     return;
                 }
-                if (deadlineDate >= eventDate) {
-                    statusEl.textContent = '報名截止日期必須早於活動日期（不能同天）';
+                if (deadlineDate > eventDate) {
+                    statusEl.textContent = '報名截止日期不能晚於活動日期';
                     statusEl.style.color = '#e74c3c';
                     return;
                 }
