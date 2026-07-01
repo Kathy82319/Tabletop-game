@@ -375,6 +375,10 @@ const GatherModule = (() => {
     }
 
     function initCreateForm() {
+        const form = document.getElementById('gather-create-form');
+        if (!form || form.dataset.l) return;
+        form.dataset.l = '1';
+
         const addGameBtn = document.getElementById('gc-add-game-btn');
         if (addGameBtn) {
             addGameBtn.addEventListener('click', () => {
@@ -518,51 +522,59 @@ const GatherModule = (() => {
         if (!delegationSetup) {
             delegationSetup = true;
 
-        // 分頁切換
-        document.addEventListener('click', e => {
-            const tabBtn = e.target.closest('.booking-tab-btn');
-            if (tabBtn) {
-                const scope = tabBtn.closest('.booking-tab-bar')?.parentElement;
-                if (!scope) return;
-                scope.querySelectorAll('.booking-tab-btn').forEach(b => b.classList.remove('active'));
-                scope.querySelectorAll('.booking-tab-content').forEach(c => c.classList.remove('active'));
-                tabBtn.classList.add('active');
-                scope.querySelector(`#${tabBtn.dataset.tab}`)?.classList.add('active');
-                const titleEl = document.getElementById('booking-page-title');
-                if (titleEl) titleEl.textContent = tabBtn.dataset.tab === 'booking-tab-gather' ? '揪團桌遊' : '場地預約';
-                if (tabBtn.dataset.tab === 'booking-tab-gather') loadList();
-            }
-
-            // 糾團卡片點擊
-            const card = e.target.closest('.gg-card[data-id]');
-            if (card) {
-                const activeTab = document.querySelector('.booking-tab-content.active');
-                if (activeTab && activeTab.id === 'booking-tab-gather') {
-                    showDetail(card.dataset.id);
+            document.addEventListener('click', e => {
+                // 分頁切換
+                const tabBtn = e.target.closest('.booking-tab-btn');
+                if (tabBtn) {
+                    const scope = tabBtn.closest('.booking-tab-bar')?.parentElement;
+                    if (!scope) return;
+                    scope.querySelectorAll('.booking-tab-btn').forEach(b => b.classList.remove('active'));
+                    scope.querySelectorAll('.booking-tab-content').forEach(c => c.classList.remove('active'));
+                    tabBtn.classList.add('active');
+                    scope.querySelector(`#${tabBtn.dataset.tab}`)?.classList.add('active');
+                    const titleEl = document.getElementById('booking-page-title');
+                    if (titleEl) titleEl.textContent = tabBtn.dataset.tab === 'booking-tab-gather' ? '揪團桌遊' : '場地預約';
+                    if (tabBtn.dataset.tab === 'booking-tab-gather') loadList();
                 }
-            }
-        });
-        } // end if (!delegationSetup)
 
-        // 每次 DOM 重建後重新綁定（template re-injection 後元素是新的）
-        document.getElementById('gather-create-btn')?.addEventListener('click', showCreateForm);
-        document.getElementById('gather-my-btn')?.addEventListener('click', showMyGatherings);
-        document.getElementById('gather-create-back')?.addEventListener('click', () => { backToMain(); loadList(); });
-        document.getElementById('gather-my-back')?.addEventListener('click', backToMain);
-        document.getElementById('gather-detail-back')?.addEventListener('click', backToMain);
+                // 揪團卡片點擊
+                const card = e.target.closest('.gg-card[data-id]');
+                if (card) {
+                    const activeTab = document.querySelector('.booking-tab-content.active');
+                    if (activeTab && activeTab.id === 'booking-tab-gather') {
+                        showDetail(card.dataset.id);
+                    }
+                }
+            });
+        }
+
+        // 綁定按鈕：用 data-l 防止 DOM 未重建時重複綁定
+        const bindOnce = (id, handler) => {
+            const el = document.getElementById(id);
+            if (el && !el.dataset.l) { el.dataset.l = '1'; el.addEventListener('click', handler); }
+        };
+        bindOnce('gather-create-btn', showCreateForm);
+        bindOnce('gather-my-btn', showMyGatherings);
+        bindOnce('gather-create-back', () => { backToMain(); loadList(); });
+        bindOnce('gather-my-back', backToMain);
+        bindOnce('gather-detail-back', backToMain);
 
         initCreateForm();
-        loadList();
+
+        // 只在揪團桌遊 tab 可見時才載入列表
+        if (document.getElementById('booking-tab-gather')?.classList.contains('active')) {
+            loadList();
+        }
 
         // 處理分享連結 hash
         const hash = location.hash.substring(1);
         if (hash.startsWith('gather-share@')) {
             const token = hash.split('@')[1];
-            const appContent = document.getElementById('app-content');
-            appContent.querySelectorAll('.booking-tab-btn').forEach(b => b.classList.remove('active'));
-            appContent.querySelectorAll('.booking-tab-content').forEach(c => c.classList.remove('active'));
-            appContent.querySelector('[data-tab="booking-tab-gather"]')?.classList.add('active');
-            appContent.querySelector('#booking-tab-gather')?.classList.add('active');
+            const ac = document.getElementById('app-content');
+            ac.querySelectorAll('.booking-tab-btn').forEach(b => b.classList.remove('active'));
+            ac.querySelectorAll('.booking-tab-content').forEach(c => c.classList.remove('active'));
+            ac.querySelector('[data-tab="booking-tab-gather"]')?.classList.add('active');
+            ac.querySelector('#booking-tab-gather')?.classList.add('active');
             handleShareLink(token);
         }
     }

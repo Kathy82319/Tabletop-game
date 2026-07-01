@@ -76,18 +76,23 @@ function handleNavigation() {
     if (appContent.dataset.currentPage === hash) {
         return;
     }
-    appContent.dataset.currentPage = hash;
 
     const [pageId, ...rest] = hash.split('@');
     const data = rest.join('@');
+    const prevPageId = (appContent.dataset.currentPage || '').split('@')[0];
 
-    const pageTemplate = pageTemplates.querySelector(`#${pageId}`);
-    if (pageTemplate) {
-        appContent.innerHTML = pageTemplate.innerHTML;
-    } else {
-        appContent.innerHTML = pageTemplates.querySelector('#page-home').innerHTML;
-        initializeHomePage();
-        return;
+    appContent.dataset.currentPage = hash;
+
+    // 只有切換到不同頁面才重新注入模板，同頁面步驟切換保留現有 DOM
+    if (pageId !== prevPageId) {
+        const pageTemplate = pageTemplates.querySelector(`#${pageId}`);
+        if (pageTemplate) {
+            appContent.innerHTML = pageTemplate.innerHTML;
+        } else {
+            appContent.innerHTML = pageTemplates.querySelector('#page-home').innerHTML;
+            initializeHomePage();
+            return;
+        }
     }
 
     const pageInitializers = {
