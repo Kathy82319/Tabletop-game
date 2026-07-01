@@ -3582,13 +3582,31 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     display: block;
 }
 
-/* 糾團主畫面 */
-.gather-action-row {
+/* 揪團桌遊主畫面 */
+#booking-tab-gather.active {
+    display: flex;
+    flex-direction: column;
+}
+#gather-main-view {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+#gather-list-container {
+    flex: 1;
+    overflow-y: auto;
+    max-height: calc(100svh - 320px);
+    min-height: 80px;
+}
+.gather-action-bar {
+    flex-shrink: 0;
     display: flex;
     gap: 10px;
-    margin-bottom: 20px;
+    padding: 12px 0 4px;
+    margin-top: 8px;
+    border-top: 1px solid rgba(184,134,11,0.35);
 }
-.gather-action-row .cta-button {
+.gather-action-bar .cta-button {
     flex: 1;
     font-size: 0.95rem;
 }

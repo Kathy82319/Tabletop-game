@@ -512,13 +512,11 @@ const GatherModule = (() => {
     }
 
     // ---- 初始化（在 booking 頁面載入時呼叫）----
-    let initialized = false;
+    let delegationSetup = false;
     function init() {
-        if (initialized) {
-            loadList();
-            return;
-        }
-        initialized = true;
+        // document 層級的事件委派只需設定一次（跨 DOM 重建存活）
+        if (!delegationSetup) {
+            delegationSetup = true;
 
         // 分頁切換
         document.addEventListener('click', e => {
@@ -544,7 +542,9 @@ const GatherModule = (() => {
                 }
             }
         });
+        } // end if (!delegationSetup)
 
+        // 每次 DOM 重建後重新綁定（template re-injection 後元素是新的）
         document.getElementById('gather-create-btn')?.addEventListener('click', showCreateForm);
         document.getElementById('gather-my-btn')?.addEventListener('click', showMyGatherings);
         document.getElementById('gather-create-back')?.addEventListener('click', () => { backToMain(); loadList(); });
@@ -552,8 +552,6 @@ const GatherModule = (() => {
         document.getElementById('gather-detail-back')?.addEventListener('click', backToMain);
 
         initCreateForm();
-
-        // 揪團桌遊是預設分頁，立即載入列表
         loadList();
 
         // 處理分享連結 hash
