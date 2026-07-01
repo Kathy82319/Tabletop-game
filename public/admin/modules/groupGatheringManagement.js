@@ -2,7 +2,7 @@ import { api } from '../api.js';
 import { ui } from '../ui.js';
 
 const STATUS_LABEL = {
-    open: '報名中',
+    open: '揪團中',
     closed: '截止/已滿',
     pending_approval: '待審核',
     approved: '已成團',
@@ -137,7 +137,7 @@ export async function init() {
         <div class="sub-nav-tabs" id="gg-filter-tabs">
             <button class="sub-tab-btn active" data-status="pending_approval">待審核</button>
             <button class="sub-tab-btn" data-status="approved">已成團</button>
-            <button class="sub-tab-btn" data-status="open">報名中</button>
+            <button class="sub-tab-btn" data-status="open">揪團中</button>
             <button class="sub-tab-btn" data-status="failed">已流標</button>
         </div>
         <div class="table-container" style="overflow-x:auto;">
