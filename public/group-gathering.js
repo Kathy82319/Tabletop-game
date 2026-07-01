@@ -86,7 +86,6 @@ const GatherModule = (() => {
                     <span class="gg-status-badge ${statusClass}">${statusLabel}</span>
                     ${myBadge}${organizerBadge}
                 </div>
-                <span class="gg-organizer">${g.organizer_name}</span>
             </div>
             ${g.name ? `<div class="gg-card-name">${g.name}</div>` : ''}
             <div class="gg-card-info">
