@@ -255,6 +255,23 @@
     <button class="details-back-button">← 返回個人資料</button>
     <h1 style="text-align: center;">過往遊戲紀錄</h1>
     <div id="game-history-container"><p style="text-align:center; padding:20px;">讀取中...</p></div>
+
+    <!-- 場次詳細抽屜 -->
+    <div id="gh-detail-drawer" style="display:none;">
+        <div class="gh-detail-overlay" id="gh-detail-overlay"></div>
+        <div class="gh-detail-panel">
+            <div class="gh-detail-header">
+                <span id="gh-detail-title"></span>
+                <button id="gh-detail-close">✕</button>
+            </div>
+            <div class="gh-detail-body">
+                <p class="gh-section-label">最終分數</p>
+                <div id="gh-detail-players"></div>
+                <p class="gh-section-label" style="margin-top:16px;">遊戲紀錄</p>
+                <div id="gh-detail-events"></div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div id="page-edit-profile">
@@ -424,14 +441,14 @@
 
         <div class="tools-ext-section">
             <p class="tools-ext-label">推薦網站</p>
-            <a href="https://wkap.fun/#/" target="_blank" rel="noopener" class="tools-ext-card">
+            <a href="https://wkap.fun/#/" class="tools-ext-card" onclick="openExternal(event, 'https://wkap.fun/#/')">
                 <div class="tools-ext-info">
                     <span class="tools-ext-name">狼人殺輔助程式</span>
                     <span class="tools-ext-url">wkap.fun</span>
                 </div>
                 <span class="tools-ext-arrow">↗</span>
             </a>
-            <a href="https://board-game-score-pad.vercel.app/" target="_blank" rel="noopener" class="tools-ext-card">
+            <a href="https://board-game-score-pad.vercel.app/" class="tools-ext-card" onclick="openExternal(event, 'https://board-game-score-pad.vercel.app/')">
                 <div class="tools-ext-info">
                     <span class="tools-ext-name">萬用桌遊記分板</span>
                     <span class="tools-ext-url">board-game-score-pad.vercel.app</span>

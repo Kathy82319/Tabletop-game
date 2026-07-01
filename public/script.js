@@ -1,3 +1,12 @@
+function openExternal(event, url) {
+    event.preventDefault();
+    if (typeof liff !== 'undefined' && liff.isInClient()) {
+        liff.openWindow({ url: url, external: true });
+    } else {
+        window.open(url, '_blank');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // =================================================================

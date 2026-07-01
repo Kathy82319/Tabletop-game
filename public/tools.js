@@ -1112,11 +1112,87 @@ async function initializeGameHistoryPage() {
                 <div class="game-history-name">${entry.game_name}${badge}</div>
                 <div class="game-history-detail">暱稱：${entry.nickname}　分數：${entry.score} 分　共 ${entry.player_count} 位玩家</div>
                 <div class="game-history-date">${dateStr}</div>`;
+            item.onclick = () => ghOpenDetail(entry.session_id, entry.game_name);
             container.appendChild(item);
         });
     } catch (e) {
         container.innerHTML = '<p style="text-align:center; padding:20px; color:#e74c3c;">載入失敗</p>';
     }
+}
+
+// ── 過往遊戲：場次詳細抽屜 ───────────────────────────────────
+async function ghOpenDetail(sessionId, gameName) {
+    const drawer = document.getElementById('gh-detail-drawer');
+    if (!drawer) return;
+
+    document.getElementById('gh-detail-title').textContent = gameName;
+    document.getElementById('gh-detail-players').innerHTML = '<p style="color:var(--color-text-secondary); font-size:0.85rem;">讀取中...</p>';
+    document.getElementById('gh-detail-events').innerHTML  = '';
+    drawer.style.display = 'flex';
+
+    document.getElementById('gh-detail-close').onclick   = ghCloseDetail;
+    document.getElementById('gh-detail-overlay').onclick = ghCloseDetail;
+
+    try {
+        const res  = await fetch(`/api/scoreboard/${sessionId}`);
+        const data = await res.json();
+
+        // 玩家分數（加入順序）
+        const playersEl = document.getElementById('gh-detail-players');
+        const players   = data.players || [];
+        if (players.length === 0) {
+            playersEl.innerHTML = '<p style="color:var(--color-text-secondary); font-size:0.85rem;">無玩家資料</p>';
+        } else {
+            playersEl.innerHTML = players.map(p => `
+                <div class="gh-player-row">
+                    <span class="gh-player-name">${p.nickname}</span>
+                    <span class="gh-player-score">${p.score} 分</span>
+                </div>`).join('');
+        }
+
+        // 事件紀錄（最新在上）
+        const eventsEl = document.getElementById('gh-detail-events');
+        const events   = data.events || [];
+        if (events.length === 0) {
+            eventsEl.innerHTML = '<p style="color:var(--color-text-secondary); font-size:0.85rem;">尚無紀錄</p>';
+        } else {
+            eventsEl.innerHTML = events.map(ev => {
+                const d  = new Date(ev.created_at);
+                const ts = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+                if (ev.event_type === 'score') {
+                    const pos   = ev.delta >= 0;
+                    const cls   = pos ? 'gh-event-delta-pos' : 'gh-event-delta-neg';
+                    const sign  = pos ? '+' : '';
+                    return `<div class="gh-event-row">
+                        <span class="gh-event-time">${ts}</span>
+                        <span class="gh-event-name">${ev.nickname}</span>
+                        <span class="${cls}">${sign}${ev.delta}</span>
+                        <span class="gh-event-after">→ ${ev.new_score} 分</span>
+                    </div>`;
+                } else if (ev.event_type === 'join') {
+                    return `<div class="gh-event-row">
+                        <span class="gh-event-time">${ts}</span>
+                        <span class="gh-event-name">${ev.nickname}</span>
+                        <span class="gh-event-delta-neutral">加入</span>
+                    </div>`;
+                } else {
+                    return `<div class="gh-event-row">
+                        <span class="gh-event-time">${ts}</span>
+                        <span class="gh-event-name">${ev.nickname}</span>
+                        <span class="gh-event-delta-neutral" style="opacity:0.6;">離開</span>
+                    </div>`;
+                }
+            }).join('');
+        }
+    } catch (e) {
+        document.getElementById('gh-detail-players').innerHTML =
+            '<p style="color:var(--color-danger); font-size:0.85rem;">載入失敗</p>';
+    }
+}
+
+function ghCloseDetail() {
+    const drawer = document.getElementById('gh-detail-drawer');
+    if (drawer) drawer.style.display = 'none';
 }
 
 // ================================================================
