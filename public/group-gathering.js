@@ -524,13 +524,13 @@ const GatherModule = (() => {
         document.addEventListener('click', e => {
             const tabBtn = e.target.closest('.booking-tab-btn');
             if (tabBtn) {
-                document.querySelectorAll('.booking-tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.booking-tab-content').forEach(c => c.classList.remove('active'));
+                const scope = tabBtn.closest('.booking-tab-bar')?.parentElement;
+                if (!scope) return;
+                scope.querySelectorAll('.booking-tab-btn').forEach(b => b.classList.remove('active'));
+                scope.querySelectorAll('.booking-tab-content').forEach(c => c.classList.remove('active'));
                 tabBtn.classList.add('active');
-                const targetId = tabBtn.dataset.tab;
-                const targetEl = document.getElementById(targetId);
-                if (targetEl) targetEl.classList.add('active');
-                if (targetId === 'booking-tab-gather') loadList();
+                scope.querySelector(`#${tabBtn.dataset.tab}`)?.classList.add('active');
+                if (tabBtn.dataset.tab === 'booking-tab-gather') loadList();
             }
 
             // 糾團卡片點擊
@@ -555,13 +555,11 @@ const GatherModule = (() => {
         const hash = location.hash.substring(1);
         if (hash.startsWith('gather-share@')) {
             const token = hash.split('@')[1];
-            // 切換到糾團分頁
-            document.querySelectorAll('.booking-tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.booking-tab-content').forEach(c => c.classList.remove('active'));
-            const gatherBtn = document.querySelector('[data-tab="booking-tab-gather"]');
-            const gatherTab = document.getElementById('booking-tab-gather');
-            if (gatherBtn) gatherBtn.classList.add('active');
-            if (gatherTab) gatherTab.classList.add('active');
+            const appContent = document.getElementById('app-content');
+            appContent.querySelectorAll('.booking-tab-btn').forEach(b => b.classList.remove('active'));
+            appContent.querySelectorAll('.booking-tab-content').forEach(c => c.classList.remove('active'));
+            appContent.querySelector('[data-tab="booking-tab-gather"]')?.classList.add('active');
+            appContent.querySelector('#booking-tab-gather')?.classList.add('active');
             handleShareLink(token);
         }
     }
