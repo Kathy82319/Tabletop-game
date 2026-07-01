@@ -121,14 +121,13 @@ const GatherModule = (() => {
 
     // ---- 詳情頁 ----
     async function showDetail(id) {
-        const mainView = document.getElementById('gather-main-view');
-        const detailView = document.getElementById('gather-detail-view');
-        const content = document.getElementById('gather-detail-content');
-        if (!detailView) return;
+        const overlay = document.getElementById('gg-modal-overlay');
+        const content = document.getElementById('gg-modal-content');
+        if (!overlay) return;
 
         content.innerHTML = '<p style="text-align:center; padding:20px;">載入中...</p>';
-        mainView.style.display = 'none';
-        detailView.style.display = 'block';
+        overlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
 
         try {
             const res = await fetch(`/api/group-gatherings/${id}`, {
@@ -663,9 +662,17 @@ const GatherModule = (() => {
         }
     }
 
+    // ---- 彈窗關閉 ----
+    function closeModal() {
+        const overlay = document.getElementById('gg-modal-overlay');
+        if (overlay) overlay.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
     // ---- 返回主畫面 ----
     function backToMain() {
-        const views = ['gather-create-view', 'gather-my-view', 'gather-detail-view'];
+        closeModal();
+        const views = ['gather-create-view', 'gather-my-view'];
         views.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = 'none';
@@ -695,6 +702,11 @@ const GatherModule = (() => {
                     if (titleEl) titleEl.textContent = tabBtn.dataset.tab === 'booking-tab-gather' ? '揪團桌遊' : '場地預約';
                     if (tabBtn.dataset.tab === 'booking-tab-gather') { backToMain(); loadList(); }
                     if (tabBtn.dataset.tab === 'booking-tab-reserve') { window.initBookingDatepicker?.(); }
+                }
+
+                // 彈窗關閉（點背景或 ✕ 按鈕）
+                if (e.target.id === 'gg-modal-overlay' || e.target.id === 'gg-modal-close') {
+                    closeModal();
                 }
 
                 // 揪團卡片點擊
