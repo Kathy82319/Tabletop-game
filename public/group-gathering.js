@@ -41,6 +41,25 @@ const GatherModule = (() => {
         return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     }
 
+    let countdownInterval = null;
+    function startCountdownTimer() {
+        function tick() {
+            document.querySelectorAll('.gg-countdown[data-deadline]').forEach(el => {
+                const deadline = new Date(el.dataset.deadline.replace(' ', 'T'));
+                const diff = deadline - Date.now();
+                if (diff <= 0) { el.textContent = '已截止'; return; }
+                const days = Math.floor(diff / 86400000);
+                const hours = Math.floor((diff % 86400000) / 3600000);
+                const mins = Math.floor((diff % 3600000) / 60000);
+                if (days > 0) el.textContent = `剩 ${days} 天`;
+                else if (hours > 0) el.textContent = `剩 ${hours} 小時`;
+                else el.textContent = `剩 ${mins} 分鐘`;
+            });
+        }
+        tick();
+        if (!countdownInterval) countdownInterval = setInterval(tick, 60000);
+    }
+
     function renderGameTags(games) {
         if (!games || games.length === 0) return '<span style="color:var(--color-text-secondary);">未指定</span>';
         return games.map(g => {
@@ -69,11 +88,14 @@ const GatherModule = (() => {
                 </div>
                 <span class="gg-organizer">${g.organizer_name}</span>
             </div>
-            <div class="gg-card-date">📅 ${g.event_date} ${g.start_time}–${g.end_time}</div>
-            <div class="gg-card-games">${g.games.map(gm => gm.name).join(' · ')}</div>
+            <div class="gg-card-info">
+                <div class="gg-card-row"><span class="gg-card-label">活動日期：</span>${g.event_date}</div>
+                <div class="gg-card-row"><span class="gg-card-label">開始/預計結束：</span>${g.start_time}–${g.end_time}</div>
+                <div class="gg-card-row"><span class="gg-card-label">預計遊戲：</span>${g.games.map(gm => gm.name).join('、')}</div>
+            </div>
             <div class="gg-card-footer">
                 <span>👥 ${maxText}</span>
-                <span>截止：${formatDeadline(g.deadline)}</span>
+                <span>截止：${formatDeadline(g.deadline)}<span class="gg-countdown" data-deadline="${g.deadline}"></span></span>
             </div>
         </div>`;
     }
@@ -90,6 +112,7 @@ const GatherModule = (() => {
                 return;
             }
             container.innerHTML = list.map(g => renderGatherCard(g)).join('');
+            startCountdownTimer();
         } catch {
             container.innerHTML = '<p class="gg-empty" style="color:red;">載入失敗，請稍後再試</p>';
         }
@@ -180,7 +203,7 @@ const GatherModule = (() => {
                         <span class="gg-detail-label">🎲 遊戲</span>
                         <div>${renderGameTags(g.games)}</div>
                     </div>
-                    ${g.note ? `<div class="gg-detail-section"><span class="gg-detail-label">📝 備註</span><p>${g.note}</p></div>` : ''}
+                    ${g.note ? `<div class="gg-detail-section"><span class="gg-detail-label">📝 備註</span><span class="gg-detail-note">${g.note}</span></div>` : ''}
                     <div class="gg-detail-section">
                         <span class="gg-detail-label">成員列表</span>
                         <div id="gg-members-list">${membersHtml}</div>

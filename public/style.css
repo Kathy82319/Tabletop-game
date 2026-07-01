@@ -3641,16 +3641,28 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     font-size: 0.85rem;
     color: var(--color-text-secondary);
 }
-.gg-card-date {
-    font-size: 0.95rem;
-    font-weight: bold;
-    color: var(--color-text-primary);
-    margin-bottom: 4px;
-}
-.gg-card-games {
-    font-size: 0.85rem;
-    color: var(--color-text-secondary);
+.gg-card-info {
     margin-bottom: 8px;
+}
+.gg-card-row {
+    font-size: 0.88rem;
+    color: var(--color-text-primary);
+    margin-bottom: 3px;
+    line-height: 1.4;
+}
+.gg-card-label {
+    color: var(--color-text-secondary);
+    font-size: 0.82rem;
+}
+.gg-countdown {
+    font-size: 0.78rem;
+    color: var(--color-frame-gold);
+    margin-left: 5px;
+}
+.gg-detail-note {
+    line-height: 1.5;
+    word-break: break-word;
+    white-space: pre-wrap;
 }
 .gg-card-footer {
     display: flex;
