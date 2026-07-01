@@ -26,7 +26,7 @@ function renderList(list) {
             <td>${dateStr}</td>
             <td>${s.player_count}</td>
             <td>
-                <button class="action-btn btn-view" data-id="${s.session_id}" data-name="${s.game_name}" style="margin-right:6px;">查看</button>
+                <button class="action-btn btn-view" data-id="${s.session_id}" data-name="${s.game_name}" style="margin-right:6px; background:var(--warning-color); color:#000;">查看</button>
                 <button class="action-btn btn-delete" data-id="${s.session_id}" data-name="${s.game_name}" style="background:var(--danger-color); color:#fff;">刪除</button>
             </td>
         </tr>`;
