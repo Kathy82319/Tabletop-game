@@ -23,9 +23,9 @@ export async function onRequestPost(context) {
         return Response.json({ error: '無效的請求格式' }, { status: 400 });
     }
 
-    const { event_date, start_time, end_time, max_participants, games, note, deadline } = body;
+    const { event_date, start_time, end_time, max_participants, games, note, deadline, name } = body;
 
-    if (!event_date || !start_time || !end_time || !deadline) {
+    if (!event_date || !start_time || !end_time || !deadline || !name) {
         return Response.json({ error: '缺少必填欄位' }, { status: 400 });
     }
 
@@ -36,11 +36,12 @@ export async function onRequestPost(context) {
     const share_token = crypto.randomUUID();
 
     await env.DB.prepare(
-        `INSERT INTO GroupGatherings (organizer_user_id, organizer_name, event_date, start_time, end_time, max_participants, games, note, deadline, share_token)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO GroupGatherings (organizer_user_id, organizer_name, name, event_date, start_time, end_time, max_participants, games, note, deadline, share_token)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
         organizerUserId,
         organizerName,
+        name.trim().substring(0, 20),
         event_date,
         start_time,
         end_time,

@@ -3641,6 +3641,12 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     font-size: 0.85rem;
     color: var(--color-text-secondary);
 }
+.gg-card-name {
+    font-size: 1rem;
+    font-weight: bold;
+    color: var(--color-text-primary);
+    margin-bottom: 6px;
+}
 .gg-card-info {
     margin-bottom: 8px;
 }

@@ -88,6 +88,7 @@ const GatherModule = (() => {
                 </div>
                 <span class="gg-organizer">${g.organizer_name}</span>
             </div>
+            ${g.name ? `<div class="gg-card-name">${g.name}</div>` : ''}
             <div class="gg-card-info">
                 <div class="gg-card-row"><span class="gg-card-label">活動日期：</span>${g.event_date}</div>
                 <div class="gg-card-row"><span class="gg-card-label">開始/預計結束：</span>${g.start_time}–${g.end_time}</div>
@@ -160,7 +161,7 @@ const GatherModule = (() => {
                         ? `<input type="checkbox" class="gg-member-check" data-uid="${m.user_id}" ${m.status === 'approved' ? 'checked' : ''}>`
                         : `<span class="gg-member-status">${m.status === 'approved' ? '✓' : ''}</span>`}
                 </div>`
-            ).join('') || '<p style="color:var(--color-text-secondary);">尚無成員報名</p>';
+            ).join('') || '<span style="color:var(--color-text-secondary);">尚無成員報名</span>';
 
             let actionsHtml = '';
             if (isOrganizer) {
@@ -185,7 +186,7 @@ const GatherModule = (() => {
                 <div class="gg-detail">
                     <div class="gg-detail-header">
                         <span class="gg-status-badge ${STATUS_CLASS[g.status] || ''}">${STATUS_LABEL[g.status] || g.status}</span>
-                        <h2>${g.organizer_name} 的糾團</h2>
+                        <h2>${g.name || (g.organizer_name + ' 的糾團')}</h2>
                     </div>
                     <div class="gg-detail-section">
                         <span class="gg-detail-label">📅 時間</span>
@@ -403,13 +404,14 @@ const GatherModule = (() => {
         form.dataset.l = '1';
 
         const addGameBtn = document.getElementById('gc-add-game-btn');
+        function syncAddGameBtn() {
+            const container = document.getElementById('gc-games-container');
+            if (addGameBtn) addGameBtn.style.display = container.children.length >= 3 ? 'none' : '';
+        }
         if (addGameBtn) {
             addGameBtn.addEventListener('click', () => {
                 const container = document.getElementById('gc-games-container');
-                if (container.children.length >= 3) {
-                    alert('最多只能新增 3 款遊戲');
-                    return;
-                }
+                if (container.children.length >= 3) return;
                 const slot = document.createElement('div');
                 slot.className = 'gc-game-slot';
                 slot.innerHTML = `
@@ -417,8 +419,12 @@ const GatherModule = (() => {
                     <label class="gc-game-tag-label"><input type="checkbox" class="gc-game-played"> 有玩過</label>
                     <label class="gc-game-tag-label"><input type="checkbox" class="gc-game-beginner"> 適合新手</label>
                     <button type="button" class="gc-remove-game-btn">✕</button>`;
-                slot.querySelector('.gc-remove-game-btn').addEventListener('click', () => slot.remove());
+                slot.querySelector('.gc-remove-game-btn').addEventListener('click', () => {
+                    slot.remove();
+                    syncAddGameBtn();
+                });
                 container.appendChild(slot);
+                syncAddGameBtn();
             });
         }
 
@@ -525,6 +531,7 @@ const GatherModule = (() => {
                 const maxPart = hasLimit ? parseInt(document.getElementById('gc-max-participants').value) : null;
 
                 const payload = {
+                    name: document.getElementById('gc-name').value.trim(),
                     event_date: eventDate,
                     start_time: startTime,
                     end_time: endTime,
