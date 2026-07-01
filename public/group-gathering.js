@@ -625,6 +625,7 @@ const GatherModule = (() => {
                     const titleEl = document.getElementById('booking-page-title');
                     if (titleEl) titleEl.textContent = tabBtn.dataset.tab === 'booking-tab-gather' ? '揪團桌遊' : '場地預約';
                     if (tabBtn.dataset.tab === 'booking-tab-gather') { backToMain(); loadList(); }
+                    if (tabBtn.dataset.tab === 'booking-tab-reserve') { window.initBookingDatepicker?.(); }
                 }
 
                 // 揪團卡片點擊

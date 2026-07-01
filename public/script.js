@@ -1030,8 +1030,12 @@ async function initializeBookingPage(stepId) {
         });
     }
     
-    const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
-    if (datepickerContainer) {
+    // flatpickr 在 display:none 的 tab 內初始化會崩潰
+    // 改為懶加載：等場地預約 tab 被點開時才初始化
+    window.initBookingDatepicker = function () {
+        const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
+        if (!datepickerContainer || datepickerContainer.dataset.fpInit) return;
+        datepickerContainer.dataset.fpInit = '1';
         if (enabledDatesByAdmin.length === 0) {
             datepickerContainer.innerHTML = '<p style="text-align:center; color: var(--color-danger);">目前沒有開放預約的日期。</p>';
         } else {
@@ -1057,7 +1061,7 @@ async function initializeBookingPage(stepId) {
                 }
             });
         }
-    }
+    };
 
     const userData = await fetchGameData();
     if (userData) {
