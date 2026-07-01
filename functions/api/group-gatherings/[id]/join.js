@@ -19,8 +19,8 @@ export async function onRequestPost(context) {
         `SELECT * FROM GroupGatherings WHERE id = ?`
     ).bind(id).first();
 
-    if (!g) return Response.json({ error: '找不到此糾團' }, { status: 404 });
-    if (g.status !== 'open') return Response.json({ error: '此糾團已不開放報名' }, { status: 400 });
+    if (!g) return Response.json({ error: '找不到此揪團' }, { status: 404 });
+    if (g.status !== 'open') return Response.json({ error: '此揪團已不開放報名' }, { status: 400 });
 
     const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
     if (g.deadline <= now) return Response.json({ error: '報名已截止' }, { status: 400 });
@@ -29,7 +29,7 @@ export async function onRequestPost(context) {
     const existing = await env.DB.prepare(
         `SELECT id FROM GroupGatheringMembers WHERE gathering_id = ? AND user_id = ?`
     ).bind(id, profile.userId).first();
-    if (existing) return Response.json({ error: '您已報名此糾團' }, { status: 400 });
+    if (existing) return Response.json({ error: '您已報名此揪團' }, { status: 400 });
 
     if (g.max_participants) {
         const count = await env.DB.prepare(
@@ -60,7 +60,7 @@ export async function onRequestPost(context) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         userId: g.organizer_user_id,
-                        message: `🎉 人數已滿通知\n\n您發起的糾團（${g.event_date} ${g.start_time}）報名人數已達上限 ${g.max_participants} 人！\n\n請記得在截止時間前至糾團頁面提交給店家確認。`,
+                        message: `🎉 人數已滿通知\n\n您發起的揪團（${g.event_date} ${g.start_time}）報名人數已達上限 ${g.max_participants} 人！\n\n請記得在截止時間前至揪團頁面提交給店家確認。`,
                     }),
                 }).catch(err => console.error('通知團主人數已滿失敗:', err))
             );

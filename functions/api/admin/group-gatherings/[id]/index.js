@@ -6,7 +6,7 @@ export async function onRequestGet(context) {
         `SELECT * FROM GroupGatherings WHERE id = ?`
     ).bind(id).first();
 
-    if (!g) return Response.json({ error: '找不到此糾團' }, { status: 404 });
+    if (!g) return Response.json({ error: '找不到此揪團' }, { status: 404 });
 
     const members = await env.DB.prepare(
         `SELECT id, user_id, display_name, joined_at, status

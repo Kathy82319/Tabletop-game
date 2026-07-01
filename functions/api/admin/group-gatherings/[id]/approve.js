@@ -6,9 +6,9 @@ export async function onRequestPost(context) {
         `SELECT * FROM GroupGatherings WHERE id = ?`
     ).bind(id).first();
 
-    if (!g) return Response.json({ error: '找不到此糾團' }, { status: 404 });
+    if (!g) return Response.json({ error: '找不到此揪團' }, { status: 404 });
     if (g.status !== 'pending_approval') {
-        return Response.json({ error: '此糾團不在待審核狀態' }, { status: 400 });
+        return Response.json({ error: '此揪團不在待審核狀態' }, { status: 400 });
     }
 
     const members = await env.DB.prepare(
@@ -18,7 +18,7 @@ export async function onRequestPost(context) {
     const totalPeople = members.results.length + 1; // +1 for organizer
     const PEOPLE_PER_TABLE = 4;
     const tablesNeeded = Math.ceil(totalPeople / PEOPLE_PER_TABLE);
-    const contactName = `${g.organizer_name}的糾團（${totalPeople}人）`;
+    const contactName = `${g.organizer_name}的揪團（${totalPeople}人）`;
 
     const insertResult = await env.DB.prepare(
         `INSERT INTO Bookings (user_id, contact_name, contact_phone, booking_date, time_slot, num_of_people, tables_occupied, status)
@@ -40,10 +40,10 @@ export async function onRequestPost(context) {
     ).bind(bookingId, id).run();
 
     // 通知團主
-    const organizerMsg = `🎉 糾團成功！\n\n您發起的糾團已獲店家確認！\n📅 ${g.event_date} ${g.start_time}–${g.end_time}\n👥 共 ${totalPeople} 人\n\n期待與您相見！`;
+    const organizerMsg = `🎉 揪團成功！\n\n您發起的揪團已獲店家確認！\n📅 ${g.event_date} ${g.start_time}–${g.end_time}\n👥 共 ${totalPeople} 人\n\n期待與您相見！`;
 
     // 通知所有成員
-    const memberMsg = `🎉 糾團成功！\n\n您報名的糾團已獲店家確認！\n📅 ${g.event_date} ${g.start_time}–${g.end_time}\n\n期待與您相見！`;
+    const memberMsg = `🎉 揪團成功！\n\n您報名的揪團已獲店家確認！\n📅 ${g.event_date} ${g.start_time}–${g.end_time}\n\n期待與您相見！`;
 
     const notifyPromises = [
         fetch(new URL('/api/send-message', request.url), {

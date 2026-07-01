@@ -11,7 +11,7 @@ export async function onRequestGet(context) {
     ).bind(id).first();
 
     if (!g) {
-        return Response.json({ error: '找不到此糾團' }, { status: 404 });
+        return Response.json({ error: '找不到此揪團' }, { status: 404 });
     }
 
     const members = await env.DB.prepare(

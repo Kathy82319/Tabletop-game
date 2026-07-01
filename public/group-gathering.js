@@ -1,4 +1,4 @@
-// 糾團功能前台邏輯
+// 揪團功能前台邏輯
 // 依賴 window.userProfile（由 script.js 在 liff.init 後設定）
 
 const GatherModule = (() => {
@@ -109,7 +109,7 @@ const GatherModule = (() => {
             const res = await fetch('/api/group-gatherings/list');
             const list = await res.json();
             if (!Array.isArray(list) || list.length === 0) {
-                container.innerHTML = '<p class="gg-empty">目前沒有開放中的糾團，來發起第一個吧！</p>';
+                container.innerHTML = '<p class="gg-empty">目前沒有開放中的揪團，來發起第一個吧！</p>';
                 return;
             }
             container.innerHTML = list.map(g => renderGatherCard(g)).join('');
@@ -170,7 +170,7 @@ const GatherModule = (() => {
                         actionsHtml += `<button class="cta-button" id="gg-select-members-btn">確認參加名單</button>`;
                     }
                     actionsHtml += `<button class="cta-button" id="gg-submit-btn" style="margin-top:8px;">提交給店家確認</button>`;
-                    actionsHtml += `<button class="cta-button" id="gg-cancel-btn" style="margin-top:8px; background:#c0392b;">解散糾團</button>`;
+                    actionsHtml += `<button class="cta-button" id="gg-cancel-btn" style="margin-top:8px; background:#c0392b;">解散揪團</button>`;
                 }
             } else {
                 if ((isOpen || isClosed) && beforeDeadline && !isFull && !alreadyJoined && getLiffToken()) {
@@ -180,13 +180,13 @@ const GatherModule = (() => {
                 }
             }
 
-            actionsHtml += `<button class="cta-button" id="gg-share-btn" style="margin-top:8px; background: var(--color-text-secondary);">📤 分享糾團連結</button>`;
+            actionsHtml += `<button class="cta-button" id="gg-share-btn" style="margin-top:8px; background: var(--color-text-secondary);">📤 分享揪團連結</button>`;
 
             content.innerHTML = `
                 <div class="gg-detail">
                     <div class="gg-detail-header">
                         <span class="gg-status-badge ${STATUS_CLASS[g.status] || ''}">${STATUS_LABEL[g.status] || g.status}</span>
-                        <h2>${g.name || (g.organizer_name + ' 的糾團')}</h2>
+                        <h2>${g.name || (g.organizer_name + ' 的揪團')}</h2>
                     </div>
                     <div class="gg-detail-section">
                         <span class="gg-detail-label">📅 時間</span>
@@ -323,7 +323,7 @@ const GatherModule = (() => {
         const cancelBtn = document.getElementById('gg-cancel-btn');
         if (cancelBtn) {
             cancelBtn.addEventListener('click', async () => {
-                if (!confirm('確定要解散此糾團嗎？所有成員將收到通知。')) return;
+                if (!confirm('確定要解散此揪團嗎？所有成員將收到通知。')) return;
                 cancelBtn.disabled = true;
                 try {
                     const res = await fetch(`/api/group-gatherings/${id}/cancel`, {
@@ -332,7 +332,7 @@ const GatherModule = (() => {
                     });
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error || '解散失敗');
-                    setStatus('已解散糾團');
+                    setStatus('已解散揪團');
                     setTimeout(() => backToMain(), 1500);
                 } catch (err) {
                     setStatus(err.message, true);
@@ -346,7 +346,7 @@ const GatherModule = (() => {
             shareBtn.addEventListener('click', () => {
                 const shareUrl = `${location.origin}${location.pathname}#gather-share@${g.share_token}`;
                 if (navigator.share) {
-                    navigator.share({ title: `${g.organizer_name} 的糾團`, url: shareUrl });
+                    navigator.share({ title: `${g.organizer_name} 的揪團`, url: shareUrl });
                 } else if (navigator.clipboard) {
                     navigator.clipboard.writeText(shareUrl).then(() => setStatus('連結已複製！'));
                 } else {
@@ -356,7 +356,7 @@ const GatherModule = (() => {
         }
     }
 
-    // ---- 我的糾團 ----
+    // ---- 我的揪團 ----
     async function showMyGatherings() {
         const mainView = document.getElementById('gather-main-view');
         const myView = document.getElementById('gather-my-view');
@@ -380,11 +380,11 @@ const GatherModule = (() => {
             const { organized, joined } = await res.json();
 
             organizedEl.innerHTML = organized.length === 0
-                ? '<p class="gg-empty">尚未發起過糾團</p>'
+                ? '<p class="gg-empty">尚未發起過揪團</p>'
                 : organized.map(g => renderGatherCard(g, true)).join('');
 
             joinedEl.innerHTML = joined.length === 0
-                ? '<p class="gg-empty">尚未報名過糾團</p>'
+                ? '<p class="gg-empty">尚未報名過揪團</p>'
                 : joined.map(g => renderGatherCard(g, true)).join('');
         } catch {
             organizedEl.innerHTML = '<p class="gg-empty" style="color:red;">載入失敗</p>';
@@ -392,7 +392,7 @@ const GatherModule = (() => {
         }
     }
 
-    // ---- 建立糾團 ----
+    // ---- 建立揪團 ----
     function showCreateForm() {
         document.getElementById('gather-main-view').style.display = 'none';
         document.getElementById('gather-create-view').style.display = 'block';
@@ -490,7 +490,7 @@ const GatherModule = (() => {
                 statusEl.textContent = '';
 
                 if (!getLiffToken()) {
-                    statusEl.textContent = '請先登入 LINE 才能發起糾團';
+                    statusEl.textContent = '請先登入 LINE 才能發起揪團';
                     statusEl.style.color = '#e74c3c';
                     return;
                 }
@@ -554,7 +554,7 @@ const GatherModule = (() => {
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error || '發布失敗');
 
-                    statusEl.textContent = '糾團發布成功！';
+                    statusEl.textContent = '揪團發布成功！';
                     statusEl.style.color = '#27ae60';
                     form.reset();
                     setTimeout(() => {
@@ -565,7 +565,7 @@ const GatherModule = (() => {
                     statusEl.textContent = err.message;
                     statusEl.style.color = '#e74c3c';
                     submitBtn.disabled = false;
-                    submitBtn.textContent = '發布糾團';
+                    submitBtn.textContent = '發布揪團';
                 }
             });
     }
@@ -585,7 +585,7 @@ const GatherModule = (() => {
             const res = await fetch(`/api/group-gatherings/share/${token}`);
             const g = await res.json();
             if (!res.ok) {
-                content.innerHTML = `<p style="color:red;">${g.error || '找不到此糾團'}</p>`;
+                content.innerHTML = `<p style="color:red;">${g.error || '找不到此揪團'}</p>`;
                 return;
             }
             showDetail(g.id);
@@ -671,7 +671,7 @@ const GatherModule = (() => {
 })();
 
 // 等待 booking 頁面初始化後再掛載
-// script.js 的 initializeBookingPage 執行後，糾團 tab 才存在於 DOM
+// script.js 的 initializeBookingPage 執行後，揪團 tab 才存在於 DOM
 document.addEventListener('gather-page-ready', () => {
     GatherModule.init();
 });

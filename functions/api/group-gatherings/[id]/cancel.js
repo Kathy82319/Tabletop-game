@@ -1,4 +1,4 @@
-// 團主解散糾團
+// 團主解散揪團
 export async function onRequestPost(context) {
     const { request, env, params } = context;
     const id = params.id;
@@ -20,10 +20,10 @@ export async function onRequestPost(context) {
         `SELECT * FROM GroupGatherings WHERE id = ?`
     ).bind(id).first();
 
-    if (!g) return Response.json({ error: '找不到此糾團' }, { status: 404 });
+    if (!g) return Response.json({ error: '找不到此揪團' }, { status: 404 });
     if (g.organizer_user_id !== profile.userId) return Response.json({ error: '僅團主可操作' }, { status: 403 });
     if (['approved', 'failed', 'cancelled'].includes(g.status)) {
-        return Response.json({ error: '此糾團無法解散' }, { status: 400 });
+        return Response.json({ error: '此揪團無法解散' }, { status: 400 });
     }
 
     await env.DB.prepare(
@@ -41,7 +41,7 @@ export async function onRequestPost(context) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 userId: m.user_id,
-                message: `😔 糾團取消通知\n\n您報名的糾團「${g.event_date} ${g.start_time}」已被團主解散。\n\n期待下次再一起玩桌遊！`,
+                message: `😔 揪團取消通知\n\n您報名的揪團「${g.event_date} ${g.start_time}」已被團主解散。\n\n期待下次再一起玩桌遊！`,
             }),
         }).catch(err => console.error(`通知成員 ${m.user_id} 失敗:`, err))
     );

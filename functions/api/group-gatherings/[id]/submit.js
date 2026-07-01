@@ -1,4 +1,4 @@
-// 團主提交糾團給店家審核
+// 團主提交揪團給店家審核
 export async function onRequestPost(context) {
     const { request, env, params } = context;
     const id = params.id;
@@ -20,10 +20,10 @@ export async function onRequestPost(context) {
         `SELECT * FROM GroupGatherings WHERE id = ?`
     ).bind(id).first();
 
-    if (!g) return Response.json({ error: '找不到此糾團' }, { status: 404 });
+    if (!g) return Response.json({ error: '找不到此揪團' }, { status: 404 });
     if (g.organizer_user_id !== profile.userId) return Response.json({ error: '僅團主可操作' }, { status: 403 });
     if (!['open', 'closed'].includes(g.status)) {
-        return Response.json({ error: '此糾團狀態不允許提交' }, { status: 400 });
+        return Response.json({ error: '此揪團狀態不允許提交' }, { status: 400 });
     }
 
     const memberCount = await env.DB.prepare(
@@ -38,7 +38,7 @@ export async function onRequestPost(context) {
         `UPDATE GroupGatherings SET status = 'pending_approval' WHERE id = ?`
     ).bind(id).run();
 
-    // 通知管理員有新糾團待審核
+    // 通知管理員有新揪團待審核
     const storeInfo = await env.DB.prepare(
         `SELECT booking_notify_user_id FROM StoreInfo WHERE id = 1`
     ).first();
@@ -50,7 +50,7 @@ export async function onRequestPost(context) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     userId: storeInfo.booking_notify_user_id,
-                    message: `🔔 新糾團審核通知\n\n${g.organizer_name} 發起的糾團需要審核：\n日期：${g.event_date} ${g.start_time}–${g.end_time}\n人數：${memberCount.c} 人\n\n請至後台「糾團管理」審核。`,
+                    message: `🔔 新揪團審核通知\n\n${g.organizer_name} 發起的揪團需要審核：\n日期：${g.event_date} ${g.start_time}–${g.end_time}\n人數：${memberCount.c} 人\n\n請至後台「揪團管理」審核。`,
                 }),
             }).catch(err => console.error('通知管理員失敗:', err))
         );

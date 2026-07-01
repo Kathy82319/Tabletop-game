@@ -10,7 +10,7 @@ export async function onRequestPost(context) {
 
     const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
 
-    // 找出已過截止時間但仍在 open/closed 狀態的糾團
+    // 找出已過截止時間但仍在 open/closed 狀態的揪團
     const expired = await env.DB.prepare(
         `SELECT id, organizer_user_id, organizer_name, event_date, start_time
          FROM GroupGatherings
@@ -34,7 +34,7 @@ export async function onRequestPost(context) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 userId: g.organizer_user_id,
-                message: `😔 糾團流標通知\n\n您發起的糾團「${g.event_date} ${g.start_time}」已超過截止時間，未能成功提交店家審核，已自動流標。\n\n感謝您的參與，歡迎再次發起糾團！`,
+                message: `😔 揪團流標通知\n\n您發起的揪團「${g.event_date} ${g.start_time}」已超過截止時間，未能成功提交店家審核，已自動流標。\n\n感謝您的參與，歡迎再次發起揪團！`,
             }),
         }).catch(err => console.error(`發送流標通知給 ${g.organizer_user_id} 失敗:`, err))
     );
@@ -50,7 +50,7 @@ export async function onRequestPost(context) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     userId: m.user_id,
-                    message: `😔 糾團流標通知\n\n您報名的糾團「${g.event_date} ${g.start_time}」已超過截止時間自動流標。\n\n期待下次再一起玩桌遊！`,
+                    message: `😔 揪團流標通知\n\n您報名的揪團「${g.event_date} ${g.start_time}」已超過截止時間自動流標。\n\n期待下次再一起玩桌遊！`,
                 }),
             }).catch(err => console.error(`發送流標通知給成員 ${m.user_id} 失敗:`, err))
         ));

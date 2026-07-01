@@ -10,7 +10,7 @@ export async function onRequestGet(context) {
          GROUP BY g.id`
     ).bind(token).first();
 
-    if (!g) return Response.json({ error: '找不到此糾團' }, { status: 404 });
+    if (!g) return Response.json({ error: '找不到此揪團' }, { status: 404 });
 
     return Response.json({
         ...g,

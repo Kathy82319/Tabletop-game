@@ -3590,10 +3590,10 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 /* =====================================================
-   糾團功能樣式
+   揪團功能樣式
    ===================================================== */
 
-/* 場地預約 / 糾團 分頁切換列 */
+/* 場地預約 / 揪團 分頁切換列 */
 .booking-tab-bar {
     display: flex;
     gap: 0;
@@ -3662,7 +3662,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     border-bottom: 1px solid var(--color-frame-gold);
 }
 
-/* 糾團卡片 */
+/* 揪團卡片 */
 .gg-card {
     background: var(--color-card-background);
     border: 1px solid rgba(184,134,11,0.3);
@@ -3736,7 +3736,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .gg-status-approved { background: #d4edda; color: #155724; }
 .gg-status-failed  { background: #f8d7da; color: #721c24; }
 
-/* 我的糾團標記 */
+/* 我的揪團標記 */
 .gg-my-badge {
     display: inline-block;
     padding: 2px 7px;
@@ -3757,7 +3757,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     color: var(--color-text-secondary);
 }
 
-/* 糾團詳情 */
+/* 揪團詳情 */
 .gg-detail-header {
     margin-bottom: 16px;
 }
@@ -3815,7 +3815,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     font-weight: bold;
 }
 
-/* 建立糾團表單 */
+/* 建立揪團表單 */
 .gather-limit-row {
     display: flex;
     gap: 0;

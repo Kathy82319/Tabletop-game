@@ -31,7 +31,7 @@ async function loadGatherings(status) {
     try {
         const list = await api.getGroupGatherings(status);
         if (list.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">沒有「${STATUS_LABEL[status] || status}」的糾團</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">沒有「${STATUS_LABEL[status] || status}」的揪團</td></tr>`;
             return;
         }
         tbody.innerHTML = list.map(g => `
@@ -69,7 +69,7 @@ async function showDetail(id) {
         const approvedCount = members.filter(m => m.status !== 'rejected').length;
 
         content.innerHTML = `
-            <h3 style="margin-top:0;">${g.organizer_name} 的糾團 #${g.id}</h3>
+            <h3 style="margin-top:0;">${g.organizer_name} 的揪團 #${g.id}</h3>
             <table class="gg-detail-table">
                 <tr><td>狀態</td><td>${STATUS_LABEL[g.status] || g.status}</td></tr>
                 <tr><td>日期時間</td><td>${g.event_date} ${g.start_time}–${g.end_time}</td></tr>
@@ -97,7 +97,7 @@ async function showDetail(id) {
 }
 
 async function approveGathering(id) {
-    if (!confirm(`確定要同意糾團 #${id} 並自動建立預約嗎？`)) return;
+    if (!confirm(`確定要同意揪團 #${id} 並自動建立預約嗎？`)) return;
     try {
         await api.approveGroupGathering(id);
         ui.toast.success('已同意成團，預約已自動建立並通知成員！');
@@ -132,7 +132,7 @@ export async function init() {
 
     pageElement.innerHTML = `
         <div class="page-header">
-            <h2>糾團管理</h2>
+            <h2>揪團管理</h2>
         </div>
         <div class="sub-nav-tabs" id="gg-filter-tabs">
             <button class="sub-tab-btn active" data-status="pending_approval">待審核</button>

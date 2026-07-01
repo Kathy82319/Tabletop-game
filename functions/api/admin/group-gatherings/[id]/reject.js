@@ -12,9 +12,9 @@ export async function onRequestPost(context) {
         `SELECT * FROM GroupGatherings WHERE id = ?`
     ).bind(id).first();
 
-    if (!g) return Response.json({ error: '找不到此糾團' }, { status: 404 });
+    if (!g) return Response.json({ error: '找不到此揪團' }, { status: 404 });
     if (g.status !== 'pending_approval') {
-        return Response.json({ error: '此糾團不在待審核狀態' }, { status: 400 });
+        return Response.json({ error: '此揪團不在待審核狀態' }, { status: 400 });
     }
 
     await env.DB.prepare(
@@ -22,7 +22,7 @@ export async function onRequestPost(context) {
     ).bind(id).run();
 
     const reasonText = reason ? `\n原因：${reason}` : '';
-    const msg = `😔 糾團未通過通知\n\n您發起的糾團「${g.event_date} ${g.start_time}」店家暫時無法接受。${reasonText}\n\n如有疑問請聯繫店家，歡迎再次發起糾團！`;
+    const msg = `😔 揪團未通過通知\n\n您發起的揪團「${g.event_date} ${g.start_time}」店家暫時無法接受。${reasonText}\n\n如有疑問請聯繫店家，歡迎再次發起揪團！`;
 
     context.waitUntil(
         fetch(new URL('/api/send-message', request.url), {

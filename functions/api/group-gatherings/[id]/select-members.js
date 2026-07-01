@@ -20,10 +20,10 @@ export async function onRequestPost(context) {
         `SELECT * FROM GroupGatherings WHERE id = ?`
     ).bind(id).first();
 
-    if (!g) return Response.json({ error: '找不到此糾團' }, { status: 404 });
+    if (!g) return Response.json({ error: '找不到此揪團' }, { status: 404 });
     if (g.organizer_user_id !== profile.userId) return Response.json({ error: '僅團主可操作' }, { status: 403 });
     if (!['open', 'closed'].includes(g.status)) {
-        return Response.json({ error: '此糾團狀態不允許篩選成員' }, { status: 400 });
+        return Response.json({ error: '此揪團狀態不允許篩選成員' }, { status: 400 });
     }
 
     let body;
