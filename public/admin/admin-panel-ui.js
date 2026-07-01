@@ -1,8 +1,9 @@
 document.addEventListener('click', function(e) {
-    const urlInput = e.target.closest('[id^="edit-game-image"]');
+    const urlInput = e.target.closest('[id^="edit-game-image"], #edit-news-image');
     if (urlInput) {
         const previewId = urlInput.id === 'edit-game-image'   ? 'prev-img-1' :
-                          urlInput.id === 'edit-game-image-2' ? 'prev-img-2' : 'prev-img-3';
+                          urlInput.id === 'edit-game-image-2' ? 'prev-img-2' :
+                          urlInput.id === 'edit-game-image-3' ? 'prev-img-3' : 'prev-news-img';
         const preview = document.getElementById(previewId);
         if (preview && urlInput.value) {
             preview.src = urlInput.value;
@@ -50,9 +51,16 @@ document.addEventListener('change', async function(e) {
 
 document.addEventListener('input', function(e) {
     const input = e.target;
-    if (!input.id || !input.id.startsWith('edit-game-image')) return;
-    const previewId = input.id === 'edit-game-image'   ? 'prev-img-1' :
-                      input.id === 'edit-game-image-2' ? 'prev-img-2' : 'prev-img-3';
+    if (!input.id) return;
+    let previewId;
+    if (input.id.startsWith('edit-game-image')) {
+        previewId = input.id === 'edit-game-image'   ? 'prev-img-1' :
+                    input.id === 'edit-game-image-2' ? 'prev-img-2' : 'prev-img-3';
+    } else if (input.id === 'edit-news-image') {
+        previewId = 'prev-news-img';
+    } else {
+        return;
+    }
     const preview = document.getElementById(previewId);
     if (!preview) return;
     if (input.value) { preview.src = input.value; preview.style.display = 'block'; }

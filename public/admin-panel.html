@@ -583,7 +583,17 @@
                 <div class="form-group"><label for="edit-news-title">標題</label><input type="text" id="edit-news-title" required></div>
                 <div class="form-group"><label for="edit-news-category">分類</label><input type="text" id="edit-news-category" placeholder="例如：促銷活動" required></div>
                 <div class="form-group"><label for="edit-news-date">發布日期</label><input type="text" id="edit-news-date" required></div>
-                <div class="form-group"><label for="edit-news-image">圖片網址</label><input type="url" id="edit-news-image" placeholder="https://..."></div>
+                <div class="form-group">
+                    <label>圖片</label>
+                    <div class="img-upload-row">
+                        <input type="url" id="edit-news-image" placeholder="貼上網址，或點右側上傳">
+                        <label class="img-upload-btn" title="上傳圖片到 R2">
+                            📁
+                            <input type="file" accept="image/*" data-target="edit-news-image" data-preview="prev-news-img" style="display:none" class="r2-file-input">
+                        </label>
+                    </div>
+                    <img id="prev-news-img" class="img-preview" style="display:none">
+                </div>
                 <div class="form-group"><label for="edit-news-content">詳細內文 (選填)</label><textarea id="edit-news-content" rows="8"></textarea></div>
                 <div class="form-group"><label style="display: flex; align-items: center;"><input type="checkbox" id="edit-news-published" checked style="width: auto; margin-right: 10px;">立即發布</label></div>
                 <div class="form-actions">

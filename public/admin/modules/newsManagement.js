@@ -71,6 +71,8 @@ function openEditNewsModal(newsId = null) {
         form.querySelector('#edit-news-category').value = newsItem.category;
         flatpickrInstance.setDate(newsItem.published_date);
         form.querySelector('#edit-news-image').value = newsItem.image_url || '';
+        const prevNewsImg = document.getElementById('prev-news-img');
+        if (prevNewsImg) { if (newsItem.image_url) { prevNewsImg.src = newsItem.image_url; prevNewsImg.style.display = 'block'; } else { prevNewsImg.style.display = 'none'; } }
         form.querySelector('#edit-news-content').value = newsItem.content || '';
         form.querySelector('#edit-news-published').checked = newsItem.is_published;
         deleteBtn.style.display = 'inline-block';
@@ -79,6 +81,8 @@ function openEditNewsModal(newsId = null) {
     } else {
         modalTitle.textContent = '新增情報';
         deleteBtn.style.display = 'none';
+        const prevNewsImg = document.getElementById('prev-news-img');
+        if (prevNewsImg) prevNewsImg.style.display = 'none';
     }
 
     ui.showModal('#edit-news-modal');
