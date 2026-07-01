@@ -419,19 +419,15 @@ const GatherModule = (() => {
                 }
 
                 const gameSlots = document.querySelectorAll('#gc-games-container .gc-game-slot');
-                const games = [];
-                let valid = true;
-                gameSlots.forEach(slot => {
-                    const name = slot.querySelector('.gc-game-name').value.trim();
-                    if (!name) { valid = false; return; }
-                    games.push({
-                        name,
-                        has_played: slot.querySelector('.gc-game-played').checked,
-                        beginner_friendly: slot.querySelector('.gc-game-beginner').checked,
-                    });
-                });
+                const games = Array.from(gameSlots)
+                    .map(slot => ({
+                        name: slot.querySelector('.gc-game-name')?.value.trim() || '',
+                        has_played: slot.querySelector('.gc-game-played')?.checked || false,
+                        beginner_friendly: slot.querySelector('.gc-game-beginner')?.checked || false,
+                    }))
+                    .filter(g => g.name);
 
-                if (!valid || games.length === 0) {
+                if (games.length === 0) {
                     statusEl.textContent = '請至少填寫一款遊戲名稱';
                     statusEl.style.color = '#e74c3c';
                     return;
