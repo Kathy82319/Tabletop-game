@@ -154,7 +154,15 @@ const GatherModule = (() => {
 
             const shareUrl = `${location.origin}${location.pathname}#gather-share@${g.share_token}`;
 
-            const membersHtml = (g.members || []).filter(m => m.status !== 'rejected').map(m =>
+            const allNonRejected = (g.members || []).filter(m => m.status !== 'rejected');
+            const pendingMembers = allNonRejected.filter(m => m.status === 'pending');
+            const showWaitlist = isOrganizer && !hasMemberLimit && isPending && pendingMembers.length > 0;
+
+            const membersToShow = (isOrganizer && !hasMemberLimit && (isOpen || isClosed))
+                ? allNonRejected
+                : allNonRejected.filter(m => m.status === 'approved');
+
+            const membersHtml = membersToShow.map(m =>
                 `<div class="gg-member-row">
                     <span>👤 ${m.display_name}</span>
                     ${isOrganizer && !hasMemberLimit && (isOpen || isClosed)
@@ -163,13 +171,25 @@ const GatherModule = (() => {
                 </div>`
             ).join('') || '<span style="color:var(--color-text-secondary);">尚無成員報名</span>';
 
+            const waitlistHtml = showWaitlist
+                ? pendingMembers.map(m =>
+                    `<div class="gg-member-row">
+                        <span>👤 ${m.display_name}</span>
+                        <button class="gg-approve-member-btn" data-uid="${m.user_id}" style="font-size:0.8rem;padding:4px 10px;">補位</button>
+                    </div>`
+                ).join('')
+                : '';
+
             let actionsHtml = '';
             if (isOrganizer) {
-                if ((isOpen || isClosed) && !isPending) {
+                if (isOpen || isClosed) {
                     if (!hasMemberLimit) {
                         actionsHtml += `<button class="cta-button" id="gg-select-members-btn">確認參加名單</button>`;
                     }
                     actionsHtml += `<button class="cta-button" id="gg-submit-btn" style="margin-top:8px;">提交給店家確認</button>`;
+                    actionsHtml += `<button class="cta-button" id="gg-cancel-btn" style="margin-top:8px; background:#c0392b;">解散揪團</button>`;
+                } else if (isPending) {
+                    actionsHtml += `<button class="cta-button" id="gg-reopen-btn" style="background: var(--color-text-secondary); margin-top:8px;">重新開放報名</button>`;
                     actionsHtml += `<button class="cta-button" id="gg-cancel-btn" style="margin-top:8px; background:#c0392b;">解散揪團</button>`;
                 }
             } else {
@@ -209,6 +229,10 @@ const GatherModule = (() => {
                         <span class="gg-detail-label">成員列表</span>
                         <div id="gg-members-list">${membersHtml}</div>
                     </div>
+                    ${showWaitlist ? `<div class="gg-detail-section">
+                        <span class="gg-detail-label">候補名單</span>
+                        <div id="gg-waitlist">${waitlistHtml}</div>
+                    </div>` : ''}
                     <div class="gg-actions">${actionsHtml}</div>
                     <p id="gg-action-status" class="form-status"></p>
                 </div>`;
@@ -337,6 +361,51 @@ const GatherModule = (() => {
                 } catch (err) {
                     setStatus(err.message, true);
                     cancelBtn.disabled = false;
+                }
+            });
+        }
+
+        const reopenBtn = document.getElementById('gg-reopen-btn');
+        if (reopenBtn) {
+            reopenBtn.addEventListener('click', async () => {
+                if (!confirm('確定要重新開放報名嗎？揪團狀態將回到「報名中」。')) return;
+                reopenBtn.disabled = true;
+                try {
+                    const res = await fetch(`/api/group-gatherings/${id}/reopen`, {
+                        method: 'POST',
+                        headers: authHeaders(),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || '操作失敗');
+                    setStatus('已重新開放報名');
+                    setTimeout(() => showDetail(id), 1000);
+                } catch (err) {
+                    setStatus(err.message, true);
+                    reopenBtn.disabled = false;
+                }
+            });
+        }
+
+        const waitlistEl = document.getElementById('gg-waitlist');
+        if (waitlistEl) {
+            waitlistEl.addEventListener('click', async (e) => {
+                const btn = e.target.closest('.gg-approve-member-btn');
+                if (!btn) return;
+                const uid = btn.dataset.uid;
+                btn.disabled = true;
+                try {
+                    const res = await fetch(`/api/group-gatherings/${id}/approve-member`, {
+                        method: 'POST',
+                        headers: authHeaders(),
+                        body: JSON.stringify({ user_id: uid }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || '補位失敗');
+                    setStatus('已批准補位');
+                    setTimeout(() => showDetail(id), 800);
+                } catch (err) {
+                    setStatus(err.message, true);
+                    btn.disabled = false;
                 }
             });
         }

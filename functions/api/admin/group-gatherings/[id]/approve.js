@@ -12,10 +12,11 @@ export async function onRequestPost(context) {
     }
 
     const members = await env.DB.prepare(
-        `SELECT user_id, display_name FROM GroupGatheringMembers WHERE gathering_id = ? AND status != 'rejected'`
+        `SELECT user_id, display_name, status FROM GroupGatheringMembers WHERE gathering_id = ? AND status != 'rejected'`
     ).bind(id).all();
 
-    const totalPeople = members.results.length + 1; // +1 for organizer
+    const approvedMembers = members.results.filter(m => m.status === 'approved');
+    const totalPeople = approvedMembers.length + 1; // +1 for organizer
     const PEOPLE_PER_TABLE = 4;
     const tablesNeeded = Math.ceil(totalPeople / PEOPLE_PER_TABLE);
     const contactName = `${g.organizer_name}的揪團（${totalPeople}人）`;
@@ -39,6 +40,11 @@ export async function onRequestPost(context) {
         `UPDATE GroupGatherings SET status = 'approved', booking_id = ? WHERE id = ?`
     ).bind(bookingId, id).run();
 
+    // 候補成員一律轉為拒絕
+    await env.DB.prepare(
+        `UPDATE GroupGatheringMembers SET status = 'rejected' WHERE gathering_id = ? AND status = 'pending'`
+    ).bind(id).run();
+
     // 通知團主
     const organizerMsg = `🎉 揪團成功！\n\n您發起的揪團已獲店家確認！\n📅 ${g.event_date} ${g.start_time}–${g.end_time}\n👥 共 ${totalPeople} 人\n\n期待與您相見！`;
 
@@ -51,7 +57,7 @@ export async function onRequestPost(context) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: g.organizer_user_id, message: organizerMsg }),
         }).catch(err => console.error('通知團主失敗:', err)),
-        ...members.results.map(m =>
+        ...approvedMembers.map(m =>
             fetch(new URL('/api/send-message', request.url), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

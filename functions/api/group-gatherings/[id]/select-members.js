@@ -43,7 +43,7 @@ export async function onRequestPost(context) {
     ).bind(id).all();
 
     const updates = allMembers.results.map(m => {
-        const status = approved_member_ids.includes(m.user_id) ? 'approved' : 'rejected';
+        const status = approved_member_ids.includes(m.user_id) ? 'approved' : 'pending';
         return env.DB.prepare(
             `UPDATE GroupGatheringMembers SET status = ? WHERE id = ?`
         ).bind(status, m.id);
