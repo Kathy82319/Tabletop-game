@@ -18,6 +18,7 @@ const App = {
         'scan': './modules/scanAndPoint.js',
         'membership-settings': './modules/membershipSettings.js',
         'scoreboards': './modules/scoreboardManagement.js',
+        'group-gatherings': './modules/groupGatheringManagement.js',
     },
 
 async handleRouteChange() {

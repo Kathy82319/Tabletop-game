@@ -1211,6 +1211,9 @@ async function handleBookingConfirmation(confirmBtn) {
         confirmBtn.disabled = false;
         confirmBtn.textContent = '確認送出';
     }
+
+    // 觸發糾團模組初始化
+    document.dispatchEvent(new CustomEvent('gather-page-ready'));
 }
     // =================================================================
     // =================================================================

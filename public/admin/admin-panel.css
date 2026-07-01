@@ -541,3 +541,67 @@ td { font-size: 0.9rem; }
     padding-bottom: 8px;
     border-bottom: 1px solid var(--border-color);
 }
+
+/* ---- 糾團管理 ---- */
+.admin-gg-tag {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    background: #cce5ff;
+    color: #004085;
+    margin-left: 4px;
+}
+.admin-gg-tag-beginner {
+    background: #d4edda;
+    color: #155724;
+}
+.admin-gg-games-cell {
+    max-width: 180px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+.admin-gg-status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: bold;
+}
+.gg-s-open            { background: #d4edda; color: #155724; }
+.gg-s-closed          { background: #fff3cd; color: #856404; }
+.gg-s-pending_approval { background: #cce5ff; color: #004085; }
+.gg-s-approved        { background: #d4edda; color: #155724; }
+.gg-s-failed          { background: #f8d7da; color: #721c24; }
+.gg-s-cancelled       { background: #e2e3e5; color: #383d41; }
+
+.gg-detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12px;
+}
+.gg-detail-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9rem;
+}
+.gg-detail-table td:first-child {
+    color: var(--text-light);
+    width: 90px;
+}
+.gg-member-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.gg-member-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 8px;
+    background: var(--background-color);
+    border-radius: 4px;
+    font-size: 0.88rem;
+}
+.badge-approved { color: var(--success-color); font-weight: bold; }
+.badge-rejected { color: var(--danger-color); }
+

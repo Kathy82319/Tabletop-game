@@ -316,6 +316,14 @@
 </div>
 
     <div id="page-booking">
+        <!-- 場地預約 / 糾團 分頁切換 -->
+        <div class="booking-tab-bar">
+            <button class="booking-tab-btn active" data-tab="booking-tab-reserve">場地預約</button>
+            <button class="booking-tab-btn" data-tab="booking-tab-gather">糾團</button>
+        </div>
+
+        <!-- 場地預約分頁 -->
+        <div id="booking-tab-reserve" class="booking-tab-content active">
         <div id="booking-wizard-container">
 <div id="step-preference" class="booking-step active">
     <div class="booking-header">
@@ -366,8 +374,93 @@
                 <div id="booking-result-content"></div>
             </div>
         </div>
+        </div><!-- /booking-tab-reserve -->
+
+        <!-- 糾團分頁 -->
+        <div id="booking-tab-gather" class="booking-tab-content">
+            <div id="gather-main-view">
+                <div class="booking-header">
+                    <h1 class="page-main-title">糾團</h1>
+                    <p class="booking-subtitle">找到同好，一起征服桌遊！</p>
+                </div>
+                <div class="gather-action-row">
+                    <button class="cta-button" id="gather-create-btn">＋ 發起糾團</button>
+                    <button class="cta-button" id="gather-my-btn" style="background: var(--color-text-secondary);">我的糾團</button>
+                </div>
+                <h2 class="gather-section-title">開放報名中</h2>
+                <div id="gather-list-container">
+                    <p style="text-align:center; color: var(--color-text-secondary);">載入中...</p>
+                </div>
+            </div>
+
+            <!-- 建立糾團表單 -->
+            <div id="gather-create-view" style="display:none;">
+                <button class="details-back-button" id="gather-create-back">← 返回</button>
+                <h2 style="text-align:center;">發起糾團</h2>
+                <form id="gather-create-form">
+                    <div class="input-group">
+                        <label>活動日期</label>
+                        <input type="date" id="gc-date" required>
+                    </div>
+                    <div class="input-group">
+                        <label>開始 / 結束時間</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="time" id="gc-start-time" required style="flex:1;">
+                            <span style="line-height:42px;">–</span>
+                            <input type="time" id="gc-end-time" required style="flex:1;">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>報名截止時間</label>
+                        <input type="datetime-local" id="gc-deadline" required>
+                    </div>
+                    <div class="input-group">
+                        <label>人數上限</label>
+                        <div class="gather-limit-row">
+                            <button type="button" class="gather-limit-btn active" data-limit="yes">有限制</button>
+                            <button type="button" class="gather-limit-btn" data-limit="no">不限制</button>
+                        </div>
+                        <input type="number" id="gc-max-participants" min="1" max="50" placeholder="最多幾人（不含團主）" style="margin-top:8px;">
+                    </div>
+                    <div class="input-group">
+                        <label>遊戲選擇（最多 3 款）</label>
+                        <div id="gc-games-container">
+                            <div class="gc-game-slot">
+                                <input type="text" class="gc-game-name" placeholder="遊戲名稱">
+                                <label class="gc-game-tag-label"><input type="checkbox" class="gc-game-played"> 有玩過</label>
+                                <label class="gc-game-tag-label"><input type="checkbox" class="gc-game-beginner"> 適合新手</label>
+                            </div>
+                        </div>
+                        <button type="button" id="gc-add-game-btn" class="gather-add-game-btn">＋ 新增遊戲</button>
+                    </div>
+                    <div class="input-group">
+                        <label>說明備註</label>
+                        <textarea id="gc-note" rows="3" placeholder="有什麼想讓大家知道的嗎？"></textarea>
+                    </div>
+                    <button type="submit" class="cta-button" style="margin-top:16px;">發布糾團</button>
+                </form>
+                <p id="gather-create-status" class="form-status"></p>
+            </div>
+
+            <!-- 我的糾團 -->
+            <div id="gather-my-view" style="display:none;">
+                <button class="details-back-button" id="gather-my-back">← 返回</button>
+                <h2 style="text-align:center;">我的糾團</h2>
+                <h3 class="gather-section-title">我發起的</h3>
+                <div id="gather-my-organized-container"></div>
+                <h3 class="gather-section-title" style="margin-top:20px;">我報名的</h3>
+                <div id="gather-my-joined-container"></div>
+            </div>
+
+            <!-- 糾團詳情 -->
+            <div id="gather-detail-view" style="display:none;">
+                <button class="details-back-button" id="gather-detail-back">← 返回</button>
+                <div id="gather-detail-content"></div>
+            </div>
+        </div><!-- /booking-tab-gather -->
+
     </div>
-    
+
     <div id="page-info">
         <h1 class="page-main-title">店家資訊</h1>
         <div id="store-info-container">
@@ -734,6 +827,7 @@
     <script src="https://npmcdn.com/flatpickr/dist/l10n/zh-tw.js"></script>
     <script src="script.js"></script>
     <script src="tools.js"></script>
+    <script src="group-gathering.js"></script>
 
 <div id="quiz-modal" class="modal-overlay" style="display: none;">
     <div class="modal-content quiz-modal-content">

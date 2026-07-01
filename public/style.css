@@ -3544,3 +3544,262 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     font-size: 0.92rem;
     padding: 12px 8px;
 }
+
+/* =====================================================
+   糾團功能樣式
+   ===================================================== */
+
+/* 場地預約 / 糾團 分頁切換列 */
+.booking-tab-bar {
+    display: flex;
+    gap: 0;
+    margin-bottom: 16px;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    border: 1px solid var(--color-frame-gold);
+}
+.booking-tab-btn {
+    flex: 1;
+    padding: 10px;
+    font-size: 1rem;
+    font-family: var(--font-primary);
+    background: transparent;
+    color: var(--color-text-secondary);
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.booking-tab-btn.active {
+    background: var(--color-cta-background);
+    color: #fff;
+    font-weight: bold;
+}
+.booking-tab-content {
+    display: none;
+}
+.booking-tab-content.active {
+    display: block;
+}
+
+/* 糾團主畫面 */
+.gather-action-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.gather-action-row .cta-button {
+    flex: 1;
+    font-size: 0.95rem;
+}
+.gather-section-title {
+    font-size: 1.1rem;
+    color: var(--color-text-secondary);
+    margin: 0 0 10px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--color-frame-gold);
+}
+
+/* 糾團卡片 */
+.gg-card {
+    background: var(--color-card-background);
+    border: 1px solid rgba(184,134,11,0.3);
+    border-radius: var(--border-radius);
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+}
+.gg-card:active {
+    transform: scale(0.98);
+}
+.gg-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+.gg-organizer {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+}
+.gg-card-date {
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+}
+.gg-card-games {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 8px;
+}
+.gg-card-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    color: var(--color-text-secondary);
+}
+
+/* 狀態徽章 */
+.gg-status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    font-weight: bold;
+    margin-right: 4px;
+}
+.gg-status-open    { background: #d4edda; color: #155724; }
+.gg-status-closed  { background: #fff3cd; color: #856404; }
+.gg-status-pending { background: #cce5ff; color: #004085; }
+.gg-status-approved { background: #d4edda; color: #155724; }
+.gg-status-failed  { background: #f8d7da; color: #721c24; }
+
+/* 我的糾團標記 */
+.gg-my-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    background: #e8d5b7;
+    color: var(--color-text-primary);
+}
+.gg-badge-organizer {
+    background: var(--color-frame-gold);
+    color: #fff;
+}
+
+/* 空狀態文字 */
+.gg-empty {
+    text-align: center;
+    padding: 20px;
+    color: var(--color-text-secondary);
+}
+
+/* 糾團詳情 */
+.gg-detail-header {
+    margin-bottom: 16px;
+}
+.gg-detail-header h2 {
+    margin: 8px 0 0;
+    font-size: 1.3rem;
+}
+.gg-detail-section {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    align-items: flex-start;
+}
+.gg-detail-label {
+    min-width: 75px;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    flex-shrink: 0;
+}
+.gg-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+/* 遊戲標籤 */
+.gg-game-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+.gg-tag {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+}
+.gg-tag-played   { background: #cce5ff; color: #004085; }
+.gg-tag-beginner { background: #d4edda; color: #155724; }
+
+/* 成員列表 */
+.gg-member-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(184,134,11,0.15);
+    font-size: 0.92rem;
+}
+.gg-member-status {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+/* 建立糾團表單 */
+.gather-limit-row {
+    display: flex;
+    gap: 0;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    border: 1px solid var(--color-frame-gold);
+}
+.gather-limit-btn {
+    flex: 1;
+    padding: 8px;
+    font-size: 0.9rem;
+    background: transparent;
+    color: var(--color-text-secondary);
+    border: none;
+    cursor: pointer;
+}
+.gather-limit-btn.active {
+    background: var(--color-cta-background);
+    color: #fff;
+}
+.gc-game-slot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+    padding: 8px;
+    background: rgba(184,134,11,0.06);
+    border-radius: 6px;
+}
+.gc-game-slot .gc-game-name {
+    flex: 1;
+    min-width: 120px;
+    padding: 6px 10px;
+    border: 1px solid var(--color-frame-gold);
+    border-radius: 6px;
+    background: transparent;
+    font-family: var(--font-primary);
+    font-size: 0.9rem;
+}
+.gc-game-tag-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.83rem;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+.gc-remove-game-btn {
+    background: none;
+    border: none;
+    color: var(--color-danger);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 4px;
+}
+.gather-add-game-btn {
+    background: none;
+    border: 1px dashed var(--color-frame-gold);
+    color: var(--color-text-secondary);
+    border-radius: 6px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    width: 100%;
+    margin-top: 4px;
+}
+
