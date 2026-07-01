@@ -3822,26 +3822,24 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     margin-top: 4px;
 }
 #gather-create-form input[type="date"],
-#gather-create-form input[type="time"],
-#gather-create-form .gc-select {
+#gather-create-form input[type="time"] {
     width: 100%;
-    padding: 10px 12px;
-    background: var(--color-surface-raised);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-sm);
+    padding: 12px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--color-frame-gold);
+    border-radius: var(--border-radius);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
     color: var(--color-text-primary);
     font-size: 1rem;
-    font-family: inherit;
-    -webkit-appearance: none;
-    appearance: none;
+    font-family: var(--font-primary);
     box-sizing: border-box;
+    transition: all 0.3s ease;
 }
 #gather-create-form input[type="date"]:focus,
-#gather-create-form input[type="time"]:focus,
-#gather-create-form .gc-select:focus {
+#gather-create-form input[type="time"]:focus {
     outline: none;
-    border-color: var(--color-accent);
-    box-shadow: 0 0 0 2px rgba(184,134,11,0.2);
+    border-color: var(--color-frame-gold-light);
+    box-shadow: 0 0 8px var(--color-frame-gold-light);
 }
 .gc-deadline-row {
     display: flex;
