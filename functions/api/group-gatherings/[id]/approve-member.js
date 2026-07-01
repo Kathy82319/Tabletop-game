@@ -33,7 +33,7 @@ export async function onRequestPost(context) {
     if (!user_id) return Response.json({ error: '缺少 user_id' }, { status: 400 });
 
     const member = await env.DB.prepare(
-        `SELECT id FROM GroupGatheringMembers WHERE gathering_id = ? AND user_id = ? AND status = 'pending'`
+        `SELECT id, user_id FROM GroupGatheringMembers WHERE gathering_id = ? AND user_id = ? AND status = 'pending'`
     ).bind(id, user_id).first();
 
     if (!member) return Response.json({ error: '找不到此候補成員' }, { status: 404 });
@@ -41,6 +41,16 @@ export async function onRequestPost(context) {
     await env.DB.prepare(
         `UPDATE GroupGatheringMembers SET status = 'approved' WHERE id = ?`
     ).bind(member.id).run();
+
+    const promoteMsg = `🎉 揪團補位通知\n\n恭喜！您已成功補位加入揪團！\n📅 ${g.event_date} ${g.start_time}–${g.end_time}\n\n期待與您相見！`;
+
+    context.waitUntil(
+        fetch(new URL('/api/send-message', request.url), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: member.user_id, message: promoteMsg }),
+        }).catch(err => console.error(`通知補位成員失敗:`, err))
+    );
 
     return Response.json({ success: true });
 }

@@ -16,6 +16,7 @@ export async function onRequestPost(context) {
     ).bind(id).all();
 
     const approvedMembers = members.results.filter(m => m.status === 'approved');
+    const waitlistedMembers = members.results.filter(m => m.status === 'pending');
     const totalPeople = approvedMembers.length + 1; // +1 for organizer
     const PEOPLE_PER_TABLE = 4;
     const tablesNeeded = Math.ceil(totalPeople / PEOPLE_PER_TABLE);
@@ -48,8 +49,11 @@ export async function onRequestPost(context) {
     // 通知團主
     const organizerMsg = `🎉 揪團成功！\n\n您發起的揪團已獲店家確認！\n📅 ${g.event_date} ${g.start_time}–${g.end_time}\n👥 共 ${totalPeople} 人\n\n期待與您相見！`;
 
-    // 通知所有成員
+    // 通知確認成員
     const memberMsg = `🎉 揪團成功！\n\n您報名的揪團已獲店家確認！\n📅 ${g.event_date} ${g.start_time}–${g.end_time}\n\n期待與您相見！`;
+
+    // 通知候補落選成員
+    const waitlistMsg = `😔 揪團報名通知\n\n很遺憾，您報名的揪團「${g.event_date} ${g.start_time}」人數已滿，本次無法參與。\n\n期待下次再一起玩桌遊！`;
 
     const notifyPromises = [
         fetch(new URL('/api/send-message', request.url), {
@@ -63,6 +67,13 @@ export async function onRequestPost(context) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: m.user_id, message: memberMsg }),
             }).catch(err => console.error(`通知成員 ${m.user_id} 失敗:`, err))
+        ),
+        ...waitlistedMembers.map(m =>
+            fetch(new URL('/api/send-message', request.url), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: m.user_id, message: waitlistMsg }),
+            }).catch(err => console.error(`通知候補成員 ${m.user_id} 失敗:`, err))
         ),
     ];
 
