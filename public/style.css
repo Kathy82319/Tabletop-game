@@ -2665,6 +2665,57 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     background: rgba(231, 76, 60, 0.15);
 }
 
+/* ── 過往遊戲紀錄頁（普通頁面，用 app 色系）───────────────── */
+#game-history-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0 4px 24px;
+}
+
+.game-history-card {
+    background-color: var(--color-card-background);
+    border: 1px solid var(--color-frame-gold);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    backdrop-filter: blur(5px);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.game-history-name {
+    font-size: 1rem;
+    font-weight: bold;
+    color: var(--color-text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.game-history-detail {
+    font-size: 0.88rem;
+    color: var(--color-text-secondary);
+}
+
+.game-history-date {
+    font-size: 0.78rem;
+    color: var(--color-frame-gold);
+    opacity: 0.8;
+}
+
+.game-history-owner-badge {
+    display: inline-block;
+    background: rgba(184, 134, 11, 0.15);
+    border: 1px solid var(--color-frame-gold);
+    border-radius: 10px;
+    padding: 1px 8px;
+    font-size: 0.72rem;
+    font-weight: normal;
+    color: var(--color-frame-gold);
+}
+
 /* ── 記分板：過往紀錄標籤 ───────────────────────────────────── */
 .sb-owner-badge {
     display: inline-block;

@@ -1105,12 +1105,13 @@ async function initializeGameHistoryPage() {
         list.forEach(entry => {
             const d = new Date(entry.created_at);
             const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-            const badge   = entry.is_owner ? '<span class="sb-owner-badge">建立者</span>' : '';
+            const badge   = entry.is_owner ? '<span class="game-history-owner-badge">建立者</span>' : '';
             const item    = document.createElement('div');
-            item.className = 'sb-history-item';
+            item.className = 'game-history-card';
             item.innerHTML = `
-                <div class="sb-history-meta">${entry.game_name} ${badge} · ${dateStr}</div>
-                <div class="sb-history-summary">暱稱：${entry.nickname} · 分數：${entry.score} 分 · ${entry.player_count} 位玩家</div>`;
+                <div class="game-history-name">${entry.game_name}${badge}</div>
+                <div class="game-history-detail">暱稱：${entry.nickname}　分數：${entry.score} 分　共 ${entry.player_count} 位玩家</div>
+                <div class="game-history-date">${dateStr}</div>`;
             container.appendChild(item);
         });
     } catch (e) {
