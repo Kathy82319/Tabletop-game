@@ -1158,7 +1158,7 @@ async function ghOpenDetail(sessionId, gameName) {
         } else {
             eventsEl.innerHTML = events.map(ev => {
                 const d  = new Date(ev.created_at);
-                const ts = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+                const ts = `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
                 if (ev.event_type === 'score') {
                     const pos   = ev.delta >= 0;
                     const cls   = pos ? 'gh-event-delta-pos' : 'gh-event-delta-neg';
