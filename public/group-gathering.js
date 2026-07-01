@@ -442,8 +442,15 @@ const GatherModule = (() => {
             gcDateEl.addEventListener('change', () => {
                 const eventDate = gcDateEl.value;
                 if (gcDeadlineDateEl) {
-                    gcDeadlineDateEl.max = eventDate || '';
-                    if (gcDeadlineDateEl.value > eventDate) gcDeadlineDateEl.value = '';
+                    if (eventDate) {
+                        const dayBefore = new Date(eventDate);
+                        dayBefore.setDate(dayBefore.getDate() - 1);
+                        const maxDate = dayBefore.toISOString().split('T')[0];
+                        gcDeadlineDateEl.max = maxDate;
+                        if (gcDeadlineDateEl.value >= eventDate) gcDeadlineDateEl.value = '';
+                    } else {
+                        gcDeadlineDateEl.max = '';
+                    }
                 }
             });
         }
@@ -485,8 +492,8 @@ const GatherModule = (() => {
                     statusEl.style.color = '#e74c3c';
                     return;
                 }
-                if (deadlineDate > eventDate) {
-                    statusEl.textContent = '報名截止日期不能晚於活動日期';
+                if (deadlineDate >= eventDate) {
+                    statusEl.textContent = '報名截止日期不能與活動日期相同或更晚';
                     statusEl.style.color = '#e74c3c';
                     return;
                 }
