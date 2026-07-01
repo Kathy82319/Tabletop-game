@@ -530,6 +530,8 @@ const GatherModule = (() => {
                 scope.querySelectorAll('.booking-tab-content').forEach(c => c.classList.remove('active'));
                 tabBtn.classList.add('active');
                 scope.querySelector(`#${tabBtn.dataset.tab}`)?.classList.add('active');
+                const titleEl = document.getElementById('booking-page-title');
+                if (titleEl) titleEl.textContent = tabBtn.dataset.tab === 'booking-tab-gather' ? '揪團桌遊' : '場地預約';
                 if (tabBtn.dataset.tab === 'booking-tab-gather') loadList();
             }
 
@@ -550,6 +552,9 @@ const GatherModule = (() => {
         document.getElementById('gather-detail-back')?.addEventListener('click', backToMain);
 
         initCreateForm();
+
+        // 揪團桌遊是預設分頁，立即載入列表
+        loadList();
 
         // 處理分享連結 hash
         const hash = location.hash.substring(1);
