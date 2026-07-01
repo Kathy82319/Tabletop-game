@@ -43,7 +43,7 @@ async function loadGatherings(status) {
                 <td class="admin-gg-games-cell">${renderGameTags(g.games)}</td>
                 <td><span class="admin-gg-status-badge gg-s-${g.status}">${STATUS_LABEL[g.status] || g.status}</span></td>
                 <td class="actions-cell">
-                    <button class="action-btn btn-gg-view" data-id="${g.id}">詳情</button>
+                    <button class="action-btn btn-gg-view" data-id="${g.id}" style="background:var(--info-color);">詳情</button>
                     ${g.status === 'pending_approval' ? `
                     <button class="action-btn btn-gg-approve" data-id="${g.id}" style="background:var(--success-color);">同意</button>
                     <button class="action-btn btn-gg-reject"  data-id="${g.id}" style="background:var(--danger-color);">拒絕</button>
