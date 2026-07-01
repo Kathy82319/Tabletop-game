@@ -95,7 +95,7 @@ const GatherModule = (() => {
             </div>
             <div class="gg-card-footer">
                 <span>👥 ${maxText}</span>
-                <span>截止：${formatDeadline(g.deadline)}<span class="gg-countdown" data-deadline="${g.deadline}"></span></span>
+                <span>報名截止日期：${formatDeadline(g.deadline)}<span class="gg-countdown" data-deadline="${g.deadline}"></span></span>
             </div>
         </div>`;
     }
