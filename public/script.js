@@ -1065,6 +1065,8 @@ async function initializeBookingPage(stepId) {
     if (stepId === 'step-summary') {
         renderSummary();
     }
+
+    document.dispatchEvent(new CustomEvent('gather-page-ready'));
 }
 
 function showBookingStep(stepId) {
@@ -1212,8 +1214,6 @@ async function handleBookingConfirmation(confirmBtn) {
         confirmBtn.textContent = '確認送出';
     }
 
-    // 觸發糾團模組初始化
-    document.dispatchEvent(new CustomEvent('gather-page-ready'));
 }
     // =================================================================
     // =================================================================

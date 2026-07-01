@@ -516,7 +516,14 @@ const GatherModule = (() => {
     }
 
     // ---- 初始化（在 booking 頁面載入時呼叫）----
+    let initialized = false;
     function init() {
+        if (initialized) {
+            loadList();
+            return;
+        }
+        initialized = true;
+
         // 分頁切換
         document.addEventListener('click', e => {
             const tabBtn = e.target.closest('.booking-tab-btn');
