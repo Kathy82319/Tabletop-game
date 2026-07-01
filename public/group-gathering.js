@@ -409,9 +409,7 @@ const GatherModule = (() => {
             });
         });
 
-        const form = document.getElementById('gather-create-form');
-        if (form) {
-            form.addEventListener('submit', async (e) => {
+        form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const statusEl = document.getElementById('gather-create-status');
                 statusEl.textContent = '';
@@ -477,7 +475,6 @@ const GatherModule = (() => {
                     submitBtn.textContent = '發布糾團';
                 }
             });
-        }
     }
 
     // ---- 分享連結進入 ----
