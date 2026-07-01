@@ -3764,30 +3764,37 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     background: rgba(0, 0, 0, 0.6);
     z-index: 200;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
+    padding: 16px;
 }
 #gg-modal-card {
-    background: var(--color-surface);
-    border-radius: 16px 16px 0 0;
+    background: #f9f5eb;
+    border: 1px solid rgba(184, 134, 11, 0.4);
+    border-radius: 12px;
     width: 100%;
-    max-width: 480px;
-    max-height: 85vh;
+    max-width: 420px;
+    max-height: 88vh;
     overflow-y: auto;
-    padding: 20px 16px 36px;
+    padding: 20px 16px 28px;
     position: relative;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
 }
 #gg-modal-close {
     position: absolute;
-    top: 14px;
-    right: 16px;
+    top: 12px;
+    right: 14px;
     background: none;
     border: none;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     color: var(--color-text-secondary);
     cursor: pointer;
     line-height: 1;
-    padding: 4px;
+    padding: 4px 6px;
+}
+#gg-modal-content .cta-button {
+    padding: 9px 16px;
+    font-size: 0.95rem;
 }
 
 /* 揪團詳情 */

@@ -199,7 +199,9 @@ const GatherModule = (() => {
                 }
             }
 
-            actionsHtml += `<button class="cta-button" id="gg-share-btn" style="margin-top:8px; background: var(--color-text-secondary);">📤 分享揪團連結</button>`;
+            if (g.status !== 'cancelled') {
+                actionsHtml += `<button class="cta-button" id="gg-share-btn" style="margin-top:8px; background: var(--color-text-secondary);">📤 分享揪團連結</button>`;
+            }
 
             content.innerHTML = `
                 <div class="gg-detail">
