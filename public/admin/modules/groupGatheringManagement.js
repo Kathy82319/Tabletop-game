@@ -75,7 +75,7 @@ async function showDetail(id) {
                 <tr><td>狀態</td><td>${STATUS_LABEL[g.status] || g.status}</td></tr>
                 <tr><td>日期時間</td><td>${g.event_date} ${g.start_time}–${g.end_time}</td></tr>
                 <tr><td>截止時間</td><td>${g.deadline}</td></tr>
-                <tr><td>人數限制</td><td>${g.max_participants ? `${approvedCount} / ${g.max_participants}` : `${approvedCount} 人（不限）`}</td></tr>
+                <tr><td>人數限制</td><td>${g.max_participants ? `${approvedCount + 1} / ${g.max_participants}` : `${approvedCount + 1} 人（不限）`}</td></tr>
                 <tr><td>遊戲</td><td>${renderGameTags(g.games)}</td></tr>
                 ${g.note ? `<tr><td>備註</td><td>${g.note}</td></tr>` : ''}
             </table>

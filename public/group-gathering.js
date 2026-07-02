@@ -73,7 +73,7 @@ const GatherModule = (() => {
     function renderGatherCard(g, showMyStatus = false) {
         const statusLabel = STATUS_LABEL[g.status] || g.status;
         const statusClass = STATUS_CLASS[g.status] || '';
-        const maxText = g.max_participants ? `${g.member_count || 0} / ${g.max_participants}` : `${g.member_count || 0} 人`;
+        const maxText = g.max_participants ? `${(g.member_count || 0) + 1} / ${g.max_participants}` : `${(g.member_count || 0) + 1} 人`;
         const myBadge = showMyStatus && g.my_status && g.my_status !== 'organizer'
             ? `<span class="gg-my-badge">${g.my_status === 'approved' ? '已通過' : g.my_status === 'rejected' ? '未通過' : '已報名'}</span>` : '';
         const organizerBadge = showMyStatus && g.my_status === 'organizer'
@@ -148,7 +148,7 @@ const GatherModule = (() => {
             const beforeDeadline = now < deadline;
             const hasMemberLimit = !!g.max_participants;
             const memberCount = (g.members || []).filter(m => m.status !== 'rejected').length;
-            const isFull = hasMemberLimit && memberCount >= g.max_participants;
+            const isFull = hasMemberLimit && memberCount >= g.max_participants - 1;
 
             const shareUrl = `${location.origin}${location.pathname}#gather-share@${g.share_token}`;
 
@@ -229,7 +229,7 @@ const GatherModule = (() => {
                     </div>
                     <div class="gg-detail-section">
                         <span class="gg-detail-label">👥 人數</span>
-                        <span>${hasMemberLimit ? `${memberCount} / ${g.max_participants} 人` : `${memberCount} 人（不限）`}</span>
+                        <span>${hasMemberLimit ? `${memberCount + 1} / ${g.max_participants} 人` : `${memberCount + 1} 人（不限）`}</span>
                     </div>
                     <div class="gg-detail-section">
                         <span class="gg-detail-label">🎲 遊戲</span>

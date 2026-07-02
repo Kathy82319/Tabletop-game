@@ -35,7 +35,7 @@ export async function onRequestPost(context) {
         const count = await env.DB.prepare(
             `SELECT COUNT(*) as c FROM GroupGatheringMembers WHERE gathering_id = ? AND status != 'rejected'`
         ).bind(id).first();
-        if (count.c >= g.max_participants) {
+        if (count.c >= g.max_participants - 1) {
             return Response.json({ error: '報名人數已滿' }, { status: 400 });
         }
     }
@@ -56,7 +56,7 @@ export async function onRequestPost(context) {
         const count = await env.DB.prepare(
             `SELECT COUNT(*) as c FROM GroupGatheringMembers WHERE gathering_id = ? AND status != 'rejected'`
         ).bind(id).first();
-        if (count.c >= g.max_participants) {
+        if (count.c >= g.max_participants - 1) {
             await env.DB.prepare(
                 `UPDATE GroupGatherings SET status = 'closed' WHERE id = ?`
             ).bind(id).run();
