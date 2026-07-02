@@ -77,6 +77,18 @@ function handleNavigation() {
         return;
     }
 
+    // 揪團分享連結：注入 booking 頁面並讓 GatherModule 處理 hash
+    if (hash.startsWith('gather-share@')) {
+        const prevPageId = (appContent.dataset.currentPage || '').split('@')[0];
+        if (prevPageId !== 'page-booking') {
+            const bookingTemplate = pageTemplates.querySelector('#page-booking');
+            if (bookingTemplate) appContent.innerHTML = bookingTemplate.innerHTML;
+        }
+        appContent.dataset.currentPage = hash;
+        initializeBookingPage(null);
+        return;
+    }
+
     const [pageId, ...rest] = hash.split('@');
     const data = rest.join('@');
     const prevPageId = (appContent.dataset.currentPage || '').split('@')[0];
