@@ -122,7 +122,6 @@ function handleNavigation() {
         'page-tools': initializeToolsPage,
         'page-scoreboard-join': () => initializeScoreboardJoinPage(data),
         'page-game-history': initializeGameHistoryPage,
-        'page-my-gatherings': initializeMyGatheringsPage,
     };
 
     if (pageInitializers[pageId]) {
