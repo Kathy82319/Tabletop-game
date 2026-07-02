@@ -3806,16 +3806,15 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     font-size: 1.3rem;
 }
 .gg-detail-section {
-    display: flex;
+    display: grid;
+    grid-template-columns: 88px 1fr;
     gap: 10px;
     margin-bottom: 12px;
-    align-items: flex-start;
+    align-items: start;
 }
 .gg-detail-label {
-    min-width: 75px;
     font-size: 0.85rem;
     color: var(--color-text-secondary);
-    flex-shrink: 0;
 }
 .gg-actions {
     display: flex;
