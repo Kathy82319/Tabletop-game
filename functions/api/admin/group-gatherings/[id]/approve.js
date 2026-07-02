@@ -47,10 +47,17 @@ export async function onRequestPost(context) {
         `UPDATE GroupGatherings SET status = 'approved', booking_id = ? WHERE id = ?`
     ).bind(bookingId, id).run();
 
-    // 候補成員一律轉為拒絕
-    await env.DB.prepare(
-        `UPDATE GroupGatheringMembers SET status = 'rejected' WHERE gathering_id = ? AND status = 'pending'`
-    ).bind(id).run();
+    if (hasLimit) {
+        // 有上限：pending 成員（舊資料）一律補正為 approved
+        await env.DB.prepare(
+            `UPDATE GroupGatheringMembers SET status = 'approved' WHERE gathering_id = ? AND status = 'pending'`
+        ).bind(id).run();
+    } else {
+        // 無上限：候補名單中的 pending 成員一律拒絕
+        await env.DB.prepare(
+            `UPDATE GroupGatheringMembers SET status = 'rejected' WHERE gathering_id = ? AND status = 'pending'`
+        ).bind(id).run();
+    }
 
     // 通知團主
     const organizerMsg = `🎉 揪團成功！\n\n您發起的揪團已獲店家確認！\n📅 ${g.event_date} ${g.start_time}–${g.end_time}\n👥 共 ${totalPeople} 人\n\n期待與您相見！`;
