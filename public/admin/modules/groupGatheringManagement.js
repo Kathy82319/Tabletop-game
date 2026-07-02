@@ -143,6 +143,7 @@ export async function init() {
             <button class="sub-tab-btn" data-status="open">揪團中</button>
             <button class="sub-tab-btn" data-status="closed">已滿員</button>
             <button class="sub-tab-btn" data-status="failed">已流標</button>
+            <button class="sub-tab-btn" data-status="cancelled">已解散</button>
         </div>
         <div class="table-container" style="overflow-x:auto;">
             <table class="data-table">
