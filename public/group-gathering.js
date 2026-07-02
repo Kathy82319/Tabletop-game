@@ -775,7 +775,26 @@ const GatherModule = (() => {
         }
     }
 
-    return { init };
+    async function renderMyPage(organizedEl, joinedEl) {
+        organizedEl.innerHTML = '<p style="text-align:center;">載入中...</p>';
+        joinedEl.innerHTML = '';
+        try {
+            const res = await fetch('/api/group-gatherings/my', { headers: authHeaders() });
+            if (!res.ok) { organizedEl.innerHTML = '<p class="gg-empty">請先登入</p>'; return; }
+            const { organized, joined } = await res.json();
+            organizedEl.innerHTML = organized.length === 0
+                ? '<p class="gg-empty">尚未發起過揪團</p>'
+                : organized.map(g => renderGatherCard(g, true)).join('');
+            joinedEl.innerHTML = joined.length === 0
+                ? '<p class="gg-empty">尚未報名過揪團</p>'
+                : joined.map(g => renderGatherCard(g, true)).join('');
+            startCountdownTimer();
+        } catch {
+            organizedEl.innerHTML = '<p class="gg-empty" style="color:red;">載入失敗</p>';
+        }
+    }
+
+    return { init, renderMyPage };
 })();
 
 // 等待 booking 頁面初始化後再掛載

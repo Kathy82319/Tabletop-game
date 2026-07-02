@@ -122,6 +122,7 @@ function handleNavigation() {
         'page-tools': initializeToolsPage,
         'page-scoreboard-join': () => initializeScoreboardJoinPage(data),
         'page-game-history': initializeGameHistoryPage,
+        'page-my-gatherings': initializeMyGatheringsPage,
     };
 
     if (pageInitializers[pageId]) {
@@ -322,6 +323,7 @@ async function initializeProfilePage() {
         document.getElementById('my-exp-history-btn').addEventListener('click', () => navigateTo('page-my-exp-history'));
         document.getElementById('rental-history-btn').addEventListener('click', () => navigateTo('page-rental-history'));
         document.getElementById('game-history-btn').addEventListener('click', () => navigateTo('page-game-history'));
+        document.getElementById('my-gatherings-btn').addEventListener('click', () => navigateTo('page-my-gatherings'));
 
 liff.getProfile().then(profile => {
         userProfile = profile;

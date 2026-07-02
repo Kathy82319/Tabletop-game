@@ -199,6 +199,7 @@
        <button class="cta-button" id="my-exp-history-btn">經驗<br>成長紀錄</button>
        <button class="cta-button" id="rental-history-btn">桌遊<br>租借紀錄</button>
        <button class="cta-button" id="game-history-btn">過往<br>遊戲紀錄</button>
+       <button class="cta-button" id="my-gatherings-btn">我的<br>揪團</button>
     </div>
 </div>
 
@@ -225,6 +226,22 @@
     <button class="cta-button" id="toggle-past-rentals-btn" style="margin-top: 20px; background: var(--color-text-secondary);">查看過往紀錄</button>
     <div id="past-rentals-container" style="display: none; margin-top: 20px;">
         <h2 style="text-align: center; font-size: 1.5rem;">過往的租借</h2>
+    </div>
+</div>
+
+<div id="page-my-gatherings">
+    <button class="details-back-button">← 返回個人資料</button>
+    <h1 style="text-align: center;">我的揪團</h1>
+    <h3 class="gather-section-title">我發起的</h3>
+    <div id="my-gatherings-organized-container"></div>
+    <h3 class="gather-section-title" style="margin-top: 20px;">我報名的</h3>
+    <div id="my-gatherings-joined-container"></div>
+    <!-- 揪團詳情彈窗（複用） -->
+    <div id="gg-modal-overlay" style="display:none;">
+        <div id="gg-modal-card">
+            <button id="gg-modal-close">✕</button>
+            <div id="gg-modal-content"></div>
+        </div>
     </div>
 </div>
 

@@ -15,7 +15,7 @@ export async function onRequestGet(context) {
     }
 
     const members = await env.DB.prepare(
-        `SELECT id, user_id, display_name, joined_at, status
+        `SELECT id, user_id, display_name, line_name, joined_at, status
          FROM GroupGatheringMembers
          WHERE gathering_id = ?
          ORDER BY joined_at ASC`

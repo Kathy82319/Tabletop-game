@@ -82,7 +82,10 @@ async function showDetail(id) {
             <div class="gg-member-list">
                 ${members.length === 0 ? '<p>尚無成員</p>' : members.map(m => `
                     <div class="gg-member-item">
-                        <span>${m.display_name}</span>
+                        <div>
+                            <span style="font-weight:600;">${m.display_name}</span>
+                            <span style="font-size:0.8rem; color:#666; margin-left:6px;">(${m.line_name || '—'} · ${m.user_id})</span>
+                        </div>
                         <span class="gg-member-badge ${m.status === 'approved' ? 'badge-approved' : m.status === 'rejected' ? 'badge-rejected' : ''}">${m.status === 'approved' ? '通過' : m.status === 'rejected' ? '未通過' : '待定'}</span>
                     </div>`).join('')}
             </div>
