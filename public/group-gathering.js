@@ -674,25 +674,18 @@ const GatherModule = (() => {
 
     // ---- 分享連結進入 ----
     async function handleShareLink(token) {
-        const mainView = document.getElementById('gather-main-view');
-        const detailView = document.getElementById('gather-detail-view');
-        const content = document.getElementById('gather-detail-content');
-        if (!detailView || !content) return;
-
-        mainView.style.display = 'none';
-        detailView.style.display = 'block';
-        content.innerHTML = '<p style="text-align:center; padding:20px;">載入中...</p>';
-
         try {
             const res = await fetch(`/api/group-gatherings/share/${token}`);
             const g = await res.json();
-            if (!res.ok) {
-                content.innerHTML = `<p style="color:red;">${g.error || '找不到此揪團'}</p>`;
-                return;
-            }
+            if (!res.ok) throw new Error(g.error || '找不到此揪團');
             showDetail(g.id);
-        } catch {
-            content.innerHTML = '<p style="color:red;">載入失敗，請稍後再試</p>';
+        } catch (err) {
+            const overlay = document.getElementById('gg-modal-overlay');
+            const content = document.getElementById('gg-modal-content');
+            if (overlay && content) {
+                content.innerHTML = `<p style="color:red;">${err.message}</p>`;
+                overlay.style.display = 'flex';
+            }
         }
     }
 
