@@ -138,6 +138,7 @@ export async function init() {
             <button class="sub-tab-btn active" data-status="pending_approval">待審核</button>
             <button class="sub-tab-btn" data-status="approved">已成團</button>
             <button class="sub-tab-btn" data-status="open">揪團中</button>
+            <button class="sub-tab-btn" data-status="closed">已滿員</button>
             <button class="sub-tab-btn" data-status="failed">已流標</button>
         </div>
         <div class="table-container" style="overflow-x:auto;">

@@ -157,8 +157,10 @@ const GatherModule = (() => {
             const showWaitlist = isOrganizer && !hasMemberLimit && isPending && pendingMembers.length > 0;
 
             const membersToShow = (isOrganizer && !hasMemberLimit && (isOpen || isClosed))
-                ? allNonRejected
-                : allNonRejected.filter(m => m.status === 'approved');
+                ? allNonRejected  // 無上限：團主選人模式，顯示全部
+                : hasMemberLimit
+                    ? allNonRejected  // 有上限：加入即確認，顯示全部非拒絕
+                    : allNonRejected.filter(m => m.status === 'approved'); // 無上限其他狀態：只顯示已確認
 
             const membersHtml = membersToShow.map(m =>
                 `<div class="gg-member-row">
@@ -192,7 +194,16 @@ const GatherModule = (() => {
                 }
             } else {
                 if ((isOpen || isClosed) && beforeDeadline && !isFull && !alreadyJoined && getLiffToken()) {
-                    actionsHtml += `<button class="cta-button" id="gg-join-btn">立即報名</button>`;
+                    actionsHtml += `
+                        <button class="cta-button" id="gg-join-btn">立即報名</button>
+                        <div id="gg-nickname-form" style="display:none; margin-top:10px;">
+                            <input type="text" id="gg-nickname-input" maxlength="20" placeholder="請輸入您的暱稱（最多20字）"
+                                style="width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid var(--color-frame-gold);border-radius:var(--border-radius);background:rgba(255,255,255,0.6);font-size:0.95rem;margin-bottom:8px;">
+                            <div style="display:flex;gap:8px;">
+                                <button class="cta-button" id="gg-confirm-join-btn" style="flex:2;">確認報名</button>
+                                <button class="cta-button" id="gg-cancel-join-btn" style="flex:1;background:var(--color-text-secondary);">取消</button>
+                            </div>
+                        </div>`;
                 } else if (alreadyJoined && (isOpen || isClosed)) {
                     actionsHtml += `<button class="cta-button" id="gg-leave-btn" style="background: var(--color-text-secondary);">取消報名</button>`;
                 }
@@ -253,13 +264,36 @@ const GatherModule = (() => {
 
         const joinBtn = document.getElementById('gg-join-btn');
         if (joinBtn) {
-            joinBtn.addEventListener('click', async () => {
-                joinBtn.disabled = true;
-                joinBtn.textContent = '報名中...';
+            joinBtn.addEventListener('click', () => {
+                const nicknameForm = document.getElementById('gg-nickname-form');
+                const nicknameInput = document.getElementById('gg-nickname-input');
+                if (nicknameInput && window.userProfile?.displayName) {
+                    nicknameInput.value = window.userProfile.displayName;
+                }
+                joinBtn.style.display = 'none';
+                if (nicknameForm) nicknameForm.style.display = 'block';
+            });
+        }
+
+        const cancelJoinBtn = document.getElementById('gg-cancel-join-btn');
+        if (cancelJoinBtn) {
+            cancelJoinBtn.addEventListener('click', () => {
+                document.getElementById('gg-nickname-form').style.display = 'none';
+                if (joinBtn) joinBtn.style.display = 'block';
+            });
+        }
+
+        const confirmJoinBtn = document.getElementById('gg-confirm-join-btn');
+        if (confirmJoinBtn) {
+            confirmJoinBtn.addEventListener('click', async () => {
+                const nickname = document.getElementById('gg-nickname-input')?.value.trim();
+                if (!nickname) { setStatus('請輸入暱稱', true); return; }
+                confirmJoinBtn.disabled = true;
                 try {
                     const res = await fetch(`/api/group-gatherings/${id}/join`, {
                         method: 'POST',
                         headers: authHeaders(),
+                        body: JSON.stringify({ display_name: nickname }),
                     });
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error || '報名失敗');
@@ -267,8 +301,7 @@ const GatherModule = (() => {
                     setTimeout(() => showDetail(id), 1000);
                 } catch (err) {
                     setStatus(err.message, true);
-                    joinBtn.disabled = false;
-                    joinBtn.textContent = '立即報名';
+                    confirmJoinBtn.disabled = false;
                 }
             });
         }

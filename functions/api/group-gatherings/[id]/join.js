@@ -40,9 +40,15 @@ export async function onRequestPost(context) {
         }
     }
 
+    let body = {};
+    try { body = await request.json(); } catch {}
+    const displayName = (body.display_name || '').trim() || profile.displayName;
+
+    // 有人數限制的團直接 approved，無限制的團需團主手動篩選所以為 pending
+    const joinStatus = g.max_participants ? 'approved' : 'pending';
     await env.DB.prepare(
-        `INSERT INTO GroupGatheringMembers (gathering_id, user_id, display_name) VALUES (?, ?, ?)`
-    ).bind(id, profile.userId, profile.displayName).run();
+        `INSERT INTO GroupGatheringMembers (gathering_id, user_id, display_name, status) VALUES (?, ?, ?, ?)`
+    ).bind(id, profile.userId, displayName, joinStatus).run();
 
     // 人數已滿時自動關閉報名並通知團主
     if (g.max_participants) {

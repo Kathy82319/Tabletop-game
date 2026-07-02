@@ -15,8 +15,14 @@ export async function onRequestPost(context) {
         `SELECT user_id, display_name, status FROM GroupGatheringMembers WHERE gathering_id = ? AND status != 'rejected'`
     ).bind(id).all();
 
-    const approvedMembers = members.results.filter(m => m.status === 'approved');
-    const waitlistedMembers = members.results.filter(m => m.status === 'pending');
+    // 有人數上限的團：加入即確認，所有非拒絕成員都算通過；候補邏輯只用於無上限的團
+    const hasLimit = !!g.max_participants;
+    const approvedMembers = hasLimit
+        ? members.results
+        : members.results.filter(m => m.status === 'approved');
+    const waitlistedMembers = hasLimit
+        ? []
+        : members.results.filter(m => m.status === 'pending');
     const totalPeople = approvedMembers.length + 1; // +1 for organizer
     const PEOPLE_PER_TABLE = 4;
     const tablesNeeded = Math.ceil(totalPeople / PEOPLE_PER_TABLE);
