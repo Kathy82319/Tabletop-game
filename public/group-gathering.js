@@ -156,11 +156,11 @@ const GatherModule = (() => {
             const pendingMembers = allNonRejected.filter(m => m.status === 'pending');
             const showWaitlist = isOrganizer && !hasMemberLimit && isPending && pendingMembers.length > 0;
 
-            const membersToShow = (isOrganizer && !hasMemberLimit && (isOpen || isClosed))
-                ? allNonRejected  // 無上限：團主選人模式，顯示全部
+            const membersToShow = (!hasMemberLimit && (isOpen || isClosed))
+                ? allNonRejected  // 無上限開放中：所有人都看到全部報名者（團主有勾選框）
                 : hasMemberLimit
                     ? allNonRejected  // 有上限：加入即確認，顯示全部非拒絕
-                    : allNonRejected.filter(m => m.status === 'approved'); // 無上限其他狀態：只顯示已確認
+                    : allNonRejected.filter(m => m.status === 'approved'); // 其他狀態：只顯示已確認
 
             const membersHtml = membersToShow.map(m =>
                 `<div class="gg-member-row">
