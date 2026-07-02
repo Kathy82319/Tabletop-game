@@ -236,6 +236,10 @@ const GatherModule = (() => {
                         <div>${renderGameTags(g.games)}</div>
                     </div>
                     ${g.note ? `<div class="gg-detail-section"><span class="gg-detail-label">📝 備註</span><span class="gg-detail-note">${g.note}</span></div>` : ''}
+                    ${isOrganizer && !hasMemberLimit && (isOpen || isClosed) ? `
+                    <div class="gather-limit-hint" style="margin-bottom:12px;">
+                        ✏️ 無人數上限模式：請勾選您想帶去的成員，未勾選的人將列為候補。確認名單後點「確認參加名單」，再提交給店家審核。
+                    </div>` : ''}
                     <div class="gg-detail-section">
                         <span class="gg-detail-label">成員列表</span>
                         <div id="gg-members-list">${membersHtml}</div>
