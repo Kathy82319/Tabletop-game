@@ -9,7 +9,7 @@ export async function onRequestGet(context) {
     if (!g) return Response.json({ error: '找不到此揪團' }, { status: 404 });
 
     const members = await env.DB.prepare(
-        `SELECT id, user_id, display_name, joined_at, status
+        `SELECT id, user_id, display_name, line_name, joined_at, status
          FROM GroupGatheringMembers
          WHERE gathering_id = ?
          ORDER BY joined_at ASC`
