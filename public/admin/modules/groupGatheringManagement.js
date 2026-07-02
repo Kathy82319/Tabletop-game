@@ -40,7 +40,7 @@ async function loadGatherings(status) {
                 <td>${g.id}</td>
                 <td>${g.organizer_name}</td>
                 <td>${g.event_date}<br>${g.start_time}–${g.end_time}</td>
-                <td>${g.member_count + 1} 人</td>
+                <td>${g.max_participants ? `${g.member_count + 1} / ${g.max_participants}` : `${g.member_count + 1} 人`}</td>
                 <td class="admin-gg-games-cell">${renderGameTags(g.games)}</td>
                 <td><span class="admin-gg-status-badge gg-s-${g.status}">${STATUS_LABEL[g.status] || g.status}</span></td>
                 <td class="actions-cell">
