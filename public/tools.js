@@ -1085,6 +1085,36 @@ async function sjFetchAndRender() {
     } catch (e) { /* 等下次 */ }
 }
 
+// ── 我的揪團頁（從個人資料進入）──────────────────────────────
+async function initializeMyGatheringsPage() {
+    const organizedEl = document.getElementById('my-gatherings-organized-container');
+    const joinedEl    = document.getElementById('my-gatherings-joined-container');
+    if (!organizedEl || !joinedEl) return;
+
+    await GatherModule.renderMyPage(organizedEl, joinedEl);
+
+    // 揪團卡片點擊 → 開啟完整詳情彈窗
+    document.addEventListener('click', function onGatherCardClick(e) {
+        const card = e.target.closest('.gg-card[data-id]');
+        if (!card || !document.getElementById('my-gatherings-organized-container')) {
+            document.removeEventListener('click', onGatherCardClick);
+            return;
+        }
+        GatherModule.showDetail(card.dataset.id);
+    });
+
+    // 彈窗關閉
+    document.addEventListener('click', function onModalClose(e) {
+        if (e.target.id === 'gg-modal-overlay' || e.target.id === 'gg-modal-close') {
+            const overlay = document.getElementById('gg-modal-overlay');
+            if (overlay) { overlay.style.display = 'none'; document.body.style.overflow = ''; }
+            if (!document.getElementById('my-gatherings-organized-container')) {
+                document.removeEventListener('click', onModalClose);
+            }
+        }
+    });
+}
+
 // ── 冒險者過往遊戲紀錄頁 ──────────────────────────────────────
 async function initializeGameHistoryPage() {
     const lineId    = window.userProfile?.userId;

@@ -798,7 +798,7 @@ const GatherModule = (() => {
         }
     }
 
-    return { init, renderMyPage };
+    return { init, renderMyPage, showDetail };
 })();
 
 // 等待 booking 頁面初始化後再掛載
