@@ -1,7 +1,9 @@
 export async function onRequestGet(context) {
     const { env, request } = context;
     const url = new URL(request.url);
-    const status = url.searchParams.get('status') || 'pending_approval';
+    const statusParam = url.searchParams.get('status') || 'pending_approval';
+    const statuses = statusParam.split(',').map(s => s.trim()).filter(Boolean);
+    const placeholders = statuses.map(() => '?').join(', ');
 
     const gatherings = await env.DB.prepare(
         `SELECT g.id, g.organizer_user_id, g.organizer_name, g.event_date, g.start_time, g.end_time,
@@ -9,10 +11,10 @@ export async function onRequestGet(context) {
                 COUNT(CASE WHEN m.status != 'rejected' THEN 1 END) as member_count
          FROM GroupGatherings g
          LEFT JOIN GroupGatheringMembers m ON g.id = m.gathering_id
-         WHERE g.status = ?
+         WHERE g.status IN (${placeholders})
          GROUP BY g.id
          ORDER BY g.created_at DESC`
-    ).bind(status).all();
+    ).bind(...statuses).all();
 
     const result = gatherings.results.map(g => ({
         ...g,

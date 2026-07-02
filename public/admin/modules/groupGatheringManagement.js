@@ -31,7 +31,8 @@ async function loadGatherings(status) {
     try {
         const list = await api.getGroupGatherings(status);
         if (list.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">沒有「${STATUS_LABEL[status] || status}」的揪團</td></tr>`;
+            const label = status.split(',').map(s => STATUS_LABEL[s.trim()] || s).join('／');
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">沒有「${label}」的揪團</td></tr>`;
             return;
         }
         tbody.innerHTML = list.map(g => `
@@ -142,8 +143,7 @@ export async function init() {
             <button class="sub-tab-btn" data-status="approved">已成團</button>
             <button class="sub-tab-btn" data-status="open">揪團中</button>
             <button class="sub-tab-btn" data-status="closed">已滿員</button>
-            <button class="sub-tab-btn" data-status="failed">已流標</button>
-            <button class="sub-tab-btn" data-status="cancelled">已解散</button>
+            <button class="sub-tab-btn" data-status="failed,cancelled">已流標／解散</button>
         </div>
         <div class="table-container" style="overflow-x:auto;">
             <table class="data-table">
