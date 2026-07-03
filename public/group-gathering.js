@@ -102,14 +102,14 @@ const GatherModule = (() => {
                     <div class="gg-card-row"><span class="gg-card-label">時間：</span>${g.start_time}–${g.end_time}</div>
                     <div class="gg-card-row"><span class="gg-card-label">遊戲：</span>${g.games.map(gm => gm.name).join('、')}</div>
                 </div>
-                <div class="gg-card-footer">
-                    <span>截止 ${formatDeadline(g.deadline)}<span class="gg-countdown" data-deadline="${g.deadline}"></span></span>
-                </div>
             </div>
             <div class="gg-card-aside">
-                <span class="gg-status-badge ${statusClass}">${statusLabel}</span>
-                ${myBadge}${organizerBadge}
-                <span class="gg-card-count">👥 ${maxText}</span>
+                <div>
+                    <span class="gg-status-badge ${statusClass}">${statusLabel}</span>
+                    ${myBadge}${organizerBadge}
+                    <span class="gg-card-count">👥 ${maxText}</span>
+                </div>
+                <span class="gg-card-deadline">截止 ${formatDeadline(g.deadline)}<span class="gg-countdown" data-deadline="${g.deadline}"></span></span>
             </div>
         </div>`;
     }
@@ -267,7 +267,7 @@ const GatherModule = (() => {
                     ${g.note ? `<div class="gg-detail-section"><span class="gg-detail-label">📝 備註</span><span class="gg-detail-note">${g.note}</span></div>` : ''}
                     ${isOrganizer && !hasMemberLimit && (isOpen || isClosed) ? `
                     <div class="gather-limit-hint" style="margin-bottom:12px;">
-                        ✏️ 無人數上限模式：請勾選您想帶去的成員，未勾選的人將列為候補。確認名單後點「確認參加名單」，再提交給店家審核。
+                        ✏️ 無人數上限模式：請勾選您想帶去的成員，未勾選的人將列為候補。確認名單後點「確認參加名單」，再提交給店家審核。店家審核過之後將會自動婉拒未勾選的參與者。
                     </div>` : ''}
                     <div class="gg-detail-section">
                         <span class="gg-detail-label">成員列表</span>

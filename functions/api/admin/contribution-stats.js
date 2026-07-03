@@ -9,6 +9,7 @@ export async function onRequest(context) {
         const { results } = await db.prepare(
             `SELECT class_name, SUM(contribution_value) AS total
              FROM ContributionHistory
+             WHERE class_name NOT IN ('初心者', '測試者')
              GROUP BY class_name
              ORDER BY total DESC`
         ).all();
