@@ -3698,6 +3698,10 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     cursor: pointer;
     transition: box-shadow 0.2s, transform 0.15s;
     display: flex;
+    flex-direction: column;
+}
+.gg-card-top {
+    display: flex;
     align-items: flex-start;
 }
 .gg-card:active {
@@ -3712,14 +3716,14 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    justify-content: space-between;
+    gap: 4px;
     margin-left: 8px;
-    align-self: stretch;
 }
 .gg-card-deadline {
     font-size: 0.78rem;
     color: var(--color-text-secondary);
     text-align: right;
+    margin-top: 4px;
 }
 .gg-card-count {
     font-size: 0.8rem;

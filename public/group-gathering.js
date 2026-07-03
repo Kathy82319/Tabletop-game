@@ -95,22 +95,22 @@ const GatherModule = (() => {
 
         return `
         <div class="gg-card" data-id="${g.id}">
-            <div class="gg-card-main">
-                ${g.name ? `<div class="gg-card-name">${g.name}</div>` : ''}
-                <div class="gg-card-info">
-                    <div class="gg-card-row"><span class="gg-card-label">活動日期：</span>${g.event_date}</div>
-                    <div class="gg-card-row"><span class="gg-card-label">時間：</span>${g.start_time}–${g.end_time}</div>
-                    <div class="gg-card-row"><span class="gg-card-label">遊戲：</span><span class="gg-card-games">${g.games.map(gm => gm.name).join('、')}</span></div>
+            <div class="gg-card-top">
+                <div class="gg-card-main">
+                    ${g.name ? `<div class="gg-card-name">${g.name}</div>` : ''}
+                    <div class="gg-card-info">
+                        <div class="gg-card-row"><span class="gg-card-label">活動日期：</span>${g.event_date}</div>
+                        <div class="gg-card-row"><span class="gg-card-label">時間：</span>${g.start_time}–${g.end_time}</div>
+                        <div class="gg-card-row"><span class="gg-card-label">遊戲：</span><span class="gg-card-games">${g.games.map(gm => gm.name).join('、')}</span></div>
+                    </div>
                 </div>
-            </div>
-            <div class="gg-card-aside">
-                <div>
+                <div class="gg-card-aside">
                     <span class="gg-status-badge ${statusClass}">${statusLabel}</span>
                     ${myBadge}${organizerBadge}
                     <span class="gg-card-count">👥 ${maxText}</span>
                 </div>
-                <span class="gg-card-deadline">截止 ${formatDeadline(g.deadline)}<span class="gg-countdown" data-deadline="${g.deadline}"></span></span>
             </div>
+            <div class="gg-card-deadline">截止 ${formatDeadline(g.deadline)}<span class="gg-countdown" data-deadline="${g.deadline}"></span></div>
         </div>`;
     }
 
