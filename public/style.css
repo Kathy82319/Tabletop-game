@@ -3673,10 +3673,9 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     overflow-y: auto;
     max-height: calc(100svh - 340px);
     min-height: 80px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 8px;
-    align-content: start;
 }
 .gather-action-bar {
     flex-shrink: 0;
@@ -3782,7 +3781,6 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     text-align: center;
     padding: 20px;
     color: var(--color-text-secondary);
-    grid-column: 1 / -1;
 }
 
 /* 揪團詳情彈窗 */
