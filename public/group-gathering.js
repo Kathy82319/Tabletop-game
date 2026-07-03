@@ -42,12 +42,26 @@ const GatherModule = (() => {
     }
 
     let countdownInterval = null;
+    let allGatherings = [];
+    let filterDate = '';
+    let filterGame = '';
+    let filterBeginner = false;
     function startCountdownTimer() {
         function tick() {
             document.querySelectorAll('.gg-countdown[data-deadline]').forEach(el => {
                 const deadline = new Date(el.dataset.deadline.replace(' ', 'T'));
                 const diff = deadline - Date.now();
-                if (diff <= 0) { el.textContent = '已截止'; return; }
+                if (diff <= 0) {
+                    const card = el.closest('.gg-card');
+                    if (card) {
+                        card.remove();
+                        const container = document.getElementById('gather-list-container');
+                        if (container && container.querySelectorAll('.gg-card').length === 0) {
+                            container.innerHTML = '<p class="gg-empty">目前沒有開放中的揪團，來發起第一個吧！</p>';
+                        }
+                    }
+                    return;
+                }
                 const days = Math.floor(diff / 86400000);
                 const hours = Math.floor((diff % 86400000) / 3600000);
                 const mins = Math.floor((diff % 3600000) / 60000);
@@ -90,29 +104,44 @@ const GatherModule = (() => {
             ${g.name ? `<div class="gg-card-name">${g.name}</div>` : ''}
             <div class="gg-card-info">
                 <div class="gg-card-row"><span class="gg-card-label">活動日期：</span>${g.event_date}</div>
-                <div class="gg-card-row"><span class="gg-card-label">開始/預計結束：</span>${g.start_time}–${g.end_time}</div>
-                <div class="gg-card-row"><span class="gg-card-label">預計遊戲：</span>${g.games.map(gm => gm.name).join('、')}</div>
+                <div class="gg-card-row"><span class="gg-card-label">時間：</span>${g.start_time}–${g.end_time}</div>
+                <div class="gg-card-row"><span class="gg-card-label">遊戲：</span>${g.games.map(gm => gm.name).join('、')}</div>
             </div>
             <div class="gg-card-footer">
                 <span>👥 ${maxText}</span>
-                <span>報名截止日期：${formatDeadline(g.deadline)}<span class="gg-countdown" data-deadline="${g.deadline}"></span></span>
+                <span>截止 ${formatDeadline(g.deadline)}<span class="gg-countdown" data-deadline="${g.deadline}"></span></span>
             </div>
         </div>`;
     }
 
     // ---- 主列表 ----
+    function applyFilters() {
+        const container = document.getElementById('gather-list-container');
+        if (!container) return;
+        let filtered = allGatherings;
+        if (filterDate) filtered = filtered.filter(g => g.event_date === filterDate);
+        if (filterGame) filtered = filtered.filter(g => g.games.some(gm => gm.name.includes(filterGame)));
+        if (filterBeginner) filtered = filtered.filter(g => g.games.some(gm => gm.beginner_friendly));
+        if (filtered.length === 0) {
+            container.innerHTML = '<p class="gg-empty">沒有符合條件的揪團</p>';
+            return;
+        }
+        container.innerHTML = filtered.map(g => renderGatherCard(g)).join('');
+        startCountdownTimer();
+    }
+
     async function loadList() {
         const container = document.getElementById('gather-list-container');
         if (!container) return;
         try {
             const res = await fetch('/api/group-gatherings/list');
             const list = await res.json();
-            if (!Array.isArray(list) || list.length === 0) {
+            allGatherings = Array.isArray(list) ? list : [];
+            if (allGatherings.length === 0) {
                 container.innerHTML = '<p class="gg-empty">目前沒有開放中的揪團，來發起第一個吧！</p>';
                 return;
             }
-            container.innerHTML = list.map(g => renderGatherCard(g)).join('');
-            startCountdownTimer();
+            applyFilters();
         } catch {
             container.innerHTML = '<p class="gg-empty" style="color:red;">載入失敗，請稍後再試</p>';
         }
@@ -758,6 +787,26 @@ const GatherModule = (() => {
         };
         bindOnce('gather-create-btn', showCreateForm);
         bindOnce('gather-my-btn', showMyGatherings);
+
+        const dateInput = document.getElementById('gg-filter-date');
+        if (dateInput && !dateInput.dataset.l) {
+            dateInput.dataset.l = '1';
+            dateInput.addEventListener('input', () => { filterDate = dateInput.value; applyFilters(); });
+        }
+        const gameInput = document.getElementById('gg-filter-game');
+        if (gameInput && !gameInput.dataset.l) {
+            gameInput.dataset.l = '1';
+            gameInput.addEventListener('input', () => { filterGame = gameInput.value.trim(); applyFilters(); });
+        }
+        const beginnerBtn = document.getElementById('gg-filter-beginner');
+        if (beginnerBtn && !beginnerBtn.dataset.l) {
+            beginnerBtn.dataset.l = '1';
+            beginnerBtn.addEventListener('click', () => {
+                filterBeginner = !filterBeginner;
+                beginnerBtn.classList.toggle('active', filterBeginner);
+                applyFilters();
+            });
+        }
 
         initCreateForm();
 

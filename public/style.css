@@ -3636,11 +3636,47 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     flex-direction: column;
     flex: 1;
 }
+#gg-filter-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+#gg-filter-bar input {
+    flex: 1;
+    min-width: 0;
+    padding: 5px 8px;
+    border: 1px solid rgba(184,134,11,0.4);
+    border-radius: var(--border-radius);
+    background: rgba(255,255,255,0.6);
+    font-size: 0.82rem;
+    color: var(--color-text-primary);
+}
+.gg-filter-toggle {
+    flex-shrink: 0;
+    padding: 5px 10px;
+    border: 1px solid rgba(184,134,11,0.4);
+    border-radius: var(--border-radius);
+    background: transparent;
+    font-size: 0.82rem;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+.gg-filter-toggle.active {
+    background: var(--color-frame-gold);
+    color: #fff;
+    border-color: var(--color-frame-gold);
+}
 #gather-list-container {
     flex: 1;
     overflow-y: auto;
-    max-height: calc(100svh - 320px);
+    max-height: calc(100svh - 340px);
     min-height: 80px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    align-content: start;
 }
 .gather-action-bar {
     flex-shrink: 0;
@@ -3654,21 +3690,12 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     flex: 1;
     font-size: 0.95rem;
 }
-.gather-section-title {
-    font-size: 1.1rem;
-    color: var(--color-text-secondary);
-    margin: 0 0 10px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid var(--color-frame-gold);
-}
-
 /* 揪團卡片 */
 .gg-card {
     background: var(--color-card-background);
     border: 1px solid rgba(184,134,11,0.3);
     border-radius: var(--border-radius);
-    padding: 12px 14px;
-    margin-bottom: 12px;
+    padding: 8px 10px;
     cursor: pointer;
     transition: box-shadow 0.2s, transform 0.15s;
 }
@@ -3755,6 +3782,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     text-align: center;
     padding: 20px;
     color: var(--color-text-secondary);
+    grid-column: 1 / -1;
 }
 
 /* 揪團詳情彈窗 */

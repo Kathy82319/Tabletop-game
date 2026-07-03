@@ -16,7 +16,7 @@ export async function onRequestGet(context) {
     const userId = profile.userId;
 
     const organized = await env.DB.prepare(
-        `SELECT g.id, g.organizer_name, g.event_date, g.start_time, g.end_time,
+        `SELECT g.id, g.organizer_name, g.name, g.event_date, g.start_time, g.end_time,
                 g.max_participants, g.games, g.note, g.deadline, g.status, g.share_token,
                 COUNT(CASE WHEN m.status != 'rejected' THEN 1 END) as member_count
          FROM GroupGatherings g
@@ -27,7 +27,7 @@ export async function onRequestGet(context) {
     ).bind(userId).all();
 
     const joined = await env.DB.prepare(
-        `SELECT g.id, g.organizer_name, g.event_date, g.start_time, g.end_time,
+        `SELECT g.id, g.organizer_name, g.name, g.event_date, g.start_time, g.end_time,
                 g.max_participants, g.games, g.note, g.deadline, g.status, g.share_token,
                 me.status as my_status,
                 COUNT(CASE WHEN m.status != 'rejected' THEN 1 END) as member_count
