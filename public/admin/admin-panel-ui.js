@@ -12,6 +12,33 @@ document.addEventListener('click', function(e) {
     }
 });
 
+function compressImage(file, maxPx = 1200, quality = 0.82) {
+    if (file.type === 'image/gif' || file.size < 200 * 1024) return Promise.resolve(file);
+    return new Promise((resolve) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+            URL.revokeObjectURL(url);
+            let { naturalWidth: w, naturalHeight: h } = img;
+            if (w > maxPx || h > maxPx) {
+                const ratio = Math.min(maxPx / w, maxPx / h);
+                w = Math.round(w * ratio);
+                h = Math.round(h * ratio);
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            canvas.toBlob(
+                (blob) => resolve(blob ? new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }) : file),
+                'image/jpeg', quality
+            );
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+        img.src = url;
+    });
+}
+
 document.addEventListener('change', async function(e) {
     const input = e.target;
     if (!input.classList.contains('r2-file-input')) return;
@@ -29,8 +56,9 @@ document.addEventListener('change', async function(e) {
     label.textContent = '⏳';
 
     try {
+        const uploadFile = await compressImage(file);
         const fd = new FormData();
-        fd.append('file', file);
+        fd.append('file', uploadFile);
 
         const res  = await fetch('/api/admin/upload-image', { method: 'POST', body: fd });
         const data = await res.json();

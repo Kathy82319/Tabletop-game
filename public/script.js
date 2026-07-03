@@ -170,7 +170,7 @@ function renderNews(filterCategory = 'ALL') {
         const snippet = news.content ? news.content.substring(0, 50) + '...' : '';
         const imageHTML = news.image_url
             ? `<div class="news-card-image-container">
-                   <img src="${news.image_url}" alt="${news.title}" class="news-card-image">
+                   <img src="${news.image_url}" alt="${news.title}" class="news-card-image" loading="lazy">
                </div>`
             : '';
 
@@ -210,9 +210,11 @@ function renderNews(filterCategory = 'ALL') {
 
     async function initializeHomePage() {
         try {
-            const response = await fetch('/api/get-news');
-            if (!response.ok) throw new Error('無法獲取最新情報');
-            allNews = await response.json();
+            if (allNews.length === 0) {
+                const response = await fetch('/api/get-news');
+                if (!response.ok) throw new Error('無法獲取最新情報');
+                allNews = await response.json();
+            }
             setupNewsFilters();
             renderNews();
         } catch (error) {
@@ -324,14 +326,6 @@ async function initializeProfilePage() {
         document.getElementById('rental-history-btn').addEventListener('click', () => navigateTo('page-rental-history'));
         document.getElementById('game-history-btn').addEventListener('click', () => navigateTo('page-game-history'));
         document.getElementById('my-gatherings-btn').addEventListener('click', () => navigateTo('page-my-gatherings'));
-
-liff.getProfile().then(profile => {
-        userProfile = profile;
-        const pictureEl = document.getElementById('profile-picture');
-        if(pictureEl) pictureEl.src = profile.pictureUrl || 'placeholder.jpg';
-        const oldQrBtn = document.getElementById('toggle-qrcode-btn');
-        if(oldQrBtn) oldQrBtn.style.display = 'none'; 
-    });
 
     const qrIconBtn = document.getElementById('qr-icon-btn');
     const qrContainer = document.getElementById('qrcode-container');
@@ -589,7 +583,7 @@ async function initializeRentalHistoryPage() {
 
             return `
                 <div class="card rental-card">
-                    <img src="${rental.game_image_url || 'placeholder.jpg'}" class="rental-game-image">
+                    <img src="${rental.game_image_url || 'placeholder.jpg'}" class="rental-game-image" loading="lazy">
                     <div class="rental-info">
                         <h3 class="rental-game-title">${rental.game_name}</h3>
                         <p>租借日期：${rental.rental_date}</p>
@@ -866,7 +860,7 @@ function renderGames() {
         }
         container.innerHTML = filteredGames.map(game => `
             <div class="card game-card" data-game-id="${game.game_id}">
-                <img src="${game.image_url || 'placeholder.jpg'}" alt="${game.name}" class="game-image">
+                <img src="${game.image_url || 'placeholder.jpg'}" alt="${game.name}" class="game-image" loading="lazy">
                 <div class="game-info">
                     <h3 class="game-title">${game.name}</h3>
                     <p class="game-description">${game.description}</p> 
