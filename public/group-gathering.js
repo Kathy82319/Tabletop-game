@@ -604,8 +604,9 @@ const GatherModule = (() => {
         const gcDateEl = document.getElementById('gc-date');
         if (gcDateEl) gcDateEl.min = today;
 
-        // 截止日期最大值：不能晚於活動日期
+        // 截止日期最小值：不能選過去
         const gcDeadlineDateEl = document.getElementById('gc-deadline-date');
+        if (gcDeadlineDateEl) gcDeadlineDateEl.min = today;
         if (gcDateEl) {
             gcDateEl.addEventListener('change', () => {
                 const eventDate = gcDateEl.value;
@@ -657,6 +658,12 @@ const GatherModule = (() => {
 
                 if (endTime && startTime && endTime <= startTime) {
                     statusEl.textContent = '預計結束時間必須晚於開始時間';
+                    statusEl.style.color = '#e74c3c';
+                    return;
+                }
+                const deadlineDateTime = new Date(`${deadlineDate}T${deadlineHour}:00:00`);
+                if (deadlineDateTime <= new Date()) {
+                    statusEl.textContent = '報名截止時間不能早於現在';
                     statusEl.style.color = '#e74c3c';
                     return;
                 }
