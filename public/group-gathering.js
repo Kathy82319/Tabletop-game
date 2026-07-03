@@ -19,7 +19,7 @@ const GatherModule = (() => {
 
     // ---- 狀態對應 ----
     const STATUS_LABEL = {
-        open: '報名中',
+        open: '揪團中',
         closed: '報名截止',
         pending_approval: '等待店家審核',
         approved: '已成團',
@@ -798,6 +798,34 @@ const GatherModule = (() => {
         };
         bindOnce('gather-create-btn', showCreateForm);
         bindOnce('gather-my-btn', showMyGatherings);
+
+        const pastToggle = document.getElementById('gg-past-toggle');
+        const pastContainer = document.getElementById('gg-past-container');
+        if (pastToggle && pastContainer && !pastToggle.dataset.l) {
+            pastToggle.dataset.l = '1';
+            let pastLoaded = false;
+            let pastOpen = false;
+            pastToggle.addEventListener('click', async () => {
+                pastOpen = !pastOpen;
+                pastContainer.style.display = pastOpen ? 'flex' : 'none';
+                pastToggle.textContent = pastOpen ? '收起過往揪團 ▴' : '顯示過往揪團 ▾';
+                if (pastOpen && !pastLoaded) {
+                    pastContainer.innerHTML = '<p class="gg-empty">載入中...</p>';
+                    try {
+                        const res = await fetch('/api/group-gatherings/list?past=1');
+                        const list = await res.json();
+                        pastLoaded = true;
+                        if (!Array.isArray(list) || list.length === 0) {
+                            pastContainer.innerHTML = '<p class="gg-empty">目前沒有過往揪團記錄</p>';
+                        } else {
+                            pastContainer.innerHTML = list.map(g => renderGatherCard(g)).join('');
+                        }
+                    } catch {
+                        pastContainer.innerHTML = '<p class="gg-empty" style="color:red;">載入失敗</p>';
+                    }
+                }
+            });
+        }
 
         const dateInput = document.getElementById('gg-filter-date');
         if (dateInput && !dateInput.dataset.l) {

@@ -144,7 +144,7 @@ async function loadContributionChart() {
                     }
                 },
                 scales: {
-                    y: { beginAtZero: true, ticks: { precision: 0 } },
+                    y: { beginAtZero: true, ticks: { precision: 0 }, grace: '15%' },
                     x: { ticks: { font: { size: 13 } } }
                 }
             },
