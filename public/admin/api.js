@@ -39,7 +39,9 @@ export const api = {
     
     getDashboardStats: () => request('/api/admin/dashboard-stats'),
     getActivities: () => request('/api/admin/activities'),
-    markActivityAsRead: (activity_id) => request('/api/admin/activities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ activity_id }) }),    
+    getAllActivities: () => request('/api/admin/activities?all=1'),
+    markActivityAsRead: (activity_id) => request('/api/admin/activities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ activity_id }) }),
+    markAllActivitiesAsRead: () => request('/api/admin/activities', { method: 'DELETE' }),
     getUsers: () => request('/api/get-users'),
     getUserDetails: (userId) => request(`/api/admin/user-details?userId=${userId}`),
     updateUserDetails: (data) => request('/api/update-user-details', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),

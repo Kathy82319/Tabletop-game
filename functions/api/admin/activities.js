@@ -5,9 +5,12 @@ export async function onRequest(context) {
 
     try {
         if (request.method === 'GET') {
-            const { results } = await db.prepare(
-                "SELECT * FROM Activities WHERE is_read = 0 ORDER BY created_at DESC"
-            ).all();
+            const url = new URL(request.url);
+            const showAll = url.searchParams.get('all') === '1';
+            const query = showAll
+                ? "SELECT * FROM Activities ORDER BY created_at DESC LIMIT 80"
+                : "SELECT * FROM Activities WHERE is_read = 0 ORDER BY created_at DESC";
+            const { results } = await db.prepare(query).all();
             return new Response(JSON.stringify(results || []), {
                 status: 200, headers: { 'Content-Type': 'application/json' }
             });
@@ -22,10 +25,15 @@ export async function onRequest(context) {
             return new Response(JSON.stringify({ success: true }), { status: 200 });
         }
 
+        if (request.method === 'DELETE') {
+            await db.prepare("UPDATE Activities SET is_read = 1 WHERE is_read = 0").run();
+            return new Response(JSON.stringify({ success: true }), { status: 200 });
+        }
+
         return new Response('無效的請求方法', { status: 405 });
     } catch (error) {
         console.error('Error in activities API:', error);
-        return new Response(JSON.stringify({ error: '處理動態消息時發生錯誤', details: error.message }), { 
+        return new Response(JSON.stringify({ error: '處理動態消息時發生錯誤', details: error.message }), {
             status: 500, headers: { 'Content-Type': 'application/json' }
         });
     }

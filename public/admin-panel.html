@@ -32,43 +32,70 @@
     
 <main class="main-content">
         <div id="page-dashboard" class="page active">
-        <div class="page-header">
-            <h2>今日狀態總覽</h2>
+            <div class="page-header">
+                <h2>今日狀態總覽</h2>
             </div>
-        <div id="dashboard-grid" class="dashboard-grid">
-                <div class="stat-card" data-target="bookings">
-                    <h3>今日預約總人數</h3>
-                    <p id="stat-today-guests" class="stat-value">讀取中...</p>
-                </div>
-                <div class="stat-card" data-target="rentals-rented">
-                    <h3>未歸還遊戲總數</h3>
-                    <p id="stat-outstanding-rentals" class="stat-value">讀取中...</p>
-                </div>
-                <div class="stat-card" data-target="rentals-due-today">
-                    <h3>今日到期遊戲</h3>
-                    <p id="stat-due-today" class="stat-value">讀取中...</p>
-                    <p class="stat-subtext">筆租借紀錄</p>
-                </div>
-        </div>
 
-<div id="contribution-chart-section" style="margin-top: 2rem; background:white; border-radius:8px; padding:1.5rem; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-    <h2 style="margin-top:0; font-size:1.2rem; color:var(--text-dark);">職業貢獻度分佈</h2>
-    <div style="position:relative; height:320px;">
-        <canvas id="contribution-chart"></canvas>
-    </div>
-    <p id="contribution-chart-empty" style="text-align:center; color:var(--text-light); display:none;">尚無貢獻度資料</p>
-</div>
+            <div class="dashboard-layout">
+                <!-- 左欄：統計卡片 + 貢獻圖 -->
+                <div class="dashboard-col-left">
+                    <div id="dashboard-grid" class="dashboard-grid">
+                        <div class="stat-card" data-target="bookings">
+                            <h3>今日預約人數</h3>
+                            <p id="stat-today-guests" class="stat-value">...</p>
+                            <p class="stat-subtext">位訪客</p>
+                        </div>
+                        <div class="stat-card accent-orange" data-target="rentals-rented">
+                            <h3>未歸還遊戲</h3>
+                            <p id="stat-outstanding-rentals" class="stat-value">...</p>
+                            <p class="stat-subtext">件租借中</p>
+                        </div>
+                        <div class="stat-card accent-red" data-target="rentals-due-today">
+                            <h3>今日到期</h3>
+                            <p id="stat-due-today" class="stat-value">...</p>
+                            <p class="stat-subtext">筆租借紀錄</p>
+                        </div>
+                        <div class="stat-card accent-purple" data-target="group-gatherings">
+                            <h3>待審核揪團</h3>
+                            <p id="stat-pending-gatherings" class="stat-value">...</p>
+                            <p class="stat-subtext">則等待審核</p>
+                        </div>
+                        <div class="stat-card accent-green">
+                            <h3>本月新增會員</h3>
+                            <p id="stat-new-members" class="stat-value">...</p>
+                            <p class="stat-subtext">位新成員</p>
+                        </div>
+                    </div>
 
-<div id="activity-feed-section" style="margin-top: 2rem;">
-    <h2 class="page-header" style="justify-content: flex-start; gap: 1rem; align-items: center;">
-        <span>最新動態</span>
-        <span id="activity-count-badge" style="font-size: 0.9rem; background-color: var(--primary-color); color: white; padding: 4px 10px; border-radius: 12px; display: none;"></span>
-    </h2>
-    <div id="activity-feed-container" style="max-height: 400px; overflow-y: auto; background-color: var(--color-sidebar-bg); padding: 1rem; border-radius: var(--border-radius); box-shadow: var(--box-shadow);">
-        <p>正在載入動態...</p>
-    </div>
-</div>                
-            
+                    <div id="contribution-chart-section" style="background:white; border-radius:10px; padding:1.5rem; box-shadow:0 2px 6px rgba(0,0,0,0.07);">
+                        <h3 style="margin:0 0 1rem; font-size:1rem; color:var(--text-dark);">職業貢獻度分佈</h3>
+                        <div style="position:relative; height:300px;">
+                            <canvas id="contribution-chart"></canvas>
+                        </div>
+                        <p id="contribution-chart-empty" style="text-align:center; color:var(--text-light); display:none;">尚無貢獻度資料</p>
+                    </div>
+                </div>
+
+                <!-- 右欄：最新動態 -->
+                <div class="dashboard-col-right">
+                    <div class="activity-panel">
+                        <div class="activity-panel-header">
+                            <h3>
+                                最新動態
+                                <span id="activity-count-badge" style="font-size:0.78rem; background:var(--primary-color); color:white; padding:2px 9px; border-radius:10px; display:none;"></span>
+                            </h3>
+                            <button id="btn-mark-all-read" class="btn-mark-all">全部已讀</button>
+                        </div>
+                        <div class="activity-panel-tabs">
+                            <button class="activity-tab-btn active" data-tab="unread">未讀</button>
+                            <button class="activity-tab-btn" data-tab="all">全部記錄</button>
+                        </div>
+                        <div id="activity-feed-container" class="activity-feed-list">
+                            <div style="padding:1.5rem; text-align:center; color:var(--text-light); font-size:0.88rem;">正在載入動態...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
 <div id="page-users" class="page">

@@ -100,7 +100,7 @@ const GatherModule = (() => {
                 <div class="gg-card-info">
                     <div class="gg-card-row"><span class="gg-card-label">活動日期：</span>${g.event_date}</div>
                     <div class="gg-card-row"><span class="gg-card-label">時間：</span>${g.start_time}–${g.end_time}</div>
-                    <div class="gg-card-row"><span class="gg-card-label">遊戲：</span>${g.games.map(gm => gm.name).join('、')}</div>
+                    <div class="gg-card-row"><span class="gg-card-label">遊戲：</span><span class="gg-card-games">${g.games.map(gm => gm.name).join('、')}</span></div>
                 </div>
             </div>
             <div class="gg-card-aside">
@@ -599,8 +599,12 @@ const GatherModule = (() => {
         if (startTimeEl) startTimeEl.addEventListener('change', updateEndTimeOptions);
         updateEndTimeOptions();
 
-        // 截止日期最大值：不能晚於活動日期
+        // 活動日期不能選過去
+        const today = new Date().toISOString().split('T')[0];
         const gcDateEl = document.getElementById('gc-date');
+        if (gcDateEl) gcDateEl.min = today;
+
+        // 截止日期最大值：不能晚於活動日期
         const gcDeadlineDateEl = document.getElementById('gc-deadline-date');
         if (gcDateEl) {
             gcDateEl.addEventListener('change', () => {

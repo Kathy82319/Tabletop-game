@@ -3749,6 +3749,17 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     color: var(--color-text-secondary);
     font-size: 0.82rem;
 }
+.gg-card-row:has(.gg-card-games) {
+    display: flex;
+    overflow: hidden;
+}
+.gg-card-games {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 .gg-countdown {
     font-size: 0.78rem;
     color: var(--color-frame-gold);

@@ -7,72 +7,93 @@ const renderStats = (stats) => {
         const el = document.getElementById(id);
         if (el) el.textContent = text;
     };
-
-    updateText('stat-today-guests', stats.today_total_guests || 0);
-    updateText('stat-outstanding-rentals', stats.outstanding_rentals_count || 0);
-    updateText('stat-due-today', stats.due_today_rentals_count || 0);
+    updateText('stat-today-guests', stats.today_total_guests ?? 0);
+    updateText('stat-outstanding-rentals', stats.outstanding_rentals_count ?? 0);
+    updateText('stat-due-today', stats.due_today_rentals_count ?? 0);
+    updateText('stat-pending-gatherings', stats.pending_gatherings_count ?? 0);
+    updateText('stat-new-members', stats.new_members_this_month ?? 0);
 };
 
-async function loadAndRenderActivities() {
+// ---- 動態類別判斷 ----
+function getActivityCategory(message) {
+    if (/預約/.test(message)) return { label: '預約', cls: 'badge-booking' };
+    if (/租借|歸還/.test(message)) return { label: '租借', cls: 'badge-rental' };
+    if (/揪團/.test(message)) return { label: '揪團', cls: 'badge-gathering' };
+    if (/會員|新顧客|加入/.test(message)) return { label: '會員', cls: 'badge-member' };
+    return { label: '系統', cls: 'badge-system' };
+}
+
+// ---- 動態列表渲染 ----
+let currentTab = 'unread';
+
+async function renderActivityFeed() {
     const container = document.getElementById('activity-feed-container');
     const badge = document.getElementById('activity-count-badge');
-    if (!container || !badge) return;
+    if (!container) return;
+
+    container.innerHTML = '<div style="padding:1.5rem; text-align:center; color:var(--text-light); font-size:0.88rem;">載入中...</div>';
 
     try {
-        const activities = await api.getActivities(); 
         const options = {
-            timeZone: 'Asia/Taipei',
-            year: 'numeric',
-            month: 'numeric',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
+            timeZone: 'Asia/Taipei', year: 'numeric', month: 'numeric',
+            day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false
         };
 
-            if (activities && activities.length > 0) {
-            badge.textContent = `${activities.length} 則未讀`;
-            badge.style.display = 'inline-block';
-            container.innerHTML = activities.map(act => {
-                const localizedTime = new Date(act.created_at).toLocaleString('zh-TW', options);
-                
-                return `
-                <div class="activity-item" data-id="${act.activity_id}" style="...">
-                    <div style="flex-grow: 1;">
-                        <p style="margin: 0; font-weight: 500;">${act.message}</p>
-                        <small style="color: var(--text-light);">${localizedTime}</small>
-                    </div>
-                </div>
-                `
-            }).join('');
+        const [unreadData, allData] = await Promise.all([
+            api.getActivities(),
+            currentTab === 'all' ? api.getAllActivities() : Promise.resolve(null),
+        ]);
 
-            container.querySelectorAll('.mark-activity-read').forEach(checkbox => {
-                checkbox.addEventListener('change', async (e) => {
-                    const item = e.target.closest('.activity-item');
-                    const activityId = Number(item.dataset.id);
-                    if (e.target.checked) {
-                        try {
-                            e.target.disabled = true;
-                            await api.markActivityAsRead(activityId); 
-                            item.style.opacity = '0.3';
-                            ui.toast.success('已標示為已讀');
-                        } catch (error) {
-                            ui.toast.error(`標示已讀失敗: ${error.message}`);
-                            e.target.checked = false;
-                            e.target.disabled = false;
-                        }
-                    }
-                });
-            });
+        const unreadCount = unreadData?.length || 0;
+        if (unreadCount > 0) {
+            badge.textContent = `${unreadCount} 則未讀`;
+            badge.style.display = 'inline-block';
         } else {
             badge.style.display = 'none';
-            container.innerHTML = '<p style="text-align: center; color: var(--text-light);">沒有未讀的動態消息</p>';
         }
+
+        const data = currentTab === 'all' ? (allData || []) : (unreadData || []);
+
+        if (data.length === 0) {
+            container.innerHTML = `<div style="padding:2rem; text-align:center; color:var(--text-light); font-size:0.88rem;">${currentTab === 'unread' ? '沒有未讀的動態消息' : '尚無動態紀錄'}</div>`;
+            return;
+        }
+
+        container.innerHTML = data.map(act => {
+            const cat = getActivityCategory(act.message);
+            const time = new Date(act.created_at).toLocaleString('zh-TW', options);
+            const isRead = act.is_read === 1;
+            return `
+            <div class="activity-item${isRead ? ' is-read' : ''}" data-id="${act.activity_id}">
+                <div class="activity-item-body">
+                    <p>${act.message}</p>
+                    <small>${time}</small>
+                </div>
+                <span class="activity-badge ${cat.cls}">${cat.label}</span>
+                ${!isRead ? `<button class="activity-mark-btn" data-id="${act.activity_id}">已讀</button>` : ''}
+            </div>`;
+        }).join('');
+
+        container.querySelectorAll('.activity-mark-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = Number(e.currentTarget.dataset.id);
+                try {
+                    btn.disabled = true;
+                    await api.markActivityAsRead(id);
+                    await renderActivityFeed();
+                } catch {
+                    btn.disabled = false;
+                    ui.toast.error('標示已讀失敗');
+                }
+            });
+        });
+
     } catch (error) {
-        container.innerHTML = `<p style="color: var(--danger-color);">載入動態失敗: ${error.message}</p>`;
+        container.innerHTML = `<div style="padding:1rem; color:var(--danger-color); font-size:0.88rem;">載入動態失敗: ${error.message}</div>`;
     }
 }
 
+// ---- 貢獻度圖表 ----
 let contributionChartInstance = null;
 
 async function loadContributionChart() {
@@ -118,21 +139,13 @@ async function loadContributionChart() {
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: (ctx) => {
-                                const pct = percentages[ctx.dataIndex];
-                                return ` ${ctx.parsed.y} 點（佔 ${pct}%）`;
-                            }
+                            label: (ctx) => ` ${ctx.parsed.y} 點（佔 ${percentages[ctx.dataIndex]}%）`
                         }
                     }
                 },
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { precision: 0 }
-                    },
-                    x: {
-                        ticks: { font: { size: 13 } }
-                    }
+                    y: { beginAtZero: true, ticks: { precision: 0 } },
+                    x: { ticks: { font: { size: 13 } } }
                 }
             },
             plugins: [{
@@ -141,11 +154,10 @@ async function loadContributionChart() {
                     const { ctx } = chart;
                     chart.data.datasets.forEach((dataset, i) => {
                         chart.getDatasetMeta(i).data.forEach((bar, idx) => {
-                            const pct = percentages[idx];
                             ctx.fillStyle = '#444';
                             ctx.font = 'bold 12px sans-serif';
                             ctx.textAlign = 'center';
-                            ctx.fillText(`${pct}%`, bar.x, bar.y - 6);
+                            ctx.fillText(`${percentages[idx]}%`, bar.x, bar.y - 6);
                         });
                     });
                 }
@@ -156,23 +168,48 @@ async function loadContributionChart() {
     }
 }
 
+// ---- 事件綁定 ----
 const setupEventListeners = () => {
     const dashboardGrid = document.getElementById('dashboard-grid');
     if (dashboardGrid && !dashboardGrid.dataset.listenerAttached) {
         dashboardGrid.addEventListener('click', (e) => {
             const card = e.target.closest('.stat-card');
             if (!card || !card.dataset.target) return;
-
             const target = card.dataset.target;
-            if (target === 'bookings') {
-                window.location.hash = '#bookings';
-            } else if (target === 'rentals-rented') {
-                window.location.hash = '#rentals@rented'; // <-- NEW
-            } else if (target === 'rentals-due-today') {
-                window.location.hash = '#rentals@due_today'; // <-- NEW
-            }
+            if (target === 'bookings') window.location.hash = '#bookings';
+            else if (target === 'rentals-rented') window.location.hash = '#rentals@rented';
+            else if (target === 'rentals-due-today') window.location.hash = '#rentals@due_today';
+            else if (target === 'group-gatherings') window.location.hash = '#group-gatherings';
         });
         dashboardGrid.dataset.listenerAttached = 'true';
+    }
+
+    // 分頁切換
+    document.querySelectorAll('.activity-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.activity-tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentTab = btn.dataset.tab;
+            renderActivityFeed();
+        });
+    });
+
+    // 全部已讀
+    const markAllBtn = document.getElementById('btn-mark-all-read');
+    if (markAllBtn && !markAllBtn.dataset.listenerAttached) {
+        markAllBtn.addEventListener('click', async () => {
+            try {
+                markAllBtn.disabled = true;
+                await api.markAllActivitiesAsRead();
+                await renderActivityFeed();
+                ui.toast.success('已全部標示為已讀');
+            } catch {
+                ui.toast.error('操作失敗');
+            } finally {
+                markAllBtn.disabled = false;
+            }
+        });
+        markAllBtn.dataset.listenerAttached = 'true';
     }
 };
 
@@ -181,14 +218,20 @@ export const init = async (context, param) => {
     if (!page) return;
 
     const guestsEl = document.getElementById('stat-today-guests');
-    if (guestsEl) guestsEl.textContent = '讀取中...';
+    if (guestsEl) guestsEl.textContent = '...';
+
+    // 重置分頁狀態到未讀
+    currentTab = 'unread';
+    document.querySelectorAll('.activity-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === 'unread');
+    });
 
     try {
         const stats = await api.getDashboardStats();
         renderStats(stats);
         await Promise.all([
-            loadAndRenderActivities(),
-            loadContributionChart()
+            loadContributionChart(),
+            renderActivityFeed(),
         ]);
         setupEventListeners();
     } catch (error) {
