@@ -76,18 +76,17 @@ function renderTable() {
     if (!tbody) return;
 
     if (items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3">尚無職業資料。</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="2">尚無職業資料。</td></tr>';
         return;
     }
 
     tbody.innerHTML = items.map(item => {
         const iconHtml = item.icon_url
-            ? `<img src="${item.icon_url}" style="max-height: 1.5em; vertical-align: middle; border-radius: 4px;">`
-            : '-';
+            ? `<img src="${item.icon_url}" style="max-height: 1.2em; vertical-align: middle; border-radius: 4px; margin-right: 4px;">`
+            : '';
         return `
             <tr>
-                <td style="text-align:center;">${iconHtml}</td>
-                <td>${item.name}</td>
+                <td style="text-align:left;">${iconHtml}${item.name}</td>
                 <td><input type="number" class="class-contribution-value" data-id="${item.id}" value="${item.value}" style="width:100%; box-sizing:border-box;"></td>
             </tr>`;
     }).join('');

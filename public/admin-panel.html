@@ -323,26 +323,27 @@
                 此圖表數值為手動輸入的靜態展示資料，不會連動任何實際統計或紀錄。
             </p>
 
-            <div style="background:white; border-radius:10px; padding:1.5rem; box-shadow:0 2px 6px rgba(0,0,0,0.07); margin-bottom:1.5rem;">
-                <div style="position:relative; height:320px;">
-                    <canvas id="class-contribution-chart"></canvas>
+            <div class="class-contribution-layout">
+                <div style="background:white; border-radius:10px; padding:1.5rem; box-shadow:0 2px 6px rgba(0,0,0,0.07);">
+                    <div style="position:relative; height:320px;">
+                        <canvas id="class-contribution-chart"></canvas>
+                    </div>
+                    <p id="class-contribution-chart-empty" style="text-align:center; color:var(--text-light); display:none;">尚無職業資料，請先至「顧客管理 → 會員制度設定 → 職業管理」新增職業。</p>
                 </div>
-                <p id="class-contribution-chart-empty" style="text-align:center; color:var(--text-light); display:none;">尚無職業資料，請先至「顧客管理 → 會員制度設定 → 職業管理」新增職業。</p>
-            </div>
 
-            <div style="background:white; border-radius:10px; padding:1.5rem; box-shadow:0 2px 6px rgba(0,0,0,0.07);">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width:60px;">圖示</th>
-                            <th>職業</th>
-                            <th style="width:200px;">顯示數值</th>
-                        </tr>
-                    </thead>
-                    <tbody id="class-contribution-tbody"></tbody>
-                </table>
-                <div class="form-actions" style="margin-top:1rem;">
-                    <button id="btn-save-class-contribution" class="action-btn btn-save">儲存變更</button>
+                <div style="background:white; border-radius:10px; padding:1.2rem; box-shadow:0 2px 6px rgba(0,0,0,0.07);">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>職業</th>
+                                <th>數值</th>
+                            </tr>
+                        </thead>
+                        <tbody id="class-contribution-tbody"></tbody>
+                    </table>
+                    <div class="form-actions" style="margin-top:1rem;">
+                        <button id="btn-save-class-contribution" class="action-btn btn-save">儲存變更</button>
+                    </div>
                 </div>
             </div>
         </div>

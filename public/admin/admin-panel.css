@@ -315,6 +315,15 @@ td { font-size: 0.9rem; }
     .dashboard-layout { grid-template-columns: 1fr; }
     .dashboard-col-right { position: static; }
 }
+.class-contribution-layout {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+@media (max-width: 900px) {
+    .class-contribution-layout { grid-template-columns: 1fr; }
+}
 .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
 .stat-card {
     background-color: white;
