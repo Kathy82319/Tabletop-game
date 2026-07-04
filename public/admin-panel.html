@@ -324,14 +324,14 @@
             </p>
 
             <div class="class-contribution-layout">
-                <div style="background:white; border-radius:10px; padding:1.5rem; box-shadow:0 2px 6px rgba(0,0,0,0.07);">
-                    <div style="position:relative; height:320px;">
+                <div style="background:white; border-radius:10px; padding:1.5rem; box-shadow:0 2px 6px rgba(0,0,0,0.07); display:flex; flex-direction:column;">
+                    <div style="position:relative; flex:1; min-height:280px;">
                         <canvas id="class-contribution-chart"></canvas>
                     </div>
                     <p id="class-contribution-chart-empty" style="text-align:center; color:var(--text-light); display:none;">尚無職業資料，請先至「顧客管理 → 會員制度設定 → 職業管理」新增職業。</p>
                 </div>
 
-                <div style="background:white; border-radius:10px; padding:1.2rem; box-shadow:0 2px 6px rgba(0,0,0,0.07);">
+                <div style="background:white; border-radius:10px; padding:1.2rem; box-shadow:0 2px 6px rgba(0,0,0,0.07); display:flex; flex-direction:column;">
                     <table>
                         <thead>
                             <tr>
@@ -341,7 +341,7 @@
                         </thead>
                         <tbody id="class-contribution-tbody"></tbody>
                     </table>
-                    <div class="form-actions" style="margin-top:1rem;">
+                    <div class="form-actions" style="margin-top:auto; padding-top:1rem;">
                         <button id="btn-save-class-contribution" class="action-btn btn-save">儲存變更</button>
                     </div>
                 </div>

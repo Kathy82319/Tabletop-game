@@ -319,7 +319,7 @@ td { font-size: 0.9rem; }
     display: grid;
     grid-template-columns: 3fr 1fr;
     gap: 1.5rem;
-    align-items: start;
+    align-items: stretch;
 }
 @media (max-width: 900px) {
     .class-contribution-layout { grid-template-columns: 1fr; }
