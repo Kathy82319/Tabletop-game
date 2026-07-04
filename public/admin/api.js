@@ -76,7 +76,9 @@ bulkCreateGames: (data) => request('/api/admin/bulk-create-games', { method: 'PO
     getContributionHistory: () => request('/api/admin/contribution-history'),
     deleteContributionRecord: (contribution_id) => request('/api/admin/contribution-history', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contribution_id }) }),
     getContributionStats: () => request('/api/admin/contribution-stats'),
-    
+    getClassContribution: () => request('/api/admin/class-contribution'),
+    saveClassContribution: (data) => request('/api/admin/class-contribution', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+
     getAllNews: () => request('/api/admin/get-all-news'),
     createNews: (data) => request('/api/admin/create-news', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
     updateNews: (data) => request('/api/admin/update-news', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),

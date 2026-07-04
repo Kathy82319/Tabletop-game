@@ -22,6 +22,7 @@
             <a href="#rentals">桌遊租借</a>
             <a href="#bookings">訂位管理</a>
             <a href="#exp-history">經驗紀錄</a>
+            <a href="#class-contribution">職業貢獻度</a>
             <a href="#news">情報管理</a>
             <a href="#drafts">訊息草稿</a>
             <a href="#store-info">店家資訊</a>
@@ -306,6 +307,43 @@
                     </thead>
                     <tbody id="contrib-history-tbody"></tbody>
                 </table>
+            </div>
+        </div>
+
+        <div id="page-class-contribution" class="page">
+            <div class="page-header">
+                <h2>職業貢獻度</h2>
+                <label style="display:flex; align-items:center; gap:8px; font-size:0.9rem; font-weight:normal; cursor:pointer;">
+                    <input type="checkbox" id="class-contribution-toggle" style="width:auto;">
+                    顯示於前端「冒險者資料」頁面
+                </label>
+            </div>
+
+            <p style="color:var(--text-light); font-size:0.88rem; margin-top:-0.8rem;">
+                此圖表數值為手動輸入的靜態展示資料，不會連動任何實際統計或紀錄。
+            </p>
+
+            <div style="background:white; border-radius:10px; padding:1.5rem; box-shadow:0 2px 6px rgba(0,0,0,0.07); margin-bottom:1.5rem;">
+                <div style="position:relative; height:320px;">
+                    <canvas id="class-contribution-chart"></canvas>
+                </div>
+                <p id="class-contribution-chart-empty" style="text-align:center; color:var(--text-light); display:none;">尚無職業資料，請先至「顧客管理 → 會員制度設定 → 職業管理」新增職業。</p>
+            </div>
+
+            <div style="background:white; border-radius:10px; padding:1.5rem; box-shadow:0 2px 6px rgba(0,0,0,0.07);">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:60px;">圖示</th>
+                            <th>職業</th>
+                            <th style="width:200px;">顯示數值</th>
+                        </tr>
+                    </thead>
+                    <tbody id="class-contribution-tbody"></tbody>
+                </table>
+                <div class="form-actions" style="margin-top:1rem;">
+                    <button id="btn-save-class-contribution" class="action-btn btn-save">儲存變更</button>
+                </div>
             </div>
         </div>
 
