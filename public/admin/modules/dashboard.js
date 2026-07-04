@@ -12,6 +12,7 @@ const renderStats = (stats) => {
     updateText('stat-due-today', stats.due_today_rentals_count ?? 0);
     updateText('stat-pending-gatherings', stats.pending_gatherings_count ?? 0);
     updateText('stat-new-members', stats.new_members_this_month ?? 0);
+    updateText('stat-total-members', `共 ${stats.total_members ?? 0} 位會員`);
 };
 
 // ---- 動態類別判斷 ----
