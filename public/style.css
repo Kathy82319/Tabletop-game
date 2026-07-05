@@ -666,6 +666,7 @@ input[readonly] {
     right: 0;
     bottom: 0;
     height: 0%;
+    clip-path: polygon(50% 0%, 100% 22%, 100% 100%, 0% 100%, 0% 22%);
     transition: height 0.4s ease;
 }
 .hourglass-frame-image {
