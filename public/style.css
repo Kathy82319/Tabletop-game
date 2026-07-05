@@ -3742,19 +3742,6 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     margin-bottom: 8px;
     flex-wrap: wrap;
 }
-#gg-filter-date-range {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex: 1;
-    min-width: 0;
-}
-#gg-filter-date-range span {
-    flex-shrink: 0;
-    font-size: 0.82rem;
-    color: var(--color-text-secondary);
-}
-#gg-filter-bar input[type="date"],
 #gg-filter-bar input[type="text"] {
     flex: 1;
     min-width: 0;
@@ -3764,10 +3751,86 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     background: rgba(255,255,255,0.6);
     font-size: 0.82rem;
     color: var(--color-text-primary);
-    width: 100%;
 }
-#gg-filter-date-range input[type="date"] {
-    min-width: 120px;
+#gg-date-picker-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+#gg-date-picker-cal {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 200;
+    background: var(--color-bg-panel, #fff);
+    border: 1px solid rgba(184,134,11,0.4);
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    min-width: 252px;
+}
+.gg-cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.gg-cal-nav {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    color: var(--color-frame-gold);
+    font-size: 0.9rem;
+    line-height: 1;
+}
+.gg-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+.gg-cal-dow {
+    text-align: center;
+    font-size: 0.68rem;
+    color: var(--color-text-secondary);
+    padding: 2px 0 4px;
+}
+.gg-cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    background: none;
+    color: var(--color-text-primary);
+}
+.gg-cal-day:hover { background: rgba(184,134,11,0.18); }
+.gg-cal-day.gg-cal-start,
+.gg-cal-day.gg-cal-end {
+    background: var(--color-frame-gold);
+    color: #fff;
+    font-weight: 600;
+}
+.gg-cal-day.gg-cal-range {
+    background: rgba(184,134,11,0.2);
+    border-radius: 0;
+}
+.gg-cal-footer {
+    margin-top: 8px;
+    text-align: center;
+}
+.gg-cal-clear {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.78rem;
+    color: var(--color-text-secondary);
+    text-decoration: underline;
+    padding: 0;
 }
 .gg-filter-toggle {
     flex-shrink: 0;

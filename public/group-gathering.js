@@ -47,6 +47,7 @@ const GatherModule = (() => {
     let filterDateTo   = '';
     let filterGame = '';
     let filterBeginner = false;
+    let calYear = 0, calMonth = 0, calPickerOpen = false;
     function startCountdownTimer() {
         function tick() {
             document.querySelectorAll('.gg-countdown[data-deadline]').forEach(el => {
@@ -130,6 +131,114 @@ const GatherModule = (() => {
         }
         container.innerHTML = filtered.map(g => renderGatherCard(g)).join('');
         startCountdownTimer();
+    }
+
+    // ---- 日期區間選擇器 ----
+    function updateDateBtn() {
+        const btn = document.getElementById('gg-filter-date-btn');
+        if (!btn) return;
+        if (!filterDateFrom && !filterDateTo) {
+            btn.textContent = '日期';
+            btn.classList.remove('active');
+        } else {
+            const fmt = s => s ? s.slice(5).replace('-', '/') : '?';
+            btn.textContent = (filterDateFrom && filterDateTo && filterDateFrom !== filterDateTo)
+                ? `${fmt(filterDateFrom)}～${fmt(filterDateTo)}`
+                : fmt(filterDateFrom || filterDateTo);
+            btn.classList.add('active');
+        }
+    }
+
+    function renderCal() {
+        const cal = document.getElementById('gg-date-picker-cal');
+        if (!cal) return;
+        const mn = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+        const firstDow = new Date(calYear, calMonth, 1).getDay();
+        const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+        let html = `<div class="gg-cal-header">
+            <button class="gg-cal-nav" data-dir="-1">◀</button>
+            <span>${calYear}年 ${mn[calMonth]}</span>
+            <button class="gg-cal-nav" data-dir="1">▶</button>
+        </div><div class="gg-cal-grid">
+        <span class="gg-cal-dow">日</span><span class="gg-cal-dow">一</span>
+        <span class="gg-cal-dow">二</span><span class="gg-cal-dow">三</span>
+        <span class="gg-cal-dow">四</span><span class="gg-cal-dow">五</span>
+        <span class="gg-cal-dow">六</span>`;
+        for (let i = 0; i < firstDow; i++) html += '<span></span>';
+        for (let d = 1; d <= daysInMonth; d++) {
+            const ds = `${calYear}-${String(calMonth + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            let cls = 'gg-cal-day';
+            if (ds === filterDateFrom) cls += ' gg-cal-start';
+            if (ds === filterDateTo)   cls += ' gg-cal-end';
+            if (filterDateFrom && filterDateTo && ds > filterDateFrom && ds < filterDateTo) cls += ' gg-cal-range';
+            html += `<button class="${cls}" data-date="${ds}">${d}</button>`;
+        }
+        html += `</div>`;
+        if (filterDateFrom || filterDateTo) {
+            html += `<div class="gg-cal-footer"><button class="gg-cal-clear">清除日期</button></div>`;
+        }
+        cal.innerHTML = html;
+
+        cal.querySelectorAll('.gg-cal-nav').forEach(b => {
+            b.addEventListener('click', () => {
+                calMonth += parseInt(b.dataset.dir);
+                if (calMonth < 0)  { calMonth = 11; calYear--; }
+                if (calMonth > 11) { calMonth = 0;  calYear++; }
+                renderCal();
+            });
+        });
+        cal.querySelectorAll('.gg-cal-day').forEach(b => {
+            b.addEventListener('click', () => {
+                const date = b.dataset.date;
+                if (!filterDateFrom || (filterDateFrom && filterDateTo)) {
+                    filterDateFrom = date;
+                    filterDateTo = '';
+                } else {
+                    if (date < filterDateFrom) { filterDateTo = filterDateFrom; filterDateFrom = date; }
+                    else { filterDateTo = date; }
+                }
+                updateDateBtn();
+                renderCal();
+                applyFilters();
+                if (filterDateFrom && filterDateTo) {
+                    setTimeout(() => {
+                        calPickerOpen = false;
+                        const c = document.getElementById('gg-date-picker-cal');
+                        if (c) c.hidden = true;
+                    }, 150);
+                }
+            });
+        });
+        const clrBtn = cal.querySelector('.gg-cal-clear');
+        if (clrBtn) {
+            clrBtn.addEventListener('click', () => {
+                filterDateFrom = '';
+                filterDateTo = '';
+                updateDateBtn();
+                renderCal();
+                applyFilters();
+            });
+        }
+    }
+
+    function initDatePicker() {
+        const btn = document.getElementById('gg-filter-date-btn');
+        const cal = document.getElementById('gg-date-picker-cal');
+        if (!btn || !cal || btn.dataset.l) return;
+        btn.dataset.l = '1';
+        const now = new Date();
+        calYear = now.getFullYear();
+        calMonth = now.getMonth();
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            calPickerOpen = !calPickerOpen;
+            if (calPickerOpen) { renderCal(); cal.hidden = false; }
+            else { cal.hidden = true; }
+        });
+        document.addEventListener('click', () => {
+            if (calPickerOpen) { calPickerOpen = false; cal.hidden = true; }
+        });
+        cal.addEventListener('click', e => e.stopPropagation());
     }
 
     async function loadList() {
@@ -865,16 +974,7 @@ const GatherModule = (() => {
             });
         }
 
-        const dateFromInput = document.getElementById('gg-filter-date-from');
-        if (dateFromInput && !dateFromInput.dataset.l) {
-            dateFromInput.dataset.l = '1';
-            dateFromInput.addEventListener('change', () => { filterDateFrom = dateFromInput.value; applyFilters(); });
-        }
-        const dateToInput = document.getElementById('gg-filter-date-to');
-        if (dateToInput && !dateToInput.dataset.l) {
-            dateToInput.dataset.l = '1';
-            dateToInput.addEventListener('change', () => { filterDateTo = dateToInput.value; applyFilters(); });
-        }
+        initDatePicker();
         const gameInput = document.getElementById('gg-filter-game');
         if (gameInput && !gameInput.dataset.l) {
             gameInput.dataset.l = '1';
