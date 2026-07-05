@@ -87,7 +87,7 @@ function renderTable() {
         return `
             <tr>
                 <td style="text-align:left;">${iconHtml}${item.name}</td>
-                <td><input type="number" class="class-contribution-value" data-id="${item.id}" value="${item.value}" style="width:100%; box-sizing:border-box;"></td>
+                <td><input type="number" class="class-contribution-value" data-id="${item.id}" value="${item.value}" style="width:80px; box-sizing:border-box;"></td>
             </tr>`;
     }).join('');
 
