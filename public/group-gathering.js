@@ -43,7 +43,8 @@ const GatherModule = (() => {
 
     let countdownInterval = null;
     let allGatherings = [];
-    let filterDate = '';
+    let filterDateFrom = '';
+    let filterDateTo   = '';
     let filterGame = '';
     let filterBeginner = false;
     function startCountdownTimer() {
@@ -119,7 +120,8 @@ const GatherModule = (() => {
         const container = document.getElementById('gather-list-container');
         if (!container) return;
         let filtered = allGatherings;
-        if (filterDate) filtered = filtered.filter(g => g.event_date === filterDate);
+        if (filterDateFrom) filtered = filtered.filter(g => g.event_date >= filterDateFrom);
+        if (filterDateTo)   filtered = filtered.filter(g => g.event_date <= filterDateTo);
         if (filterGame) filtered = filtered.filter(g => g.games.some(gm => gm.name.includes(filterGame)));
         if (filterBeginner) filtered = filtered.filter(g => g.games.some(gm => gm.beginner_friendly));
         if (filtered.length === 0) {
@@ -863,10 +865,15 @@ const GatherModule = (() => {
             });
         }
 
-        const dateInput = document.getElementById('gg-filter-date');
-        if (dateInput && !dateInput.dataset.l) {
-            dateInput.dataset.l = '1';
-            dateInput.addEventListener('input', () => { filterDate = dateInput.value; applyFilters(); });
+        const dateFromInput = document.getElementById('gg-filter-date-from');
+        if (dateFromInput && !dateFromInput.dataset.l) {
+            dateFromInput.dataset.l = '1';
+            dateFromInput.addEventListener('change', () => { filterDateFrom = dateFromInput.value; applyFilters(); });
+        }
+        const dateToInput = document.getElementById('gg-filter-date-to');
+        if (dateToInput && !dateToInput.dataset.l) {
+            dateToInput.dataset.l = '1';
+            dateToInput.addEventListener('change', () => { filterDateTo = dateToInput.value; applyFilters(); });
         }
         const gameInput = document.getElementById('gg-filter-game');
         if (gameInput && !gameInput.dataset.l) {

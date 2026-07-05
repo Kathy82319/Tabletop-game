@@ -3742,7 +3742,20 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     margin-bottom: 8px;
     flex-wrap: wrap;
 }
-#gg-filter-bar input {
+#gg-filter-date-range {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+#gg-filter-date-range span {
+    flex-shrink: 0;
+    font-size: 0.82rem;
+    color: var(--color-text-secondary);
+}
+#gg-filter-bar input[type="date"],
+#gg-filter-bar input[type="text"] {
     flex: 1;
     min-width: 0;
     padding: 5px 8px;
@@ -3751,6 +3764,10 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     background: rgba(255,255,255,0.6);
     font-size: 0.82rem;
     color: var(--color-text-primary);
+    width: 100%;
+}
+#gg-filter-date-range input[type="date"] {
+    min-width: 120px;
 }
 .gg-filter-toggle {
     flex-shrink: 0;
