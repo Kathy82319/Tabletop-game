@@ -651,12 +651,6 @@ input[readonly] {
     position: relative;
     width: 20px;
     height: 31px;
-    background-image: url('hourglass-frame.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    image-rendering: pixelated;
-    isolation: isolate;
 }
 .hourglass-fill-track {
     position: absolute;
@@ -664,6 +658,7 @@ input[readonly] {
     right: 20%;
     top: 13%;
     bottom: 15%;
+    overflow: hidden;
 }
 .hourglass-fill {
     position: absolute;
@@ -671,8 +666,17 @@ input[readonly] {
     right: 0;
     bottom: 0;
     height: 0%;
-    mix-blend-mode: multiply;
     transition: height 0.4s ease;
+}
+.hourglass-frame-image {
+    position: absolute;
+    inset: 0;
+    background-image: url('hourglass-frame.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    image-rendering: pixelated;
+    pointer-events: none;
 }
 .hourglass-item-value {
     font-size: 0.62em;

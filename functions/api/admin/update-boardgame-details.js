@@ -44,10 +44,18 @@ export async function onRequest(context) {
   
     const db = context.env.DB;
     
+    const barcode = body.barcode ? String(body.barcode).trim() : null;
+    if (barcode) {
+        const dup = await db.prepare('SELECT game_id FROM BoardGames WHERE barcode = ? AND game_id != ?').bind(barcode, body.gameId).first();
+        if (dup) {
+            return new Response(JSON.stringify({ error: `此條碼已被「${dup.game_id}」使用，請確認條碼是否重複。` }), { status: 400 });
+        }
+    }
+
     const stmt = db.prepare(
       `UPDATE BoardGames SET
-         name = ?, description = ?, image_url = ?, image_url_2 = ?, image_url_3 = ?, tags = ?,
-         min_players = ?, max_players = ?, difficulty = ?, play_time = ?,  
+         name = ?, barcode = ?, description = ?, image_url = ?, image_url_2 = ?, image_url_3 = ?, tags = ?,
+         min_players = ?, max_players = ?, difficulty = ?, play_time = ?,
          total_stock = ?, for_rent_stock = ?, for_sale_stock = ?,
          sale_price = ?, rent_price = ?, deposit = ?, late_fee_per_day = ?,
          is_visible = ?, supplementary_info = ?
@@ -56,7 +64,7 @@ export async function onRequest(context) {
     const is_visible = Number(body.total_stock) > 0 ? 1 : 0;
 
     const result = await stmt.bind(
-        body.name, body.description || '', body.image_url || '', body.image_url_2 || '', body.image_url_3 || '', body.tags || '',
+        body.name, barcode, body.description || '', body.image_url || '', body.image_url_2 || '', body.image_url_3 || '', body.tags || '',
         Number(body.min_players), Number(body.max_players), body.difficulty,
         body.play_time || '30~90分鐘',
         Number(body.total_stock), Number(body.for_rent_stock), Number(body.for_sale_stock) || 0,

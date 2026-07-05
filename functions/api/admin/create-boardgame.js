@@ -32,19 +32,27 @@ export async function onRequest(context) {
 
         const is_visible = total_stock > 0 ? 1 : 0;
 
+        const barcode = body.barcode ? String(body.barcode).trim() : null;
+        if (barcode) {
+            const dup = await db.prepare('SELECT game_id FROM BoardGames WHERE barcode = ?').bind(barcode).first();
+            if (dup) {
+                return new Response(JSON.stringify({ error: `此條碼已被「${dup.game_id}」使用，請確認條碼是否重複。` }), { status: 400 });
+            }
+        }
+
         const stmt = db.prepare(
           `INSERT INTO BoardGames (
-             game_id, name, description, image_url, image_url_2, image_url_3, tags,
+             game_id, name, barcode, description, image_url, image_url_2, image_url_3, tags,
              min_players, max_players, difficulty, play_time,
              total_stock, for_rent_stock, for_sale_stock,
              sale_price, rent_price, deposit, late_fee_per_day,
              is_visible, supplementary_info, display_order
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 999)`
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 999)`
         );
 
         await stmt.bind(
             newGameId,
-            body.name, body.description || '', body.image_url || '', body.image_url_2 || '', body.image_url_3 || '', body.tags || '',
+            body.name, barcode, body.description || '', body.image_url || '', body.image_url_2 || '', body.image_url_3 || '', body.tags || '',
             Number(body.min_players) || 1, Number(body.max_players) || 4, body.difficulty || '普通',
             body.play_time || '30~90分鐘',
             total_stock, for_rent_stock, for_sale_stock,

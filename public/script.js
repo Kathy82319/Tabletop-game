@@ -507,6 +507,7 @@ function renderClassContribution(data) {
                     <div class="hourglass-fill-track">
                         <div class="hourglass-fill" style="height:${percent}%; background-color:${color};"></div>
                     </div>
+                    <div class="hourglass-frame-image"></div>
                 </div>
                 <div class="hourglass-item-value">${item.value || 0} pts</div>
             </div>`;

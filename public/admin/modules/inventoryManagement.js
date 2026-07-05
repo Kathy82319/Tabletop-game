@@ -429,6 +429,7 @@ function renderGameList(games) {
 function gameMatchesTerm(game, term) {
     const t = term.toLowerCase();
     if ((game.name || '').toLowerCase().includes(t)) return true;
+    if ((game.barcode || '').toLowerCase().includes(t)) return true;
     if (Number(game.for_sale_stock) > 0 && '販售'.includes(t)) return true;
     if (Number(game.for_rent_stock) > 0 && '可租借'.includes(t)) return true;
     return (game.tags || '').split(',').some(tag => tag.trim().toLowerCase().includes(t) && tag.trim() !== '');
@@ -522,6 +523,7 @@ function openEditGameModal(gameId) {
         document.getElementById('edit-game-id-display').closest('.form-group').style.display = 'block';
 
         document.getElementById('edit-game-name').value = game.name;
+        document.getElementById('edit-game-barcode').value = game.barcode || '';
         document.getElementById('edit-game-image').value = game.image_url || '';
         document.getElementById('edit-game-image-2').value = game.image_url_2 || '';
         document.getElementById('edit-game-image-3').value = game.image_url_3 || '';
@@ -582,6 +584,7 @@ async function handleEditGameFormSubmit(e) {
 
     const updatedData = {
         name: document.getElementById('edit-game-name').value,
+        barcode: document.getElementById('edit-game-barcode').value.trim(),
         tags: document.getElementById('edit-game-tags').value,
         image_url: document.getElementById('edit-game-image').value,
         image_url_2: document.getElementById('edit-game-image-2').value,
