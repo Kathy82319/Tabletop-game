@@ -897,24 +897,42 @@ const GatherModule = (() => {
     }
 
     async function renderMyPage(organizedEl, joinedEl) {
+        if (!organizedEl || !joinedEl) return;
         organizedEl.innerHTML = '<p style="text-align:center;">載入中...</p>';
-        joinedEl.innerHTML = '';
+        joinedEl.innerHTML    = '<p style="text-align:center;">載入中...</p>';
+
+        let organized = [], joined = [];
         try {
             const res = await fetch('/api/group-gatherings/my', { headers: authHeaders() });
-            if (!res.ok) { organizedEl.innerHTML = '<p class="gg-empty">請先登入</p>'; return; }
-            const { organized, joined } = await res.json();
+            if (!res.ok) throw new Error('auth');
+            const data = await res.json();
+            organized = data.organized || [];
+            joined    = data.joined    || [];
+        } catch (err) {
+            const msg = err.message === 'auth'
+                ? '<p class="gg-empty">請先登入</p>'
+                : '<p class="gg-empty" style="color:red;">載入失敗</p>';
+            organizedEl.innerHTML = msg;
+            joinedEl.innerHTML    = msg;
+            return;
+        }
 
-            const pastOrgToggle     = document.getElementById('my-gatherings-past-organized-toggle');
-            const pastOrgContainer  = document.getElementById('my-gatherings-past-organized-container');
-            const pastJoinToggle    = document.getElementById('my-gatherings-past-joined-toggle');
-            const pastJoinContainer = document.getElementById('my-gatherings-past-joined-container');
+        const pastOrgToggle     = document.getElementById('my-gatherings-past-organized-toggle');
+        const pastOrgContainer  = document.getElementById('my-gatherings-past-organized-container');
+        const pastJoinToggle    = document.getElementById('my-gatherings-past-joined-toggle');
+        const pastJoinContainer = document.getElementById('my-gatherings-past-joined-container');
 
+        try {
             renderMySection(organizedEl, pastOrgToggle, pastOrgContainer, organized, '尚未發起過揪團');
-            renderMySection(joinedEl, pastJoinToggle, pastJoinContainer, joined, '尚未報名過揪團');
-            startCountdownTimer();
         } catch {
             organizedEl.innerHTML = '<p class="gg-empty" style="color:red;">載入失敗</p>';
         }
+        try {
+            renderMySection(joinedEl, pastJoinToggle, pastJoinContainer, joined, '尚未報名過揪團');
+        } catch {
+            joinedEl.innerHTML = '<p class="gg-empty" style="color:red;">載入失敗</p>';
+        }
+        startCountdownTimer();
     }
 
     return { init, renderMyPage, showDetail };
