@@ -53,11 +53,11 @@ const GatherModule = (() => {
                 const diff = deadline - Date.now();
                 if (diff <= 0) {
                     const card = el.closest('.gg-card');
-                    if (card) {
+                    const listContainer = document.getElementById('gather-list-container');
+                    if (card && listContainer && listContainer.contains(card)) {
                         card.remove();
-                        const container = document.getElementById('gather-list-container');
-                        if (container && container.querySelectorAll('.gg-card').length === 0) {
-                            container.innerHTML = '<p class="gg-empty">目前沒有開放中的揪團，來發起第一個吧！</p>';
+                        if (listContainer.querySelectorAll('.gg-card').length === 0) {
+                            listContainer.innerHTML = '<p class="gg-empty">目前沒有開放中的揪團，來發起第一個吧！</p>';
                         }
                     }
                     return;
