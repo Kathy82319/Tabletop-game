@@ -3732,6 +3732,10 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     flex-direction: column;
     flex: 1;
 }
+#gather-my-view {
+    flex: 1;
+    overflow-y: auto;
+}
 #gg-filter-bar {
     display: flex;
     gap: 6px;
@@ -3883,7 +3887,6 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     border-radius: 12px;
     font-size: 0.78rem;
     font-weight: bold;
-    margin-right: 4px;
 }
 .gg-status-open    { background: #d4edda; color: #155724; }
 .gg-status-closed  { background: #fff3cd; color: #856404; }

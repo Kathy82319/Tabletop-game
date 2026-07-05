@@ -8,7 +8,7 @@ let allGames = [];
 let selectedRentalGames = new Map();
 let rentalSearchChips = [];
 
-let rentalListTbody, rentalSearchInput, rentalStatusFilter,
+let rentalListTbody, rentalSearchInput, rentalStatusFilter, rentalBarcodeScanInput,
     editRentalModal, editRentalForm, sortDueDateBtn,
     createRentalModal, createRentalForm;
 
@@ -20,7 +20,8 @@ function rentalMatchesTerm(rental, term) {
     const t = term.toLowerCase();
     return (rental.game_name || '').toLowerCase().includes(t) ||
            (rental.nickname || '').toLowerCase().includes(t) ||
-           (rental.line_display_name || '').toLowerCase().includes(t);
+           (rental.line_display_name || '').toLowerCase().includes(t) ||
+           (rental.barcode || '').toLowerCase().includes(t);
 }
 
 function renderRentalSearchChips() {
@@ -47,6 +48,29 @@ function removeRentalSearchChip(term) {
     rentalSearchChips = rentalSearchChips.filter(c => c !== term);
     renderRentalSearchChips();
     applyFiltersAndRender();
+}
+
+function handleRentalBarcodeScan(rawValue) {
+    const value = rawValue.trim();
+    if (!value) return;
+
+    rentalSearchChips = [];
+    rentalSearchInput.value = '';
+
+    const rentedBtn = rentalStatusFilter.querySelector('button[data-filter="rented"]');
+    if (rentedBtn) {
+        rentalStatusFilter.querySelector('.active')?.classList.remove('active');
+        rentedBtn.classList.add('active');
+    }
+
+    addRentalSearchChip(value);
+
+    const matches = allRentals.filter(r =>
+        (r.barcode || '') === value && ['rented', 'due_today', 'overdue'].includes(r.derived_status)
+    );
+    if (matches.length === 0) {
+        ui.toast.info('此條碼目前沒有尚未歸還的租借紀錄');
+    }
 }
 
 function getStatusClass(status) {
@@ -425,6 +449,14 @@ function setupEventListeners() {
     const page = document.getElementById('page-rentals');
     if (page.dataset.initialized) return;
 
+    rentalBarcodeScanInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleRentalBarcodeScan(rentalBarcodeScanInput.value);
+            rentalBarcodeScanInput.value = '';
+        }
+    });
+
     rentalSearchInput.addEventListener('input', applyFiltersAndRender);
 
     rentalSearchInput.addEventListener('keydown', (e) => {
@@ -547,6 +579,7 @@ export const init = async (context, initialStatus) => {
     rentalListTbody = page.querySelector('#rental-list-tbody');
     rentalSearchInput = page.querySelector('#rental-search-input');
     rentalStatusFilter = page.querySelector('#rental-status-filter');
+    rentalBarcodeScanInput = page.querySelector('#rental-barcode-scan-input');
     editRentalModal = document.getElementById('edit-rental-modal');
     editRentalForm = document.getElementById('edit-rental-form');
 

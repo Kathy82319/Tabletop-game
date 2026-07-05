@@ -17,7 +17,7 @@ export async function onRequest(context) {
         r.late_fee_override,
         r.late_fee_per_day,  -- <--- 新增這一行，取得該筆租借設定的逾期費
         u.line_display_name, u.nickname,
-        b.name as game_name
+        b.name as game_name, b.barcode as barcode
       FROM Rentals AS r
       LEFT JOIN Users AS u ON r.user_id = u.user_id
       LEFT JOIN BoardGames AS b ON r.game_id = b.game_id

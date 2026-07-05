@@ -502,6 +502,8 @@ const GatherModule = (() => {
             ? `<p class="gg-empty">${emptyMsg}</p>`
             : active.map(g => renderGatherCard(g, true)).join('');
 
+        if (!pastToggleEl || !pastContainerEl) return;
+
         if (past.length > 0) {
             pastToggleEl.style.display = 'block';
             pastContainerEl.innerHTML = past.map(g => renderGatherCard(g, true)).join('');
@@ -522,7 +524,7 @@ const GatherModule = (() => {
     async function showMyGatherings() {
         const mainView = document.getElementById('gather-main-view');
         const myView = document.getElementById('gather-my-view');
-        if (!myView) return;
+        if (!mainView || !myView) return;
 
         mainView.style.display = 'none';
         myView.style.display = 'block';
@@ -901,12 +903,14 @@ const GatherModule = (() => {
             const res = await fetch('/api/group-gatherings/my', { headers: authHeaders() });
             if (!res.ok) { organizedEl.innerHTML = '<p class="gg-empty">請先登入</p>'; return; }
             const { organized, joined } = await res.json();
-            organizedEl.innerHTML = organized.length === 0
-                ? '<p class="gg-empty">尚未發起過揪團</p>'
-                : organized.map(g => renderGatherCard(g, true)).join('');
-            joinedEl.innerHTML = joined.length === 0
-                ? '<p class="gg-empty">尚未報名過揪團</p>'
-                : joined.map(g => renderGatherCard(g, true)).join('');
+
+            const pastOrgToggle     = document.getElementById('my-gatherings-past-organized-toggle');
+            const pastOrgContainer  = document.getElementById('my-gatherings-past-organized-container');
+            const pastJoinToggle    = document.getElementById('my-gatherings-past-joined-toggle');
+            const pastJoinContainer = document.getElementById('my-gatherings-past-joined-container');
+
+            renderMySection(organizedEl, pastOrgToggle, pastOrgContainer, organized, '尚未發起過揪團');
+            renderMySection(joinedEl, pastJoinToggle, pastJoinContainer, joined, '尚未報名過揪團');
             startCountdownTimer();
         } catch {
             organizedEl.innerHTML = '<p class="gg-empty" style="color:red;">載入失敗</p>';
