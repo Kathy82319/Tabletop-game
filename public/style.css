@@ -620,35 +620,39 @@ input[readonly] {
 }
 .profile-contribution-list {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 16px;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: 4px;
 }
 .hourglass-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 64px;
+    flex: 1;
+    min-width: 0;
 }
 .hourglass-item-label {
-    font-size: 0.82em;
+    font-size: 0.62em;
     color: #444;
     text-align: center;
     white-space: nowrap;
-    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    margin-bottom: 2px;
 }
 .hourglass-item-icon {
-    height: 1.1em;
+    height: 1em;
     vertical-align: middle;
-    margin-right: 2px;
+    margin-right: 1px;
     border-radius: 2px;
 }
 .hourglass-frame {
     position: relative;
-    width: 40px;
-    height: 56px;
+    width: 18px;
+    height: 26px;
     background-color: rgba(184, 134, 11, 0.08);
-    border: 2px solid var(--color-frame-gold, #b8860b);
+    border: 1.5px solid var(--color-frame-gold, #b8860b);
     clip-path: polygon(0% 0%, 100% 0%, 100% 10%, 54% 48%, 100% 90%, 100% 100%, 0% 100%, 0% 90%, 46% 48%, 0% 10%);
     overflow: hidden;
 }
@@ -661,9 +665,10 @@ input[readonly] {
     transition: height 0.4s ease;
 }
 .hourglass-item-value {
-    font-size: 0.8em;
+    font-size: 0.62em;
     color: #666;
-    margin-top: 4px;
+    margin-top: 2px;
+    white-space: nowrap;
 }
 
 /* --- 【新增/修改】冒險者頁面精緻化樣式 --- */
