@@ -492,6 +492,33 @@ const GatherModule = (() => {
     }
 
     // ---- 我的揪團 ----
+    const PAST_STATUSES = new Set(['approved', 'failed', 'cancelled']);
+
+    function renderMySection(activeEl, pastToggleEl, pastContainerEl, list, emptyMsg) {
+        const active = list.filter(g => !PAST_STATUSES.has(g.status));
+        const past   = list.filter(g =>  PAST_STATUSES.has(g.status));
+
+        activeEl.innerHTML = active.length === 0
+            ? `<p class="gg-empty">${emptyMsg}</p>`
+            : active.map(g => renderGatherCard(g, true)).join('');
+
+        if (past.length > 0) {
+            pastToggleEl.style.display = 'block';
+            pastContainerEl.innerHTML = past.map(g => renderGatherCard(g, true)).join('');
+            if (!pastToggleEl.dataset.l) {
+                pastToggleEl.dataset.l = '1';
+                pastToggleEl.addEventListener('click', () => {
+                    const open = pastContainerEl.style.display === 'flex';
+                    pastContainerEl.style.display = open ? 'none' : 'flex';
+                    pastToggleEl.textContent = open ? '顯示過往揪團 ▾' : '收起過往揪團 ▴';
+                });
+            }
+        } else {
+            pastToggleEl.style.display = 'none';
+            pastContainerEl.style.display = 'none';
+        }
+    }
+
     async function showMyGatherings() {
         const mainView = document.getElementById('gather-main-view');
         const myView = document.getElementById('gather-my-view');
@@ -500,8 +527,13 @@ const GatherModule = (() => {
         mainView.style.display = 'none';
         myView.style.display = 'block';
 
-        const organizedEl = document.getElementById('gather-my-organized-container');
-        const joinedEl = document.getElementById('gather-my-joined-container');
+        const organizedEl        = document.getElementById('gather-my-organized-container');
+        const joinedEl           = document.getElementById('gather-my-joined-container');
+        const pastOrgToggle      = document.getElementById('gg-my-past-organized-toggle');
+        const pastOrgContainer   = document.getElementById('gg-my-past-organized-container');
+        const pastJoinToggle     = document.getElementById('gg-my-past-joined-toggle');
+        const pastJoinContainer  = document.getElementById('gg-my-past-joined-container');
+
         organizedEl.innerHTML = '<p style="text-align:center;">載入中...</p>';
         joinedEl.innerHTML = '<p style="text-align:center;">載入中...</p>';
 
@@ -514,13 +546,8 @@ const GatherModule = (() => {
             }
             const { organized, joined } = await res.json();
 
-            organizedEl.innerHTML = organized.length === 0
-                ? '<p class="gg-empty">尚未發起過揪團</p>'
-                : organized.map(g => renderGatherCard(g, true)).join('');
-
-            joinedEl.innerHTML = joined.length === 0
-                ? '<p class="gg-empty">尚未報名過揪團</p>'
-                : joined.map(g => renderGatherCard(g, true)).join('');
+            renderMySection(organizedEl, pastOrgToggle, pastOrgContainer, organized, '尚未發起過揪團');
+            renderMySection(joinedEl, pastJoinToggle, pastJoinContainer, joined, '尚未報名過揪團');
         } catch {
             organizedEl.innerHTML = '<p class="gg-empty" style="color:red;">載入失敗</p>';
             joinedEl.innerHTML = '';
