@@ -590,6 +590,82 @@ input[readonly] {
     font-family: var(--font-primary);
 }
 
+/* EXP 分段式讀條 */
+.exp-bar-row {
+    margin-top: 6px;
+    gap: 8px;
+}
+.exp-bar {
+    display: flex;
+    gap: 3px;
+    flex: 1;
+}
+.exp-bar-segment {
+    flex: 1;
+    height: 10px;
+    background-color: #EFEBE9;
+    border: 1px solid #D7CCC8;
+    border-radius: 2px;
+}
+.exp-bar-segment.filled {
+    background-color: #4CAF93;
+    border-color: #3d8f77;
+}
+
+/* 職業貢獻度 (沙漏) */
+.profile-contribution-title {
+    font-weight: bold;
+    color: #444;
+    margin-bottom: 12px;
+}
+.profile-contribution-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+}
+.hourglass-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 64px;
+}
+.hourglass-item-label {
+    font-size: 0.82em;
+    color: #444;
+    text-align: center;
+    white-space: nowrap;
+    margin-bottom: 4px;
+}
+.hourglass-item-icon {
+    height: 1.1em;
+    vertical-align: middle;
+    margin-right: 2px;
+    border-radius: 2px;
+}
+.hourglass-frame {
+    position: relative;
+    width: 40px;
+    height: 56px;
+    background-color: rgba(184, 134, 11, 0.08);
+    border: 2px solid var(--color-frame-gold, #b8860b);
+    clip-path: polygon(0% 0%, 100% 0%, 100% 10%, 54% 48%, 100% 90%, 100% 100%, 0% 100%, 0% 90%, 46% 48%, 0% 10%);
+    overflow: hidden;
+}
+.hourglass-fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 0%;
+    transition: height 0.4s ease;
+}
+.hourglass-item-value {
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 4px;
+}
+
 /* --- 【新增/修改】冒險者頁面精緻化樣式 --- */
 
 /* 1. 解決標籤和標題上下置中對齊問題 */

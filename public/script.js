@@ -12,7 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     const myLiffId = "2008076323-GN1e7naW";
     let userProfile = null;
-    let gameData = {}; 
+    let gameData = {};
+    let classContributionData = null;
     const appContent = document.getElementById('app-content');
     const pageTemplates = document.getElementById('page-templates');
     const tabBar = document.getElementById('tab-bar');
@@ -340,8 +341,12 @@ async function initializeProfilePage() {
     }
 
     try {
-        const userData = await fetchGameData(true); 
+        const [userData] = await Promise.all([
+            fetchGameData(true),
+            fetchClassContribution()
+        ]);
         updateProfileDisplay(userData);
+        renderClassContribution(classContributionData);
     } catch (error) {
         console.error("無法更新個人資料畫面:", error);
         if (displayNameElement) displayNameElement.textContent = '資料載入失敗';
@@ -370,6 +375,19 @@ async function initializeProfilePage() {
         }
     }
 
+    async function fetchClassContribution() {
+        try {
+            const response = await fetch('/api/get-class-contribution');
+            if (!response.ok) throw new Error('無法取得職業貢獻度資料');
+            classContributionData = await response.json();
+            return classContributionData;
+        } catch (error) {
+            console.error('呼叫職業貢獻度 API 失敗:', error);
+            classContributionData = null;
+            return null;
+        }
+    }
+
 function updateProfileDisplay(data) {
     if (!data) return;
     
@@ -385,8 +403,17 @@ function updateProfileDisplay(data) {
     const perkText = data.perk && data.perk !== '無' && data.perk !== '無特殊優惠' ? `(${data.perk})` : '';
     document.getElementById('user-perk-text').textContent = perkText;
     
+    const expToNextLevel = data.expToNextLevel || 10;
     document.getElementById('user-level').textContent = data.level;
-    document.getElementById('user-exp').textContent = `${data.current_exp} / 10`;
+    document.getElementById('user-exp').textContent = `${data.current_exp} / ${expToNextLevel}`;
+
+    const expBarEl = document.getElementById('exp-bar');
+    if (expBarEl) {
+        const filled = Math.max(0, Math.min(expToNextLevel, data.current_exp || 0));
+        expBarEl.innerHTML = Array.from({ length: expToNextLevel }, (_, i) =>
+            `<span class="exp-bar-segment${i < filled ? ' filled' : ''}"></span>`
+        ).join('');
+    }
 
     if (data.class_icon_url && classIconEl && overlayEl) {
         classIconEl.src = data.class_icon_url; 
@@ -447,6 +474,41 @@ function updateProfileDisplay(data) {
         document.getElementById('user-equipment').innerHTML = data.equipment || '無';
         document.getElementById('user-equipment-desc').innerHTML = data.equipment_description || '無';
     }
+}
+
+function renderClassContribution(data) {
+    const section = document.getElementById('profile-contribution-section');
+    const divider = document.getElementById('profile-contribution-divider');
+    const list = document.getElementById('profile-contribution-list');
+    if (!section || !list) return;
+
+    const items = (data && data.showOnProfile && Array.isArray(data.items)) ? data.items : [];
+
+    if (items.length === 0) {
+        section.style.display = 'none';
+        if (divider) divider.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+    if (divider) divider.style.display = 'block';
+
+    const colors = ['#4e79a7', '#f28e2b', '#e15759', '#76b7b2', '#59a14f', '#edc948', '#b07aa1', '#ff9da7'];
+    const maxValue = Math.max(1, ...items.map(item => item.value || 0));
+
+    list.innerHTML = items.map((item, i) => {
+        const icon = item.icon_url ? `<img src="${item.icon_url}" class="hourglass-item-icon">` : '';
+        const percent = Math.round(((item.value || 0) / maxValue) * 100);
+        const color = colors[i % colors.length];
+        return `
+            <div class="hourglass-item">
+                <div class="hourglass-item-label">${icon}${item.name}</div>
+                <div class="hourglass-frame">
+                    <div class="hourglass-fill" style="height:${percent}%; background-color:${color};"></div>
+                </div>
+                <div class="hourglass-item-value">${item.value || 0} pts</div>
+            </div>`;
+    }).join('');
 }
 
 window.showAssetPopover = function(name, desc) {

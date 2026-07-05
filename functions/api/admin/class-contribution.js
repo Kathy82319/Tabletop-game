@@ -7,7 +7,7 @@ export async function onRequest(context) {
         if (request.method === 'GET') {
             const [{ results: items }, storeInfo] = await Promise.all([
                 db.prepare(
-                    `SELECT ga.id, ga.name, ga.icon_url, COALESCE(cc.value, 0) AS value
+                    `SELECT ga.id, ga.name, ga.icon_url, COALESCE(cc.value, 0) AS value, COALESCE(cc.is_visible, 1) AS is_visible
                      FROM GameAssets ga
                      LEFT JOIN ClassContributionDisplay cc ON cc.class_asset_id = ga.id
                      WHERE ga.type = 'class'
@@ -34,10 +34,10 @@ export async function onRequest(context) {
                     .bind(showOnProfile ? 1 : 0),
                 ...items.map(item =>
                     db.prepare(
-                        `INSERT INTO ClassContributionDisplay (class_asset_id, value, updated_at)
-                         VALUES (?, ?, CURRENT_TIMESTAMP)
-                         ON CONFLICT(class_asset_id) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP`
-                    ).bind(item.id, Number(item.value) || 0)
+                        `INSERT INTO ClassContributionDisplay (class_asset_id, value, is_visible, updated_at)
+                         VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                         ON CONFLICT(class_asset_id) DO UPDATE SET value = excluded.value, is_visible = excluded.is_visible, updated_at = CURRENT_TIMESTAMP`
+                    ).bind(item.id, Number(item.value) || 0, item.isVisible ? 1 : 0)
                 )
             ];
 

@@ -76,7 +76,7 @@ function renderTable() {
     if (!tbody) return;
 
     if (items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="2">尚無職業資料。</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3">尚無職業資料。</td></tr>';
         return;
     }
 
@@ -84,10 +84,12 @@ function renderTable() {
         const iconHtml = item.icon_url
             ? `<img src="${item.icon_url}" style="max-height: 1.2em; vertical-align: middle; border-radius: 4px; margin-right: 4px;">`
             : '';
+        const checked = item.is_visible ? 'checked' : '';
         return `
             <tr>
                 <td style="text-align:left;">${iconHtml}${item.name}</td>
                 <td><input type="number" class="class-contribution-value" data-id="${item.id}" value="${item.value}" style="width:80px; box-sizing:border-box;"></td>
+                <td><input type="checkbox" class="class-contribution-visible" data-id="${item.id}" ${checked} style="width:auto;"></td>
             </tr>`;
     }).join('');
 
@@ -104,7 +106,8 @@ async function handleSave() {
         showOnProfile: toggle.checked,
         items: items.map(item => {
             const input = document.querySelector(`.class-contribution-value[data-id="${item.id}"]`);
-            return { id: item.id, value: Number(input?.value) || 0 };
+            const visibleInput = document.querySelector(`.class-contribution-visible[data-id="${item.id}"]`);
+            return { id: item.id, value: Number(input?.value) || 0, isVisible: !!visibleInput?.checked };
         })
     };
 
