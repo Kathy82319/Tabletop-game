@@ -649,12 +649,21 @@ input[readonly] {
 }
 .hourglass-frame {
     position: relative;
-    width: 18px;
-    height: 26px;
-    background-color: rgba(184, 134, 11, 0.08);
-    border: 1.5px solid var(--color-frame-gold, #b8860b);
-    clip-path: polygon(0% 0%, 100% 0%, 100% 10%, 54% 48%, 100% 90%, 100% 100%, 0% 100%, 0% 90%, 46% 48%, 0% 10%);
-    overflow: hidden;
+    width: 20px;
+    height: 31px;
+    background-image: url('hourglass-frame.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    image-rendering: pixelated;
+    isolation: isolate;
+}
+.hourglass-fill-track {
+    position: absolute;
+    left: 20%;
+    right: 20%;
+    top: 13%;
+    bottom: 15%;
 }
 .hourglass-fill {
     position: absolute;
@@ -662,6 +671,7 @@ input[readonly] {
     right: 0;
     bottom: 0;
     height: 0%;
+    mix-blend-mode: multiply;
     transition: height 0.4s ease;
 }
 .hourglass-item-value {
