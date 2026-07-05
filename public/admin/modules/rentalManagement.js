@@ -103,7 +103,7 @@ function renderRentalList(rentals) {
         
         row.innerHTML = `
             <td><span class="status-badge ${getStatusClass(rental.derived_status)}">${statusText}</span>${lateFeeText}</td>
-            <td>${rental.game_name || '遊戲資料遺失'}</td>
+            <td class="compound-cell"><div class="main-info">${escapeHtml(rental.game_name || '遊戲資料遺失')}</div>${rental.barcode ? `<div class="sub-info">條碼: ${escapeHtml(rental.barcode)}</div>` : ''}</td>
             <td class="compound-cell"><div class="main-info">${displayName}</div>${subInfo}</td>
             <td>${rental.due_date}</td>
             <td>${rental.return_date || '尚未歸還'}</td>
