@@ -492,11 +492,18 @@ const GatherModule = (() => {
     }
 
     // ---- 我的揪團 ----
-    const PAST_STATUSES = new Set(['approved', 'failed', 'cancelled']);
+    function isGatheringPast(g) {
+        if (g.status === 'failed' || g.status === 'cancelled') return true;
+        if (g.status === 'approved') {
+            const today = new Date().toISOString().slice(0, 10);
+            return g.event_date < today;
+        }
+        return false;
+    }
 
     function renderMySection(activeEl, pastToggleEl, pastContainerEl, list, emptyMsg) {
-        const active = list.filter(g => !PAST_STATUSES.has(g.status));
-        const past   = list.filter(g =>  PAST_STATUSES.has(g.status));
+        const active = list.filter(g => !isGatheringPast(g));
+        const past   = list.filter(g =>  isGatheringPast(g));
 
         activeEl.innerHTML = active.length === 0
             ? `<p class="gg-empty">${emptyMsg}</p>`
