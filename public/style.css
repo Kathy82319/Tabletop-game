@@ -632,7 +632,7 @@ input[readonly] {
     min-width: 0;
 }
 .hourglass-item-label {
-    font-size: 0.62em;
+    font-size: 0.75em;
     color: #444;
     text-align: center;
     white-space: nowrap;
@@ -649,8 +649,8 @@ input[readonly] {
 }
 .hourglass-frame {
     position: relative;
-    width: 20px;
-    height: 31px;
+    width: 28px;
+    height: 44px;
 }
 .hourglass-fill-track {
     position: absolute;
@@ -680,7 +680,7 @@ input[readonly] {
     pointer-events: none;
 }
 .hourglass-item-value {
-    font-size: 0.62em;
+    font-size: 0.75em;
     color: #666;
     margin-top: 2px;
     white-space: nowrap;
