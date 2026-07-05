@@ -659,6 +659,7 @@ input[readonly] {
     top: 13%;
     bottom: 15%;
     overflow: hidden;
+    clip-path: polygon(0% 0%, 100% 0%, 0% 100%, 100% 100%);
 }
 .hourglass-fill {
     position: absolute;
@@ -666,7 +667,6 @@ input[readonly] {
     right: 0;
     bottom: 0;
     height: 0%;
-    clip-path: polygon(50% 0%, 100% 22%, 100% 100%, 0% 100%, 0% 22%);
     transition: height 0.4s ease;
 }
 .hourglass-frame-image {

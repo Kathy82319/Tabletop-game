@@ -159,6 +159,88 @@ function makeInlineVal(field, gameId, value) {
     return span;
 }
 
+function makeBarcodeInlineVal(gameId, value) {
+    const span = document.createElement('span');
+    span.className = 'inline-val barcode-val';
+    span.dataset.field = 'barcode';
+    span.dataset.gameId = gameId;
+    if (value) {
+        span.textContent = value;
+    } else {
+        span.textContent = '點擊掃描綁定';
+        span.classList.add('barcode-empty');
+    }
+    return span;
+}
+
+function activateBarcodeInlineEdit(span, gameId) {
+    if (span.querySelector('input')) return;
+
+    const game = allGamesData.find(g => g.game_id == gameId);
+    const originalValue = game ? (game.barcode || '') : '';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = originalValue;
+    input.className = 'inline-edit-input barcode-inline-input';
+
+    span.textContent = '';
+    span.classList.remove('barcode-empty');
+    span.classList.add('editing');
+    span.appendChild(input);
+    input.focus();
+    input.select();
+
+    let committed = false;
+
+    const renderDisplay = (value) => {
+        if (value) {
+            span.textContent = value;
+            span.classList.remove('barcode-empty');
+        } else {
+            span.textContent = '點擊掃描綁定';
+            span.classList.add('barcode-empty');
+        }
+    };
+
+    const commit = async (rawValue) => {
+        if (committed) return;
+        committed = true;
+        span.classList.remove('editing');
+
+        const newValue = rawValue.trim();
+        if (newValue === originalValue || !game) {
+            renderDisplay(originalValue);
+            return;
+        }
+
+        const prevValue = game.barcode;
+        game.barcode = newValue; // optimistic update
+        renderDisplay(newValue);
+
+        try {
+            await api.patchGameBarcode({ gameId, barcode: newValue });
+            ui.toast.success(newValue ? '條碼已綁定' : '條碼已清除');
+        } catch (error) {
+            game.barcode = prevValue;
+            renderDisplay(prevValue);
+            ui.toast.error(`儲存失敗：${error.message}`);
+        }
+    };
+
+    input.addEventListener('blur', () => commit(input.value));
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            commit(input.value);
+        } else if (e.key === 'Escape') {
+            committed = true;
+            span.classList.remove('editing');
+            renderDisplay(originalValue);
+        }
+    });
+}
+
 function makeStockLabel(text) {
     const s = document.createElement('span');
     s.className = 'stock-label';
@@ -325,6 +407,10 @@ function renderGameList(games) {
         const idDiv = document.createElement('div');
         idDiv.className = 'sub-info';
         idDiv.textContent = `ID: ${game.game_id}`;
+        const barcodeDiv = document.createElement('div');
+        barcodeDiv.className = 'sub-info';
+        barcodeDiv.style.marginTop = '3px';
+        barcodeDiv.append('條碼: ', makeBarcodeInlineVal(game.game_id, game.barcode || ''));
         const tagsArea = document.createElement('div');
         tagsArea.className = 'sub-info tags-area';
         tagsArea.style.marginTop = '5px';
@@ -350,6 +436,7 @@ function renderGameList(games) {
 
         cellGame.appendChild(nameDiv);
         cellGame.appendChild(idDiv);
+        cellGame.appendChild(barcodeDiv);
         cellGame.appendChild(tagsArea);
 
         // 庫存（inline edit）
@@ -610,7 +697,7 @@ async function handleEditGameFormSubmit(e) {
         if (gameId) {
             updatedData.gameId = gameId;
             await api.updateProductDetails(updatedData);
-            const gameIndex = allGamesData.findIndex(g => g.game_id === updatedData.gameId);
+            const gameIndex = allGamesData.findIndex(g => String(g.game_id) === String(updatedData.gameId));
             if (gameIndex !== -1) {
                 allGamesData[gameIndex] = {
                     ...allGamesData[gameIndex],
@@ -757,7 +844,11 @@ function setupEventListeners() {
         const gameId = row.dataset.gameId;
 
         if (target.classList.contains('inline-val') && !target.querySelector('input')) {
-            activateInlineEdit(target);
+            if (target.dataset.field === 'barcode') {
+                activateBarcodeInlineEdit(target, gameId);
+            } else {
+                activateInlineEdit(target);
+            }
         } else if (target.classList.contains('btn-edit-game')) {
             openEditGameModal(gameId);
         } else if (target.classList.contains('btn-rent')) {
