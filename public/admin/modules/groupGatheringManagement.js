@@ -13,13 +13,24 @@ const STATUS_LABEL = {
 let pageElement;
 let currentFilter = 'pending_approval';
 
+// 揪團的名稱/備註/暱稱皆為使用者輸入，插入 innerHTML 前必須跳脫，避免儲存型 XSS
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function renderGameTags(games) {
     if (!games || games.length === 0) return '—';
     return games.map(g => {
         const tags = [];
         if (g.has_played) tags.push('<span class="admin-gg-tag">有玩過</span>');
         if (g.beginner_friendly) tags.push('<span class="admin-gg-tag admin-gg-tag-beginner">適合新手</span>');
-        return `${g.name}${tags.join('')}`;
+        return `${escapeHtml(g.name)}${tags.join('')}`;
     }).join(' / ');
 }
 
@@ -38,7 +49,7 @@ async function loadGatherings(status) {
         tbody.innerHTML = list.map(g => `
             <tr>
                 <td>${g.id}</td>
-                <td>${g.organizer_name}</td>
+                <td>${escapeHtml(g.organizer_name)}</td>
                 <td>${g.event_date}<br>${g.start_time}–${g.end_time}</td>
                 <td>${g.max_participants ? `${g.member_count + 1} / ${g.max_participants}` : `${g.member_count + 1} 人`}</td>
                 <td class="admin-gg-games-cell">${renderGameTags(g.games)}</td>
@@ -70,22 +81,22 @@ async function showDetail(id) {
         const approvedCount = members.filter(m => m.status !== 'rejected').length;
 
         content.innerHTML = `
-            <h3 style="margin-top:0;">${g.organizer_name} 的揪團 #${g.id}</h3>
+            <h3 style="margin-top:0;">${escapeHtml(g.organizer_name)} 的揪團 #${g.id}</h3>
             <table class="gg-detail-table">
                 <tr><td>狀態</td><td>${STATUS_LABEL[g.status] || g.status}</td></tr>
                 <tr><td>日期時間</td><td>${g.event_date} ${g.start_time}–${g.end_time}</td></tr>
                 <tr><td>截止時間</td><td>${g.deadline}</td></tr>
                 <tr><td>人數限制</td><td>${g.max_participants ? `${approvedCount + 1} / ${g.max_participants}` : `${approvedCount + 1} 人（不限）`}</td></tr>
                 <tr><td>遊戲</td><td>${renderGameTags(g.games)}</td></tr>
-                ${g.note ? `<tr><td>備註</td><td>${g.note}</td></tr>` : ''}
+                ${g.note ? `<tr><td>備註</td><td>${escapeHtml(g.note)}</td></tr>` : ''}
             </table>
             <h4>報名成員（${approvedCount} 人）</h4>
             <div class="gg-member-list">
                 ${members.length === 0 ? '<p>尚無成員</p>' : members.map(m => `
                     <div class="gg-member-item">
                         <div>
-                            <span style="font-weight:600;">${m.display_name}</span>
-                            <span style="font-size:0.8rem; color:#666; margin-left:6px;">(${m.line_name || '—'} · ${m.user_id})</span>
+                            <span style="font-weight:600;">${escapeHtml(m.display_name)}</span>
+                            <span style="font-size:0.8rem; color:#666; margin-left:6px;">(${escapeHtml(m.line_name) || '—'} · ${escapeHtml(m.user_id)})</span>
                         </div>
                         <span class="gg-member-badge ${m.status === 'approved' ? 'badge-approved' : m.status === 'rejected' ? 'badge-rejected' : ''}">${m.status === 'approved' ? '通過' : m.status === 'rejected' ? '未通過' : '待定'}</span>
                     </div>`).join('')}

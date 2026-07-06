@@ -1,4 +1,5 @@
 // functions/api/admin/create-rental.js
+import { sendLinePush } from '../_lib/line.js';
 
 export async function onRequest(context) {
   try {
@@ -86,11 +87,8 @@ export async function onRequest(context) {
 
     if (userId && message) {
         context.waitUntil(
-            fetch(new URL('/api/send-message', context.request.url), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, message }),
-            }).catch(err => console.error("背景發送 LINE 訊息失敗:", err))
+            sendLinePush(context.env, userId, message)
+                .catch(err => console.error("背景發送 LINE 訊息失敗:", err))
         );
     }
     

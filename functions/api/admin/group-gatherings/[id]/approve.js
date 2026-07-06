@@ -1,3 +1,5 @@
+import { sendLinePush } from '../../../_lib/line.js';
+
 export async function onRequestPost(context) {
     const { request, env, params } = context;
     const id = params.id;
@@ -69,24 +71,12 @@ export async function onRequestPost(context) {
     const waitlistMsg = `😔 揪團報名通知\n\n很遺憾，您報名的揪團「${g.event_date} ${g.start_time}」人數已滿，本次無法參與。\n\n期待下次再一起玩桌遊！`;
 
     const notifyPromises = [
-        fetch(new URL('/api/send-message', request.url), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: g.organizer_user_id, message: organizerMsg }),
-        }).catch(err => console.error('通知團主失敗:', err)),
+        sendLinePush(env, g.organizer_user_id, organizerMsg).catch(err => console.error('通知團主失敗:', err)),
         ...approvedMembers.map(m =>
-            fetch(new URL('/api/send-message', request.url), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: m.user_id, message: memberMsg }),
-            }).catch(err => console.error(`通知成員 ${m.user_id} 失敗:`, err))
+            sendLinePush(env, m.user_id, memberMsg).catch(err => console.error(`通知成員 ${m.user_id} 失敗:`, err))
         ),
         ...waitlistedMembers.map(m =>
-            fetch(new URL('/api/send-message', request.url), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: m.user_id, message: waitlistMsg }),
-            }).catch(err => console.error(`通知候補成員 ${m.user_id} 失敗:`, err))
+            sendLinePush(env, m.user_id, waitlistMsg).catch(err => console.error(`通知候補成員 ${m.user_id} 失敗:`, err))
         ),
     ];
 

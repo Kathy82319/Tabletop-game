@@ -1,4 +1,6 @@
 // functions/api/bookings-create.js
+import { sendLinePush } from './_lib/line.js';
+
 export async function onRequest(context) {
   try {
     if (context.request.method !== 'POST') {
@@ -34,16 +36,18 @@ export async function onRequest(context) {
     
     if (adminUserId) {
         context.waitUntil(
-            fetch(new URL('/api/send-message', context.request.url), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: adminUserId, message: adminNotificationMessage }),
-            }).catch(err => console.error("背景發送給管理員的 LINE 訊息失敗:", err))
+            sendLinePush(context.env, adminUserId, adminNotificationMessage)
+                .catch(err => console.error("背景發送給管理員的 LINE 訊息失敗:", err))
         );
-    }    
-    const message = `🎉 預約成功！\n\n` + `姓名：${contactName}\n電話：${contactPhone}\n` + `日期：${bookingDate}\n時段：${timeSlot}\n` + `人數：${numOfPeople} 人 \n\n` + `感謝您的預約，我們到時見！`;
+    }
 
-    return new Response(JSON.stringify({ success: true, message: '預約成功！', confirmationMessage: message }), { status: 201 });
+    const confirmationMessage = `🎉 預約成功！\n\n` + `姓名：${contactName}\n電話：${contactPhone}\n` + `日期：${bookingDate}\n時段：${timeSlot}\n` + `人數：${numOfPeople} 人 \n\n` + `感謝您的預約，我們到時見！`;
+    context.waitUntil(
+        sendLinePush(context.env, userId, confirmationMessage)
+            .catch(err => console.error("背景發送預約確認訊息失敗:", err))
+    );
+
+    return new Response(JSON.stringify({ success: true, message: '預約成功！' }), { status: 201 });
   } catch (error) {
     console.error('Error in bookings-create API:', error);
     return new Response(JSON.stringify({ error: '建立預約失敗。', details: error.message }), { status: 500 });

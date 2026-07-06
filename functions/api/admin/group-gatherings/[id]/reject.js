@@ -1,3 +1,5 @@
+import { sendLinePush } from '../../../_lib/line.js';
+
 export async function onRequestPost(context) {
     const { request, env, params } = context;
     const id = params.id;
@@ -25,11 +27,7 @@ export async function onRequestPost(context) {
     const msg = `😔 揪團未通過通知\n\n您發起的揪團「${g.event_date} ${g.start_time}」店家暫時無法接受。${reasonText}\n\n如有疑問請聯繫店家，歡迎再次發起揪團！`;
 
     context.waitUntil(
-        fetch(new URL('/api/send-message', request.url), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: g.organizer_user_id, message: msg }),
-        }).catch(err => console.error('通知團主失敗:', err))
+        sendLinePush(env, g.organizer_user_id, msg).catch(err => console.error('通知團主失敗:', err))
     );
 
     return Response.json({ success: true });

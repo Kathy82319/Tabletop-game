@@ -17,6 +17,17 @@ const GatherModule = (() => {
         return headers;
     }
 
+    // 使用者輸入（揪團名稱/備註/暱稱等）在插入 innerHTML 前必須跳脫，避免儲存型 XSS
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     // ---- 狀態對應 ----
     const STATUS_LABEL = {
         open: '揪團中',
@@ -82,7 +93,7 @@ const GatherModule = (() => {
             const tags = [];
             if (g.has_played) tags.push('<span class="gg-tag gg-tag-played">有玩過</span>');
             if (g.beginner_friendly) tags.push('<span class="gg-tag gg-tag-beginner">適合新手</span>');
-            return `<div class="gg-game-row"><strong>${g.name}</strong>${tags.join('')}</div>`;
+            return `<div class="gg-game-row"><strong>${escapeHtml(g.name)}</strong>${tags.join('')}</div>`;
         }).join('');
     }
 
@@ -99,11 +110,11 @@ const GatherModule = (() => {
         <div class="gg-card" data-id="${g.id}">
             <div class="gg-card-top">
                 <div class="gg-card-main">
-                    ${g.name ? `<div class="gg-card-name">${g.name}</div>` : ''}
+                    ${g.name ? `<div class="gg-card-name">${escapeHtml(g.name)}</div>` : ''}
                     <div class="gg-card-info">
                         <div class="gg-card-row"><span class="gg-card-label">活動日期：</span>${g.event_date}</div>
                         <div class="gg-card-row"><span class="gg-card-label">時間：</span>${g.start_time}–${g.end_time}</div>
-                        <div class="gg-card-row"><span class="gg-card-label">遊戲：</span><span class="gg-card-games">${g.games.map(gm => gm.name).join('、')}</span></div>
+                        <div class="gg-card-row"><span class="gg-card-label">遊戲：</span><span class="gg-card-games">${g.games.map(gm => escapeHtml(gm.name)).join('、')}</span></div>
                     </div>
                 </div>
                 <div class="gg-card-aside">
@@ -304,7 +315,7 @@ const GatherModule = (() => {
 
             const membersHtml = membersToShow.map(m =>
                 `<div class="gg-member-row">
-                    <span>👤 ${m.display_name}</span>
+                    <span>👤 ${escapeHtml(m.display_name)}</span>
                     ${isOrganizer && !hasMemberLimit && (isOpen || isClosed)
                         ? `<input type="checkbox" class="gg-member-check" data-uid="${m.user_id}" ${m.status === 'approved' ? 'checked' : ''}>`
                         : `<span class="gg-member-status">${m.status === 'approved' ? '✓' : ''}</span>`}
@@ -314,7 +325,7 @@ const GatherModule = (() => {
             const waitlistHtml = showWaitlist
                 ? pendingMembers.map(m =>
                     `<div class="gg-member-row">
-                        <span>👤 ${m.display_name}</span>
+                        <span>👤 ${escapeHtml(m.display_name)}</span>
                         <button class="gg-approve-member-btn" data-uid="${m.user_id}" style="font-size:0.8rem;padding:4px 10px;">補位</button>
                     </div>`
                 ).join('')
@@ -357,7 +368,7 @@ const GatherModule = (() => {
                 <div class="gg-detail">
                     <div class="gg-detail-header">
                         <span class="gg-status-badge ${STATUS_CLASS[g.status] || ''}">${STATUS_LABEL[g.status] || g.status}</span>
-                        <h2>${g.name || (g.organizer_name + ' 的揪團')}</h2>
+                        <h2>${g.name ? escapeHtml(g.name) : (escapeHtml(g.organizer_name) + ' 的揪團')}</h2>
                     </div>
                     <div class="gg-detail-section">
                         <span class="gg-detail-label">📅 時間</span>
@@ -375,7 +386,7 @@ const GatherModule = (() => {
                         <span class="gg-detail-label">🎲 遊戲</span>
                         <div>${renderGameTags(g.games)}</div>
                     </div>
-                    ${g.note ? `<div class="gg-detail-section"><span class="gg-detail-label">📝 備註</span><span class="gg-detail-note">${g.note}</span></div>` : ''}
+                    ${g.note ? `<div class="gg-detail-section"><span class="gg-detail-label">📝 備註</span><span class="gg-detail-note">${escapeHtml(g.note)}</span></div>` : ''}
                     ${isOrganizer && !hasMemberLimit && (isOpen || isClosed) ? `
                     <div class="gather-limit-hint" style="margin-bottom:12px;">
                         ✏️ 無人數上限模式：請勾選您想帶去的成員，未勾選的人將列為候補。確認名單後點「確認參加名單」，再提交給店家審核。店家審核過之後將會自動婉拒未勾選的參與者。

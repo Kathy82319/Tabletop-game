@@ -1,4 +1,6 @@
 // 團主在 pending_approval 狀態手動補位候補成員
+import { sendLinePush } from '../../_lib/line.js';
+
 export async function onRequestPost(context) {
     const { request, env, params } = context;
     const id = params.id;
@@ -45,11 +47,7 @@ export async function onRequestPost(context) {
     const promoteMsg = `🎉 揪團補位通知\n\n恭喜！您已成功補位加入揪團！\n📅 ${g.event_date} ${g.start_time}–${g.end_time}\n\n期待與您相見！`;
 
     context.waitUntil(
-        fetch(new URL('/api/send-message', request.url), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: member.user_id, message: promoteMsg }),
-        }).catch(err => console.error(`通知補位成員失敗:`, err))
+        sendLinePush(env, member.user_id, promoteMsg).catch(err => console.error(`通知補位成員失敗:`, err))
     );
 
     return Response.json({ success: true });

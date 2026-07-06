@@ -1272,14 +1272,6 @@ async function handleBookingConfirmation(confirmBtn) {
             throw new Error(errorResult.error || '建立預約時發生未知錯誤');
         }
         
-        const result = await createRes.json();
-        
-        await fetch('/api/send-message', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: userProfile.userId, message: result.confirmationMessage })
-        });
-
         appContent.querySelector('#booking-result-content').innerHTML = `
             <h2 class="success">✅ 預約成功！</h2>
             <p>已將預約確認訊息發送至您的 LINE，我們到時見！</p>

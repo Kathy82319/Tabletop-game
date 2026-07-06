@@ -1,4 +1,6 @@
 // 團主解散揪團
+import { sendLinePush } from '../../_lib/line.js';
+
 export async function onRequestPost(context) {
     const { request, env, params } = context;
     const id = params.id;
@@ -36,14 +38,9 @@ export async function onRequestPost(context) {
     ).bind(id).all();
 
     const notifyPromises = members.results.map(m =>
-        fetch(new URL('/api/send-message', request.url), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId: m.user_id,
-                message: `😔 揪團取消通知\n\n您報名的揪團「${g.event_date} ${g.start_time}」已被團主解散。\n\n期待下次再一起玩桌遊！`,
-            }),
-        }).catch(err => console.error(`通知成員 ${m.user_id} 失敗:`, err))
+        sendLinePush(env, m.user_id,
+            `😔 揪團取消通知\n\n您報名的揪團「${g.event_date} ${g.start_time}」已被團主解散。\n\n期待下次再一起玩桌遊！`
+        ).catch(err => console.error(`通知成員 ${m.user_id} 失敗:`, err))
     );
 
     context.waitUntil(Promise.all(notifyPromises));

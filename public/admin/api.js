@@ -23,7 +23,7 @@ export async function fetchAllGames() {
 }
 
 export async function fetchAllUsers() {
-    const response = await fetch('/api/get-users');
+    const response = await fetch('/api/admin/get-users');
     if (!response.ok) {
         throw new Error('無法獲取使用者列表');
     }
@@ -42,9 +42,9 @@ export const api = {
     getAllActivities: () => request('/api/admin/activities?all=1'),
     markActivityAsRead: (activity_id) => request('/api/admin/activities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ activity_id }) }),
     markAllActivitiesAsRead: () => request('/api/admin/activities', { method: 'DELETE' }),
-    getUsers: () => request('/api/get-users'),
+    getUsers: () => request('/api/admin/get-users'),
     getUserDetails: (userId) => request(`/api/admin/user-details?userId=${userId}`),
-    updateUserDetails: (data) => request('/api/update-user-details', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+    updateUserDetails: (data) => request('/api/admin/update-user-details', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
     claimPerk: (userId) => request('/api/admin/claim-perk', { method: 'POST', body: JSON.stringify({ userId }) }),
     searchUsers: (query) => request(`/api/admin/user-search?q=${encodeURIComponent(query)}`),
 
@@ -64,16 +64,16 @@ bulkCreateGames: (data) => request('/api/admin/bulk-create-games', { method: 'PO
     updateRentalDetails: (data) => request('/api/admin/update-rental-details', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
     updateRentalStatus: (rentalId, status) => request('/api/admin/update-rental-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rentalId, status }) }),
     
-    getBookings: (status = 'today') => request(`/api/get-bookings?status=${status}`),
+    getBookings: (status = 'today') => request(`/api/admin/get-bookings?status=${status}`),
     createBooking: (data) => request('/api/admin/create-booking', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
-    updateBookingStatus: (bookingId, status) => request('/api/update-booking-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookingId, status }) }),
+    updateBookingStatus: (bookingId, status) => request('/api/admin/update-booking-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookingId, status }) }),
     getBookingSettings: () => request('/api/admin/booking-settings'),
     saveBookingSettings: (body) => request('/api/admin/booking-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
 
     getRecentPointedUsers: () => request('/api/admin/recent-pointed-users'),
     getExpHistory: () => request('/api/admin/exp-history-list'),
     deleteExpRecord: (history_id) => request('/api/admin/exp-history-list', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ history_id }) }),
-    addPoints: (data) => request('/api/add-exp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+    addPoints: (data) => request('/api/admin/add-exp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
     getContributionHistory: () => request('/api/admin/contribution-history'),
     deleteContributionRecord: (contribution_id) => request('/api/admin/contribution-history', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contribution_id }) }),
     getContributionStats: () => request('/api/admin/contribution-stats'),
@@ -90,7 +90,7 @@ bulkCreateGames: (data) => request('/api/admin/bulk-create-games', { method: 'PO
     updateMessageDraft: (data) => request('/api/admin/message-drafts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
     deleteMessageDraft: (draft_id) => request('/api/admin/message-drafts', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ draft_id }) }),
     
-    sendMessage: (userId, message) => request('/api/send-message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, message }) }),
+    sendMessage: (userId, message) => request('/api/admin/send-message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, message }) }),
     getStoreInfo: () => request('/api/get-store-info'),
     updateStoreInfo: (data) => request('/api/admin/update-store-info', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
 

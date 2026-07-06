@@ -1,4 +1,6 @@
 // 團主提交揪團給店家審核
+import { sendLinePush } from '../../_lib/line.js';
+
 export async function onRequestPost(context) {
     const { request, env, params } = context;
     const id = params.id;
@@ -45,14 +47,9 @@ export async function onRequestPost(context) {
 
     if (storeInfo?.booking_notify_user_id) {
         context.waitUntil(
-            fetch(new URL('/api/send-message', request.url), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: storeInfo.booking_notify_user_id,
-                    message: `🔔 新揪團審核通知\n\n${g.organizer_name} 發起的揪團需要審核：\n日期：${g.event_date} ${g.start_time}–${g.end_time}\n人數：${memberCount.c} 人\n\n請至後台「揪團管理」審核。`,
-                }),
-            }).catch(err => console.error('通知管理員失敗:', err))
+            sendLinePush(env, storeInfo.booking_notify_user_id,
+                `🔔 新揪團審核通知\n\n${g.organizer_name} 發起的揪團需要審核：\n日期：${g.event_date} ${g.start_time}–${g.end_time}\n人數：${memberCount.c} 人\n\n請至後台「揪團管理」審核。`
+            ).catch(err => console.error('通知管理員失敗:', err))
         );
     }
 

@@ -1,5 +1,7 @@
 // 由 cron-job.org 每天台灣時間 00:00 觸發
 // Header: X-Cron-Secret: <CRON_SECRET env var>
+import { sendLinePush } from '../_lib/line.js';
+
 export async function onRequestPost(context) {
     const { request, env } = context;
 
@@ -29,14 +31,9 @@ export async function onRequestPost(context) {
 
     // 發 LINE 通知給各團主
     const notifyPromises = expired.results.map(g =>
-        fetch(new URL('/api/send-message', request.url), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId: g.organizer_user_id,
-                message: `😔 揪團流標通知\n\n您發起的揪團「${g.event_date} ${g.start_time}」已超過截止時間，未能成功提交店家審核，已自動流標。\n\n感謝您的參與，歡迎再次發起揪團！`,
-            }),
-        }).catch(err => console.error(`發送流標通知給 ${g.organizer_user_id} 失敗:`, err))
+        sendLinePush(env, g.organizer_user_id,
+            `😔 揪團流標通知\n\n您發起的揪團「${g.event_date} ${g.start_time}」已超過截止時間，未能成功提交店家審核，已自動流標。\n\n感謝您的參與，歡迎再次發起揪團！`
+        ).catch(err => console.error(`發送流標通知給 ${g.organizer_user_id} 失敗:`, err))
     );
 
     // 通知所有 pending 成員
@@ -45,14 +42,9 @@ export async function onRequestPost(context) {
             `SELECT user_id FROM GroupGatheringMembers WHERE gathering_id = ? AND status = 'pending'`
         ).bind(g.id).all();
         return Promise.all(members.results.map(m =>
-            fetch(new URL('/api/send-message', request.url), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: m.user_id,
-                    message: `😔 揪團流標通知\n\n您報名的揪團「${g.event_date} ${g.start_time}」已超過截止時間自動流標。\n\n期待下次再一起玩桌遊！`,
-                }),
-            }).catch(err => console.error(`發送流標通知給成員 ${m.user_id} 失敗:`, err))
+            sendLinePush(env, m.user_id,
+                `😔 揪團流標通知\n\n您報名的揪團「${g.event_date} ${g.start_time}」已超過截止時間自動流標。\n\n期待下次再一起玩桌遊！`
+            ).catch(err => console.error(`發送流標通知給成員 ${m.user_id} 失敗:`, err))
         ));
     });
 
