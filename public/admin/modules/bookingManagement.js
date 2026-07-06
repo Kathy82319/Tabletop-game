@@ -14,6 +14,11 @@ let pageElement, bookingListTbody, calendarViewContainer, listViewContainer,
     calendarGrid, calendarMonthYear, createBookingBtn, manageDatesBtn,
     createBookingModal, createBookingForm, bookingSettingsModal;
 
+// 預約聯絡人姓名/會員暱稱等皆為使用者輸入，插入 innerHTML 前必須跳脫，避免儲存型 XSS
+function escapeHtml(str) {
+    return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 /**
  * 渲染預約列表
  * @param {Array} bookings - 要顯示的預約陣列
@@ -32,11 +37,11 @@ function renderBookingList(bookings) {
         row.innerHTML = `
             <td>${booking.booking_date}<br>${booking.time_slot}</td>
             <td class="compound-cell clickable-cell" data-booking-id="${booking.booking_id}" style="cursor: pointer; text-decoration: underline; color: var(--primary-color);">
-                <div class="main-info">${booking.contact_name}</div>
-                <div class="sub-info">${booking.user_id || '現場客'}</div>
+                <div class="main-info">${escapeHtml(booking.contact_name)}</div>
+                <div class="sub-info">${escapeHtml(booking.user_id) || '現場客'}</div>
             </td>
             <td>${booking.num_of_people}</td>
-            <td>${booking.item || '-'}</td>
+            <td>${escapeHtml(booking.item) || '-'}</td>
             <td>${statusText}</td>
             <td class="actions-cell">
                 <button class="action-btn btn-check-in" data-booking-id="${booking.booking_id}" style="background-color: var(--success-color);" ${booking.status !== 'confirmed' ? 'disabled' : ''}>報到</button>
@@ -95,7 +100,7 @@ function renderCalendar(date) {
             bookingEl.dataset.bookingId = booking.booking_id;
             bookingEl.style.cursor = 'pointer';
             bookingEl.innerHTML = `
-                <div class="calendar-booking-info">${booking.time_slot} ${booking.contact_name} (${booking.num_of_people})</div>
+                <div class="calendar-booking-info">${booking.time_slot} ${escapeHtml(booking.contact_name)} (${booking.num_of_people})</div>
                 <button class="calendar-cancel-btn" data-booking-id="${booking.booking_id}" title="取消預約" ${booking.status !== 'confirmed' ? 'style="display:none;"' : ''}>&times;</button>
             `;
             dayCell.appendChild(bookingEl);
@@ -303,18 +308,18 @@ async function openBookingDetailsModal(bookingId) {
             const displayName = profile.nickname || profile.line_display_name;
             userHtml = `
                 <div class="profile-summary">
-                    <img src="/api/admin/get-avatar?userId=${profile.user_id}" alt="Avatar">
-                    <h4>${displayName}</h4>
-                    <p><strong>姓名:</strong> ${profile.real_name || '未設定'}</p>
-                    <p><strong>電話:</strong> ${profile.phone || '未設定'}</p>
+                    <img src="/api/admin/get-avatar?userId=${encodeURIComponent(profile.user_id)}" alt="Avatar">
+                    <h4>${escapeHtml(displayName)}</h4>
+                    <p><strong>姓名:</strong> ${escapeHtml(profile.real_name) || '未設定'}</p>
+                    <p><strong>電話:</strong> ${escapeHtml(profile.phone) || '未設定'}</p>
                     <hr>
                     <p><strong>等級:</strong> ${profile.level} (${profile.current_exp}/10 EXP)</p>
-                    <p><strong>職業:</strong> ${profile.class}</p>
-                    <p><strong>標籤:</strong> ${profile.tag}</p>
-                    ${profile.notes ? `<div class="crm-notes-section" style="margin-top: 1rem; padding: 0.8rem; background-color: #fffbe6; border-radius: 6px; border: 1px solid #ffe58f; max-height: 5em; overflow-y: auto;"><strong>備註:</strong><p style="white-space: pre-wrap; margin: 0;">${profile.notes}</p></div>` : ''}
+                    <p><strong>職業:</strong> ${escapeHtml(profile.class)}</p>
+                    <p><strong>標籤:</strong> ${escapeHtml(profile.tag)}</p>
+                    ${profile.notes ? `<div class="crm-notes-section" style="margin-top: 1rem; padding: 0.8rem; background-color: #fffbe6; border-radius: 6px; border: 1px solid #ffe58f; max-height: 5em; overflow-y: auto;"><strong>備註:</strong><p style="white-space: pre-wrap; margin: 0;">${escapeHtml(profile.notes)}</p></div>` : ''}
                 </div>`;
         } catch (error) {
-            userHtml = `<div class="profile-summary"><h4>會員資料載入失敗</h4><p style="color:red;">${error.message}</p></div>`;
+            userHtml = `<div class="profile-summary"><h4>會員資料載入失敗</h4><p style="color:red;">${escapeHtml(error.message)}</p></div>`;
         }
     }
 
@@ -323,11 +328,11 @@ async function openBookingDetailsModal(bookingId) {
              <h4>預約內容</h4>
              <p><strong>預約 ID:</strong> ${booking.booking_id}</p>
              <p><strong>預約時間:</strong> ${booking.booking_date} ${booking.time_slot}</p>
-             <p><strong>聯絡姓名:</strong> ${booking.contact_name}</p>
-             <p><strong>聯絡電話:</strong> ${booking.contact_phone || '未提供'}</p>
+             <p><strong>聯絡姓名:</strong> ${escapeHtml(booking.contact_name)}</p>
+             <p><strong>聯絡電話:</strong> ${escapeHtml(booking.contact_phone) || '未提供'}</p>
              <p><strong>預約人數:</strong> ${booking.num_of_people} 人</p>
-             <p><strong>預約項目:</strong> ${booking.item || '無'}</p>
-             <p><strong>狀態:</strong> ${booking.status}</p>
+             <p><strong>預約項目:</strong> ${escapeHtml(booking.item) || '無'}</p>
+             <p><strong>狀態:</strong> ${escapeHtml(booking.status)}</p>
         </div>
     `;
 
@@ -396,7 +401,7 @@ function setupEventListeners() {
         const searchTerm = e.target.value.trim();
         createBookingForm.querySelector('#booking-user-id').value = '';
         if (searchTerm.length < 1) { userSearchResults.style.display = 'none'; return; }
-        try { const users = await api.searchUsers(searchTerm); userSearchResults.innerHTML = users.map(u => `<li data-user-id="${u.user_id}" data-name="${u.nickname || u.line_display_name}" data-phone="${u.phone || ''}">${u.nickname || u.line_display_name}${u.phone ? ' | ' + u.phone : ''} (${u.user_id})</li>`).join(''); userSearchResults.style.display = users.length > 0 ? 'block' : 'none'; }
+        try { const users = await api.searchUsers(searchTerm); userSearchResults.innerHTML = users.map(u => `<li data-user-id="${escapeHtml(u.user_id)}" data-name="${escapeHtml(u.nickname || u.line_display_name)}" data-phone="${escapeHtml(u.phone || '')}">${escapeHtml(u.nickname || u.line_display_name)}${u.phone ? ' | ' + escapeHtml(u.phone) : ''} (${escapeHtml(u.user_id)})</li>`).join(''); userSearchResults.style.display = users.length > 0 ? 'block' : 'none'; }
         catch (error) { console.error('搜尋使用者失敗', error); }
     });
     userSearchResults.addEventListener('click', (e) => {

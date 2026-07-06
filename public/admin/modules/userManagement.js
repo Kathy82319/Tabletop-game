@@ -7,6 +7,11 @@ let allAssets = []; // 儲存職業、技能、裝備設定
 let allDrafts = []; // 儲存訊息草稿 (用於 CRM 發送訊息)
 let currentAssetType = 'class'; // 當前制度設定的分頁
 
+// 會員暱稱/LINE 顯示名稱等皆為使用者輸入，插入 innerHTML 前必須跳脫，避免儲存型 XSS
+function escapeHtml(str) {
+    return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 // ============================================================
 // ============================================================
 
@@ -28,7 +33,7 @@ function renderUserList(users) {
         row.dataset.userId = user.user_id;
         row.style.cursor = 'pointer';
         
-        const displayName = user.nickname ? `${user.line_display_name} (${user.nickname})` : user.line_display_name;
+        const displayName = user.nickname ? `${escapeHtml(user.line_display_name)} (${escapeHtml(user.nickname)})` : escapeHtml(user.line_display_name);
         
         const needsPerk = user.level > 1 && user.level > (user.perk_claimed_level || 0);
         const levelDisplay = needsPerk ? `${user.level} ⭐` : user.level;

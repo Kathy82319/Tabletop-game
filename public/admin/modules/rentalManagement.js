@@ -422,7 +422,7 @@ export function initializeCreateRentalModalEventListeners() {
         }
         try {
             const users = await api.searchUsers(searchTerm);
-            userSearchResults.innerHTML = users.map(u => `<li data-user-id="${u.user_id}" data-name="${u.nickname || u.line_display_name}" data-phone="${u.phone || ''}">${u.nickname || u.line_display_name} (${u.user_id})</li>`).join('');
+            userSearchResults.innerHTML = users.map(u => `<li data-user-id="${escapeHtml(u.user_id)}" data-name="${escapeHtml(u.nickname || u.line_display_name)}" data-phone="${escapeHtml(u.phone || '')}">${escapeHtml(u.nickname || u.line_display_name)} (${escapeHtml(u.user_id)})</li>`).join('');
             userSearchResults.style.display = users.length > 0 ? 'block' : 'none';
         } catch (error) { console.error('搜尋使用者失敗', error); }
     });
@@ -552,7 +552,7 @@ rentalStatusFilter.addEventListener('click', e => {
         }
         try {
             const users = await api.searchUsers(searchTerm);
-            userSearchResults.innerHTML = users.map(u => `<li data-user-id="${u.user_id}" data-name="${u.nickname || u.line_display_name}" data-phone="${u.phone || ''}">${u.nickname || u.line_display_name} (${u.user_id})</li>`).join('');
+            userSearchResults.innerHTML = users.map(u => `<li data-user-id="${escapeHtml(u.user_id)}" data-name="${escapeHtml(u.nickname || u.line_display_name)}" data-phone="${escapeHtml(u.phone || '')}">${escapeHtml(u.nickname || u.line_display_name)} (${escapeHtml(u.user_id)})</li>`).join('');
             userSearchResults.style.display = users.length > 0 ? 'block' : 'none';
         } catch (error) { console.error('搜尋使用者失敗', error); }
     });
