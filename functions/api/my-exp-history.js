@@ -1,16 +1,16 @@
 // functions/api/my-exp-history.js
+import { verifyLiffUser } from './_lib/auth.js';
 
 export async function onRequest(context) {
   try {
-    const url = new URL(context.request.url);
-    const userId = url.searchParams.get('userId');
-
-    if (!userId) {
-      return new Response(JSON.stringify({ error: '缺少使用者 ID 參數。' }), {
-        status: 400,
+    const profile = await verifyLiffUser(context.request);
+    if (!profile) {
+      return new Response(JSON.stringify({ error: '未登入或驗證失敗。' }), {
+        status: 401,
         headers: { 'Content-Type': 'application/json' },
       });
     }
+    const userId = profile.userId;
 
     const db = context.env.DB;
     

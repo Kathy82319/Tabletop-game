@@ -1,11 +1,13 @@
+import { verifyLiffUser } from '../_lib/auth.js';
+
 export async function onRequestGet(context) {
     const { request, env } = context;
-    const url = new URL(request.url);
-    const line_user_id = url.searchParams.get('line_user_id');
 
-    if (!line_user_id) {
-        return Response.json({ error: '缺少 line_user_id' }, { status: 400 });
+    const profile = await verifyLiffUser(request);
+    if (!profile) {
+        return Response.json({ error: '未登入或驗證失敗。' }, { status: 401 });
     }
+    const line_user_id = profile.userId;
 
     // 找出此玩家參與過的所有對局（含建立者身份）
     const { results } = await env.DB.prepare(`

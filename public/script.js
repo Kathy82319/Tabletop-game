@@ -29,7 +29,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let bookingData = {};
     let dailyAvailability = { limit: TOTAL_TABLES, booked: 0, available: TOTAL_TABLES };
     let disabledDatesByAdmin = [];
- 
+
+    // 取得 LIFF access token，供後端驗證真實身份用（不可信任前端自稱的 userId）
+    function getLiffAuthHeaders() {
+        const headers = { 'Content-Type': 'application/json' };
+        if (typeof liff !== 'undefined' && liff.isLoggedIn && liff.isLoggedIn()) {
+            headers['X-LIFF-Token'] = liff.getAccessToken();
+        }
+        return headers;
+    }
+
     // =================================================================
     // =================================================================
     appContent.addEventListener('click', (event) => {
@@ -354,15 +363,12 @@ async function initializeProfilePage() {
 }
 
 
-    async function fetchGameData(forceRefresh = false) { 
+    async function fetchGameData(forceRefresh = false) {
         if (!forceRefresh && gameData && gameData.user_id) return gameData;
         try {
-            const picUrl = userProfile.pictureUrl || "https://meee.com.tw/JOqBTeG";
-
             const response = await fetch('/api/user', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: userProfile.userId, displayName: userProfile.displayName, pictureUrl: picUrl }),
+                headers: getLiffAuthHeaders(),
             });
             if (!response.ok) throw new Error('無法取得會員遊戲資料');
             gameData = await response.json();
@@ -554,7 +560,7 @@ async function initializeMyBookingsPage() {
     };
 
     try {
-        const currentResponse = await fetch(`/api/my-bookings?userId=${userProfile.userId}&filter=current`);
+        const currentResponse = await fetch(`/api/my-bookings?filter=current`, { headers: getLiffAuthHeaders() });
         if (!currentResponse.ok) throw new Error('查詢預約失敗');
         const currentBookings = await currentResponse.json();
         renderBookings(currentBookings, currentContainer);
@@ -567,7 +573,7 @@ async function initializeMyBookingsPage() {
                 toggleBtn.textContent = '隱藏過往紀錄';
 
                 try {
-                    const pastResponse = await fetch(`/api/my-bookings?userId=${userProfile.userId}&filter=past`);
+                    const pastResponse = await fetch(`/api/my-bookings?filter=past`, { headers: getLiffAuthHeaders() });
                     if (!pastResponse.ok) throw new Error('查詢過往預約失敗');
                     const pastBookings = await pastResponse.json();
                     renderBookings(pastBookings, pastContainer, true);
@@ -591,7 +597,7 @@ async function initializeMyBookingsPage() {
         if (!container) return;
         container.innerHTML = '<p>正在查詢您的經驗紀錄...</p>';
         try {
-            const response = await fetch(`/api/my-exp-history?userId=${userProfile.userId}`);
+            const response = await fetch(`/api/my-exp-history`, { headers: getLiffAuthHeaders() });
             if (!response.ok) throw new Error('查詢紀錄失敗');
             const records = await response.json();
             if (records.length === 0) {
@@ -661,7 +667,7 @@ async function initializeRentalHistoryPage() {
     };
 
     try {
-        const currentResponse = await fetch(`/api/my-rental-history?userId=${userProfile.userId}&filter=current`);
+        const currentResponse = await fetch(`/api/my-rental-history?filter=current`, { headers: getLiffAuthHeaders() });
         if (!currentResponse.ok) throw new Error('查詢租借紀錄失敗');
         const currentRentals = await currentResponse.json();
         renderRentals(currentRentals, currentContainer);
@@ -674,7 +680,7 @@ async function initializeRentalHistoryPage() {
                 toggleBtn.textContent = '隱藏過往紀錄';
 
                 try {
-                    const pastResponse = await fetch(`/api/my-rental-history?userId=${userProfile.userId}&filter=past`);
+                    const pastResponse = await fetch(`/api/my-rental-history?filter=past`, { headers: getLiffAuthHeaders() });
                     if (!pastResponse.ok) throw new Error('查詢過往租借失敗');
                     const pastRentals = await pastResponse.json();
                     renderRentals(pastRentals, pastContainer, true);
@@ -789,19 +795,16 @@ async function initializeEditProfilePage() {
         }
 
         const formData = {
-            userId: userProfile.userId,
             realName: document.getElementById('edit-profile-real-name').value.trim(),
             nickname: document.getElementById('edit-profile-nickname').value,
             phone: document.getElementById('edit-profile-phone').value,
             email: document.getElementById('edit-profile-email').value,
-            preferredGames: [...new Set(selectedGames)], 
-            displayName: userProfile.displayName,
-            pictureUrl: userProfile.pictureUrl || ''
+            preferredGames: [...new Set(selectedGames)],
         };
 
         try {
             const response = await fetch('/api/update-user-profile', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData)
+                method: 'POST', headers: getLiffAuthHeaders(), body: JSON.stringify(formData)
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || '儲存失敗');
@@ -1253,7 +1256,6 @@ async function handleBookingConfirmation(confirmBtn) {
         confirmBtn.textContent = '處理中...';
         
         const bookingPayload = {
-            userId: userProfile.userId,
             bookingDate: bookingData.date,
             timeSlot: bookingData.timeSlot,
             numOfPeople: bookingData.people,
@@ -1263,7 +1265,7 @@ async function handleBookingConfirmation(confirmBtn) {
 
         const createRes = await fetch('/api/bookings-create', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getLiffAuthHeaders(),
             body: JSON.stringify(bookingPayload)
         });
 

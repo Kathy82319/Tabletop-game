@@ -1,13 +1,20 @@
 // functions/api/user.js
+import { verifyLiffUser } from './_lib/auth.js';
+
 export async function onRequest(context) {
   try {
     if (context.request.method !== 'POST') {
       return new Response(JSON.stringify({ error: '無效的請求方法' }), { status: 405 });
     }
-    const { userId, displayName, pictureUrl } = await context.request.json();
-    if (!userId) {
-      return new Response(JSON.stringify({ error: 'User ID is required.' }), { status: 400 });
+
+    const profile = await verifyLiffUser(context.request);
+    if (!profile) {
+      return new Response(JSON.stringify({ error: '未登入或驗證失敗。' }), { status: 401 });
     }
+    const userId = profile.userId;
+    const displayName = profile.displayName;
+    const pictureUrl = profile.pictureUrl || 'https://meee.com.tw/JOqBTeG';
+
     const db = context.env.DB;
     
     let user = await db.prepare('SELECT * FROM Users WHERE user_id = ?').bind(userId).first();

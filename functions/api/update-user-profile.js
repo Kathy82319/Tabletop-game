@@ -1,4 +1,5 @@
 // functions/api/update-user-profile.js
+import { verifyLiffUser } from './_lib/auth.js';
 
 export async function onRequest(context) {
   try {
@@ -6,13 +7,20 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
 
+    const profile = await verifyLiffUser(context.request);
+    if (!profile) {
+      return new Response(JSON.stringify({ error: '未登入或驗證失敗。' }), {
+        status: 401, headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    const userId = profile.userId;
+    const displayName = profile.displayName;
+    const pictureUrl = profile.pictureUrl || '';
+
     const body = await context.request.json();
-    const { userId, realName, nickname, phone, email, preferredGames, displayName, pictureUrl } = body;
+    const { realName, nickname, phone, email, preferredGames } = body;
 
     const errors = [];
-    if (!userId || typeof userId !== 'string') {
-        errors.push('無效的使用者 ID。');
-    }
     if (!nickname || typeof nickname !== 'string' || nickname.trim().length === 0 || nickname.length > 50) {
         errors.push('暱稱為必填，且長度不可超過 50 字。');
     }
@@ -24,9 +32,6 @@ export async function onRequest(context) {
     }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         errors.push('請輸入有效的電子信箱格式。');
-    }
-    if (displayName === undefined || pictureUrl === undefined) {
-        errors.push('缺少必要的 LINE 使用者資訊。');
     }
 
     if (errors.length > 0) {

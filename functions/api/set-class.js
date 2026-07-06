@@ -1,4 +1,5 @@
 // functions/api/set-class.js
+import { verifyLiffUser } from './_lib/auth.js';
 
 export async function onRequest(context) {
     try {
@@ -6,11 +7,17 @@ export async function onRequest(context) {
             return new Response('Invalid request method.', { status: 405 });
         }
 
-        const { userId, className } = await context.request.json();
+        const profile = await verifyLiffUser(context.request);
+        if (!profile) {
+            return new Response(JSON.stringify({ error: '未登入或驗證失敗。' }), { status: 401 });
+        }
+        const userId = profile.userId;
+
+        const { className } = await context.request.json();
         const ALLOWED_CLASSES = ['戰士', '盜賊', '法師', '牧師'];
 
-        if (!userId || !className || !ALLOWED_CLASSES.includes(className)) {
-            return new Response(JSON.stringify({ error: '無效的使用者 ID 或職業名稱。' }), { status: 400 });
+        if (!className || !ALLOWED_CLASSES.includes(className)) {
+            return new Response(JSON.stringify({ error: '無效的職業名稱。' }), { status: 400 });
         }
 
         const db = context.env.DB;

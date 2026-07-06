@@ -1,13 +1,21 @@
 // functions/api/bookings-create.js
 import { sendLinePush } from './_lib/line.js';
+import { verifyLiffUser } from './_lib/auth.js';
 
 export async function onRequest(context) {
   try {
     if (context.request.method !== 'POST') {
       return new Response('Invalid request method.', { status: 405 });
     }
-    const { userId, bookingDate, timeSlot, numOfPeople, contactName, contactPhone } = await context.request.json();
-    if (!userId || !bookingDate || !timeSlot || !numOfPeople || numOfPeople <= 0 || !contactName || !contactPhone) {
+
+    const profile = await verifyLiffUser(context.request);
+    if (!profile) {
+      return new Response(JSON.stringify({ error: '未登入或驗證失敗。' }), { status: 401 });
+    }
+    const userId = profile.userId;
+
+    const { bookingDate, timeSlot, numOfPeople, contactName, contactPhone } = await context.request.json();
+    if (!bookingDate || !timeSlot || !numOfPeople || numOfPeople <= 0 || !contactName || !contactPhone) {
       return new Response(JSON.stringify({ error: '所有預約欄位皆為必填。' }), { status: 400 });
     }
 

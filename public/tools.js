@@ -3,6 +3,15 @@
 // 每個小工具獨立一個區塊，統一由 initializeToolsPage() 掛載
 // =================================================================
 
+// 取得 LIFF access token，供後端驗證真實身份用（不可信任前端自稱的 line_user_id）
+function getLiffAuthHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    if (typeof liff !== 'undefined' && liff.isLoggedIn && liff.isLoggedIn()) {
+        headers['X-LIFF-Token'] = liff.getAccessToken();
+    }
+    return headers;
+}
+
 function initializeToolsPage() {
     document.querySelectorAll('.tool-card').forEach(card => {
         card.addEventListener('click', () => {
@@ -646,7 +655,7 @@ async function sbLoadRecentSessions() {
     const list    = document.getElementById('sb-history-list');
 
     try {
-        const res  = await fetch(`/api/scoreboard/my-history?line_user_id=${encodeURIComponent(lineId)}`);
+        const res  = await fetch(`/api/scoreboard/my-history`, { headers: getLiffAuthHeaders() });
         const data = await res.json();
         const owned = (data.history || []).filter(h => h.is_owner);
         if (owned.length === 0) { section.style.display = 'none'; return; }
@@ -1122,7 +1131,7 @@ async function initializeGameHistoryPage() {
     if (!lineId) { container.innerHTML = '<p style="text-align:center; padding:20px;">請先登入</p>'; return; }
 
     try {
-        const res  = await fetch(`/api/scoreboard/my-history?line_user_id=${encodeURIComponent(lineId)}`);
+        const res  = await fetch(`/api/scoreboard/my-history`, { headers: getLiffAuthHeaders() });
         const data = await res.json();
         const list = data.history || [];
 
