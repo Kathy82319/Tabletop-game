@@ -12,8 +12,11 @@ export async function onRequestGet(context) {
 
     if (!g) return Response.json({ error: '找不到此揪團' }, { status: 404 });
 
+    // 此端點無須登入即可查詢，不可外洩團主的真實 LINE user_id
+    const { organizer_user_id, ...publicG } = g;
+
     return Response.json({
-        ...g,
+        ...publicG,
         games: JSON.parse(g.games || '[]'),
     });
 }

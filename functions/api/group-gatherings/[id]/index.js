@@ -36,10 +36,17 @@ export async function onRequestGet(context) {
         }
     }
 
+    // 這支端點不需登入即可查看（分享連結用），真實 LINE user_id 只給團主本人（管理成員時需要）
+    const isOrganizer = myStatus === 'organizer';
+    const { organizer_user_id, ...publicG } = g;
+    const publicMembers = members.results.map(m =>
+        isOrganizer ? m : { ...m, user_id: undefined }
+    );
+
     return Response.json({
-        ...g,
+        ...publicG,
         games: JSON.parse(g.games || '[]'),
-        members: members.results,
+        members: publicMembers,
         my_status: myStatus,
     });
 }
