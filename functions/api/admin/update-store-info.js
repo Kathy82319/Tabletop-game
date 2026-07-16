@@ -55,6 +55,6 @@ export async function onRequest(context) {
 
   } catch (error) {
     console.error('Error in update-store-info API:', error);
-    return new Response(JSON.stringify({ error: '更新店家資訊失敗。', details: error.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: '更新店家資訊失敗。' }), { status: 500 });
   }
 }

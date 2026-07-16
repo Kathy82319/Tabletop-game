@@ -73,7 +73,7 @@ export async function onRequest(context) {
 
   } catch (error) {
     console.error('Error in update-user-profile API:', error);
-    const errorResponse = { error: '伺服器內部錯誤，更新資料失敗。', details: error.message };
+    const errorResponse = { error: '伺服器內部錯誤，更新資料失敗。' };
     return new Response(JSON.stringify(errorResponse), {
       status: 500, headers: { 'Content-Type': 'application/json' },
     });

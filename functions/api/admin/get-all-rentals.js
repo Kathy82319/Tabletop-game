@@ -79,6 +79,6 @@ const todayDate = new Date();
 
   } catch (error) {
     console.error('Error in get-all-rentals API:', error);
-    return new Response(JSON.stringify({ error: '獲取所有租借紀錄失敗。', details: error.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: '獲取所有租借紀錄失敗。' }), { status: 500 });
   }
 }

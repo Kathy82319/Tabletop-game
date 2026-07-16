@@ -52,7 +52,7 @@ export async function onRequest(context) {
 
   } catch (error) {
     console.error('Error in dashboard-stats API:', error);
-    return new Response(JSON.stringify({ error: '獲取儀表板數據失敗。', details: error.message }), {
+    return new Response(JSON.stringify({ error: '獲取儀表板數據失敗。' }), {
       status: 500,
     });
   }

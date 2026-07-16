@@ -29,7 +29,7 @@ export async function onRequest(context) {
 
   } catch (error) {
     console.error('Error in update-boardgame-order API:', error);
-    return new Response(JSON.stringify({ error: '更新順序失敗。', details: error.message }), {
+    return new Response(JSON.stringify({ error: '更新順序失敗。' }), {
       status: 500,
     });
   }

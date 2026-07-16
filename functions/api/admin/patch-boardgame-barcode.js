@@ -34,6 +34,6 @@ export async function onRequest(context) {
         });
 
     } catch (error) {
-        return new Response(JSON.stringify({ error: '更新失敗', details: error.message }), { status: 500 });
+        return new Response(JSON.stringify({ error: '更新失敗' }), { status: 500 });
     }
 }

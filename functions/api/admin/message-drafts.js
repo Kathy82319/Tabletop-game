@@ -60,6 +60,6 @@ export async function onRequest(context) {
 
     } catch (error) {
         console.error('訊息草稿 API 錯誤:', error);
-        return new Response(JSON.stringify({ error: '處理草稿時發生錯誤。', details: error.message }), { status: 500 });
+        return new Response(JSON.stringify({ error: '處理草稿時發生錯誤。' }), { status: 500 });
     }
 }

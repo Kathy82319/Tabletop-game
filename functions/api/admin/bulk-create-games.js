@@ -100,6 +100,6 @@ export async function onRequest(context) {
 
     } catch (error) {
         console.error('Error in bulk-create-games API:', error);
-        return new Response(JSON.stringify({ error: '批量匯入時發生嚴重錯誤', details: error.message }), { status: 500 });
+        return new Response(JSON.stringify({ error: '批量匯入時發生嚴重錯誤' }), { status: 500 });
     }
 }

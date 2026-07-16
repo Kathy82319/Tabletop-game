@@ -26,6 +26,6 @@ export async function onRequest(context) {
 
   } catch (error) {
     console.error('Error in batch-set-rent-price API:', error);
-    return new Response(JSON.stringify({ error: '批次設定租金失敗', details: error.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: '批次設定租金失敗' }), { status: 500 });
   }
 }

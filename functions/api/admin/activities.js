@@ -33,7 +33,7 @@ export async function onRequest(context) {
         return new Response('無效的請求方法', { status: 405 });
     } catch (error) {
         console.error('Error in activities API:', error);
-        return new Response(JSON.stringify({ error: '處理動態消息時發生錯誤', details: error.message }), {
+        return new Response(JSON.stringify({ error: '處理動態消息時發生錯誤' }), {
             status: 500, headers: { 'Content-Type': 'application/json' }
         });
     }

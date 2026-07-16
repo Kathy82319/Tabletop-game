@@ -58,6 +58,6 @@ export async function onRequest(context) {
     return new Response(JSON.stringify({ success: true, message: '預約成功！' }), { status: 201 });
   } catch (error) {
     console.error('Error in bookings-create API:', error);
-    return new Response(JSON.stringify({ error: '建立預約失敗。', details: error.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: '建立預約失敗。' }), { status: 500 });
   }
 }

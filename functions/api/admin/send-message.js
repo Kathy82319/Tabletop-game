@@ -33,6 +33,6 @@ export async function onRequest(context) {
 
     } catch (error) {
         console.error("Error sending LINE message:", error);
-        return new Response(JSON.stringify({ error: '發送訊息失敗。', details: error.message }), { status: 500 });
+        return new Response(JSON.stringify({ error: '發送訊息失敗。' }), { status: 500 });
     }
 }

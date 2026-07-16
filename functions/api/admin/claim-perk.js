@@ -38,6 +38,6 @@ export async function onRequest(context) {
 
   } catch (error) {
     console.error('Error in claim-perk API:', error);
-    return new Response(JSON.stringify({ error: '標記福利時發生錯誤', details: error.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: '標記福利時發生錯誤' }), { status: 500 });
   }
 }

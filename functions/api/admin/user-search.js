@@ -33,7 +33,7 @@ export async function onRequest(context) {
 
   } catch (error) {
     console.error('Error in user-search API:', error);
-    return new Response(JSON.stringify({ error: '搜尋使用者失敗', details: error.message }), {
+    return new Response(JSON.stringify({ error: '搜尋使用者失敗' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
