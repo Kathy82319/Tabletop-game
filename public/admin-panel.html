@@ -1032,6 +1032,27 @@
         </div>
     </div>
 
+<div id="sell-game-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 id="sell-game-title">賣出遊戲</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="sell-game-form">
+                <input type="hidden" id="sell-game-id">
+                <div class="form-group">
+                    <label for="sell-game-quantity">賣出數量</label>
+                    <input type="number" id="sell-game-quantity" min="1" value="1" required>
+                </div>
+                <p id="sell-game-stock-hint" style="font-size: 0.9rem; color: var(--text-light);"></p>
+                <div class="form-actions">
+                    <button type="button" class="action-btn btn-cancel">取消</button>
+                    <button type="submit" class="action-btn btn-save">確認賣出</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 <div id="import-csv-modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">

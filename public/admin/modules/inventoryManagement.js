@@ -15,6 +15,7 @@ let searchChips = [];
 
 let gameListTbody, gameSearchInput, editGameModal, editGameForm, inventoryStockFilter;
 let btnDownloadTemplate, btnImportCSV, btnAddNewProduct, importCSVModal, importCSVForm;
+let sellGameModal, sellGameForm;
 
 // --- Tag Chip Management ---
 
@@ -353,6 +354,11 @@ function updateRowStockDisplay(gameId) {
     const backupEl = row.querySelector('.backup-display');
     if (backupEl) backupEl.textContent = backup;
 
+    const totalEl = row.querySelector('.inline-val[data-field="total_stock"]');
+    if (totalEl && !totalEl.querySelector('input')) totalEl.textContent = game.total_stock;
+    const saleEl = row.querySelector('.inline-val[data-field="for_sale_stock"]');
+    if (saleEl && !saleEl.querySelector('input')) saleEl.textContent = game.for_sale_stock;
+
     const tagsArea = row.querySelector('.tags-area');
     if (tagsArea) {
         tagsArea.querySelectorAll('.auto-tag').forEach(t => t.remove());
@@ -505,10 +511,58 @@ function renderGameList(games) {
         cellActions.innerHTML = `
             <div style="display: flex; gap: 5px; justify-content: center;">
                 <button class="action-btn btn-rent" data-gameid="${game.game_id}" style="background-color: #007bff;">出借</button>
+                <button class="action-btn btn-sell" data-gameid="${game.game_id}" style="background-color: #28a745;">賣出</button>
                 <button class="action-btn btn-edit-game" data-gameid="${game.game_id}" style="background-color: #ffc107; color: #000;">編輯</button>
             </div>
         `;
     });
+}
+
+// --- Sell Game ---
+
+function openSellGameModal(gameId) {
+    const game = allGamesData.find(g => g.game_id == gameId);
+    if (!game) return ui.toast.error('找不到遊戲資料');
+
+    sellGameForm.reset();
+    document.getElementById('sell-game-id').value = gameId;
+    document.getElementById('sell-game-title').textContent = `賣出：${game.name}`;
+    const quantityInput = document.getElementById('sell-game-quantity');
+    quantityInput.value = 1;
+    quantityInput.max = game.for_sale_stock;
+    document.getElementById('sell-game-stock-hint').textContent = `目前販售庫存：${game.for_sale_stock}`;
+
+    ui.showModal('#sell-game-modal');
+}
+
+async function handleSellGameFormSubmit(e) {
+    e.preventDefault();
+
+    const gameId = document.getElementById('sell-game-id').value;
+    const quantity = Number(document.getElementById('sell-game-quantity').value);
+    const game = allGamesData.find(g => g.game_id == gameId);
+    if (!game) return;
+
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+        return ui.toast.error('賣出數量必須為正整數');
+    }
+    if (quantity > Number(game.for_sale_stock)) {
+        return ui.toast.error(`販售庫存只剩 ${game.for_sale_stock}，無法賣出 ${quantity} 件`);
+    }
+
+    try {
+        const result = await api.sellGame({ gameId, quantity });
+
+        game.total_stock = result.total_stock;
+        game.for_sale_stock = result.for_sale_stock;
+        game.is_visible = result.is_visible;
+
+        updateRowStockDisplay(gameId);
+        ui.hideModal('#sell-game-modal');
+        ui.toast.success(result.message || '賣出成功');
+    } catch (error) {
+        ui.toast.error(`賣出失敗：${error.message}`);
+    }
 }
 
 // --- Search Chips ---
@@ -855,10 +909,13 @@ function setupEventListeners() {
             if (context && context.openCreateRentalModal) {
                 context.openCreateRentalModal(gameId);
             }
+        } else if (target.classList.contains('btn-sell')) {
+            openSellGameModal(gameId);
         }
     });
 
     editGameForm.addEventListener('submit', handleEditGameFormSubmit);
+    if (sellGameForm) sellGameForm.addEventListener('submit', handleSellGameFormSubmit);
 
     ['edit-total-stock', 'edit-for-sale-stock', 'edit-for-rent-stock'].forEach(id => {
         document.getElementById(id)?.addEventListener('input', updateBackupStock);
@@ -888,6 +945,8 @@ export const init = async (ctx, param) => {
     inventoryStockFilter = pageElement.querySelector('#inventory-stock-filter');
     editGameModal = document.getElementById('edit-game-modal');
     editGameForm = document.getElementById('edit-game-form');
+    sellGameModal = document.getElementById('sell-game-modal');
+    sellGameForm = document.getElementById('sell-game-form');
 
     btnDownloadTemplate = pageElement.querySelector('#btn-download-csv-template');
     btnImportCSV = pageElement.querySelector('#btn-import-csv');
