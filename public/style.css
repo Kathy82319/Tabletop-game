@@ -2730,6 +2730,17 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     margin: 0;
 }
 
+/* ── 記分板：修改暱稱彈窗（獨立於 tool-overlay 之外，用 fixed 確保任何頁面都能正確蓋滿）── */
+#sb-rename-popup {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2100;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
 /* ── 記分板：QR 浮層 ────────────────────────────────────────── */
 .sb-qr-modal {
     position: absolute;

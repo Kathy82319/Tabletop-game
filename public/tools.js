@@ -965,25 +965,59 @@ async function sbRemovePlayer(player) {
     }
 }
 
-// ── 修改玩家暱稱（房主可改任何人）───────────────────────────
-async function sbRenamePlayer(player) {
-    const newName = prompt('修改暱稱：', player.nickname);
-    if (newName === null) return;
-    const trimmed = newName.trim();
-    if (!trimmed || trimmed === player.nickname) return;
+// ── 修改暱稱彈窗（房主視角與玩家自己視角共用，取代原生 prompt()）──
+// 原生 prompt() 會在對話框上方顯示網站網域，改用站內彈窗避免這個瀏覽器行為
+function sbOpenRenamePopup(player, onConfirm) {
+    const popup   = document.getElementById('sb-rename-popup');
+    const input   = document.getElementById('sb-rename-input');
+    const errorEl = document.getElementById('sb-rename-error');
 
-    try {
-        const res = await fetch(`/api/scoreboard/${sbSessionId}/rename-player`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ player_id: player.player_id, nickname: trimmed, requester_line_id: sbOwnerLineId })
-        });
-        const data = await res.json();
-        if (data.error) { alert(data.error); return; }
-        await sbFetchAndRender('sb-rankings', true);
-    } catch (e) {
-        alert('修改失敗，請重試');
-    }
+    input.value = player.nickname;
+    errorEl.style.display = 'none';
+    popup.style.display = 'flex';
+    setTimeout(() => { input.focus(); input.select(); }, 50);
+
+    const close = () => { popup.style.display = 'none'; };
+    document.getElementById('sb-rename-cancel').onclick = close;
+
+    const confirmHandler = async () => {
+        const trimmed = input.value.trim();
+        if (!trimmed) {
+            errorEl.textContent = '請輸入暱稱';
+            errorEl.style.display = 'block';
+            return;
+        }
+        if (trimmed === player.nickname) { close(); return; }
+        const err = await onConfirm(trimmed);
+        if (err) {
+            errorEl.textContent = err;
+            errorEl.style.display = 'block';
+            return;
+        }
+        close();
+    };
+    document.getElementById('sb-rename-confirm').onclick = confirmHandler;
+    input.onkeydown = (e) => {
+        if (e.key === 'Enter') confirmHandler();
+    };
+}
+
+// ── 修改玩家暱稱（房主可改任何人）───────────────────────────
+function sbRenamePlayer(player) {
+    sbOpenRenamePopup(player, async (trimmed) => {
+        try {
+            const res = await fetch(`/api/scoreboard/${sbSessionId}/rename-player`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ player_id: player.player_id, nickname: trimmed, requester_line_id: sbOwnerLineId })
+            });
+            const data = await res.json();
+            if (data.error) return data.error;
+            await sbFetchAndRender('sb-rankings', true);
+        } catch (e) {
+            return '修改失敗，請重試';
+        }
+    });
 }
 
 // ── 手動新增玩家 ──────────────────────────────────────────────
@@ -1164,28 +1198,25 @@ async function sjFetchAndRender() {
 }
 
 // ── 修改自己的暱稱（玩家加入頁）───────────────────────────────
-async function sjRenamePlayer(player) {
-    const newName = prompt('修改我的暱稱：', player.nickname);
-    if (newName === null) return;
-    const trimmed = newName.trim();
-    if (!trimmed || trimmed === player.nickname) return;
-
-    try {
-        const res = await fetch(`/api/scoreboard/${sjSessionId}/rename-player`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                player_id: player.player_id,
-                nickname: trimmed,
-                requester_line_id: window.userProfile?.userId || null
-            })
-        });
-        const data = await res.json();
-        if (data.error) { alert(data.error); return; }
-        await sjFetchAndRender();
-    } catch (e) {
-        alert('修改失敗，請重試');
-    }
+function sjRenamePlayer(player) {
+    sbOpenRenamePopup(player, async (trimmed) => {
+        try {
+            const res = await fetch(`/api/scoreboard/${sjSessionId}/rename-player`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    player_id: player.player_id,
+                    nickname: trimmed,
+                    requester_line_id: window.userProfile?.userId || null
+                })
+            });
+            const data = await res.json();
+            if (data.error) return data.error;
+            await sjFetchAndRender();
+        } catch (e) {
+            return '修改失敗，請重試';
+        }
+    });
 }
 
 // ── 我的揪團頁（從個人資料進入）──────────────────────────────

@@ -868,6 +868,19 @@
     </div>
 </div>
 
+<!-- 記分板：修改暱稱彈窗（房主視角與玩家自己視角共用）-->
+<div id="sb-rename-popup" class="sb-score-popup" style="display:none;">
+    <div class="sb-score-popup-inner">
+        <p class="sb-popup-player-name">修改暱稱</p>
+        <input type="text" id="sb-rename-input" class="sb-popup-input" style="font-size:1.2rem;" placeholder="輸入新暱稱" maxlength="20">
+        <p id="sb-rename-error" style="color:#e74c3c; font-size:0.85rem; margin:0; display:none;"></p>
+        <div class="sb-popup-btns">
+            <button id="sb-rename-cancel" class="sb-popup-btn" style="background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.15);">取消</button>
+            <button id="sb-rename-confirm" class="sb-popup-btn sb-popup-plus">確認修改</button>
+        </div>
+    </div>
+</div>
+
 <div id="counter-overlay" class="tool-overlay" style="display:none;">
     <button id="counter-close-btn" class="tool-overlay-close">✕ 關閉</button>
 
