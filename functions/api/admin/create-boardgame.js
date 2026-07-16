@@ -26,10 +26,6 @@ export async function onRequest(context) {
         const for_rent_stock = Number(body.for_rent_stock) || 0;
         const for_sale_stock = Number(body.for_sale_stock) || 0;
 
-        if (for_sale_stock + for_rent_stock > total_stock) {
-            return new Response(JSON.stringify({ error: `販售庫存 + 租借庫存不可超過總庫存。` }), { status: 400 });
-        }
-
         const is_visible = total_stock > 0 ? 1 : 0;
 
         const barcode = body.barcode ? String(body.barcode).trim() : null;

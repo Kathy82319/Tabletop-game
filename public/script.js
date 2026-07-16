@@ -296,17 +296,25 @@ function initializeGameDetailsPageFromHash(gameIdString) {
             await liff.init({ liffId: myLiffId });
 
             if (!liff.isLoggedIn()) {
+                // LINE 登入會整頁導轉，回來後網址的 hash（例如揪團分享連結）會遺失，先存起來回來後還原
+                if (location.hash) {
+                    sessionStorage.setItem('pending_hash', location.hash.substring(1));
+                }
                 liff.login();
-                return; 
+                return;
             }
             userProfile = await liff.getProfile();
             window.userProfile = userProfile;
 
-            if (!location.hash) {
+            const pendingHash = sessionStorage.getItem('pending_hash');
+            if (pendingHash) {
+                sessionStorage.removeItem('pending_hash');
+                history.replaceState({ page: pendingHash, data: null }, '', `#${pendingHash}`);
+            } else if (!location.hash) {
                 history.replaceState({ page: 'page-home', data: null }, '', '#page-home');
             }
-            
-            handleNavigation(); 
+
+            handleNavigation();
 
         } catch (err) {
             console.error("LIFF 初始化或 Profile 獲取失敗", err);

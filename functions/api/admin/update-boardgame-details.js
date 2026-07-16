@@ -29,10 +29,6 @@ export async function onRequest(context) {
         }
     }
 
-    if (Number(body.for_sale_stock) + Number(body.for_rent_stock) > Number(body.total_stock)) {
-        errors.push(`販售庫存 (${body.for_sale_stock}) + 租借庫存 (${body.for_rent_stock}) 不可超過總庫存 (${body.total_stock})。`);
-    }
-    
     const allowedDifficulties = ['簡單', '普通', '困難', '專家'];
     if (!allowedDifficulties.includes(body.difficulty)) {
         errors.push('無效的難度設定。');

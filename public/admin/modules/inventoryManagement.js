@@ -121,6 +121,8 @@ function updateBackupStock() {
         backupEl.value = backup;
         backupEl.style.color = backup < 0 ? 'var(--danger-color)' : '';
     }
+    const warningEl = document.getElementById('edit-stock-warning');
+    if (warningEl) warningEl.style.display = backup < 0 ? 'block' : 'none';
     // 庫存變動時同步更新介紹 tab 的 auto-tag chips
     currentForSaleStock = sale;
     currentForRentStock = rent;
@@ -242,6 +244,19 @@ function activateBarcodeInlineEdit(span, gameId) {
     });
 }
 
+function renderBackupValue(el, backup) {
+    if (!el) return;
+    if (backup < 0) {
+        el.textContent = `⚠️ ${backup}`;
+        el.style.color = 'var(--danger-color)';
+        el.title = '販售 + 租借 已超過總庫存，請確認庫存是否有誤';
+    } else {
+        el.textContent = backup;
+        el.style.color = '';
+        el.title = '';
+    }
+}
+
 function makeStockLabel(text) {
     const s = document.createElement('span');
     s.className = 'stock-label';
@@ -263,17 +278,6 @@ async function saveInlineEdit(span, gameId, field, originalValue, newRawValue) {
 
     const prevValue = game[field];
     game[field] = newValue; // optimistic update
-
-    const total = Number(game.total_stock);
-    const sale = Number(game.for_sale_stock);
-    const rent = Number(game.for_rent_stock);
-
-    if (sale + rent > total) {
-        game[field] = prevValue;
-        span.textContent = originalValue;
-        ui.toast.error(`販售 (${sale}) + 租借 (${rent}) 不可超過總庫存 (${total})`);
-        return;
-    }
 
     span.textContent = newValue;
 
@@ -351,8 +355,7 @@ function updateRowStockDisplay(gameId) {
     if (!row) return;
 
     const backup = Number(game.total_stock) - Number(game.for_sale_stock) - Number(game.for_rent_stock);
-    const backupEl = row.querySelector('.backup-display');
-    if (backupEl) backupEl.textContent = backup;
+    renderBackupValue(row.querySelector('.backup-display'), backup);
 
     const totalEl = row.querySelector('.inline-val[data-field="total_stock"]');
     if (totalEl && !totalEl.querySelector('input')) totalEl.textContent = game.total_stock;
@@ -479,7 +482,7 @@ function renderGameList(games) {
 
         const backupSpan = document.createElement('span');
         backupSpan.className = 'backup-display backup-val';
-        backupSpan.textContent = backup;
+        renderBackupValue(backupSpan, backup);
 
         detailCol.appendChild(makeFieldRow('販售', makeInlineVal('for_sale_stock', game.game_id, saleStock)));
         detailCol.appendChild(makeFieldRow('租借', makeInlineVal('for_rent_stock', game.game_id, game.for_rent_stock)));
@@ -718,10 +721,6 @@ async function handleEditGameFormSubmit(e) {
     const totalStock = Number(document.getElementById('edit-total-stock').value);
     const forSaleStock = Number(document.getElementById('edit-for-sale-stock').value);
     const forRentStock = Number(document.getElementById('edit-for-rent-stock').value);
-
-    if (forSaleStock + forRentStock > totalStock) {
-        return ui.toast.error(`販售庫存 (${forSaleStock}) + 租借庫存 (${forRentStock}) 不可超過總庫存 (${totalStock})`);
-    }
 
     const updatedData = {
         name: document.getElementById('edit-game-name').value,

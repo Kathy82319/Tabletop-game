@@ -1951,6 +1951,15 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .timer-ring-prog.done { stroke: #e74c3c; }
 
+@keyframes timer-flash-anim {
+    0%, 100% { background-color: rgba(15, 8, 3, 0.95); }
+    50% { background-color: rgba(231, 76, 60, 0.75); }
+}
+
+#timer-overlay.timer-flash {
+    animation: timer-flash-anim 0.5s ease-in-out 4;
+}
+
 #timer-display {
     position: absolute;
     inset: 0;
@@ -2903,6 +2912,25 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .game-history-card { cursor: pointer; transition: box-shadow 0.15s; }
 .game-history-card:hover { box-shadow: 0 4px 18px rgba(184, 134, 11, 0.25); }
+
+/* ── 記分板：修改暱稱按鈕 ───────────────────────────────────── */
+.sb-rename-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.25);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    transition: color 0.15s, background 0.15s;
+}
+
+.sb-rename-btn:hover {
+    color: var(--color-frame-gold);
+    background: rgba(184, 134, 11, 0.15);
+}
 
 /* ── 記分板：移除玩家按鈕 ───────────────────────────────────── */
 .sb-remove-btn {

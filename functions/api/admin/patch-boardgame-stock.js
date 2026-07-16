@@ -24,12 +24,6 @@ export async function onRequest(context) {
         const saleN = Number(for_sale_stock);
         const rentN = Number(for_rent_stock);
 
-        if (saleN + rentN > totalN) {
-            return new Response(JSON.stringify({
-                error: `販售庫存 (${saleN}) + 租借庫存 (${rentN}) 不可超過總庫存 (${totalN})`
-            }), { status: 400 });
-        }
-
         const is_visible = totalN > 0 ? 1 : 0;
         const db = context.env.DB;
 

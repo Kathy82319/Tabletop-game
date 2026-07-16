@@ -372,6 +372,35 @@ function timerRender() {
 function timerDone() {
     document.getElementById('timer-display').textContent = '時間到！';
     if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 500]);
+
+    // 震動 API 在 iOS（含 LINE 內建瀏覽器）完全不支援，這裡補上聲音+閃爍提醒，確保各裝置都有感
+    timerPlayBeep();
+    const overlay = document.getElementById('timer-overlay');
+    overlay.classList.add('timer-flash');
+    setTimeout(() => overlay.classList.remove('timer-flash'), 2000);
+}
+
+function timerPlayBeep() {
+    try {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new Ctx();
+        const beepAt = (startTime) => {
+            const osc  = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.value = 880;
+            gain.gain.setValueAtTime(0.001, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.3, startTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3);
+            osc.start(startTime);
+            osc.stop(startTime + 0.3);
+        };
+        beepAt(ctx.currentTime);
+        beepAt(ctx.currentTime + 0.4);
+        beepAt(ctx.currentTime + 0.8);
+    } catch (e) { /* 部分瀏覽器可能封鎖自動播放，忽略即可 */ }
 }
 
 // ================================================================
@@ -822,6 +851,9 @@ function sbRenderRankings(containerId) {
         card.className = 'sb-player-card';
         if (isOwner) card.style.cursor = 'pointer';
 
+        const renameBtn = isOwner
+            ? `<button class="sb-rename-btn" title="修改暱稱">✎</button>`
+            : '';
         const removeBtn = isOwner
             ? `<button class="sb-remove-btn" title="移除玩家">×</button>`
             : '';
@@ -830,11 +862,19 @@ function sbRenderRankings(containerId) {
             <div class="sb-card-top">
                 <span class="sb-name">${p.nickname}</span>
                 <span class="sb-score">${p.score}<span class="sb-score-unit"> 分</span></span>
+                ${renameBtn}
                 ${removeBtn}
             </div>`;
 
         if (isOwner) {
             card.onclick = () => sbOpenScorePopup(p);
+            const rBtn = card.querySelector('.sb-rename-btn');
+            if (rBtn) {
+                rBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    sbRenamePlayer(p);
+                };
+            }
             const btn = card.querySelector('.sb-remove-btn');
             if (btn) {
                 btn.onclick = (e) => {
@@ -922,6 +962,27 @@ async function sbRemovePlayer(player) {
         await sbFetchAndRender('sb-rankings', true);
     } catch (e) {
         alert('移除失敗，請重試');
+    }
+}
+
+// ── 修改玩家暱稱（房主可改任何人）───────────────────────────
+async function sbRenamePlayer(player) {
+    const newName = prompt('修改暱稱：', player.nickname);
+    if (newName === null) return;
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === player.nickname) return;
+
+    try {
+        const res = await fetch(`/api/scoreboard/${sbSessionId}/rename-player`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ player_id: player.player_id, nickname: trimmed, requester_line_id: sbOwnerLineId })
+        });
+        const data = await res.json();
+        if (data.error) { alert(data.error); return; }
+        await sbFetchAndRender('sb-rankings', true);
+    } catch (e) {
+        alert('修改失敗，請重試');
     }
 }
 
@@ -1083,15 +1144,48 @@ async function sjFetchAndRender() {
         players.forEach((p, rank) => {
             const card = document.createElement('div');
             card.className = 'sb-player-card' + (rank === 0 ? ' sb-first' : '');
+            const isSelf = p.player_id === sjPlayerId;
+            const renameBtn = isSelf
+                ? `<button class="sb-rename-btn" title="修改我的暱稱">✎</button>`
+                : '';
             card.innerHTML = `
                 <div class="sb-card-top">
                     <span class="sb-rank">${rank === 0 ? '👑' : rank + 1}</span>
                     <span class="sb-name">${p.nickname}</span>
                     <span class="sb-score">${p.score}<span class="sb-score-unit"> 分</span></span>
+                    ${renameBtn}
                 </div>`;
+            if (isSelf) {
+                card.querySelector('.sb-rename-btn').onclick = () => sjRenamePlayer(p);
+            }
             container.appendChild(card);
         });
     } catch (e) { /* 等下次 */ }
+}
+
+// ── 修改自己的暱稱（玩家加入頁）───────────────────────────────
+async function sjRenamePlayer(player) {
+    const newName = prompt('修改我的暱稱：', player.nickname);
+    if (newName === null) return;
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === player.nickname) return;
+
+    try {
+        const res = await fetch(`/api/scoreboard/${sjSessionId}/rename-player`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                player_id: player.player_id,
+                nickname: trimmed,
+                requester_line_id: window.userProfile?.userId || null
+            })
+        });
+        const data = await res.json();
+        if (data.error) { alert(data.error); return; }
+        await sjFetchAndRender();
+    } catch (e) {
+        alert('修改失敗，請重試');
+    }
 }
 
 // ── 我的揪團頁（從個人資料進入）──────────────────────────────
