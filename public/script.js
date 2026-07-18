@@ -157,8 +157,19 @@ function handleNavigation() {
             location.hash = newHash;
         }
     }
-    
-    window.addEventListener('popstate', handleNavigation);
+
+    // LIFF 瀏覽器裡「上一頁記錄」用完後，手機返回鍵會直接跳出網頁回到 LINE。
+    // 補一筆重複的歷史紀錄當緩衝，讓返回鍵永遠有東西可以消耗，不會真的跳出 App。
+    function ensureBackBuffer() {
+        history.pushState({ page: location.hash.substring(1) || 'page-home' }, '', location.href);
+    }
+
+    window.addEventListener('popstate', () => {
+        handleNavigation();
+        if ((location.hash.substring(1) || 'page-home') === 'page-home') {
+            ensureBackBuffer();
+        }
+    });
     window.addEventListener('hashchange', handleNavigation);
 
     // =================================================================
@@ -316,11 +327,13 @@ function initializeGameDetailsPageFromHash(gameIdString) {
             }
 
             handleNavigation();
+            ensureBackBuffer();
 
         } catch (err) {
             console.error("LIFF 初始化或 Profile 獲取失敗", err);
             history.replaceState({ page: 'page-home', data: null }, '', '#page-home');
             handleNavigation();
+            ensureBackBuffer();
         }
     }
     // =================================================================
