@@ -26,14 +26,13 @@ export async function onRequestGet(context) {
            )`
     ).bind(profile.userId).all();
 
-    const result = [];
-    for (const row of rows.results) {
+    const result = await Promise.all(rows.results.map(async row => {
         const history = await env.DB.prepare(
             `SELECT edited_at, changes FROM GroupGatheringEditHistory
              WHERE gathering_id = ? AND id > ? ORDER BY id ASC`
         ).bind(row.id, row.last_seen_edit_id).all();
 
-        result.push({
+        return {
             gathering_id: row.id,
             name: row.name,
             organizer_name: row.organizer_name,
@@ -43,8 +42,8 @@ export async function onRequestGet(context) {
                 edited_at: h.edited_at,
                 changes: JSON.parse(h.changes),
             })),
-        });
-    }
+        };
+    }));
 
     return Response.json(result);
 }
