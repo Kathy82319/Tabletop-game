@@ -364,22 +364,19 @@ const GatherModule = (() => {
             const hasHistory = (g.edit_history || []).length > 0;
 
             let iconActionsHtml = '';
-            if (g.status !== 'cancelled') {
-                iconActionsHtml += `<button class="gg-icon-chip" id="gg-share-btn">🔗<span>分享</span></button>`;
-            }
             if (canEdit) {
                 iconActionsHtml += `<button class="gg-icon-chip" id="gg-edit-btn">✏️<span>編輯</span></button>`;
             }
-            if (hasHistory) {
-                iconActionsHtml += `<button class="gg-icon-chip" id="gg-history-btn">🕐<span>紀錄</span></button>`;
+            if (g.status !== 'cancelled') {
+                iconActionsHtml += `<button class="gg-icon-chip" id="gg-share-btn">🔗<span>分享</span></button>`;
             }
 
             content.innerHTML = `
                 <div class="gg-detail">
-                    ${iconActionsHtml ? `<div class="gg-icon-actions">${iconActionsHtml}</div>` : ''}
                     <div class="gg-detail-header">
                         <span class="gg-status-badge ${STATUS_CLASS[g.status] || ''}">${STATUS_LABEL[g.status] || g.status}</span>
                         <h2>${g.name ? escapeHtml(g.name) : (escapeHtml(g.organizer_name) + ' 的揪團')}</h2>
+                        ${iconActionsHtml ? `<div class="gg-icon-actions">${iconActionsHtml}</div>` : ''}
                     </div>
                     <div class="gg-detail-section">
                         <span class="gg-detail-label">📅 時間</span>
@@ -414,6 +411,12 @@ const GatherModule = (() => {
                     <p id="gg-action-status" class="form-status"></p>
                 </div>`;
 
+            const historyBtn = document.getElementById('gg-modal-history');
+            if (historyBtn) {
+                historyBtn.style.display = hasHistory ? '' : 'none';
+                historyBtn.onclick = () => showEditHistory(g, id);
+            }
+
             bindDetailActions(g, id);
         } catch {
             content.innerHTML = '<p style="color:red;">載入失敗，請稍後再試</p>';
@@ -422,6 +425,8 @@ const GatherModule = (() => {
 
     // ---- 編輯紀錄 ----
     function showEditHistory(g, id) {
+        const historyBtn = document.getElementById('gg-modal-history');
+        if (historyBtn) historyBtn.style.display = 'none';
         const content = document.getElementById('gg-modal-content');
         if (!content) return;
         const list = g.edit_history || [];
@@ -448,6 +453,8 @@ const GatherModule = (() => {
 
     // ---- 編輯揪團 ----
     function showEditForm(g, id) {
+        const historyBtn = document.getElementById('gg-modal-history');
+        if (historyBtn) historyBtn.style.display = 'none';
         const content = document.getElementById('gg-modal-content');
         if (!content) return;
 
@@ -631,11 +638,6 @@ const GatherModule = (() => {
         const editBtn = document.getElementById('gg-edit-btn');
         if (editBtn) {
             editBtn.addEventListener('click', () => showEditForm(g, id));
-        }
-
-        const historyBtn = document.getElementById('gg-history-btn');
-        if (historyBtn) {
-            historyBtn.addEventListener('click', () => showEditHistory(g, id));
         }
 
         const joinBtn = document.getElementById('gg-join-btn');
@@ -1167,11 +1169,6 @@ const GatherModule = (() => {
                 const tabBtn = e.target.closest('.booking-tab-btn');
                 if (tabBtn) {
                     setGatherSubView(tabBtn.dataset.tab === 'booking-tab-gather' ? 'gather-main' : 'reserve');
-                }
-
-                // 揪團分頁內的「← 返回」（我的揪團／發起揪團 返回列表）
-                if (e.target.closest('.gather-subview-back-btn')) {
-                    setGatherSubView('gather-main');
                 }
 
                 // 彈窗關閉（點背景或 ✕ 按鈕）

@@ -140,7 +140,7 @@ p {
 }
 
 /* 返回按鈕 */
-.details-back-button, .back-button, .gather-subview-back-btn {
+.details-back-button, .back-button {
     font-family: var(--font-primary);
     font-size: 1rem;
     color: var(--color-text-secondary);
@@ -153,7 +153,7 @@ p {
     transition: all 0.3s ease;
 }
 
-.details-back-button:hover, .back-button:hover, .gather-subview-back-btn:hover {
+.details-back-button:hover, .back-button:hover {
     background-color: var(--color-frame-gold);
     color: white;
 }
@@ -4085,6 +4085,19 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     line-height: 1;
     padding: 4px 6px;
 }
+/* 編輯紀錄時鐘圖示，緊貼在 ✕ 旁邊 */
+#gg-modal-history {
+    position: absolute;
+    top: 12px;
+    right: 42px;
+    background: none;
+    border: none;
+    font-size: 1.15rem;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px 6px;
+}
 #gg-modal-content .cta-button {
     padding: 9px 16px;
     font-size: 0.95rem;
@@ -4116,15 +4129,11 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     margin-top: 20px;
 }
 
-/* 詳情彈窗右上角、✕ 下方的小方框圖示按鈕（分享／編輯／編輯紀錄），直向排列 */
+/* 標題下方的小方框圖示按鈕（分享／編輯） */
 .gg-icon-actions {
-    position: absolute;
-    top: 40px;
-    right: 12px;
     display: flex;
-    flex-direction: column;
-    gap: 6px;
-    align-items: flex-end;
+    gap: 8px;
+    margin-top: 8px;
 }
 .gg-icon-chip {
     display: flex;
