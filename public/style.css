@@ -140,7 +140,7 @@ p {
 }
 
 /* 返回按鈕 */
-.details-back-button, .back-button {
+.details-back-button, .back-button, .gather-subview-back-btn {
     font-family: var(--font-primary);
     font-size: 1rem;
     color: var(--color-text-secondary);
@@ -153,7 +153,7 @@ p {
     transition: all 0.3s ease;
 }
 
-.details-back-button:hover, .back-button:hover {
+.details-back-button:hover, .back-button:hover, .gather-subview-back-btn:hover {
     background-color: var(--color-frame-gold);
     color: white;
 }

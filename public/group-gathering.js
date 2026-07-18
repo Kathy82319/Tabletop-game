@@ -1075,10 +1075,7 @@ const GatherModule = (() => {
                     statusEl.textContent = '揪團發布成功！';
                     statusEl.style.color = '#27ae60';
                     form.reset();
-                    setTimeout(() => {
-                        backToMain();
-                        loadList();
-                    }, 1500);
+                    setTimeout(() => setGatherSubView('gather-main'), 1500);
                 } catch (err) {
                     statusEl.textContent = err.message;
                     statusEl.style.color = '#e74c3c';
@@ -1124,6 +1121,40 @@ const GatherModule = (() => {
         if (main) main.style.display = 'block';
     }
 
+    function activateBookingTab(tabId) {
+        const scope = document.querySelector('.booking-tab-bar')?.parentElement;
+        if (!scope) return;
+        scope.querySelectorAll('.booking-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+        scope.querySelectorAll('.booking-tab-content').forEach(c => c.classList.toggle('active', c.id === tabId));
+        const titleEl = document.getElementById('booking-page-title');
+        if (titleEl) titleEl.textContent = tabId === 'booking-tab-gather' ? '揪團桌遊' : '場地預約';
+    }
+
+    // 統一管理「場地預約／揪團桌遊」分頁切換，以及揪團分頁內的子畫面（列表／我的揪團／發起揪團），
+    // 並同步瀏覽器歷史紀錄，讓手機返回鍵可以照原路一步步返回，而不是直接跳出 App。
+    function setGatherSubView(view, push = true) {
+        if (view === 'reserve') {
+            activateBookingTab('booking-tab-reserve');
+            window.initBookingDatepicker?.();
+        } else {
+            activateBookingTab('booking-tab-gather');
+            if (view === 'gather-my') {
+                showMyGatherings();
+            } else if (view === 'gather-create') {
+                showCreateForm();
+            } else {
+                backToMain();
+                loadList();
+            }
+        }
+        if (push) history.pushState({ gatherSubView: view }, '', location.href);
+    }
+
+    window.addEventListener('popstate', e => {
+        const view = (e.state && e.state.gatherSubView) || 'gather-main';
+        setGatherSubView(view, false);
+    });
+
     // ---- 初始化（在 booking 頁面載入時呼叫）----
     let delegationSetup = false;
     function init() {
@@ -1135,16 +1166,12 @@ const GatherModule = (() => {
                 // 分頁切換
                 const tabBtn = e.target.closest('.booking-tab-btn');
                 if (tabBtn) {
-                    const scope = tabBtn.closest('.booking-tab-bar')?.parentElement;
-                    if (!scope) return;
-                    scope.querySelectorAll('.booking-tab-btn').forEach(b => b.classList.remove('active'));
-                    scope.querySelectorAll('.booking-tab-content').forEach(c => c.classList.remove('active'));
-                    tabBtn.classList.add('active');
-                    scope.querySelector(`#${tabBtn.dataset.tab}`)?.classList.add('active');
-                    const titleEl = document.getElementById('booking-page-title');
-                    if (titleEl) titleEl.textContent = tabBtn.dataset.tab === 'booking-tab-gather' ? '揪團桌遊' : '場地預約';
-                    if (tabBtn.dataset.tab === 'booking-tab-gather') { backToMain(); loadList(); }
-                    if (tabBtn.dataset.tab === 'booking-tab-reserve') { window.initBookingDatepicker?.(); }
+                    setGatherSubView(tabBtn.dataset.tab === 'booking-tab-gather' ? 'gather-main' : 'reserve');
+                }
+
+                // 揪團分頁內的「← 返回」（我的揪團／發起揪團 返回列表）
+                if (e.target.closest('.gather-subview-back-btn')) {
+                    setGatherSubView('gather-main');
                 }
 
                 // 彈窗關閉（點背景或 ✕ 按鈕）
@@ -1168,8 +1195,8 @@ const GatherModule = (() => {
             const el = document.getElementById(id);
             if (el && !el.dataset.l) { el.dataset.l = '1'; el.addEventListener('click', handler); }
         };
-        bindOnce('gather-create-btn', showCreateForm);
-        bindOnce('gather-my-btn', showMyGatherings);
+        bindOnce('gather-create-btn', () => setGatherSubView('gather-create'));
+        bindOnce('gather-my-btn', () => setGatherSubView('gather-my'));
 
         const pastToggle = document.getElementById('gg-past-toggle');
         const pastContainer = document.getElementById('gg-past-container');
