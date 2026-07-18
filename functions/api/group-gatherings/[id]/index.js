@@ -1,3 +1,5 @@
+import { STORE_ORGANIZER_USER_ID } from '../../_lib/constants.js';
+
 export async function onRequestGet(context) {
     const { env, params, request } = context;
     const id = params.id;
@@ -53,6 +55,7 @@ export async function onRequestGet(context) {
         games: JSON.parse(g.games || '[]'),
         members: publicMembers,
         my_status: myStatus,
+        is_store_organizer: organizer_user_id === STORE_ORGANIZER_USER_ID,
         edit_history: editHistory.results.map(h => ({
             edited_at: h.edited_at,
             changes: JSON.parse(h.changes),

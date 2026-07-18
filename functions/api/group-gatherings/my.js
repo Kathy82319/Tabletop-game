@@ -1,3 +1,5 @@
+import { STORE_ORGANIZER_USER_ID } from '../_lib/constants.js';
+
 export async function onRequestGet(context) {
     const { request, env } = context;
 
@@ -27,7 +29,7 @@ export async function onRequestGet(context) {
     ).bind(userId).all();
 
     const joined = await env.DB.prepare(
-        `SELECT g.id, g.organizer_name, g.name, g.event_date, g.start_time, g.end_time,
+        `SELECT g.id, g.organizer_name, g.organizer_user_id, g.name, g.event_date, g.start_time, g.end_time,
                 g.max_participants, g.games, g.note, g.deadline, g.status, g.share_token,
                 me.status as my_status,
                 COUNT(CASE WHEN m.status != 'rejected' THEN 1 END) as member_count
@@ -39,7 +41,18 @@ export async function onRequestGet(context) {
          ORDER BY g.event_date DESC`
     ).bind(userId, userId).all();
 
-    const parse = list => list.results.map(g => ({ ...g, games: JSON.parse(g.games || '[]') }));
+    const isStoreOrganizer = userId === STORE_ORGANIZER_USER_ID;
+    const parseOrganized = list => list.results.map(g => ({
+        ...g, games: JSON.parse(g.games || '[]'), is_store_organizer: isStoreOrganizer,
+    }));
+    const parseJoined = list => list.results.map(g => {
+        const { organizer_user_id, ...publicG } = g;
+        return {
+            ...publicG,
+            games: JSON.parse(g.games || '[]'),
+            is_store_organizer: organizer_user_id === STORE_ORGANIZER_USER_ID,
+        };
+    });
 
-    return Response.json({ organized: parse(organized), joined: parse(joined) });
+    return Response.json({ organized: parseOrganized(organized), joined: parseJoined(joined) });
 }

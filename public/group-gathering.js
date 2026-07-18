@@ -46,6 +46,12 @@ const GatherModule = (() => {
         cancelled: 'gg-status-failed',
     };
 
+    // 店家自己開的團，「揪團中」標籤改顯示「店家開團」
+    function getStatusLabel(g) {
+        if (g.status === 'open' && g.is_store_organizer) return '店家開團';
+        return STATUS_LABEL[g.status] || g.status;
+    }
+
     function formatDeadline(dt) {
         if (!dt) return '';
         const d = new Date(dt.replace(' ', 'T'));
@@ -98,7 +104,7 @@ const GatherModule = (() => {
     }
 
     function renderGatherCard(g, showMyStatus = false) {
-        const statusLabel = STATUS_LABEL[g.status] || g.status;
+        const statusLabel = getStatusLabel(g);
         const statusClass = STATUS_CLASS[g.status] || '';
         const maxText = g.max_participants ? `${(g.member_count || 0) + 1} / ${g.max_participants}` : `${(g.member_count || 0) + 1} 人`;
         const myBadge = showMyStatus && g.my_status && g.my_status !== 'organizer'
@@ -374,7 +380,7 @@ const GatherModule = (() => {
             content.innerHTML = `
                 <div class="gg-detail">
                     <div class="gg-detail-header">
-                        <span class="gg-status-badge ${STATUS_CLASS[g.status] || ''}">${STATUS_LABEL[g.status] || g.status}</span>
+                        <span class="gg-status-badge ${STATUS_CLASS[g.status] || ''}">${getStatusLabel(g)}</span>
                         <h2>${g.name ? escapeHtml(g.name) : (escapeHtml(g.organizer_name) + ' 的揪團')}</h2>
                         ${iconActionsHtml ? `<div class="gg-icon-actions">${iconActionsHtml}</div>` : ''}
                     </div>
