@@ -4116,47 +4116,21 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     margin-top: 20px;
 }
 
-/* 揪團詳情：圖示按鈕（分享／編輯） */
-.gg-icon-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
-.gg-icon-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    width: 52px;
-    padding: 8px 4px;
-    background: rgba(184, 134, 11, 0.08);
-    border: 1px solid rgba(184, 134, 11, 0.3);
-    border-radius: 10px;
-    font-size: 1.1rem;
-    cursor: pointer;
-    color: inherit;
-}
-.gg-icon-btn:active {
-    background: rgba(184, 134, 11, 0.18);
-}
-.gg-icon-btn-label {
-    font-size: 0.68rem;
-    color: var(--color-text-secondary);
-}
-
-/* 詳情彈窗右上角的編輯紀錄時鐘圖示 */
-#gg-modal-history {
+/* 詳情彈窗右上角的圖示按鈕（分享／編輯／編輯紀錄），緊貼 ✕ 排成一列 */
+.gg-modal-icon-btn {
     position: absolute;
     top: 12px;
-    right: 42px;
     background: none;
     border: none;
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     color: var(--color-text-secondary);
     cursor: pointer;
     line-height: 1;
-    padding: 4px 6px;
+    padding: 2px 3px;
 }
+#gg-modal-history { right: 40px; }
+#gg-modal-edit    { right: 65px; }
+#gg-modal-share   { right: 90px; }
 
 /* 編輯紀錄列表 */
 .gg-history-entry {

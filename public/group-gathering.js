@@ -361,20 +361,12 @@ const GatherModule = (() => {
             }
 
             const canEdit = isOrganizer && (isOpen || isClosed);
-            let iconActionsHtml = '';
-            if (canEdit) {
-                iconActionsHtml += `<button class="gg-icon-btn" id="gg-edit-btn" title="編輯揪團">✏️<span class="gg-icon-btn-label">編輯</span></button>`;
-            }
-            if (g.status !== 'cancelled') {
-                iconActionsHtml += `<button class="gg-icon-btn" id="gg-share-btn" title="分享揪團連結">🔗<span class="gg-icon-btn-label">分享</span></button>`;
-            }
 
             content.innerHTML = `
                 <div class="gg-detail">
                     <div class="gg-detail-header">
                         <span class="gg-status-badge ${STATUS_CLASS[g.status] || ''}">${STATUS_LABEL[g.status] || g.status}</span>
                         <h2>${g.name ? escapeHtml(g.name) : (escapeHtml(g.organizer_name) + ' 的揪團')}</h2>
-                        <div class="gg-icon-actions">${iconActionsHtml}</div>
                     </div>
                     <div class="gg-detail-section">
                         <span class="gg-detail-label">📅 時間</span>
@@ -416,16 +408,49 @@ const GatherModule = (() => {
                 historyBtn.onclick = () => showEditHistory(g, id);
             }
 
+            const editIconBtn = document.getElementById('gg-modal-edit');
+            if (editIconBtn) {
+                editIconBtn.style.display = canEdit ? '' : 'none';
+                editIconBtn.onclick = () => showEditForm(g, id);
+            }
+
+            const shareIconBtn = document.getElementById('gg-modal-share');
+            if (shareIconBtn) {
+                shareIconBtn.style.display = g.status !== 'cancelled' ? '' : 'none';
+                shareIconBtn.onclick = () => {
+                    const shareUrl = `${location.origin}${location.pathname}#gather-share@${g.share_token}`;
+                    if (navigator.share) {
+                        navigator.share({ title: `${g.organizer_name} 的揪團`, url: shareUrl });
+                    } else if (navigator.clipboard) {
+                        navigator.clipboard.writeText(shareUrl).then(() => {
+                            const statusEl = document.getElementById('gg-action-status');
+                            if (statusEl) { statusEl.textContent = '連結已複製！'; statusEl.style.color = '#27ae60'; }
+                        });
+                    } else {
+                        prompt('複製此連結分享：', shareUrl);
+                    }
+                };
+            }
+
             bindDetailActions(g, id);
         } catch {
             content.innerHTML = '<p style="color:red;">載入失敗，請稍後再試</p>';
         }
     }
 
+    // 進入子頁面（編輯紀錄／編輯表單）時，隱藏右上角的圖示按鈕，回到詳情頁再由 showDetail 重新顯示
+    function hideModalIconBtns() {
+        ['gg-modal-edit', 'gg-modal-share', 'gg-modal-history'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+    }
+
     // ---- 編輯紀錄 ----
     function showEditHistory(g, id) {
         const content = document.getElementById('gg-modal-content');
         if (!content) return;
+        hideModalIconBtns();
         const list = g.edit_history || [];
         content.innerHTML = `
             <div class="gg-detail">
@@ -452,6 +477,7 @@ const GatherModule = (() => {
     function showEditForm(g, id) {
         const content = document.getElementById('gg-modal-content');
         if (!content) return;
+        hideModalIconBtns();
 
         const [deadlineDatePart, deadlineTimePart] = (g.deadline || '').split(' ');
         const deadlineHourPart = (deadlineTimePart || '').substring(0, 2);
@@ -797,24 +823,6 @@ const GatherModule = (() => {
             });
         }
 
-        const shareBtn = document.getElementById('gg-share-btn');
-        if (shareBtn) {
-            shareBtn.addEventListener('click', () => {
-                const shareUrl = `${location.origin}${location.pathname}#gather-share@${g.share_token}`;
-                if (navigator.share) {
-                    navigator.share({ title: `${g.organizer_name} 的揪團`, url: shareUrl });
-                } else if (navigator.clipboard) {
-                    navigator.clipboard.writeText(shareUrl).then(() => setStatus('連結已複製！'));
-                } else {
-                    prompt('複製此連結分享：', shareUrl);
-                }
-            });
-        }
-
-        const editBtn = document.getElementById('gg-edit-btn');
-        if (editBtn) {
-            editBtn.addEventListener('click', () => showEditForm(g, id));
-        }
     }
 
     // ---- 我的揪團 ----
