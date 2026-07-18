@@ -360,8 +360,13 @@ const GatherModule = (() => {
                 }
             }
 
+            const canEdit = isOrganizer && (isOpen || isClosed);
+            let iconActionsHtml = '';
+            if (canEdit) {
+                iconActionsHtml += `<button class="gg-icon-btn" id="gg-edit-btn" title="編輯揪團">✏️<span class="gg-icon-btn-label">編輯</span></button>`;
+            }
             if (g.status !== 'cancelled') {
-                actionsHtml += `<button class="cta-button" id="gg-share-btn" style="margin-top:8px; background: var(--color-text-secondary);">📤 分享揪團連結</button>`;
+                iconActionsHtml += `<button class="gg-icon-btn" id="gg-share-btn" title="分享揪團連結">🔗<span class="gg-icon-btn-label">分享</span></button>`;
             }
 
             content.innerHTML = `
@@ -369,6 +374,7 @@ const GatherModule = (() => {
                     <div class="gg-detail-header">
                         <span class="gg-status-badge ${STATUS_CLASS[g.status] || ''}">${STATUS_LABEL[g.status] || g.status}</span>
                         <h2>${g.name ? escapeHtml(g.name) : (escapeHtml(g.organizer_name) + ' 的揪團')}</h2>
+                        <div class="gg-icon-actions">${iconActionsHtml}</div>
                     </div>
                     <div class="gg-detail-section">
                         <span class="gg-detail-label">📅 時間</span>
@@ -403,10 +409,203 @@ const GatherModule = (() => {
                     <p id="gg-action-status" class="form-status"></p>
                 </div>`;
 
+            const historyBtn = document.getElementById('gg-modal-history');
+            if (historyBtn) {
+                const hasHistory = (g.edit_history || []).length > 0;
+                historyBtn.style.display = hasHistory ? '' : 'none';
+                historyBtn.onclick = () => showEditHistory(g, id);
+            }
+
             bindDetailActions(g, id);
         } catch {
             content.innerHTML = '<p style="color:red;">載入失敗，請稍後再試</p>';
         }
+    }
+
+    // ---- 編輯紀錄 ----
+    function showEditHistory(g, id) {
+        const content = document.getElementById('gg-modal-content');
+        if (!content) return;
+        const list = g.edit_history || [];
+        content.innerHTML = `
+            <div class="gg-detail">
+                <div class="gg-detail-header">
+                    <h2>編輯紀錄</h2>
+                </div>
+                ${list.length === 0 ? '<p class="gg-empty">尚無編輯紀錄</p>' : list.map(h => `
+                    <div class="gg-history-entry">
+                        <div class="gg-history-time">${formatDeadline(h.edited_at)}</div>
+                        ${h.changes.map(c => `
+                            <div class="gg-history-change">
+                                <span class="gg-history-field">${escapeHtml(c.label)}</span>
+                                <span class="gg-history-old">${escapeHtml(c.old)}</span>
+                                <span class="gg-history-arrow">→</span>
+                                <span class="gg-history-new">${escapeHtml(c.new)}</span>
+                            </div>`).join('')}
+                    </div>`).join('')}
+                <button class="cta-button" id="gg-history-back-btn" style="margin-top:16px; background: var(--color-text-secondary);">← 返回</button>
+            </div>`;
+        document.getElementById('gg-history-back-btn')?.addEventListener('click', () => showDetail(id));
+    }
+
+    // ---- 編輯揪團 ----
+    function showEditForm(g, id) {
+        const content = document.getElementById('gg-modal-content');
+        if (!content) return;
+
+        const [deadlineDatePart, deadlineTimePart] = (g.deadline || '').split(' ');
+        const deadlineHourPart = (deadlineTimePart || '').substring(0, 2);
+        const hasLimit = !!g.max_participants;
+        const startOptions = GATHER_TIME_SLOTS.map(t =>
+            `<option value="${t}" ${t === g.start_time ? 'selected' : ''}>${t}</option>`).join('');
+        const deadlineHourOptions = ['08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23']
+            .map(h => `<option value="${h}" ${h === deadlineHourPart ? 'selected' : ''}>${h}:00</option>`).join('');
+        const gameList = (g.games && g.games.length ? g.games : [{}]);
+
+        content.innerHTML = `
+            <div class="gg-detail">
+                <div class="gg-detail-header"><h2>編輯揪團</h2></div>
+                <form id="ge-form">
+                    <div class="input-group">
+                        <label>揪團名稱</label>
+                        <input type="text" id="ge-name" maxlength="20" required value="${escapeHtml(g.name || '')}">
+                    </div>
+                    <div class="input-group">
+                        <label>活動日期</label>
+                        <input type="date" id="ge-date" required value="${g.event_date}">
+                    </div>
+                    <div class="input-group">
+                        <label>開始 / 預計結束時間</label>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <select id="ge-start-time" required class="gc-select" style="flex:1;">
+                                <option value="">請選擇開始時間</option>${startOptions}
+                            </select>
+                            <span>–</span>
+                            <select id="ge-end-time" required class="gc-select" style="flex:1;"></select>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>報名截止時間</label>
+                        <div class="gc-deadline-row">
+                            <input type="date" id="ge-deadline-date" required value="${deadlineDatePart || ''}">
+                            <select id="ge-deadline-hour" required class="gc-select">
+                                <option value="">時</option>${deadlineHourOptions}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>人數上限</label>
+                        <div class="gather-limit-row">
+                            <button type="button" class="gather-limit-btn ge-limit-btn ${hasLimit ? 'active' : ''}" data-limit="yes">有限制</button>
+                            <button type="button" class="gather-limit-btn ge-limit-btn ${hasLimit ? '' : 'active'}" data-limit="no">不限制</button>
+                        </div>
+                        <input type="number" id="ge-max-participants" min="1" max="50" placeholder="最多幾人（含團主）"
+                            style="margin-top:8px; display:${hasLimit ? 'block' : 'none'};" value="${g.max_participants || ''}">
+                    </div>
+                    <div class="input-group">
+                        <label>遊戲選擇（最多 3 款）</label>
+                        <div id="ge-games-container">
+                            ${gameList.map(game => `<div class="gc-game-slot">${gameSlotHtml(game)}</div>`).join('')}
+                        </div>
+                        <button type="button" id="ge-add-game-btn" class="gather-add-game-btn">＋ 新增遊戲</button>
+                    </div>
+                    <div class="input-group">
+                        <label>說明備註</label>
+                        <textarea id="ge-note" rows="3" placeholder="有什麼想讓大家知道的嗎？">${escapeHtml(g.note || '')}</textarea>
+                    </div>
+                    <div style="display:flex; gap:8px; margin-top:16px;">
+                        <button type="submit" class="cta-button" style="flex:2;">儲存變更</button>
+                        <button type="button" id="ge-cancel-btn" class="cta-button" style="flex:1; background:var(--color-text-secondary);">取消</button>
+                    </div>
+                </form>
+                <p id="ge-status" class="form-status"></p>
+            </div>`;
+
+        const gamesContainer = document.getElementById('ge-games-container');
+        const addGameBtn = document.getElementById('ge-add-game-btn');
+        bindAddGameBtn(addGameBtn, gamesContainer);
+        gamesContainer.querySelectorAll('.gc-remove-game-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.closest('.gc-game-slot').remove();
+                addGameBtn.style.display = gamesContainer.children.length >= 3 ? 'none' : '';
+            });
+        });
+
+        const startTimeEl = document.getElementById('ge-start-time');
+        const endTimeEl = document.getElementById('ge-end-time');
+        bindEndTimeFilter(startTimeEl, endTimeEl);
+        if (g.end_time) endTimeEl.value = g.end_time;
+
+        const dateEl = document.getElementById('ge-date');
+        const deadlineDateEl = document.getElementById('ge-deadline-date');
+        bindDeadlineDateConstraints(dateEl, deadlineDateEl);
+
+        const limitBtns = content.querySelectorAll('.ge-limit-btn');
+        limitBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                limitBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('ge-max-participants').style.display = btn.dataset.limit === 'yes' ? 'block' : 'none';
+            });
+        });
+
+        document.getElementById('ge-cancel-btn').addEventListener('click', () => showDetail(id));
+
+        document.getElementById('ge-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const statusEl = document.getElementById('ge-status');
+            statusEl.textContent = '';
+
+            const games = collectGames(gamesContainer);
+            const eventDate = dateEl.value;
+            const startTime = startTimeEl.value;
+            const endTime = endTimeEl.value;
+            const deadlineDate = deadlineDateEl.value;
+            const deadlineHour = document.getElementById('ge-deadline-hour').value;
+
+            const check = validateGatherFields({ eventDate, startTime, endTime, deadlineDate, deadlineHour, games });
+            if (check.error) {
+                statusEl.textContent = check.error;
+                statusEl.style.color = '#e74c3c';
+                return;
+            }
+
+            const hasLimitNow = content.querySelector('.ge-limit-btn.active')?.dataset.limit === 'yes';
+            const maxPart = hasLimitNow ? parseInt(document.getElementById('ge-max-participants').value) : null;
+
+            const payload = {
+                name: document.getElementById('ge-name').value.trim(),
+                event_date: eventDate,
+                start_time: startTime,
+                end_time: endTime,
+                deadline: `${deadlineDate} ${deadlineHour}:00:00`,
+                max_participants: maxPart || null,
+                games,
+                note: document.getElementById('ge-note').value.trim() || null,
+            };
+
+            const submitBtn = e.target.querySelector('[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '儲存中...';
+
+            try {
+                const res = await fetch(`/api/group-gatherings/${id}/edit`, {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || '儲存失敗');
+                statusEl.textContent = '已儲存變更！';
+                statusEl.style.color = '#27ae60';
+                setTimeout(() => showDetail(id), 1000);
+            } catch (err) {
+                statusEl.textContent = err.message;
+                statusEl.style.color = '#e74c3c';
+                submitBtn.disabled = false;
+                submitBtn.textContent = '儲存變更';
+            }
+        });
     }
 
     function bindDetailActions(g, id) {
@@ -611,6 +810,11 @@ const GatherModule = (() => {
                 }
             });
         }
+
+        const editBtn = document.getElementById('gg-edit-btn');
+        if (editBtn) {
+            editBtn.addEventListener('click', () => showEditForm(g, id));
+        }
     }
 
     // ---- 我的揪團 ----
@@ -685,6 +889,98 @@ const GatherModule = (() => {
         }
     }
 
+    // ---- 揪團表單共用工具（建立/編輯共用）----
+    const GATHER_TIME_SLOTS = [
+        '12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30',
+        '16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30',
+        '20:00','20:30','21:00','21:30','22:00'
+    ];
+
+    function gameSlotHtml(game = {}) {
+        return `
+            <input type="text" class="gc-game-name" placeholder="遊戲名稱" value="${escapeHtml(game.name || '')}">
+            <label class="gc-game-tag-label"><input type="checkbox" class="gc-game-played" ${game.has_played ? 'checked' : ''}> 有玩過</label>
+            <label class="gc-game-tag-label"><input type="checkbox" class="gc-game-beginner" ${game.beginner_friendly ? 'checked' : ''}> 適合新手</label>
+            <button type="button" class="gc-remove-game-btn">✕</button>`;
+    }
+
+    function collectGames(containerEl) {
+        return Array.from(containerEl.querySelectorAll('.gc-game-slot'))
+            .map(slot => ({
+                name: slot.querySelector('.gc-game-name')?.value.trim() || '',
+                has_played: slot.querySelector('.gc-game-played')?.checked || false,
+                beginner_friendly: slot.querySelector('.gc-game-beginner')?.checked || false,
+            }))
+            .filter(g => g.name);
+    }
+
+    function bindAddGameBtn(addBtn, containerEl) {
+        function syncAddBtn() {
+            addBtn.style.display = containerEl.children.length >= 3 ? 'none' : '';
+        }
+        addBtn.addEventListener('click', () => {
+            if (containerEl.children.length >= 3) return;
+            const slot = document.createElement('div');
+            slot.className = 'gc-game-slot';
+            slot.innerHTML = gameSlotHtml();
+            slot.querySelector('.gc-remove-game-btn').addEventListener('click', () => {
+                slot.remove();
+                syncAddBtn();
+            });
+            containerEl.appendChild(slot);
+            syncAddBtn();
+        });
+        syncAddBtn();
+    }
+
+    function bindEndTimeFilter(startTimeEl, endTimeEl) {
+        function update() {
+            const start = startTimeEl?.value;
+            const currentEnd = endTimeEl?.value;
+            if (!endTimeEl) return;
+            endTimeEl.innerHTML = '<option value="">請選擇結束時間</option>';
+            GATHER_TIME_SLOTS.forEach(t => {
+                if (!start || t > start) {
+                    const opt = document.createElement('option');
+                    opt.value = t;
+                    opt.textContent = t;
+                    if (t === currentEnd) opt.selected = true;
+                    endTimeEl.appendChild(opt);
+                }
+            });
+        }
+        if (startTimeEl) startTimeEl.addEventListener('change', update);
+        update();
+    }
+
+    function bindDeadlineDateConstraints(dateEl, deadlineDateEl) {
+        const today = new Date().toISOString().split('T')[0];
+        dateEl.min = today;
+        deadlineDateEl.min = today;
+        function syncMax() {
+            const eventDate = dateEl.value;
+            if (eventDate) {
+                const dayBefore = new Date(eventDate);
+                dayBefore.setDate(dayBefore.getDate() - 1);
+                deadlineDateEl.max = dayBefore.toISOString().split('T')[0];
+                if (deadlineDateEl.value >= eventDate) deadlineDateEl.value = '';
+            } else {
+                deadlineDateEl.max = '';
+            }
+        }
+        dateEl.addEventListener('change', syncMax);
+        syncMax();
+    }
+
+    function validateGatherFields({ eventDate, startTime, endTime, deadlineDate, deadlineHour, games }) {
+        if (games.length === 0) return { error: '請至少填寫一款遊戲名稱' };
+        if (endTime && startTime && endTime <= startTime) return { error: '預計結束時間必須晚於開始時間' };
+        const deadlineDateTime = new Date(`${deadlineDate}T${deadlineHour}:00:00`);
+        if (deadlineDateTime <= new Date()) return { error: '報名截止時間不能早於現在' };
+        if (deadlineDate >= eventDate) return { error: '報名截止日期不能與活動日期相同或更晚' };
+        return { ok: true };
+    }
+
     // ---- 建立揪團 ----
     function showCreateForm() {
         document.getElementById('gather-main-view').style.display = 'none';
@@ -697,29 +993,8 @@ const GatherModule = (() => {
         form.dataset.l = '1';
 
         const addGameBtn = document.getElementById('gc-add-game-btn');
-        function syncAddGameBtn() {
-            const container = document.getElementById('gc-games-container');
-            if (addGameBtn) addGameBtn.style.display = container.children.length >= 3 ? 'none' : '';
-        }
-        if (addGameBtn) {
-            addGameBtn.addEventListener('click', () => {
-                const container = document.getElementById('gc-games-container');
-                if (container.children.length >= 3) return;
-                const slot = document.createElement('div');
-                slot.className = 'gc-game-slot';
-                slot.innerHTML = `
-                    <input type="text" class="gc-game-name" placeholder="遊戲名稱">
-                    <label class="gc-game-tag-label"><input type="checkbox" class="gc-game-played"> 有玩過</label>
-                    <label class="gc-game-tag-label"><input type="checkbox" class="gc-game-beginner"> 適合新手</label>
-                    <button type="button" class="gc-remove-game-btn">✕</button>`;
-                slot.querySelector('.gc-remove-game-btn').addEventListener('click', () => {
-                    slot.remove();
-                    syncAddGameBtn();
-                });
-                container.appendChild(slot);
-                syncAddGameBtn();
-            });
-        }
+        const gamesContainer = document.getElementById('gc-games-container');
+        if (addGameBtn && gamesContainer) bindAddGameBtn(addGameBtn, gamesContainer);
 
         const limitBtns = document.querySelectorAll('.gather-limit-btn');
         limitBtns.forEach(btn => {
@@ -732,55 +1007,14 @@ const GatherModule = (() => {
         });
 
         // 結束時間動態過濾：只顯示晚於開始時間的選項
-        const allTimes = [
-            '12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30',
-            '16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30',
-            '20:00','20:30','21:00','21:30','22:00'
-        ];
         const startTimeEl = document.getElementById('gc-start-time');
         const endTimeEl = document.getElementById('gc-end-time');
-        function updateEndTimeOptions() {
-            const start = startTimeEl?.value;
-            const currentEnd = endTimeEl?.value;
-            if (!endTimeEl) return;
-            endTimeEl.innerHTML = '<option value="">請選擇結束時間</option>';
-            allTimes.forEach(t => {
-                if (!start || t > start) {
-                    const opt = document.createElement('option');
-                    opt.value = t;
-                    opt.textContent = t;
-                    if (t === currentEnd) opt.selected = true;
-                    endTimeEl.appendChild(opt);
-                }
-            });
-        }
-        if (startTimeEl) startTimeEl.addEventListener('change', updateEndTimeOptions);
-        updateEndTimeOptions();
+        bindEndTimeFilter(startTimeEl, endTimeEl);
 
-        // 活動日期不能選過去
-        const today = new Date().toISOString().split('T')[0];
+        // 活動日期 / 截止日期不能選過去，且截止日期不能晚於活動日期
         const gcDateEl = document.getElementById('gc-date');
-        if (gcDateEl) gcDateEl.min = today;
-
-        // 截止日期最小值：不能選過去
         const gcDeadlineDateEl = document.getElementById('gc-deadline-date');
-        if (gcDeadlineDateEl) gcDeadlineDateEl.min = today;
-        if (gcDateEl) {
-            gcDateEl.addEventListener('change', () => {
-                const eventDate = gcDateEl.value;
-                if (gcDeadlineDateEl) {
-                    if (eventDate) {
-                        const dayBefore = new Date(eventDate);
-                        dayBefore.setDate(dayBefore.getDate() - 1);
-                        const maxDate = dayBefore.toISOString().split('T')[0];
-                        gcDeadlineDateEl.max = maxDate;
-                        if (gcDeadlineDateEl.value >= eventDate) gcDeadlineDateEl.value = '';
-                    } else {
-                        gcDeadlineDateEl.max = '';
-                    }
-                }
-            });
-        }
+        if (gcDateEl && gcDeadlineDateEl) bindDeadlineDateConstraints(gcDateEl, gcDeadlineDateEl);
 
         form.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -793,40 +1027,16 @@ const GatherModule = (() => {
                     return;
                 }
 
-                const gameSlots = document.querySelectorAll('#gc-games-container .gc-game-slot');
-                const games = Array.from(gameSlots)
-                    .map(slot => ({
-                        name: slot.querySelector('.gc-game-name')?.value.trim() || '',
-                        has_played: slot.querySelector('.gc-game-played')?.checked || false,
-                        beginner_friendly: slot.querySelector('.gc-game-beginner')?.checked || false,
-                    }))
-                    .filter(g => g.name);
-
-                if (games.length === 0) {
-                    statusEl.textContent = '請至少填寫一款遊戲名稱';
-                    statusEl.style.color = '#e74c3c';
-                    return;
-                }
-
+                const games = collectGames(gamesContainer);
                 const eventDate = document.getElementById('gc-date').value;
                 const startTime = document.getElementById('gc-start-time').value;
                 const endTime = document.getElementById('gc-end-time').value;
                 const deadlineDate = document.getElementById('gc-deadline-date').value;
                 const deadlineHour = document.getElementById('gc-deadline-hour').value;
 
-                if (endTime && startTime && endTime <= startTime) {
-                    statusEl.textContent = '預計結束時間必須晚於開始時間';
-                    statusEl.style.color = '#e74c3c';
-                    return;
-                }
-                const deadlineDateTime = new Date(`${deadlineDate}T${deadlineHour}:00:00`);
-                if (deadlineDateTime <= new Date()) {
-                    statusEl.textContent = '報名截止時間不能早於現在';
-                    statusEl.style.color = '#e74c3c';
-                    return;
-                }
-                if (deadlineDate >= eventDate) {
-                    statusEl.textContent = '報名截止日期不能與活動日期相同或更晚';
+                const check = validateGatherFields({ eventDate, startTime, endTime, deadlineDate, deadlineHour, games });
+                if (check.error) {
+                    statusEl.textContent = check.error;
                     statusEl.style.color = '#e74c3c';
                     return;
                 }
@@ -1060,7 +1270,52 @@ const GatherModule = (() => {
         startCountdownTimer();
     }
 
-    return { init, renderMyPage, showDetail };
+    // ---- 未讀編輯提醒彈窗 ----
+    async function checkUnreadEdits() {
+        if (!getLiffToken()) return;
+        try {
+            const res = await fetch('/api/group-gatherings/unread-edits', { headers: authHeaders() });
+            if (!res.ok) return;
+            const list = await res.json();
+            if (Array.isArray(list) && list.length > 0) showUnreadEditPopup(list);
+        } catch {}
+    }
+
+    function showUnreadEditPopup(list) {
+        const overlay = document.createElement('div');
+        overlay.id = 'gg-unread-edit-overlay';
+        overlay.innerHTML = `
+            <div id="gg-unread-edit-card">
+                <h3>⏰ 你參加的揪團有更新</h3>
+                ${list.map(item => `
+                    <div class="gg-history-entry">
+                        <div class="gg-history-time">${escapeHtml(item.name || (item.organizer_name + ' 的揪團'))}（${item.event_date} ${item.start_time}）</div>
+                        ${item.edits.map(ed => ed.changes.map(c => `
+                            <div class="gg-history-change">
+                                <span class="gg-history-field">${escapeHtml(c.label)}</span>
+                                <span class="gg-history-old">${escapeHtml(c.old)}</span>
+                                <span class="gg-history-arrow">→</span>
+                                <span class="gg-history-new">${escapeHtml(c.new)}</span>
+                            </div>`).join('')).join('')}
+                    </div>`).join('')}
+                <button class="cta-button" id="gg-unread-edit-close-btn" style="margin-top:16px; width:100%;">知道了</button>
+            </div>`;
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+
+        document.getElementById('gg-unread-edit-close-btn').addEventListener('click', async () => {
+            overlay.remove();
+            document.body.style.overflow = '';
+            await Promise.all(list.map(item =>
+                fetch(`/api/group-gatherings/${item.gathering_id}/mark-edits-seen`, {
+                    method: 'POST',
+                    headers: authHeaders(),
+                }).catch(() => {})
+            ));
+        });
+    }
+
+    return { init, renderMyPage, showDetail, checkUnreadEdits };
 })();
 
 // 等待 booking 頁面初始化後再掛載

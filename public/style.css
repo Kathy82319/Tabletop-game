@@ -4116,6 +4116,110 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     margin-top: 20px;
 }
 
+/* 揪團詳情：圖示按鈕（分享／編輯） */
+.gg-icon-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+.gg-icon-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 52px;
+    padding: 8px 4px;
+    background: rgba(184, 134, 11, 0.08);
+    border: 1px solid rgba(184, 134, 11, 0.3);
+    border-radius: 10px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: inherit;
+}
+.gg-icon-btn:active {
+    background: rgba(184, 134, 11, 0.18);
+}
+.gg-icon-btn-label {
+    font-size: 0.68rem;
+    color: var(--color-text-secondary);
+}
+
+/* 詳情彈窗右上角的編輯紀錄時鐘圖示 */
+#gg-modal-history {
+    position: absolute;
+    top: 12px;
+    right: 42px;
+    background: none;
+    border: none;
+    font-size: 1.15rem;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px 6px;
+}
+
+/* 編輯紀錄列表 */
+.gg-history-entry {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(184,134,11,0.15);
+}
+.gg-history-time {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin-bottom: 6px;
+}
+.gg-history-change {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.88rem;
+    margin-bottom: 4px;
+}
+.gg-history-field {
+    font-weight: 600;
+    min-width: 64px;
+}
+.gg-history-old {
+    color: #c0392b;
+    text-decoration: line-through;
+}
+.gg-history-arrow {
+    color: var(--color-text-secondary);
+}
+.gg-history-new {
+    color: #27ae60;
+    font-weight: 600;
+}
+
+/* 未讀編輯提醒彈窗 */
+#gg-unread-edit-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+#gg-unread-edit-card {
+    background: #f9f5eb;
+    border: 1px solid rgba(184, 134, 11, 0.4);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 20px 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+}
+#gg-unread-edit-card h3 {
+    margin: 0 0 12px;
+    font-size: 1.1rem;
+}
+
 /* 遊戲標籤 */
 .gg-game-row {
     display: flex;

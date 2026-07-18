@@ -49,9 +49,13 @@ export async function onRequestPost(context) {
 
     // 有人數限制的團直接 approved，無限制的團需團主手動篩選所以為 pending
     const joinStatus = g.max_participants ? 'approved' : 'pending';
+    // 入團當下的編輯紀錄不算「新變更」，記下當前最新的編輯紀錄 id 作為已讀基準
+    const latestEdit = await env.DB.prepare(
+        `SELECT MAX(id) as max_id FROM GroupGatheringEditHistory WHERE gathering_id = ?`
+    ).bind(id).first();
     await env.DB.prepare(
-        `INSERT INTO GroupGatheringMembers (gathering_id, user_id, display_name, line_name, status) VALUES (?, ?, ?, ?, ?)`
-    ).bind(id, profile.userId, displayName, lineName, joinStatus).run();
+        `INSERT INTO GroupGatheringMembers (gathering_id, user_id, display_name, line_name, status, last_seen_edit_id) VALUES (?, ?, ?, ?, ?, ?)`
+    ).bind(id, profile.userId, displayName, lineName, joinStatus, latestEdit?.max_id || 0).run();
 
     // 人數已滿時自動關閉報名並通知團主
     if (g.max_participants) {

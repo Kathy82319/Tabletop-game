@@ -305,6 +305,7 @@ function initializeGameDetailsPageFromHash(gameIdString) {
             }
             userProfile = await liff.getProfile();
             window.userProfile = userProfile;
+            if (typeof GatherModule !== 'undefined') GatherModule.checkUnreadEdits();
 
             const pendingHash = sessionStorage.getItem('pending_hash');
             if (pendingHash) {

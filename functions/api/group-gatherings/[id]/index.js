@@ -21,6 +21,11 @@ export async function onRequestGet(context) {
          ORDER BY joined_at ASC`
     ).bind(id).all();
 
+    const editHistory = await env.DB.prepare(
+        `SELECT id, edited_at, changes FROM GroupGatheringEditHistory
+         WHERE gathering_id = ? ORDER BY id DESC`
+    ).bind(id).all();
+
     // 判斷目前登入者身分（非必要，前端也可處理）
     let myStatus = null;
     const liffToken = request.headers.get('X-LIFF-Token');
@@ -48,5 +53,9 @@ export async function onRequestGet(context) {
         games: JSON.parse(g.games || '[]'),
         members: publicMembers,
         my_status: myStatus,
+        edit_history: editHistory.results.map(h => ({
+            edited_at: h.edited_at,
+            changes: JSON.parse(h.changes),
+        })),
     });
 }
