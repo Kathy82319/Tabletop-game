@@ -1,6 +1,7 @@
-// 由 cron-job.org 每天台灣時間 00:00 觸發
+// 由 cron-worker（獨立的 Cloudflare Worker，見 /cron-worker）每小時整點觸發一次
 // Header: X-Cron-Secret: <CRON_SECRET env var>
 import { sendLinePush } from '../_lib/line.js';
+import { nowTaiwanString } from '../_lib/time.js';
 
 export async function onRequestPost(context) {
     const { request, env } = context;
@@ -10,7 +11,7 @@ export async function onRequestPost(context) {
         return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const now = nowTaiwanString();
 
     // 找出已過截止時間但仍在 open/closed 狀態的揪團
     const expired = await env.DB.prepare(

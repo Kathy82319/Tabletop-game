@@ -1,4 +1,5 @@
 import { sendLinePush } from '../../_lib/line.js';
+import { nowTaiwanString } from '../../_lib/time.js';
 
 export async function onRequestPost(context) {
     const { request, env, params } = context;
@@ -24,7 +25,7 @@ export async function onRequestPost(context) {
     if (!g) return Response.json({ error: '找不到此揪團' }, { status: 404 });
     if (g.status !== 'open') return Response.json({ error: '此揪團已不開放報名' }, { status: 400 });
 
-    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const now = nowTaiwanString();
     if (g.deadline <= now) return Response.json({ error: '報名已截止' }, { status: 400 });
     if (g.organizer_user_id === profile.userId) return Response.json({ error: '團主不需要報名' }, { status: 400 });
 

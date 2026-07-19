@@ -1,10 +1,11 @@
 import { STORE_ORGANIZER_USER_ID } from '../_lib/constants.js';
+import { nowTaiwanString } from '../_lib/time.js';
 
 export async function onRequestGet(context) {
     const { env, request } = context;
     const url = new URL(request.url);
     const past = url.searchParams.get('past') === '1';
-    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const now = nowTaiwanString();
 
     const query = past
         ? `SELECT g.id, g.organizer_name, g.organizer_user_id, g.name, g.event_date, g.start_time, g.end_time,
