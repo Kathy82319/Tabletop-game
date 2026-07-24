@@ -183,8 +183,8 @@ function fpResetState() {
 }
 
 function fpOnTouchStart(e) {
-    e.preventDefault();
     if (fpPhase === 'result') return;
+    e.preventDefault();
     if (fpPhase === 'countdown') fpCancelCountdown();
 
     Array.from(e.changedTouches).forEach(touch => {
@@ -210,8 +210,8 @@ function fpOnTouchStart(e) {
 }
 
 function fpOnTouchEnd(e) {
-    e.preventDefault();
     if (fpPhase === 'result') return;
+    e.preventDefault();
     if (fpPhase === 'countdown') fpCancelCountdown();
 
     Array.from(e.changedTouches).forEach(touch => {
