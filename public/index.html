@@ -802,8 +802,10 @@
     <!-- 設定畫面：輸入遊戲名稱 -->
     <div id="sb-setup" class="tool-setup-panel">
         <h2 class="tool-overlay-title">記分板</h2>
-        <input type="text" id="sb-game-name-input" class="sb-game-name-input" list="sb-game-datalist" placeholder="遊戲名稱" autocomplete="off">
-        <datalist id="sb-game-datalist"></datalist>
+        <div class="sb-game-input-wrap">
+            <input type="text" id="sb-game-name-input" class="sb-game-name-input" placeholder="遊戲名稱" autocomplete="off">
+            <div id="sb-game-suggestions" class="sb-game-suggestions" style="display:none;"></div>
+        </div>
         <p id="sb-game-match-hint" style="display:none; font-size:0.78rem; color: var(--color-frame-gold); text-align:center; margin: -6px 0 10px;">✓ 將記錄到館藏清單「<span id="sb-game-match-name"></span>」</p>
         <button class="tool-start-btn" id="sb-create-btn">建立並產生 QR code</button>
 
@@ -830,6 +832,7 @@
     <div id="sb-playing" class="playing-panel" style="display:none;">
         <div class="sb-playing-header">
             <span id="sb-game-title" class="sb-game-title"></span>
+            <button id="sb-game-rename-btn" class="sb-rename-btn" title="修改開團名稱" style="display:none;">✎</button>
             <div style="display:flex; gap:6px;">
                 <button id="sb-log-btn" class="sb-log-open-btn" title="紀錄">📋</button>
                 <button id="sb-show-qr-btn" class="sb-log-open-btn" title="顯示 QR code">📱</button>

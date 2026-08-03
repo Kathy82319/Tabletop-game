@@ -654,8 +654,6 @@ async function sbLoadBoardGames() {
         const res = await fetch('/api/get-boardgames');
         const data = await res.json();
         sbBoardGames = (data || []).filter(g => g.is_visible === 1);
-        const datalist = document.getElementById('sb-game-datalist');
-        datalist.innerHTML = sbBoardGames.map(g => `<option value="${g.name}"></option>`).join('');
     } catch (e) {
         sbBoardGames = [];
     }
@@ -690,25 +688,63 @@ function sbShowSetup() {
     document.getElementById('sb-score-popup').style.display = 'none';
 
     const nameInput = document.getElementById('sb-game-name-input');
+    const dropdown  = document.getElementById('sb-game-suggestions');
     nameInput.value = '';
+    dropdown.style.display = 'none';
+    dropdown.innerHTML = '';
     document.getElementById('sb-game-match-hint').style.display = 'none';
-    nameInput.oninput = sbUpdateGameMatchHint;
+    nameInput.oninput = sbUpdateGameSuggestions;
+    nameInput.onfocus = () => { if (nameInput.value.trim()) sbUpdateGameSuggestions(); };
+    nameInput.onblur  = () => { setTimeout(() => { dropdown.style.display = 'none'; }, 150); };
     document.getElementById('sb-create-btn').onclick = sbCreate;
 
     sbLoadBoardGames();
     sbLoadRecentSessions();
 }
 
-function sbUpdateGameMatchHint() {
-    const name    = document.getElementById('sb-game-name-input').value;
-    const matched = sbMatchedBoardGame(name);
-    const hint    = document.getElementById('sb-game-match-hint');
-    if (matched) {
-        document.getElementById('sb-game-match-name').textContent = matched.name;
+// 依目前輸入內容篩選館藏遊戲，只有打字後才顯示建議、不會一開始就跳出整排清單擋住輸入框
+function sbUpdateGameSuggestions() {
+    const input    = document.getElementById('sb-game-name-input');
+    const dropdown = document.getElementById('sb-game-suggestions');
+    const hint     = document.getElementById('sb-game-match-hint');
+    const value    = input.value.trim();
+
+    const exact = sbMatchedBoardGame(value);
+    if (exact) {
+        document.getElementById('sb-game-match-name').textContent = exact.name;
         hint.style.display = 'block';
     } else {
         hint.style.display = 'none';
     }
+
+    dropdown.innerHTML = '';
+    if (!value) {
+        dropdown.style.display = 'none';
+        return;
+    }
+
+    const lower   = value.toLowerCase();
+    const matches = sbBoardGames.filter(g => g.name.toLowerCase().includes(lower)).slice(0, 6);
+
+    if (matches.length === 0 || (matches.length === 1 && matches[0].name === value)) {
+        dropdown.style.display = 'none';
+        return;
+    }
+
+    matches.forEach(g => {
+        const item = document.createElement('div');
+        item.className = 'sb-game-suggestion-item';
+        item.textContent = g.name;
+        item.onclick = () => {
+            input.value = g.name;
+            dropdown.style.display = 'none';
+            dropdown.innerHTML = '';
+            document.getElementById('sb-game-match-name').textContent = g.name;
+            hint.style.display = 'block';
+        };
+        dropdown.appendChild(item);
+    });
+    dropdown.style.display = 'block';
 }
 
 async function sbLoadRecentSessions() {
@@ -830,11 +866,32 @@ function sbShowPlaying() {
     document.getElementById('sb-game-title').textContent        = sbGameName;
     document.getElementById('sb-reset-btn').onclick             = sbShowSetup;
     document.getElementById('sb-show-qr-btn').onclick           = sbOpenQrModal;
-    document.getElementById('sb-log-btn').onclick               = sbOpenLog;
+    document.getElementById('sb-log-btn').onclick                 = sbOpenLog;
     document.getElementById('sb-add-player-btn').style.display  = isOwner ? 'block' : 'none';
     document.getElementById('sb-add-player-btn').onclick        = sbOpenAddPlayerPopup;
+    document.getElementById('sb-game-rename-btn').style.display = isOwner ? 'inline-block' : 'none';
+    document.getElementById('sb-game-rename-btn').onclick       = sbRenameGame;
 
     sbStartPolling('sb-rankings', true);
+}
+
+// ── 修改開團名稱（房主可改，選定的館藏遊戲 game_id 不會被清掉）──
+function sbRenameGame() {
+    sbOpenRenamePopup({ nickname: sbGameName }, async (trimmed) => {
+        try {
+            const res = await fetch(`/api/scoreboard/${sbSessionId}/rename-game`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ game_name: trimmed, owner_line_id: sbOwnerLineId })
+            });
+            const data = await res.json();
+            if (data.error) return data.error;
+            sbGameName = trimmed;
+            document.getElementById('sb-game-title').textContent = trimmed;
+        } catch (e) {
+            return '修改失敗，請重試';
+        }
+    }, { title: '修改開團名稱', placeholder: '輸入新的開團名稱', maxLength: 50 });
 }
 
 // ── Polling ───────────────────────────────────────────────────
@@ -1003,11 +1060,15 @@ async function sbRemovePlayer(player) {
 
 // ── 修改暱稱彈窗（房主視角與玩家自己視角共用，取代原生 prompt()）──
 // 原生 prompt() 會在對話框上方顯示網站網域，改用站內彈窗避免這個瀏覽器行為
-function sbOpenRenamePopup(player, onConfirm) {
+function sbOpenRenamePopup(player, onConfirm, opts = {}) {
     const popup   = document.getElementById('sb-rename-popup');
     const input   = document.getElementById('sb-rename-input');
     const errorEl = document.getElementById('sb-rename-error');
+    const titleEl = popup.querySelector('.sb-popup-player-name');
 
+    titleEl.textContent = opts.title || '修改暱稱';
+    input.placeholder   = opts.placeholder || '輸入新暱稱';
+    input.maxLength      = opts.maxLength || 20;
     input.value = player.nickname;
     errorEl.style.display = 'none';
     popup.style.display = 'flex';
@@ -1019,7 +1080,7 @@ function sbOpenRenamePopup(player, onConfirm) {
     const confirmHandler = async () => {
         const trimmed = input.value.trim();
         if (!trimmed) {
-            errorEl.textContent = '請輸入暱稱';
+            errorEl.textContent = `請輸入${opts.title ? '名稱' : '暱稱'}`;
             errorEl.style.display = 'block';
             return;
         }

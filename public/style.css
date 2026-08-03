@@ -2333,6 +2333,44 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     border-color: var(--color-frame-gold);
 }
 
+/* 設定畫面：遊戲名稱輸入 - 自訂搜尋建議下拉（取代原生 datalist，避免遮擋輸入框） */
+.sb-game-input-wrap {
+    position: relative;
+    width: 100%;
+    margin-bottom: 14px;
+}
+.sb-game-input-wrap .sb-game-name-input {
+    margin-bottom: 0;
+}
+.sb-game-suggestions {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    max-height: 220px;
+    overflow-y: auto;
+    background: #2a2320;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+.sb-game-suggestion-item {
+    padding: 10px 14px;
+    font-size: 0.92rem;
+    color: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+    text-align: left;
+}
+.sb-game-suggestion-item:hover,
+.sb-game-suggestion-item:active {
+    background: rgba(184, 134, 11, 0.18);
+    color: var(--color-frame-gold-light);
+}
+.sb-game-suggestion-item + .sb-game-suggestion-item {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
 /* 進行畫面：本輪記分按鈕與排名列表拉開距離 */
 #sb-add-round-btn { margin-top: 16px; }
 
