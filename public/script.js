@@ -30,6 +30,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let dailyAvailability = { limit: TOTAL_TABLES, booked: 0, available: TOTAL_TABLES };
     let disabledDatesByAdmin = [];
 
+    // 使用者輸入（暱稱等）在插入 innerHTML 前必須跳脫，避免儲存型 XSS
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     // 取得 LIFF access token，供後端驗證真實身份用（不可信任前端自稱的 userId）
     function getLiffAuthHeaders() {
         const headers = { 'Content-Type': 'application/json' };
@@ -924,6 +935,35 @@ async function initializeEditProfilePage() {
             priceContent.innerHTML = `<p style="text-align:center;">價格資訊請洽店內公告</p>`;
         } else {
             priceContent.innerHTML = `<div class="price-grid">${priceHTML}</div>`;
+        }
+
+        loadGameScoreboard(game.game_id);
+    }
+
+    async function loadGameScoreboard(gameId) {
+        const section = document.getElementById('game-my-scores-section');
+        const content = document.getElementById('game-my-scores-content');
+        if (!userProfile) { section.style.display = 'none'; return; }
+
+        try {
+            const res  = await fetch(`/api/boardgames/${gameId}/scores`, { headers: getLiffAuthHeaders() });
+            if (!res.ok) { section.style.display = 'none'; return; }
+            const data = await res.json();
+            const records = data.records || [];
+
+            if (records.length === 0) { section.style.display = 'none'; return; }
+
+            content.innerHTML = records.map((r, idx) => {
+                const d = new Date(r.created_at);
+                const dateStr = `${d.getMonth() + 1}/${d.getDate()}`;
+                return `<div class="my-score-item">
+                    <span class="my-score-who"><span class="my-score-rank">${idx + 1}</span>${escapeHtml(r.nickname)}<span class="my-score-date">· ${dateStr}</span></span>
+                    <span class="my-score-value">${r.score} 分</span>
+                </div>`;
+            }).join('');
+            section.style.display = 'block';
+        } catch (e) {
+            section.style.display = 'none';
         }
     }
 

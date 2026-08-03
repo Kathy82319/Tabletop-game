@@ -87,6 +87,11 @@
             <h3>💰 價格資訊</h3>
             <div id="game-price-content"></div>
         </div>
+
+        <div class="card details-section" id="game-my-scores-section" style="display: none;">
+            <h3>🏆 分數排行榜</h3>
+            <div id="game-my-scores-content"></div>
+        </div>
     </div>
 
     <div id="page-news-details">
@@ -797,7 +802,9 @@
     <!-- 設定畫面：輸入遊戲名稱 -->
     <div id="sb-setup" class="tool-setup-panel">
         <h2 class="tool-overlay-title">記分板</h2>
-        <input type="text" id="sb-game-name-input" class="sb-game-name-input" placeholder="遊戲名稱">
+        <input type="text" id="sb-game-name-input" class="sb-game-name-input" list="sb-game-datalist" placeholder="遊戲名稱" autocomplete="off">
+        <datalist id="sb-game-datalist"></datalist>
+        <p id="sb-game-match-hint" style="display:none; font-size:0.78rem; color: var(--color-frame-gold); text-align:center; margin: -6px 0 10px;">✓ 將記錄到館藏清單「<span id="sb-game-match-name"></span>」</p>
         <button class="tool-start-btn" id="sb-create-btn">建立並產生 QR code</button>
 
         <div id="sb-history-section" style="display:none;">

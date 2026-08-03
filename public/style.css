@@ -1111,6 +1111,47 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     color: var(--color-text-secondary);
 }
 
+/* 遊戲詳情頁 - 我的遊戲紀錄 */
+.my-score-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 4px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+.my-score-item:last-child { border-bottom: none; }
+.my-score-who {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: var(--color-text-primary);
+}
+.my-score-rank {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: rgba(184, 134, 11, 0.15);
+    color: var(--color-frame-gold);
+    font-size: 0.72rem;
+    font-weight: bold;
+}
+.my-score-date {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    opacity: 0.7;
+}
+.my-score-value {
+    font-size: 1.05rem;
+    font-weight: bold;
+    color: var(--color-frame-gold);
+    white-space: nowrap;
+}
+
 /* --- 新聞詳情頁 (page-news-details) --- */
 .details-image {
     width: 100% !important;

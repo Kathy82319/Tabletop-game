@@ -643,8 +643,27 @@ let sbPlayers     = [];
 let sbEvents      = [];
 let sbGameName    = '';
 let sbPollTimer   = null;
+let sbBoardGames  = [];
 
 const LIFF_ID = '2008076323-GN1e7naW';
+
+// ── 館藏遊戲選單（供建立記分板時比對）───────────────────────
+async function sbLoadBoardGames() {
+    if (sbBoardGames.length > 0) return;
+    try {
+        const res = await fetch('/api/get-boardgames');
+        const data = await res.json();
+        sbBoardGames = (data || []).filter(g => g.is_visible === 1);
+        const datalist = document.getElementById('sb-game-datalist');
+        datalist.innerHTML = sbBoardGames.map(g => `<option value="${g.name}"></option>`).join('');
+    } catch (e) {
+        sbBoardGames = [];
+    }
+}
+
+function sbMatchedBoardGame(name) {
+    return sbBoardGames.find(g => g.name === name.trim()) || null;
+}
 
 function sbGetJoinUrl(sessionId) {
     return `https://liff.line.me/${LIFF_ID}?liff.state=${encodeURIComponent('#page-scoreboard-join@' + sessionId)}`;
@@ -670,10 +689,26 @@ function sbShowSetup() {
     document.getElementById('sb-playing').style.display  = 'none';
     document.getElementById('sb-score-popup').style.display = 'none';
 
-    document.getElementById('sb-game-name-input').value = '';
+    const nameInput = document.getElementById('sb-game-name-input');
+    nameInput.value = '';
+    document.getElementById('sb-game-match-hint').style.display = 'none';
+    nameInput.oninput = sbUpdateGameMatchHint;
     document.getElementById('sb-create-btn').onclick = sbCreate;
 
+    sbLoadBoardGames();
     sbLoadRecentSessions();
+}
+
+function sbUpdateGameMatchHint() {
+    const name    = document.getElementById('sb-game-name-input').value;
+    const matched = sbMatchedBoardGame(name);
+    const hint    = document.getElementById('sb-game-match-hint');
+    if (matched) {
+        document.getElementById('sb-game-match-name').textContent = matched.name;
+        hint.style.display = 'block';
+    } else {
+        hint.style.display = 'none';
+    }
 }
 
 async function sbLoadRecentSessions() {
@@ -729,10 +764,11 @@ async function sbCreate() {
     btn.textContent = '建立中...';
 
     try {
+        const matched = sbMatchedBoardGame(gameName);
         const res  = await fetch('/api/scoreboard/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ game_name: gameName, owner_line_id: lineId })
+            body: JSON.stringify({ game_name: gameName, owner_line_id: lineId, game_id: matched?.game_id || null })
         });
         const data = await res.json();
         sbSessionId   = data.session_id;
