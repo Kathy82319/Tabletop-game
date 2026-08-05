@@ -21,7 +21,7 @@ export async function onRequestGet(context) {
                   COUNT(CASE WHEN m.status != 'rejected' THEN 1 END) as member_count
            FROM GroupGatherings g
            LEFT JOIN GroupGatheringMembers m ON g.id = m.gathering_id
-           WHERE g.status = 'open' AND g.deadline > ?
+           WHERE g.status IN ('open', 'closed') AND g.deadline > ?
            GROUP BY g.id
            ORDER BY g.event_date ASC, g.start_time ASC`;
 
