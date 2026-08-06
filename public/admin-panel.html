@@ -19,6 +19,7 @@
             <a href="#dashboard" class="active">儀表板</a>
             <a href="#users">顧客管理</a>
             <a href="#inventory">庫存管理</a>
+            <a href="#sales-history">販售紀錄</a>
             <a href="#rentals">桌遊租借</a>
             <a href="#bookings">訂位管理</a>
             <a href="#exp-history">經驗紀錄</a>
@@ -151,6 +152,7 @@
             <button id="btn-download-csv-template" class="action-btn" style="background-color: var(--info-color);">下載 CSV 模板</button>
             <button id="btn-import-csv" class="action-btn" style="background-color: var(--success-color);">從 CSV 匯入</button>
             <button id="btn-add-new-product" class="action-btn btn-save" style="margin-left: 10px;">新增單筆產品</button>
+            <button id="btn-batch-sell" class="action-btn" style="background-color: #6f42c1; color:#fff; margin-left: 10px;">批次販售</button>
         </div>
     </div>
     <div class="filter-bar">
@@ -167,6 +169,7 @@
     <table id="inventory-table">
         <thead>
             <tr>
+                <th><input type="checkbox" id="inventory-select-all" title="全選可販售商品"></th>
                 <th>順序</th>
                 <th>遊戲 (ID / 標籤)</th>
                 <th>庫存</th>
@@ -175,6 +178,31 @@
             </tr>
         </thead>
         <tbody id="game-list-tbody"></tbody>
+    </table>
+</div>
+
+<div id="page-sales-history" class="page">
+    <div class="page-header">
+        <h2>販售紀錄</h2>
+    </div>
+    <div class="filter-bar" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:1rem;">
+        <input type="search" id="sales-search-input" placeholder="搜尋商品名稱..." style="flex:1; min-width:160px; padding:8px;">
+        <input type="date" id="sales-date-start" style="padding:8px; border:1px solid var(--border-color); border-radius:4px;">
+        <span style="color:var(--text-light);">至</span>
+        <input type="date" id="sales-date-end" style="padding:8px; border:1px solid var(--border-color); border-radius:4px;">
+        <button id="sales-clear-filter-btn" class="action-btn" style="background:var(--text-light); color:#fff;">清除篩選</button>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>訂單編號</th>
+                <th>結帳時間</th>
+                <th>品項數</th>
+                <th>總金額</th>
+                <th>明細</th>
+            </tr>
+        </thead>
+        <tbody id="sales-history-tbody"></tbody>
     </table>
 </div>
 
@@ -1053,6 +1081,45 @@
             </form>
         </div>
     </div>
+
+<div id="checkout-sale-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 680px;">
+        <div class="modal-header">
+            <h3>批次販售結帳</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="form-group">
+            <label for="checkout-barcode-input">📷 掃描條碼加入商品</label>
+            <input type="text" id="checkout-barcode-input" placeholder="掃描條碼，或手動輸入後按 Enter" style="border: 1px solid var(--primary-color);">
+        </div>
+        <div class="form-group" style="position: relative;">
+            <label for="checkout-manual-search">或搜尋名稱手動加入</label>
+            <input type="text" id="checkout-manual-search" placeholder="輸入遊戲名稱搜尋...">
+            <ul id="checkout-manual-results" style="display: none; border: 1px solid #ccc; list-style: none; padding: 0; margin-top: 5px; max-height: 150px; overflow-y: auto; cursor: pointer; background: #fff; position: absolute; width: 100%; z-index: 20;"></ul>
+        </div>
+        <table id="checkout-items-table" style="width:100%; margin-top:10px; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align:left;">商品</th>
+                    <th>數量</th>
+                    <th>折數</th>
+                    <th>小計</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="checkout-items-tbody">
+                <tr id="checkout-empty-row"><td colspan="5" style="text-align:center; color:var(--text-light); padding: 12px 0;">尚未加入商品，請掃描條碼或手動搜尋加入</td></tr>
+            </tbody>
+        </table>
+        <div style="text-align:right; margin-top:12px; font-size:1.1rem; font-weight:bold;">
+            總金額：$<span id="checkout-total-amount">0</span>
+        </div>
+        <div class="form-actions">
+            <button type="button" class="action-btn btn-cancel">取消</button>
+            <button type="button" id="checkout-confirm-btn" class="action-btn btn-save">確認結帳</button>
+        </div>
+    </div>
+</div>
 
 <div id="import-csv-modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 500px;">

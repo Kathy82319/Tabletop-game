@@ -17,6 +17,11 @@ let gameListTbody, gameSearchInput, editGameModal, editGameForm, inventoryStockF
 let btnDownloadTemplate, btnImportCSV, btnAddNewProduct, importCSVModal, importCSVForm;
 let sellGameModal, sellGameForm;
 
+// --- Batch Sell (Checkout) ---
+let btnBatchSell, checkoutModal, checkoutItemsTbody, checkoutBarcodeInput, checkoutManualSearch, checkoutManualResults, checkoutTotalEl, checkoutConfirmBtn, inventorySelectAll;
+let selectedForBatchSale = new Set();
+let checkoutItems = new Map(); // gameId -> { gameId, name, for_sale_stock, quantity, discountTenths }
+
 // --- Tag Chip Management ---
 
 function escapeHtml(str) {
@@ -392,11 +397,25 @@ function renderGameList(games) {
         row.className = 'draggable-row';
         row.dataset.gameId = game.game_id;
 
+        const cellCheck = row.insertCell();
         const cellOrder = row.insertCell();
         const cellGame = row.insertCell();
         const cellStock = row.insertCell();
         const cellPrice = row.insertCell();
         const cellActions = row.insertCell();
+
+        // 勾選（批次販售用，僅有販售庫存的商品可勾選）
+        cellCheck.style.textAlign = 'center';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'batch-sell-check';
+        checkbox.dataset.gameId = game.game_id;
+        checkbox.checked = selectedForBatchSale.has(String(game.game_id));
+        if (!(Number(game.for_sale_stock) > 0)) {
+            checkbox.disabled = true;
+            checkbox.title = '無販售庫存';
+        }
+        cellCheck.appendChild(checkbox);
 
         // 順序 / drag
         cellOrder.className = 'drag-handle-cell';
@@ -566,6 +585,272 @@ async function handleSellGameFormSubmit(e) {
     } catch (error) {
         ui.toast.error(`賣出失敗：${error.message}`);
     }
+}
+
+// --- Batch Sell (Checkout) ---
+
+function addItemToCheckout(game) {
+    if (!(Number(game.for_sale_stock) > 0)) {
+        ui.toast.error(`《${game.name}》目前沒有販售庫存`);
+        return;
+    }
+    const gameId = String(game.game_id);
+    const existing = checkoutItems.get(gameId);
+    if (existing) {
+        if (existing.quantity >= Number(game.for_sale_stock)) {
+            ui.toast.error(`《${game.name}》販售庫存只剩 ${game.for_sale_stock}，無法再增加`);
+            return;
+        }
+        existing.quantity += 1;
+    } else {
+        checkoutItems.set(gameId, {
+            gameId,
+            name: game.name,
+            sale_price: Number(game.sale_price) || 0,
+            for_sale_stock: Number(game.for_sale_stock),
+            quantity: 1,
+            discountTenths: 10,
+            warning: ''
+        });
+    }
+    selectedForBatchSale.add(gameId);
+    renderCheckoutItems();
+}
+
+function removeItemFromCheckout(gameId) {
+    checkoutItems.delete(String(gameId));
+    selectedForBatchSale.delete(String(gameId));
+    renderCheckoutItems();
+    const row = gameListTbody?.querySelector(`.batch-sell-check[data-game-id="${gameId}"]`);
+    if (row) row.checked = false;
+}
+
+function computeLineSubtotal(item) {
+    return Math.round(item.sale_price * item.quantity * (Number(item.discountTenths) / 10));
+}
+
+function renderCheckoutItems() {
+    if (!checkoutItemsTbody) return;
+    checkoutItemsTbody.innerHTML = '';
+
+    if (checkoutItems.size === 0) {
+        checkoutItemsTbody.innerHTML = '<tr id="checkout-empty-row"><td colspan="5" style="text-align:center; color:var(--text-light); padding: 12px 0;">尚未加入商品，請掃描條碼或手動搜尋加入</td></tr>';
+        checkoutTotalEl.textContent = '0';
+        return;
+    }
+
+    let total = 0;
+    checkoutItems.forEach(item => {
+        const subtotal = computeLineSubtotal(item);
+        total += subtotal;
+
+        const row = checkoutItemsTbody.insertRow();
+        row.dataset.gameId = item.gameId;
+
+        const cellName = row.insertCell();
+        cellName.style.textAlign = 'left';
+        const warningHtml = item.warning
+            ? `<div class="checkout-warning" style="color:var(--danger-color); font-size:0.85rem;" title="${escapeHtml(item.warning)}">⚠️ ${escapeHtml(item.warning)}</div>`
+            : '';
+        cellName.innerHTML = `
+            <div class="main-info">${escapeHtml(item.name)}</div>
+            <div class="sub-info">庫存：${item.for_sale_stock}</div>
+            ${warningHtml}
+        `;
+
+        const cellQty = row.insertCell();
+        cellQty.style.textAlign = 'center';
+        cellQty.innerHTML = `<input type="number" class="checkout-qty-input" min="1" max="${item.for_sale_stock}" value="${item.quantity}" style="width:60px;">`;
+
+        const cellDiscount = row.insertCell();
+        cellDiscount.style.textAlign = 'center';
+        cellDiscount.innerHTML = `<input type="number" class="checkout-discount-input" min="1" max="10" value="${item.discountTenths}" title="折數，10 代表不打折" style="width:50px;">`;
+
+        const cellSubtotal = row.insertCell();
+        cellSubtotal.style.textAlign = 'center';
+        cellSubtotal.textContent = `$${subtotal}`;
+
+        const cellRemove = row.insertCell();
+        cellRemove.style.textAlign = 'center';
+        cellRemove.innerHTML = `<button type="button" class="checkout-remove-btn" style="color:var(--danger-color); background:none; border:none; cursor:pointer; font-size:1.1rem;">&times;</button>`;
+    });
+
+    checkoutTotalEl.textContent = total;
+}
+
+function handleCheckoutBarcodeScan(rawValue) {
+    const value = rawValue.trim();
+    if (!value) return;
+    checkoutBarcodeInput.value = '';
+
+    const game = allGamesData.find(g => (g.barcode || '') === value);
+    if (!game) {
+        ui.toast.error('掃描不到符合的商品條碼');
+        return;
+    }
+    addItemToCheckout(game);
+}
+
+function renderCheckoutManualResults(term) {
+    if (!term) {
+        checkoutManualResults.style.display = 'none';
+        return;
+    }
+    const t = term.toLowerCase();
+    const results = allGamesData.filter(g => Number(g.for_sale_stock) > 0 && (g.name || '').toLowerCase().includes(t));
+    checkoutManualResults.innerHTML = results.map(g =>
+        `<li data-game-id="${g.game_id}">${escapeHtml(g.name)}（庫存：${g.for_sale_stock}）</li>`
+    ).join('');
+    checkoutManualResults.style.display = results.length > 0 ? 'block' : 'none';
+}
+
+function openCheckoutModal() {
+    checkoutItems.clear();
+    selectedForBatchSale.forEach(gameId => {
+        const game = allGamesData.find(g => String(g.game_id) === gameId);
+        if (game && Number(game.for_sale_stock) > 0) {
+            checkoutItems.set(gameId, {
+                gameId,
+                name: game.name,
+                sale_price: Number(game.sale_price) || 0,
+                for_sale_stock: Number(game.for_sale_stock),
+                quantity: 1,
+                discountTenths: 10,
+                warning: ''
+            });
+        }
+    });
+
+    renderCheckoutItems();
+    checkoutBarcodeInput.value = '';
+    checkoutManualSearch.value = '';
+    checkoutManualResults.style.display = 'none';
+
+    ui.showModal('#checkout-sale-modal');
+    checkoutBarcodeInput.focus();
+}
+
+async function handleCheckoutConfirm() {
+    if (checkoutItems.size === 0) {
+        return ui.toast.error('請先加入要販售的商品');
+    }
+
+    const items = Array.from(checkoutItems.values()).map(item => ({
+        gameId: item.gameId,
+        quantity: item.quantity,
+        discountTenths: item.discountTenths
+    }));
+
+    checkoutItems.forEach(item => { item.warning = ''; });
+
+    try {
+        checkoutConfirmBtn.disabled = true;
+        const result = await api.checkoutSale(items);
+
+        (result.items || []).forEach(updated => {
+            const game = allGamesData.find(g => String(g.game_id) === String(updated.gameId));
+            if (game) {
+                game.total_stock = updated.total_stock;
+                game.for_sale_stock = updated.for_sale_stock;
+                game.is_visible = updated.is_visible;
+            }
+        });
+
+        checkoutItems.clear();
+        selectedForBatchSale.clear();
+        if (inventorySelectAll) inventorySelectAll.checked = false;
+        applyGameFiltersAndRender();
+        ui.hideModal('#checkout-sale-modal');
+        ui.toast.success(result.message || '結帳完成');
+
+    } catch (error) {
+        if (Array.isArray(error.shortages)) {
+            error.shortages.forEach(s => {
+                const item = checkoutItems.get(String(s.gameId));
+                if (item) item.warning = s.message;
+            });
+            renderCheckoutItems();
+        }
+        ui.toast.error(`結帳失敗：${error.message}`);
+    } finally {
+        checkoutConfirmBtn.disabled = false;
+    }
+}
+
+function setupCheckoutEventListeners() {
+    if (!checkoutModal || checkoutModal.dataset.initialized) return;
+
+    btnBatchSell.addEventListener('click', openCheckoutModal);
+
+    checkoutBarcodeInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleCheckoutBarcodeScan(checkoutBarcodeInput.value);
+        }
+    });
+
+    checkoutManualSearch.addEventListener('input', () => {
+        renderCheckoutManualResults(checkoutManualSearch.value.trim());
+    });
+
+    checkoutManualResults.addEventListener('click', (e) => {
+        const li = e.target.closest('li');
+        if (!li) return;
+        const game = allGamesData.find(g => g.game_id == li.dataset.gameId);
+        if (game) addItemToCheckout(game);
+        checkoutManualSearch.value = '';
+        checkoutManualResults.style.display = 'none';
+    });
+
+    checkoutItemsTbody.addEventListener('click', (e) => {
+        if (e.target.classList.contains('checkout-remove-btn')) {
+            const row = e.target.closest('tr');
+            if (row) removeItemFromCheckout(row.dataset.gameId);
+        }
+    });
+
+    checkoutItemsTbody.addEventListener('input', (e) => {
+        const row = e.target.closest('tr');
+        if (!row) return;
+        const item = checkoutItems.get(row.dataset.gameId);
+        if (!item) return;
+
+        if (e.target.classList.contains('checkout-qty-input')) {
+            const raw = parseInt(e.target.value, 10);
+            if (!isNaN(raw) && raw > item.for_sale_stock) {
+                ui.toast.error(`《${item.name}》販售庫存只剩 ${item.for_sale_stock}`);
+            }
+            item.quantity = isNaN(raw) ? item.quantity : Math.min(Math.max(raw, 1), item.for_sale_stock);
+            item.warning = '';
+        } else if (e.target.classList.contains('checkout-discount-input')) {
+            const raw = parseInt(e.target.value, 10);
+            item.discountTenths = isNaN(raw) ? item.discountTenths : Math.min(Math.max(raw, 1), 10);
+        } else {
+            return;
+        }
+
+        // 只更新這一列的小計與總額，避免整表重繪讓輸入框失去焦點
+        row.querySelector('td:nth-child(4)').textContent = `$${computeLineSubtotal(item)}`;
+        const warningEl = row.querySelector('.checkout-warning');
+        if (warningEl) warningEl.remove();
+        let total = 0;
+        checkoutItems.forEach(it => { total += computeLineSubtotal(it); });
+        checkoutTotalEl.textContent = total;
+    });
+
+    checkoutItemsTbody.addEventListener('blur', (e) => {
+        if (e.target.classList.contains('checkout-qty-input') || e.target.classList.contains('checkout-discount-input')) {
+            const row = e.target.closest('tr');
+            const item = row && checkoutItems.get(row.dataset.gameId);
+            if (item && Number(e.target.value) !== (e.target.classList.contains('checkout-qty-input') ? item.quantity : item.discountTenths)) {
+                e.target.value = e.target.classList.contains('checkout-qty-input') ? item.quantity : item.discountTenths;
+            }
+        }
+    }, true);
+
+    checkoutConfirmBtn.addEventListener('click', handleCheckoutConfirm);
+
+    checkoutModal.dataset.initialized = 'true';
 }
 
 // --- Search Chips ---
@@ -910,8 +1195,31 @@ function setupEventListeners() {
             }
         } else if (target.classList.contains('btn-sell')) {
             openSellGameModal(gameId);
+        } else if (target.classList.contains('batch-sell-check')) {
+            if (target.checked) {
+                selectedForBatchSale.add(String(gameId));
+            } else {
+                selectedForBatchSale.delete(String(gameId));
+                if (inventorySelectAll) inventorySelectAll.checked = false;
+            }
         }
     });
+
+    if (inventorySelectAll) {
+        inventorySelectAll.addEventListener('change', () => {
+            const checkboxes = gameListTbody.querySelectorAll('.batch-sell-check:not(:disabled)');
+            checkboxes.forEach(cb => {
+                cb.checked = inventorySelectAll.checked;
+                if (inventorySelectAll.checked) {
+                    selectedForBatchSale.add(String(cb.dataset.gameId));
+                } else {
+                    selectedForBatchSale.delete(String(cb.dataset.gameId));
+                }
+            });
+        });
+    }
+
+    setupCheckoutEventListeners();
 
     editGameForm.addEventListener('submit', handleEditGameFormSubmit);
     if (sellGameForm) sellGameForm.addEventListener('submit', handleSellGameFormSubmit);
@@ -953,8 +1261,18 @@ export const init = async (ctx, param) => {
     importCSVModal = document.getElementById('import-csv-modal');
     importCSVForm = document.getElementById('import-csv-form');
 
+    inventorySelectAll = pageElement.querySelector('#inventory-select-all');
+    btnBatchSell = pageElement.querySelector('#btn-batch-sell');
+    checkoutModal = document.getElementById('checkout-sale-modal');
+    checkoutItemsTbody = document.getElementById('checkout-items-tbody');
+    checkoutBarcodeInput = document.getElementById('checkout-barcode-input');
+    checkoutManualSearch = document.getElementById('checkout-manual-search');
+    checkoutManualResults = document.getElementById('checkout-manual-results');
+    checkoutTotalEl = document.getElementById('checkout-total-amount');
+    checkoutConfirmBtn = document.getElementById('checkout-confirm-btn');
+
     if (!gameListTbody) return;
-    gameListTbody.innerHTML = '<tr><td colspan="5">正在載入庫存資料...</td></tr>';
+    gameListTbody.innerHTML = '<tr><td colspan="6">正在載入庫存資料...</td></tr>';
 
     try {
         allGamesData = await api.getProducts();
@@ -963,6 +1281,6 @@ export const init = async (ctx, param) => {
         initializeGameDragAndDrop();
     } catch (error) {
         console.error('獲取庫存列表失敗:', error);
-        gameListTbody.innerHTML = `<tr><td colspan="5">${error.message}</td></tr>`;
+        gameListTbody.innerHTML = `<tr><td colspan="6">${error.message}</td></tr>`;
     }
 };

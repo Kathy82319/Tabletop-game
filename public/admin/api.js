@@ -5,7 +5,9 @@ async function request(url, options = {}) {
         const response = await fetch(url, options);
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: `HTTP 錯誤，狀態碼: ${response.status}` }));
-            throw new Error(errorData.error || '未知的 API 錯誤');
+            const err = new Error(errorData.error || '未知的 API 錯誤');
+            if (errorData.shortages) err.shortages = errorData.shortages;
+            throw err;
         }
         if (response.status === 204) return { success: true };
         return await response.json();
@@ -53,6 +55,8 @@ createGame: (data) => request('/api/admin/create-boardgame', { method: 'POST', h
 updateProductDetails: (data) => request('/api/admin/update-boardgame-details', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
 patchGameStock: (data) => request('/api/admin/patch-boardgame-stock', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
 sellGame: (data) => request('/api/admin/sell-boardgame', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+checkoutSale: (items) => request('/api/admin/checkout-sale', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items }) }),
+getSalesOrders: () => request('/api/admin/sales-orders'),
 patchGameBarcode: (data) => request('/api/admin/patch-boardgame-barcode', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
 updateProductOrder: (orderedGameIds) => request('/api/admin/update-boardgame-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderedGameIds }) }),
 batchUpdateGames: (gameIds, isVisible) => request('/api/admin/batch-update-games', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gameIds, isVisible }) }),
