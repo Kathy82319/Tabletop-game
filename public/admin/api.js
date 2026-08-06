@@ -57,6 +57,7 @@ patchGameStock: (data) => request('/api/admin/patch-boardgame-stock', { method: 
 sellGame: (data) => request('/api/admin/sell-boardgame', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
 checkoutSale: (items) => request('/api/admin/checkout-sale', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items }) }),
 getSalesOrders: () => request('/api/admin/sales-orders'),
+deleteSalesOrder: (order_id) => request('/api/admin/sales-orders', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id }) }),
 patchGameBarcode: (data) => request('/api/admin/patch-boardgame-barcode', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
 updateProductOrder: (orderedGameIds) => request('/api/admin/update-boardgame-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderedGameIds }) }),
 batchUpdateGames: (gameIds, isVisible) => request('/api/admin/batch-update-games', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gameIds, isVisible }) }),

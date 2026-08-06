@@ -56,11 +56,12 @@
 .barcode-inline-input { width: 140px; text-align: left; }
 /* 庫存管理表格：百分比欄寬讓標題與內容對齊 */
 #inventory-table { table-layout: fixed; }
-#inventory-table th:nth-child(1) { width: 5%; }
-#inventory-table th:nth-child(2) { width: 35%; text-align: left; }
-#inventory-table th:nth-child(3) { width: 25%; }
-#inventory-table th:nth-child(4) { width: 20%; }
-#inventory-table th:nth-child(5) { width: 15%; }
+#inventory-table th:nth-child(1) { width: 4%; }
+#inventory-table th:nth-child(2) { width: 4%; }
+#inventory-table th:nth-child(3) { width: 32%; text-align: left; }
+#inventory-table th:nth-child(4) { width: 22%; }
+#inventory-table th:nth-child(5) { width: 18%; }
+#inventory-table th:nth-child(6) { width: 20%; }
 /* 庫存欄 */
 .stock-layout { display: inline-flex; align-items: stretch; text-align: left; }
 .price-inner { display: inline-block; text-align: left; }

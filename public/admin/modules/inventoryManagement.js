@@ -404,7 +404,7 @@ function renderGameList(games) {
         const cellPrice = row.insertCell();
         const cellActions = row.insertCell();
 
-        // 勾選（批次販售用，僅有販售庫存的商品可勾選）
+        // 勾選（批次販售用；沒有販售庫存也能勾選，結帳時會用 ⚠️ 提示無庫存）
         cellCheck.style.textAlign = 'center';
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
@@ -412,8 +412,7 @@ function renderGameList(games) {
         checkbox.dataset.gameId = game.game_id;
         checkbox.checked = selectedForBatchSale.has(String(game.game_id));
         if (!(Number(game.for_sale_stock) > 0)) {
-            checkbox.disabled = true;
-            checkbox.title = '無販售庫存';
+            checkbox.title = '⚠️ 無販售庫存';
         }
         cellCheck.appendChild(checkbox);
 
@@ -590,27 +589,18 @@ async function handleSellGameFormSubmit(e) {
 // --- Batch Sell (Checkout) ---
 
 function addItemToCheckout(game) {
-    if (!(Number(game.for_sale_stock) > 0)) {
-        ui.toast.error(`《${game.name}》目前沒有販售庫存`);
-        return;
-    }
     const gameId = String(game.game_id);
     const existing = checkoutItems.get(gameId);
     if (existing) {
-        if (existing.quantity >= Number(game.for_sale_stock)) {
-            ui.toast.error(`《${game.name}》販售庫存只剩 ${game.for_sale_stock}，無法再增加`);
-            return;
-        }
         existing.quantity += 1;
     } else {
         checkoutItems.set(gameId, {
             gameId,
             name: game.name,
             sale_price: Number(game.sale_price) || 0,
-            for_sale_stock: Number(game.for_sale_stock),
+            for_sale_stock: Number(game.for_sale_stock) || 0,
             quantity: 1,
-            discountTenths: 10,
-            warning: ''
+            discountTenths: 10
         });
     }
     selectedForBatchSale.add(gameId);
@@ -627,6 +617,13 @@ function removeItemFromCheckout(gameId) {
 
 function computeLineSubtotal(item) {
     return Math.round(item.sale_price * item.quantity * (Number(item.discountTenths) / 10));
+}
+
+// 庫存警示：僅提示用，不會擋下結帳——即使庫存不足，送出後仍會成功並改用儀表板通知回報
+function getItemWarning(item) {
+    if (item.for_sale_stock <= 0) return '目前無販售庫存';
+    if (item.quantity > item.for_sale_stock) return `庫存不足，目前僅剩 ${item.for_sale_stock} 件`;
+    return '';
 }
 
 function renderCheckoutItems() {
@@ -649,8 +646,9 @@ function renderCheckoutItems() {
 
         const cellName = row.insertCell();
         cellName.style.textAlign = 'left';
-        const warningHtml = item.warning
-            ? `<div class="checkout-warning" style="color:var(--danger-color); font-size:0.85rem;" title="${escapeHtml(item.warning)}">⚠️ ${escapeHtml(item.warning)}</div>`
+        const warning = getItemWarning(item);
+        const warningHtml = warning
+            ? `<div class="checkout-warning" style="color:var(--danger-color); font-size:0.85rem;" title="${escapeHtml(warning)}">⚠️ ${escapeHtml(warning)}</div>`
             : '';
         cellName.innerHTML = `
             <div class="main-info">${escapeHtml(item.name)}</div>
@@ -660,7 +658,7 @@ function renderCheckoutItems() {
 
         const cellQty = row.insertCell();
         cellQty.style.textAlign = 'center';
-        cellQty.innerHTML = `<input type="number" class="checkout-qty-input" min="1" max="${item.for_sale_stock}" value="${item.quantity}" style="width:60px;">`;
+        cellQty.innerHTML = `<input type="number" class="checkout-qty-input" min="1" value="${item.quantity}" style="width:60px;">`;
 
         const cellDiscount = row.insertCell();
         cellDiscount.style.textAlign = 'center';
@@ -697,10 +695,12 @@ function renderCheckoutManualResults(term) {
         return;
     }
     const t = term.toLowerCase();
-    const results = allGamesData.filter(g => Number(g.for_sale_stock) > 0 && (g.name || '').toLowerCase().includes(t));
-    checkoutManualResults.innerHTML = results.map(g =>
-        `<li data-game-id="${g.game_id}">${escapeHtml(g.name)}（庫存：${g.for_sale_stock}）</li>`
-    ).join('');
+    const results = allGamesData.filter(g => (g.name || '').toLowerCase().includes(t));
+    checkoutManualResults.innerHTML = results.map(g => {
+        const noStock = !(Number(g.for_sale_stock) > 0);
+        const stockLabel = noStock ? `⚠️ 無庫存` : `庫存：${g.for_sale_stock}`;
+        return `<li data-game-id="${g.game_id}">${escapeHtml(g.name)}（${stockLabel}）</li>`;
+    }).join('');
     checkoutManualResults.style.display = results.length > 0 ? 'block' : 'none';
 }
 
@@ -708,15 +708,14 @@ function openCheckoutModal() {
     checkoutItems.clear();
     selectedForBatchSale.forEach(gameId => {
         const game = allGamesData.find(g => String(g.game_id) === gameId);
-        if (game && Number(game.for_sale_stock) > 0) {
+        if (game) {
             checkoutItems.set(gameId, {
                 gameId,
                 name: game.name,
                 sale_price: Number(game.sale_price) || 0,
-                for_sale_stock: Number(game.for_sale_stock),
+                for_sale_stock: Number(game.for_sale_stock) || 0,
                 quantity: 1,
-                discountTenths: 10,
-                warning: ''
+                discountTenths: 10
             });
         }
     });
@@ -741,8 +740,6 @@ async function handleCheckoutConfirm() {
         discountTenths: item.discountTenths
     }));
 
-    checkoutItems.forEach(item => { item.warning = ''; });
-
     try {
         checkoutConfirmBtn.disabled = true;
         const result = await api.checkoutSale(items);
@@ -762,15 +759,12 @@ async function handleCheckoutConfirm() {
         applyGameFiltersAndRender();
         ui.hideModal('#checkout-sale-modal');
         ui.toast.success(result.message || '結帳完成');
+        // 庫存不足的部分結帳仍會成功（允許庫存變負數），詳細警示已推送到儀表板通知
+        if (Array.isArray(result.warnings) && result.warnings.length > 0) {
+            ui.toast.info(`有 ${result.warnings.length} 款商品庫存不足，已通知儀表板`);
+        }
 
     } catch (error) {
-        if (Array.isArray(error.shortages)) {
-            error.shortages.forEach(s => {
-                const item = checkoutItems.get(String(s.gameId));
-                if (item) item.warning = s.message;
-            });
-            renderCheckoutItems();
-        }
         ui.toast.error(`結帳失敗：${error.message}`);
     } finally {
         checkoutConfirmBtn.disabled = false;
@@ -817,11 +811,7 @@ function setupCheckoutEventListeners() {
 
         if (e.target.classList.contains('checkout-qty-input')) {
             const raw = parseInt(e.target.value, 10);
-            if (!isNaN(raw) && raw > item.for_sale_stock) {
-                ui.toast.error(`《${item.name}》販售庫存只剩 ${item.for_sale_stock}`);
-            }
-            item.quantity = isNaN(raw) ? item.quantity : Math.min(Math.max(raw, 1), item.for_sale_stock);
-            item.warning = '';
+            item.quantity = isNaN(raw) ? item.quantity : Math.max(raw, 1);
         } else if (e.target.classList.contains('checkout-discount-input')) {
             const raw = parseInt(e.target.value, 10);
             item.discountTenths = isNaN(raw) ? item.discountTenths : Math.min(Math.max(raw, 1), 10);
@@ -829,10 +819,20 @@ function setupCheckoutEventListeners() {
             return;
         }
 
-        // 只更新這一列的小計與總額，避免整表重繪讓輸入框失去焦點
+        // 只更新這一列的小計、警示與總額，避免整表重繪讓輸入框失去焦點
         row.querySelector('td:nth-child(4)').textContent = `$${computeLineSubtotal(item)}`;
-        const warningEl = row.querySelector('.checkout-warning');
-        if (warningEl) warningEl.remove();
+
+        const nameCell = row.querySelector('td:first-child');
+        const existingWarningEl = nameCell.querySelector('.checkout-warning');
+        const warning = getItemWarning(item);
+        if (warning) {
+            const html = `<div class="checkout-warning" style="color:var(--danger-color); font-size:0.85rem;" title="${escapeHtml(warning)}">⚠️ ${escapeHtml(warning)}</div>`;
+            if (existingWarningEl) existingWarningEl.outerHTML = html;
+            else nameCell.insertAdjacentHTML('beforeend', html);
+        } else if (existingWarningEl) {
+            existingWarningEl.remove();
+        }
+
         let total = 0;
         checkoutItems.forEach(it => { total += computeLineSubtotal(it); });
         checkoutTotalEl.textContent = total;

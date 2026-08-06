@@ -27,7 +27,7 @@ function renderOrderDetail(order) {
 
     return `
         <tr class="sales-detail-row" data-order-id="${order.order_id}">
-            <td colspan="5" style="background:var(--bg-light, #f7f7f7); padding: 10px 16px;">
+            <td colspan="6" style="background:var(--bg-light, #f7f7f7); padding: 10px 16px;">
                 <table style="width:100%;">
                     <thead>
                         <tr>
@@ -50,7 +50,7 @@ function renderSalesHistory(list) {
     if (!tbody) return;
 
     if (list.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">沒有符合條件的紀錄。</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">沒有符合條件的紀錄。</td></tr>';
         return;
     }
 
@@ -67,6 +67,10 @@ function renderSalesHistory(list) {
                         style="background:var(--info-color, #17a2b8); color:#fff; padding:4px 10px;">
                         ${expanded ? '收合' : '展開'}
                     </button>
+                </td>
+                <td>
+                    <button class="action-btn btn-delete-sales-order" data-order-id="${order.order_id}"
+                        style="background:var(--danger-color); color:#fff; padding:4px 10px;">刪除</button>
                 </td>
             </tr>
         `;
@@ -101,6 +105,18 @@ function clearFilters() {
     renderSalesHistory(filteredOrders);
 }
 
+async function handleDeleteOrder(orderId) {
+    if (!confirm(`確定要刪除訂單 #${orderId} 嗎？\n刪除後這筆訂單會消失，對應賣出的商品庫存會自動加回來。`)) return;
+    try {
+        await api.deleteSalesOrder(orderId);
+        expandedOrders.delete(orderId);
+        allOrders = allOrders.filter(o => o.order_id !== orderId);
+        applyFilterAndRender();
+    } catch (e) {
+        alert(`刪除失敗：${e.message}`);
+    }
+}
+
 function setupEventListeners() {
     const page = document.getElementById('page-sales-history');
     if (page.dataset.initialized) return;
@@ -111,15 +127,22 @@ function setupEventListeners() {
     document.getElementById('sales-clear-filter-btn').addEventListener('click', clearFilters);
 
     document.getElementById('sales-history-tbody').addEventListener('click', e => {
-        const btn = e.target.closest('.btn-toggle-sales-detail');
-        if (!btn) return;
-        const orderId = Number(btn.dataset.orderId);
-        if (expandedOrders.has(orderId)) {
-            expandedOrders.delete(orderId);
-        } else {
-            expandedOrders.add(orderId);
+        const toggleBtn = e.target.closest('.btn-toggle-sales-detail');
+        if (toggleBtn) {
+            const orderId = Number(toggleBtn.dataset.orderId);
+            if (expandedOrders.has(orderId)) {
+                expandedOrders.delete(orderId);
+            } else {
+                expandedOrders.add(orderId);
+            }
+            renderSalesHistory(filteredOrders);
+            return;
         }
-        renderSalesHistory(filteredOrders);
+
+        const deleteBtn = e.target.closest('.btn-delete-sales-order');
+        if (deleteBtn) {
+            handleDeleteOrder(Number(deleteBtn.dataset.orderId));
+        }
     });
 
     page.dataset.initialized = 'true';
@@ -129,7 +152,7 @@ export const init = async () => {
     const tbody = document.getElementById('sales-history-tbody');
     if (!tbody) return;
 
-    tbody.innerHTML = '<tr><td colspan="5">正在載入販售紀錄...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6">正在載入販售紀錄...</td></tr>';
     try {
         allOrders = await api.getSalesOrders();
         filteredOrders = [...allOrders];
@@ -137,6 +160,6 @@ export const init = async () => {
         setupEventListeners();
     } catch (e) {
         console.error('載入販售紀錄失敗:', e);
-        tbody.innerHTML = `<tr><td colspan="5" style="color:red;">載入失敗: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="color:red;">載入失敗: ${e.message}</td></tr>`;
     }
 };

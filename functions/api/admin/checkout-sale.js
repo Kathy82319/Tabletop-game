@@ -33,8 +33,8 @@ export async function onRequest(context) {
 
         const db = context.env.DB;
 
-        // 先逐筆讀取並驗證庫存，任何一款不足就整批擋下、不寫入任何資料
-        const shortages = [];
+        // 逐筆讀取商品資料；只有「找不到這款遊戲」才整批擋下，庫存不足不擋單，允許庫存變負數並事後通知
+        const notFound = [];
         const lines = [];
         for (const item of items) {
             const game = await db.prepare(
@@ -42,15 +42,7 @@ export async function onRequest(context) {
             ).bind(item.gameId).first();
 
             if (!game) {
-                shortages.push({ gameId: item.gameId, message: `找不到 ID 為 ${item.gameId} 的遊戲` });
-                continue;
-            }
-            if (game.for_sale_stock < item.quantity) {
-                shortages.push({
-                    gameId: item.gameId,
-                    message: `《${game.name}》販售庫存只剩 ${game.for_sale_stock}，無法賣出 ${item.quantity} 件`,
-                    availableStock: game.for_sale_stock
-                });
+                notFound.push(`找不到 ID 為 ${item.gameId} 的遊戲`);
                 continue;
             }
 
@@ -59,18 +51,17 @@ export async function onRequest(context) {
             const newTotalStock = game.total_stock - item.quantity;
             const newForSaleStock = game.for_sale_stock - item.quantity;
             const isVisible = newTotalStock > 0 ? 1 : 0;
+            const shortage = game.for_sale_stock < item.quantity;
 
             lines.push({
                 gameId: item.gameId, name: game.name, quantity: item.quantity, discount: item.discount,
-                unitPrice, totalPrice, newTotalStock, newForSaleStock, isVisible
+                unitPrice, totalPrice, newTotalStock, newForSaleStock, isVisible,
+                shortage, availableStock: game.for_sale_stock
             });
         }
 
-        if (shortages.length > 0) {
-            return new Response(JSON.stringify({
-                error: shortages.map(s => s.message).join('；'),
-                shortages
-            }), { status: 400 });
+        if (notFound.length > 0) {
+            return new Response(JSON.stringify({ error: notFound.join('；') }), { status: 400 });
         }
 
         const totalAmount = lines.reduce((sum, l) => sum + l.totalPrice, 0);
@@ -95,6 +86,15 @@ export async function onRequest(context) {
             );
         });
 
+        const warnings = [];
+        lines.filter(l => l.shortage).forEach(line => {
+            const message = `⚠️ 結帳訂單 #${orderId}：《${line.name}》庫存不足（賣出 ${line.quantity} 件，當時僅剩 ${line.availableStock} 件），目前庫存已變為 ${line.newForSaleStock}，請確認`;
+            warnings.push(message);
+            statements.push(
+                db.prepare('INSERT INTO Activities (message, is_read) VALUES (?, 0)').bind(message)
+            );
+        });
+
         await db.batch(statements);
 
         return new Response(JSON.stringify({
@@ -107,7 +107,9 @@ export async function onRequest(context) {
                 for_sale_stock: l.newForSaleStock,
                 is_visible: l.isVisible
             })),
+            warnings,
             message: `結帳完成，共 ${lines.length} 款商品，總金額 $${totalAmount}`
+                + (warnings.length > 0 ? `（${warnings.length} 款商品庫存不足，已通知儀表板）` : '')
         }), {
             status: 200,
             headers: { 'Content-Type': 'application/json' }
