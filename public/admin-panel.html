@@ -212,9 +212,6 @@
                 <h2>桌遊租借總表</h2>
             </div>
             <div class="filter-bar">
-                <div class="form-group" style="margin-bottom: 0;">
-                    <input type="text" id="rental-barcode-scan-input" placeholder="📷 掃描條碼查詢尚未歸還" style="border: 1px solid var(--primary-color);">
-                </div>
                 <div id="rental-search-container" class="search-chip-container">
                     <input type="text" id="rental-search-input" placeholder="搜尋遊戲名稱或租借人，按空白鍵/Enter 加入篩選條件...">
                 </div>
@@ -819,8 +816,9 @@
                                     <input type="text" id="edit-game-id-display" readonly style="background: #e9ecef;">
                                 </div>
                                 <div class="form-group">
-                                    <label for="edit-game-barcode">條碼 <small style="color:var(--text-light);">（將游標點入此欄後掃描）</small></label>
-                                    <input type="text" id="edit-game-barcode" placeholder="請掃描或手動輸入條碼">
+                                    <label>條碼 <small style="color:var(--text-light);">（將游標點入欄位後掃描；同一商品若有多組條碼，可按＋新增，掃到任一組都能找到此商品）</small></label>
+                                    <div id="edit-game-barcode-list"></div>
+                                    <button type="button" id="edit-game-barcode-add-btn" class="action-btn" style="background-color: var(--info-color); padding: 4px 10px; font-size: 0.85rem; margin-top: 4px;">＋ 新增條碼欄位</button>
                                 </div>
                                 <div class="form-group">
                                     <label>標籤 <small style="color:var(--text-light);">（Enter 新增，× 移除）</small></label>

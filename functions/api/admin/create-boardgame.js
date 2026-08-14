@@ -28,11 +28,20 @@ export async function onRequest(context) {
 
         const is_visible = total_stock > 0 ? 1 : 0;
 
-        const barcode = body.barcode ? String(body.barcode).trim() : null;
-        if (barcode) {
-            const dup = await db.prepare('SELECT game_id FROM BoardGames WHERE barcode = ?').bind(barcode).first();
-            if (dup) {
-                return new Response(JSON.stringify({ error: `此條碼已被「${dup.game_id}」使用，請確認條碼是否重複。` }), { status: 400 });
+        const rawBarcodes = Array.isArray(body.barcodes) ? body.barcodes : (body.barcode ? [body.barcode] : []);
+        const barcodes = [...new Set(rawBarcodes.map(b => String(b || '').trim()).filter(Boolean))];
+        const primaryBarcode = barcodes[0] || null;
+        const extraBarcodes = barcodes.slice(1);
+
+        if (barcodes.length > 0) {
+            const placeholders = barcodes.map(() => '?').join(',');
+            const dupMain = await db.prepare(`SELECT game_id FROM BoardGames WHERE barcode IN (${placeholders})`).bind(...barcodes).first();
+            if (dupMain) {
+                return new Response(JSON.stringify({ error: `條碼已被「${dupMain.game_id}」使用，請確認條碼是否重複。` }), { status: 400 });
+            }
+            const dupExtra = await db.prepare(`SELECT game_id FROM BoardGameBarcodes WHERE barcode IN (${placeholders})`).bind(...barcodes).first();
+            if (dupExtra) {
+                return new Response(JSON.stringify({ error: `條碼已被「${dupExtra.game_id}」使用，請確認條碼是否重複。` }), { status: 400 });
             }
         }
 
@@ -48,7 +57,7 @@ export async function onRequest(context) {
 
         await stmt.bind(
             newGameId,
-            body.name, barcode, body.description || '', body.image_url || '', body.image_url_2 || '', body.image_url_3 || '', body.tags || '',
+            body.name, primaryBarcode, body.description || '', body.image_url || '', body.image_url_2 || '', body.image_url_3 || '', body.tags || '',
             Number(body.min_players) || 1, Number(body.max_players) || 4, body.difficulty || '普通',
             body.play_time || '30~90分鐘',
             total_stock, for_rent_stock, for_sale_stock,
@@ -56,6 +65,12 @@ export async function onRequest(context) {
             Number(body.deposit) || 0, Number(body.late_fee_per_day) || 50,
             is_visible, body.supplementary_info || ''
         ).run();
+
+        if (extraBarcodes.length > 0) {
+            await db.batch(extraBarcodes.map(b =>
+                db.prepare('INSERT INTO BoardGameBarcodes (game_id, barcode) VALUES (?, ?)').bind(newGameId, b)
+            ));
+        }
 
         return new Response(JSON.stringify({ success: true, gameId: newGameId }), {
             status: 201,

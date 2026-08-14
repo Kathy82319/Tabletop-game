@@ -8,12 +8,18 @@ let allGames = [];
 let selectedRentalGames = new Map();
 let rentalSearchChips = [];
 
-let rentalListTbody, rentalSearchInput, rentalStatusFilter, rentalBarcodeScanInput,
+let rentalListTbody, rentalSearchInput, rentalStatusFilter,
     editRentalModal, editRentalForm, sortDueDateBtn,
     createRentalModal, createRentalForm;
 
 function escapeHtml(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// 遊戲可能有多組條碼（主要條碼 + BoardGameBarcodes 額外條碼，以逗號字串回傳），統一展開成陣列供比對
+function gameBarcodes(game) {
+    const extra = (game.extra_barcodes || '').split(',').map(b => b.trim()).filter(Boolean);
+    return [...new Set([game.barcode, ...extra].map(b => (b || '').trim()).filter(Boolean))];
 }
 
 function rentalMatchesTerm(rental, term) {
@@ -48,29 +54,6 @@ function removeRentalSearchChip(term) {
     rentalSearchChips = rentalSearchChips.filter(c => c !== term);
     renderRentalSearchChips();
     applyFiltersAndRender();
-}
-
-function handleRentalBarcodeScan(rawValue) {
-    const value = rawValue.trim();
-    if (!value) return;
-
-    rentalSearchChips = [];
-    rentalSearchInput.value = '';
-
-    const rentedBtn = rentalStatusFilter.querySelector('button[data-filter="rented"]');
-    if (rentedBtn) {
-        rentalStatusFilter.querySelector('.active')?.classList.remove('active');
-        rentedBtn.classList.add('active');
-    }
-
-    addRentalSearchChip(value);
-
-    const matches = allRentals.filter(r =>
-        (r.barcode || '') === value && ['rented', 'due_today', 'overdue'].includes(r.derived_status)
-    );
-    if (matches.length === 0) {
-        ui.toast.info('此條碼目前沒有尚未歸還的租借紀錄');
-    }
 }
 
 function getStatusClass(status) {
@@ -178,7 +161,7 @@ function handleRentalGameBarcodeScan(rawValue) {
     const value = rawValue.trim();
     if (!value) return;
 
-    const game = allGames.find(g => (g.barcode || '') === value);
+    const game = allGames.find(g => gameBarcodes(g).includes(value));
     if (!game) {
         ui.toast.error('掃描不到符合的商品條碼');
         return;
@@ -404,7 +387,7 @@ export function initializeCreateRentalModalEventListeners() {
         const value = gameSearchInput.value.trim();
         if (!value) return;
 
-        const byBarcode = allGames.find(g => (g.barcode || '') === value);
+        const byBarcode = allGames.find(g => gameBarcodes(g).includes(value));
         if (byBarcode) {
             handleRentalGameBarcodeScan(value);
             gameSearchInput.value = '';
@@ -506,14 +489,6 @@ export function initializeCreateRentalModalEventListeners() {
 function setupEventListeners() {
     const page = document.getElementById('page-rentals');
     if (page.dataset.initialized) return;
-
-    rentalBarcodeScanInput?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            handleRentalBarcodeScan(rentalBarcodeScanInput.value);
-            rentalBarcodeScanInput.value = '';
-        }
-    });
 
     rentalSearchInput.addEventListener('input', applyFiltersAndRender);
 
@@ -637,7 +612,6 @@ export const init = async (context, initialStatus) => {
     rentalListTbody = page.querySelector('#rental-list-tbody');
     rentalSearchInput = page.querySelector('#rental-search-input');
     rentalStatusFilter = page.querySelector('#rental-status-filter');
-    rentalBarcodeScanInput = page.querySelector('#rental-barcode-scan-input');
     editRentalModal = document.getElementById('edit-rental-modal');
     editRentalForm = document.getElementById('edit-rental-form');
 

@@ -13,8 +13,9 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
 
-    const stmt = db.prepare('DELETE FROM BoardGames WHERE game_id = ?');
-    const operations = gameIds.map(gameId => stmt.bind(gameId));
+    const deleteGameStmt = db.prepare('DELETE FROM BoardGames WHERE game_id = ?');
+    const deleteBarcodesStmt = db.prepare('DELETE FROM BoardGameBarcodes WHERE game_id = ?');
+    const operations = gameIds.flatMap(gameId => [deleteBarcodesStmt.bind(gameId), deleteGameStmt.bind(gameId)]);
 
     await db.batch(operations);
 

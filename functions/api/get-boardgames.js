@@ -6,7 +6,12 @@ export async function onRequest(context) {
 
     try {
         if (request.method === 'GET') {
-            const stmt = db.prepare('SELECT * FROM BoardGames ORDER BY display_order ASC, name ASC');
+            const stmt = db.prepare(`
+                SELECT bg.*,
+                    (SELECT group_concat(barcode, ',') FROM BoardGameBarcodes WHERE game_id = bg.game_id) AS extra_barcodes
+                FROM BoardGames bg
+                ORDER BY bg.display_order ASC, bg.name ASC
+            `);
             const { results } = await stmt.all();
             return new Response(JSON.stringify(results || []), {
                 status: 200,

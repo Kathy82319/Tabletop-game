@@ -28,6 +28,16 @@ function escapeHtml(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// 遊戲可能有多組條碼（主要條碼 + BoardGameBarcodes 額外條碼，以逗號字串回傳），統一展開成陣列供比對
+function parseExtraBarcodes(extraBarcodesStr) {
+    return (extraBarcodesStr || '').split(',').map(b => b.trim()).filter(Boolean);
+}
+
+function gameBarcodes(game) {
+    const list = [game.barcode, ...parseExtraBarcodes(game.extra_barcodes)];
+    return [...new Set(list.map(b => (b || '').trim()).filter(Boolean))];
+}
+
 function renderTagChips() {
     const container = document.getElementById('tag-chip-container');
     const textInput = document.getElementById('tag-chip-text-input');
@@ -681,7 +691,7 @@ function handleCheckoutBarcodeScan(rawValue) {
     if (!value) return;
     checkoutBarcodeInput.value = '';
 
-    const game = allGamesData.find(g => (g.barcode || '') === value);
+    const game = allGamesData.find(g => gameBarcodes(g).includes(value));
     if (!game) {
         ui.toast.error('掃描不到符合的商品條碼');
         return;
@@ -858,7 +868,7 @@ function setupCheckoutEventListeners() {
 function gameMatchesTerm(game, term) {
     const t = term.toLowerCase();
     if ((game.name || '').toLowerCase().includes(t)) return true;
-    if ((game.barcode || '').toLowerCase().includes(t)) return true;
+    if (gameBarcodes(game).some(b => b.toLowerCase().includes(t))) return true;
     if (Number(game.for_sale_stock) > 0 && '販售'.includes(t)) return true;
     if (Number(game.for_rent_stock) > 0 && '可租借'.includes(t)) return true;
     return (game.tags || '').split(',').some(tag => tag.trim().toLowerCase().includes(t) && tag.trim() !== '');
@@ -936,6 +946,30 @@ function initializeGameDragAndDrop() {
     }
 }
 
+// --- Barcode Fields (編輯商品：可新增多組條碼) ---
+
+function addBarcodeFieldRow(value = '', focus = false) {
+    const container = document.getElementById('edit-game-barcode-list');
+    if (!container) return;
+    const row = document.createElement('div');
+    row.className = 'barcode-field-row';
+    row.style.cssText = 'display:flex; gap:6px; margin-bottom:6px;';
+    row.innerHTML = `
+        <input type="text" class="edit-game-barcode-input" placeholder="請掃描或手動輸入條碼" value="${escapeHtml(value)}" style="flex:1;">
+        <button type="button" class="remove-barcode-field-btn action-btn" style="background:var(--danger-color); color:#fff; padding:4px 10px;">&times;</button>
+    `;
+    container.appendChild(row);
+    if (focus) row.querySelector('input').focus();
+}
+
+function renderBarcodeFields(barcodeList) {
+    const container = document.getElementById('edit-game-barcode-list');
+    if (!container) return;
+    container.innerHTML = '';
+    const list = barcodeList.length > 0 ? barcodeList : [''];
+    list.forEach(value => addBarcodeFieldRow(value));
+}
+
 // --- Modal ---
 
 function openEditGameModal(gameId) {
@@ -952,7 +986,7 @@ function openEditGameModal(gameId) {
         document.getElementById('edit-game-id-display').closest('.form-group').style.display = 'block';
 
         document.getElementById('edit-game-name').value = game.name;
-        document.getElementById('edit-game-barcode').value = game.barcode || '';
+        renderBarcodeFields(gameBarcodes(game));
         document.getElementById('edit-game-image').value = game.image_url || '';
         document.getElementById('edit-game-image-2').value = game.image_url_2 || '';
         document.getElementById('edit-game-image-3').value = game.image_url_3 || '';
@@ -992,6 +1026,7 @@ function openEditGameModal(gameId) {
         document.getElementById('edit-for-rent-stock').value = 0;
         document.getElementById('edit-late-fee').value = 50;
 
+        renderBarcodeFields([]);
         initTagChips('');
         updateBackupStock();
     }
@@ -1006,10 +1041,13 @@ async function handleEditGameFormSubmit(e) {
     const totalStock = Number(document.getElementById('edit-total-stock').value);
     const forSaleStock = Number(document.getElementById('edit-for-sale-stock').value);
     const forRentStock = Number(document.getElementById('edit-for-rent-stock').value);
+    const barcodes = Array.from(document.querySelectorAll('#edit-game-barcode-list .edit-game-barcode-input'))
+        .map(el => el.value.trim())
+        .filter(Boolean);
 
     const updatedData = {
         name: document.getElementById('edit-game-name').value,
-        barcode: document.getElementById('edit-game-barcode').value.trim(),
+        barcodes,
         tags: document.getElementById('edit-game-tags').value,
         image_url: document.getElementById('edit-game-image').value,
         image_url_2: document.getElementById('edit-game-image-2').value,
@@ -1040,6 +1078,8 @@ async function handleEditGameFormSubmit(e) {
                 allGamesData[gameIndex] = {
                     ...allGamesData[gameIndex],
                     ...updatedData,
+                    barcode: barcodes[0] || null,
+                    extra_barcodes: barcodes.slice(1).join(','),
                     is_visible: totalStock > 0 ? 1 : 0,
                     for_sale_stock: forSaleStock
                 };
@@ -1230,6 +1270,15 @@ function setupEventListeners() {
 
     setupModalTabListeners();
     setupTagChipListeners();
+
+    document.getElementById('edit-game-barcode-add-btn')?.addEventListener('click', () => {
+        addBarcodeFieldRow('', true);
+    });
+    document.getElementById('edit-game-barcode-list')?.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-barcode-field-btn')) {
+            e.target.closest('.barcode-field-row')?.remove();
+        }
+    });
 
     btnDownloadTemplate.addEventListener('click', handleDownloadTemplate);
     btnImportCSV.addEventListener('click', openImportCSVModal);

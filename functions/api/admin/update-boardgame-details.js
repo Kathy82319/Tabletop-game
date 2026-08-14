@@ -39,12 +39,26 @@ export async function onRequest(context) {
     }
   
     const db = context.env.DB;
-    
-    const barcode = body.barcode ? String(body.barcode).trim() : null;
-    if (barcode) {
-        const dup = await db.prepare('SELECT game_id FROM BoardGames WHERE barcode = ? AND game_id != ?').bind(barcode, body.gameId).first();
-        if (dup) {
-            return new Response(JSON.stringify({ error: `此條碼已被「${dup.game_id}」使用，請確認條碼是否重複。` }), { status: 400 });
+
+    // body.barcodes 為條碼陣列（第一筆為主要條碼），也相容舊的單一 body.barcode
+    const rawBarcodes = Array.isArray(body.barcodes) ? body.barcodes : (body.barcode ? [body.barcode] : []);
+    const barcodes = [...new Set(rawBarcodes.map(b => String(b || '').trim()).filter(Boolean))];
+    const primaryBarcode = barcodes[0] || null;
+    const extraBarcodes = barcodes.slice(1);
+
+    if (barcodes.length > 0) {
+        const placeholders = barcodes.map(() => '?').join(',');
+        const dupMain = await db.prepare(
+            `SELECT game_id FROM BoardGames WHERE barcode IN (${placeholders}) AND game_id != ?`
+        ).bind(...barcodes, body.gameId).first();
+        if (dupMain) {
+            return new Response(JSON.stringify({ error: `條碼已被「${dupMain.game_id}」使用，請確認條碼是否重複。` }), { status: 400 });
+        }
+        const dupExtra = await db.prepare(
+            `SELECT game_id FROM BoardGameBarcodes WHERE barcode IN (${placeholders}) AND game_id != ?`
+        ).bind(...barcodes, body.gameId).first();
+        if (dupExtra) {
+            return new Response(JSON.stringify({ error: `條碼已被「${dupExtra.game_id}」使用，請確認條碼是否重複。` }), { status: 400 });
         }
     }
 
@@ -60,7 +74,7 @@ export async function onRequest(context) {
     const is_visible = Number(body.total_stock) > 0 ? 1 : 0;
 
     const result = await stmt.bind(
-        body.name, barcode, body.description || '', body.image_url || '', body.image_url_2 || '', body.image_url_3 || '', body.tags || '',
+        body.name, primaryBarcode, body.description || '', body.image_url || '', body.image_url_2 || '', body.image_url_3 || '', body.tags || '',
         Number(body.min_players), Number(body.max_players), body.difficulty,
         body.play_time || '30~90分鐘',
         Number(body.total_stock), Number(body.for_rent_stock), Number(body.for_sale_stock) || 0,
@@ -73,7 +87,13 @@ export async function onRequest(context) {
     if (result.meta.changes === 0) {
       return new Response(JSON.stringify({ error: `找不到遊戲 ID: ${body.gameId}，無法更新。` }), { status: 404 });
     }
-    
+
+    const barcodeSyncOps = [db.prepare('DELETE FROM BoardGameBarcodes WHERE game_id = ?').bind(body.gameId)];
+    extraBarcodes.forEach(b => {
+        barcodeSyncOps.push(db.prepare('INSERT INTO BoardGameBarcodes (game_id, barcode) VALUES (?, ?)').bind(body.gameId, b));
+    });
+    await db.batch(barcodeSyncOps);
+
     return new Response(JSON.stringify({ success: true, message: '成功更新桌遊詳細資訊！' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
