@@ -201,12 +201,15 @@ function addGameToSelection(game) {
     tag.className = 'selected-game-tag';
     tag.dataset.gameId = game.game_id;
 
-    const inputStyle = 'width: 55px; margin-left: 6px; padding: 2px 4px; border-radius: 4px; border: none; outline: none; color: #333; font-size: 0.85rem;';
+    const inputStyle = 'width: 55px; padding: 2px 4px; border-radius: 4px; border: none; outline: none; color: #333; font-size: 0.85rem;';
     tag.innerHTML = `
         <span>${escapeHtml(game.name)}</span>
-        <input type="number" class="game-rent-price-input" title="租金" placeholder="租金" style="${inputStyle}" min="0" value="${Number(game.rent_price) || 0}">
-        <input type="number" class="game-deposit-input" title="押金" placeholder="押金" style="${inputStyle}" min="0" value="${Number(game.deposit) || 0}">
-        <input type="number" class="game-weight-input" placeholder="重量(g)" style="${inputStyle}" min="0" required>
+        <span class="tag-field-label">租金</span>
+        <input type="number" class="game-rent-price-input" title="租金" style="${inputStyle}" min="0" value="${Number(game.rent_price) || 0}">
+        <span class="tag-field-label">押金</span>
+        <input type="number" class="game-deposit-input" title="押金" style="${inputStyle}" min="0" value="${Number(game.deposit) || 0}">
+        <span class="tag-field-label">重量(g)</span>
+        <input type="number" class="game-weight-input" title="重量(g)" style="${inputStyle}" min="0" required>
         <button type="button" class="remove-game-btn">&times;</button>
     `;
 
@@ -390,15 +393,29 @@ export function initializeCreateRentalModalEventListeners() {
 
     const gameSearchInput = document.getElementById('rental-game-search');
     const gameSearchResults = document.getElementById('game-search-results');
-    const gameBarcodeInput = document.getElementById('rental-game-barcode-scan');
     const userSearchInput = document.getElementById('rental-user-search');
     const userSearchResults = document.getElementById('user-search-results');
 
-    gameBarcodeInput?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            handleRentalGameBarcodeScan(gameBarcodeInput.value);
-            gameBarcodeInput.value = '';
+    // 同一個欄位同時支援「掃描槍掃條碼」與「打字搜尋名稱」：Enter 時先試條碼完全比對，
+    // 比對不到但篩選結果剛好只有一筆時，也直接視為選定該款遊戲
+    gameSearchInput.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const value = gameSearchInput.value.trim();
+        if (!value) return;
+
+        const byBarcode = allGames.find(g => (g.barcode || '') === value);
+        if (byBarcode) {
+            handleRentalGameBarcodeScan(value);
+            gameSearchInput.value = '';
+            gameSearchResults.style.display = 'none';
+            return;
+        }
+
+        const term = value.toLowerCase();
+        const results = allGames.filter(g => g.name.toLowerCase().includes(term) && g.for_rent_stock > 0);
+        if (results.length === 1) {
+            addGameToSelection(results[0]);
         }
     });
 
