@@ -12,6 +12,8 @@ const STATUS_LABEL = {
 
 let pageElement;
 let currentFilter = 'pending_approval';
+let currentList = [];
+let sortByEventTime = false; // false = 依建立時間新到舊（後端預設順序）；true = 依活動時間近到遠
 
 // 揪團的名稱/備註/暱稱皆為使用者輸入，插入 innerHTML 前必須跳脫，避免儲存型 XSS
 function escapeHtml(str) {
@@ -40,31 +42,43 @@ async function loadGatherings(status) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">載入中...</td></tr>';
 
     try {
-        const list = await api.getGroupGatherings(status);
-        if (list.length === 0) {
-            const label = status.split(',').map(s => STATUS_LABEL[s.trim()] || s).join('／');
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">沒有「${label}」的揪團</td></tr>`;
-            return;
-        }
-        tbody.innerHTML = list.map(g => `
-            <tr>
-                <td>${g.id}</td>
-                <td>${escapeHtml(g.organizer_name)}</td>
-                <td>${g.event_date}<br>${g.start_time}–${g.end_time}</td>
-                <td>${g.max_participants ? `${g.member_count + 1} / ${g.max_participants}` : `${g.member_count + 1} 人`}</td>
-                <td class="admin-gg-games-cell">${renderGameTags(g.games)}</td>
-                <td><span class="admin-gg-status-badge gg-s-${g.status}">${STATUS_LABEL[g.status] || g.status}</span></td>
-                <td class="actions-cell">
-                    <button class="action-btn btn-gg-view" data-id="${g.id}" style="background:var(--info-color);">詳情</button>
-                    ${g.status === 'pending_approval' ? `
-                    <button class="action-btn btn-gg-approve" data-id="${g.id}" style="background:var(--success-color);">同意</button>
-                    <button class="action-btn btn-gg-reject"  data-id="${g.id}" style="background:var(--danger-color);">拒絕</button>
-                    ` : ''}
-                </td>
-            </tr>`).join('');
+        currentList = await api.getGroupGatherings(status);
+        renderGatheringsTable();
     } catch (err) {
         tbody.innerHTML = `<tr><td colspan="7" style="color:red; text-align:center;">載入失敗: ${err.message}</td></tr>`;
     }
+}
+
+function renderGatheringsTable() {
+    const tbody = pageElement.querySelector('#gg-admin-tbody');
+    if (!tbody) return;
+
+    if (currentList.length === 0) {
+        const label = currentFilter.split(',').map(s => STATUS_LABEL[s.trim()] || s).join('／');
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">沒有「${label}」的揪團</td></tr>`;
+        return;
+    }
+
+    const list = sortByEventTime
+        ? [...currentList].sort((a, b) => `${a.event_date} ${a.start_time}`.localeCompare(`${b.event_date} ${b.start_time}`))
+        : currentList;
+
+    tbody.innerHTML = list.map(g => `
+        <tr>
+            <td>${g.id}</td>
+            <td>${escapeHtml(g.organizer_name)}</td>
+            <td>${g.event_date}<br>${g.start_time}–${g.end_time}</td>
+            <td>${g.max_participants ? `${g.member_count + 1} / ${g.max_participants}` : `${g.member_count + 1} 人`}</td>
+            <td class="admin-gg-games-cell">${renderGameTags(g.games)}</td>
+            <td><span class="admin-gg-status-badge gg-s-${g.status}">${STATUS_LABEL[g.status] || g.status}</span></td>
+            <td class="actions-cell">
+                <button class="action-btn btn-gg-view" data-id="${g.id}" style="background:var(--info-color);">詳情</button>
+                ${g.status === 'pending_approval' ? `
+                <button class="action-btn btn-gg-approve" data-id="${g.id}" style="background:var(--success-color);">同意</button>
+                <button class="action-btn btn-gg-reject"  data-id="${g.id}" style="background:var(--danger-color);">拒絕</button>
+                ` : ''}
+            </td>
+        </tr>`).join('');
 }
 
 async function showDetail(id) {
@@ -158,7 +172,7 @@ export async function init() {
         <div class="table-container" style="overflow-x:auto;">
             <table class="data-table">
                 <thead><tr>
-                    <th>#</th><th>團主</th><th>活動時間</th><th>人數</th><th>遊戲</th><th>狀態</th><th>操作</th>
+                    <th>#</th><th>團主</th><th id="gg-sort-event-time" style="cursor:pointer; user-select:none;" title="點擊依活動時間排序">活動時間 <span id="gg-sort-event-time-icon">↕</span></th><th>人數</th><th>遊戲</th><th>狀態</th><th>操作</th>
                 </tr></thead>
                 <tbody id="gg-admin-tbody"></tbody>
             </table>
@@ -179,7 +193,16 @@ export async function init() {
         pageElement.querySelectorAll('#gg-filter-tabs .sub-tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentFilter = btn.dataset.status;
+        sortByEventTime = false;
+        pageElement.querySelector('#gg-sort-event-time-icon').textContent = '↕';
         loadGatherings(currentFilter);
+    });
+
+    // 點擊「活動時間」欄位標題：切換成依活動時間由近到遠排序（不用重新打 API）
+    pageElement.querySelector('#gg-sort-event-time').addEventListener('click', () => {
+        sortByEventTime = !sortByEventTime;
+        pageElement.querySelector('#gg-sort-event-time-icon').textContent = sortByEventTime ? '▲' : '↕';
+        renderGatheringsTable();
     });
 
     // 表格操作按鈕

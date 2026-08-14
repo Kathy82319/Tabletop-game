@@ -108,7 +108,7 @@ function renderRentalList(rentals) {
             <td>${rental.due_date}</td>
             <td>${rental.return_date || '尚未歸還'}</td>
             <td class="actions-cell">
-                <button class="action-btn btn-return-rental" data-rental-id="${rental.rental_id}" style="background-color: var(--success-color);" ${rental.status === 'returned' ? 'disabled' : ''}>歸還</button>
+                ${rental.status === 'returned' ? '' : `<button class="action-btn btn-return-rental" data-rental-id="${rental.rental_id}" style="background-color: var(--success-color);">歸還</button>`}
                 <button class="action-btn btn-manage-rental" data-rental-id="${rental.rental_id}" style="background-color: var(--info-color);">管理</button>
             </td>
         `;
