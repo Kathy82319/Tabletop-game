@@ -9,9 +9,13 @@ export async function onRequestPatch(context) {
         return Response.json({ error: '無效的請求格式' }, { status: 400 });
     }
 
-    const { player_id, delta, owner_line_id } = body;
-    if (player_id === undefined || delta === undefined || !owner_line_id) {
+    const { player_id, owner_line_id } = body;
+    const delta = Number(body.delta);
+    if (player_id === undefined || body.delta === undefined || !owner_line_id) {
         return Response.json({ error: '缺少必要欄位' }, { status: 400 });
+    }
+    if (!Number.isFinite(delta) || Math.round(delta * 2) !== delta * 2) {
+        return Response.json({ error: '分數必須是 0.5 的倍數' }, { status: 400 });
     }
 
     const session = await env.DB.prepare(
