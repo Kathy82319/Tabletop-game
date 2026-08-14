@@ -1171,12 +1171,11 @@ function sbCloseScorePopup() {
 }
 
 async function sbApplyScore(playerId, sign) {
-    const raw = parseFloat(document.getElementById('sb-popup-input').value);
-    if (isNaN(raw) || raw <= 0) {
+    const val = parseFloat(document.getElementById('sb-popup-input').value);
+    if (isNaN(val) || val <= 0) {
         document.getElementById('sb-popup-input').focus();
         return;
     }
-    const val = Math.round(raw * 2) / 2; // 只允許 0.5 為單位
     const delta = sign * val;
     sbCloseScorePopup();
 

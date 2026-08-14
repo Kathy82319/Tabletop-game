@@ -14,8 +14,8 @@ export async function onRequestPatch(context) {
     if (player_id === undefined || body.delta === undefined || !owner_line_id) {
         return Response.json({ error: '缺少必要欄位' }, { status: 400 });
     }
-    if (!Number.isFinite(delta) || Math.round(delta * 2) !== delta * 2) {
-        return Response.json({ error: '分數必須是 0.5 的倍數' }, { status: 400 });
+    if (!Number.isFinite(delta)) {
+        return Response.json({ error: '分數必須是有效的數字' }, { status: 400 });
     }
 
     const session = await env.DB.prepare(
