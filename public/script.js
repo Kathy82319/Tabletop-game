@@ -1390,6 +1390,7 @@ async function initializeInfoPage() {
 
 const RecWizard = {
     answers: {
+        mode: null,
         players: [],
         price: [],
         tag: [],
@@ -1429,7 +1430,7 @@ const RecWizard = {
     },
 
     restart: function() {
-        this.answers = { players: [], price: [], tag: [], difficulty: [] };
+        this.answers = { mode: null, players: [], price: [], tag: [], difficulty: [] };
         sessionStorage.removeItem('quiz_answers'); // 清除暫存
         document.querySelectorAll('.quiz-option-btn').forEach(btn => btn.classList.remove('selected'));
         this.showStep(1);
@@ -1447,6 +1448,14 @@ const RecWizard = {
         this.saveState(); // 每次變動都儲存
     },
 
+    selectMode: function(value, btnElement) {
+        this.answers.mode = value;
+        btnElement.parentElement.querySelectorAll('.quiz-option-btn').forEach(btn => btn.classList.remove('selected'));
+        btnElement.classList.add('selected');
+        this.saveState();
+        this.next(1); // 單選題選完直接進下一題
+    },
+
     next: function(currentStep) {
         this.showStep(currentStep + 1);
     },
@@ -1460,7 +1469,7 @@ const RecWizard = {
         const target = document.getElementById(`quiz-step-${step}`);
         if(target) target.style.display = 'block';
         
-        const progress = (step / 4) * 100;
+        const progress = (step / 5) * 100;
         document.getElementById('quiz-progress-bar').style.width = `${progress}%`;
     },
 
@@ -1469,9 +1478,17 @@ const RecWizard = {
         document.getElementById('quiz-result').style.display = 'block';
         document.getElementById('quiz-progress-bar').style.width = '100%';
 
-        const { players, price, tag, difficulty } = this.answers;
-        
+        const { mode, players, price, tag, difficulty } = this.answers;
+
         const results = this.allGames.filter(game => {
+            const isForSale = Number(game.for_sale_stock) > 0;
+            const isForRent = Number(game.for_rent_stock) > 0;
+            const isOnsiteOnly = (game.tags || '').split(',').map(t => t.trim()).includes('僅供現場遊玩');
+
+            if (mode === 'buy' && (!isForSale || isOnsiteOnly)) return false;
+            if (mode === 'rent' && (!isForRent || isOnsiteOnly)) return false;
+            if (mode === 'onsite' && !(isForRent || isOnsiteOnly)) return false;
+
             let matchPlayers = (players.length === 0) ? true : players.some(p => (p === 7 ? game.max_players >= 7 : (game.min_players <= p && game.max_players >= p)));
             if (!matchPlayers) return false;
 
@@ -1543,7 +1560,7 @@ const RecWizard = {
         const saved = sessionStorage.getItem('quiz_answers');
         if (!saved) return false;
         const parsed = JSON.parse(saved);
-        return parsed.players.length > 0 || parsed.price.length > 0 || parsed.tag.length > 0 || parsed.difficulty.length > 0;
+        return !!parsed.mode || parsed.players.length > 0 || parsed.price.length > 0 || parsed.tag.length > 0 || parsed.difficulty.length > 0;
     },
 
     restoreButtonStates: function() {
