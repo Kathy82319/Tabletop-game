@@ -1279,6 +1279,15 @@ function setupEventListeners() {
             e.target.closest('.barcode-field-row')?.remove();
         }
     });
+    document.getElementById('edit-game-barcode-list')?.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' || !e.target.classList.contains('edit-game-barcode-input')) return;
+        e.preventDefault(); // 掃描槍會在條碼後自動送出 Enter，避免整張編輯表單被誤送出
+        const rows = document.querySelectorAll('#edit-game-barcode-list .barcode-field-row');
+        const isLastRow = e.target.closest('.barcode-field-row') === rows[rows.length - 1];
+        if (isLastRow && e.target.value.trim()) {
+            addBarcodeFieldRow('', true); // 掃完自動開下一格，方便連續掃描多組條碼
+        }
+    });
 
     btnDownloadTemplate.addEventListener('click', handleDownloadTemplate);
     btnImportCSV.addEventListener('click', openImportCSVModal);
