@@ -8,9 +8,9 @@ export async function onRequest(context) {
     }
 
     const body = await context.request.json();
-    const { 
+    const {
         userId, games, dueDate, name, phone,
-        rentPrice, deposit, lateFeePerDay 
+        lateFeePerDay
     } = body;
 
     const errors = [];
@@ -19,12 +19,7 @@ export async function onRequest(context) {
     if (!dueDate || !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) errors.push('無效的歸還日期格式。');
     if (!name || typeof name !== 'string' || name.trim().length === 0 || name.length > 50) errors.push('租借人姓名為必填，且長度不可超過 50 字。');
 
-    const rentPriceNum = Number(rentPrice);
-    const depositNum = Number(deposit);
     const lateFeeNum = Number(lateFeePerDay);
-
-    if (isNaN(rentPriceNum) || rentPriceNum < 0) errors.push('租金必須是有效的非負數。');
-    if (isNaN(depositNum) || depositNum < 0) errors.push('押金必須是有效的非負數。');
     if (isNaN(lateFeeNum) || lateFeeNum < 0) errors.push('每日逾期費必須是有效的非負數。');
 
     if (errors.length > 0) {
@@ -34,39 +29,47 @@ export async function onRequest(context) {
     const db = context.env.DB;
     const allGameNames = [];
     const dbOperations = [];
-    
+    let totalRentPrice = 0, totalDeposit = 0;
+
     for (const item of games) {
         const rawGameId = item.gameId;
         const gameWeight = item.weight || '未填寫'; // 取得公克數
-        
+
         const gameId = Number(rawGameId);
         if (isNaN(gameId) || gameId <= 0) {
             throw new Error(`傳入了無效的遊戲 ID：${rawGameId}`);
         }
 
+        const itemRentPrice = Number(item.rentPrice);
+        const itemDeposit = Number(item.deposit);
+        if (isNaN(itemRentPrice) || itemRentPrice < 0) throw new Error(`遊戲 ID ${rawGameId} 的租金必須是有效的非負數。`);
+        if (isNaN(itemDeposit) || itemDeposit < 0) throw new Error(`遊戲 ID ${rawGameId} 的押金必須是有效的非負數。`);
+
         const game = await db.prepare('SELECT name, for_rent_stock FROM BoardGames WHERE game_id = ?').bind(gameId).first();
         if (!game) throw new Error(`找不到 ID 為 ${gameId} 的遊戲。`);
         if (game.for_rent_stock <= 0) throw new Error(`《${game.name}》目前已無可租借庫存。`);
-        
+
         allGameNames.push(`${game.name} (重量: ${gameWeight}g)`);
+        totalRentPrice += itemRentPrice;
+        totalDeposit += itemDeposit;
 
         const insertStmt = db.prepare(
-            `INSERT INTO Rentals (user_id, game_id, due_date, name, phone, rent_price, deposit, late_fee_per_day) 
+            `INSERT INTO Rentals (user_id, game_id, due_date, name, phone, rent_price, deposit, late_fee_per_day)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
         );
-        
+
         dbOperations.push(insertStmt.bind(
-            userId || null, 
+            userId || null,
             gameId,
-            dueDate, name, 
+            dueDate, name,
             phone || null,
-            rentPriceNum, depositNum, lateFeeNum
+            itemRentPrice, itemDeposit, lateFeeNum
         ));
-        
+
         const updateStmt = db.prepare('UPDATE BoardGames SET for_rent_stock = for_rent_stock - 1 WHERE game_id = ?');
         dbOperations.push(updateStmt.bind(gameId));
     }
-    
+
     await db.batch(dbOperations);
     
     const rentalDateStr = new Date().toISOString().split('T')[0];
@@ -76,7 +79,7 @@ export async function onRequest(context) {
                     `日期：${rentalDateStr}\n租借時間：${rentalDuration}天\n` +
                     `歸還日期：${dueDate}\n` +
                     `租借遊戲：\n- ${allGameNames.join('\n- ')}\n\n` +
-                    `本次租金：$${rentPriceNum}\n收取押金：$${depositNum}\n\n` +
+                    `本次租金：$${totalRentPrice}\n收取押金：$${totalDeposit}\n\n` +
                     `租借規則：\n` +
                     `1. 收取遊戲押金，於歸還桌遊、確認內容物無誤後退還。\n` +
                     `2. 內容物需現場清點，若歸還時有缺少或損毀，將不退還押金。\n` +

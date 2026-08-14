@@ -174,6 +174,22 @@ export async function openCreateRentalModal(initialGameId) {
     ui.showModal('#create-rental-modal');
 }
 
+function handleRentalGameBarcodeScan(rawValue) {
+    const value = rawValue.trim();
+    if (!value) return;
+
+    const game = allGames.find(g => (g.barcode || '') === value);
+    if (!game) {
+        ui.toast.error('掃描不到符合的商品條碼');
+        return;
+    }
+    if (!(Number(game.for_rent_stock) > 0)) {
+        ui.toast.error(`《${game.name}》目前沒有可租借庫存`);
+        return;
+    }
+    addGameToSelection(game);
+}
+
 function addGameToSelection(game) {
     if (selectedRentalGames.has(game.game_id)) {
         ui.toast.info(`《${game.name}》已在租借清單中。`);
@@ -184,30 +200,40 @@ function addGameToSelection(game) {
     const tag = document.createElement('div');
     tag.className = 'selected-game-tag';
     tag.dataset.gameId = game.game_id;
-    
+
+    const inputStyle = 'width: 55px; margin-left: 6px; padding: 2px 4px; border-radius: 4px; border: none; outline: none; color: #333; font-size: 0.85rem;';
     tag.innerHTML = `
-        <span>${game.name}</span>
-        <input type="number" class="game-weight-input" placeholder="重量(g)" style="width: 70px; margin-left: 8px; padding: 2px 4px; border-radius: 4px; border: none; outline: none; color: #333; font-size: 0.85rem;" min="0" required>
+        <span>${escapeHtml(game.name)}</span>
+        <input type="number" class="game-rent-price-input" title="租金" placeholder="租金" style="${inputStyle}" min="0" value="${Number(game.rent_price) || 0}">
+        <input type="number" class="game-deposit-input" title="押金" placeholder="押金" style="${inputStyle}" min="0" value="${Number(game.deposit) || 0}">
+        <input type="number" class="game-weight-input" placeholder="重量(g)" style="${inputStyle}" min="0" required>
         <button type="button" class="remove-game-btn">&times;</button>
     `;
-    
+
     container.appendChild(tag);
     document.getElementById('rental-game-search').value = '';
     document.getElementById('game-search-results').style.display = 'none';
     updateRentalPrice();
 }
 
+function updateRentalTotals() {
+    let totalRent = 0, totalDeposit = 0;
+    document.querySelectorAll('#rental-games-container .selected-game-tag').forEach(tag => {
+        totalRent += Number(tag.querySelector('.game-rent-price-input')?.value) || 0;
+        totalDeposit += Number(tag.querySelector('.game-deposit-input')?.value) || 0;
+    });
+    document.getElementById('rental-rent-price').value = totalRent;
+    document.getElementById('rental-deposit').value = totalDeposit;
+}
+
 function updateRentalPrice() {
-    let totalRent = 0, totalDeposit = 0, maxLateFee = 50;
+    updateRentalTotals();
+    let maxLateFee = 50;
     selectedRentalGames.forEach(game => {
-        totalRent += Number(game.rent_price) || 0;
-        totalDeposit += Number(game.deposit) || 0;
         if ((Number(game.late_fee_per_day) || 0) > maxLateFee) {
             maxLateFee = Number(game.late_fee_per_day);
         }
     });
-    document.getElementById('rental-rent-price').value = totalRent;
-    document.getElementById('rental-deposit').value = totalDeposit;
     document.getElementById('rental-late-fee').value = maxLateFee;
 }
 
@@ -227,18 +253,18 @@ async function handleCreateRentalFormSubmit(event) {
     gameElements.forEach(el => {
         gamesData.push({
             gameId: el.dataset.gameId,
-            weight: el.querySelector('.game-weight-input').value
+            weight: el.querySelector('.game-weight-input').value,
+            rentPrice: el.querySelector('.game-rent-price-input').value,
+            deposit: el.querySelector('.game-deposit-input').value
         });
     });
 
     const data = {
         userId: form.querySelector('#rental-user-id').value || null,
-        games: gamesData, // 【修改】將原本的 gameIds 改為 games
+        games: gamesData, // 每款遊戲各自帶自己的租金／押金，方便個別給優惠
         dueDate: form.querySelector('#rental-due-date').value,
         name: form.querySelector('#rental-contact-name').value.trim(),
         phone: phone,
-        rentPrice: form.querySelector('#rental-rent-price').value,
-        deposit: form.querySelector('#rental-deposit').value,
         lateFeePerDay: form.querySelector('#rental-late-fee').value,
     };
     
@@ -364,8 +390,23 @@ export function initializeCreateRentalModalEventListeners() {
 
     const gameSearchInput = document.getElementById('rental-game-search');
     const gameSearchResults = document.getElementById('game-search-results');
+    const gameBarcodeInput = document.getElementById('rental-game-barcode-scan');
     const userSearchInput = document.getElementById('rental-user-search');
     const userSearchResults = document.getElementById('user-search-results');
+
+    gameBarcodeInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleRentalGameBarcodeScan(gameBarcodeInput.value);
+            gameBarcodeInput.value = '';
+        }
+    });
+
+    document.getElementById('rental-games-container')?.addEventListener('input', (e) => {
+        if (e.target.classList.contains('game-rent-price-input') || e.target.classList.contains('game-deposit-input')) {
+            updateRentalTotals();
+        }
+    });
 
     gameSearchInput.addEventListener('input', () => {
         const term = gameSearchInput.value.toLowerCase();
