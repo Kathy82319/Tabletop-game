@@ -1135,7 +1135,7 @@ const GatherModule = (() => {
         scope.querySelectorAll('.booking-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
         scope.querySelectorAll('.booking-tab-content').forEach(c => c.classList.toggle('active', c.id === tabId));
         const titleEl = document.getElementById('booking-page-title');
-        if (titleEl) titleEl.textContent = tabId === 'booking-tab-gather' ? '揪團桌遊' : '場地預約';
+        if (titleEl) titleEl.textContent = tabId === 'booking-tab-gather' ? '桌遊揪團' : '場地預約';
     }
 
     // 統一管理「場地預約／揪團桌遊」分頁切換，以及揪團分頁內的子畫面（列表／我的揪團／發起揪團），

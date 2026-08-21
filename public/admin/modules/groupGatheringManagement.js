@@ -166,7 +166,7 @@ export async function init() {
         <div class="sub-nav-tabs" id="gg-filter-tabs">
             <button class="sub-tab-btn active" data-status="pending_approval">待審核</button>
             <button class="sub-tab-btn" data-status="approved">已成團</button>
-            <button class="sub-tab-btn" data-status="open">揪團中</button>
+            <button class="sub-tab-btn" data-status="open,closed">揪團中</button>
             <button class="sub-tab-btn" data-status="failed,cancelled">已流標／解散</button>
         </div>
         <div class="table-container" style="overflow-x:auto;">
