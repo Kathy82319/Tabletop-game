@@ -354,11 +354,21 @@ input[readonly] {
     margin-left: 8px; /* 與前一個按鈕的間距 */
 }
 
-/* 【問題1 修正】遊戲卡片列表改為兩欄式 Grid */
+/* 【問題1 修正】遊戲卡片列表改為兩欄式 Grid（手機版鎖定兩欄，中間尺寸彈性多欄，桌機大螢幕鎖定五欄剛好一次看 10 款） */
 #game-list-container {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 15px;
+}
+@media (min-width: 1280px) {
+    #game-list-container {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+@media (max-width: 768px) {
+    #game-list-container {
+        grid-template-columns: 1fr 1fr;
+    }
 }
 
 /* 遊戲卡片 (由 script.js 生成) */
