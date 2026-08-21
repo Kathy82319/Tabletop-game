@@ -318,20 +318,23 @@ function initializeGameDetailsPageFromHash(gameIdString) {
             await liff.init({ liffId: myLiffId });
 
             if (!liff.isLoggedIn()) {
-                // LINE 登入會整頁導轉，回來後網址的 hash（例如揪團分享連結）會遺失，先存起來回來後還原
+                // LINE 登入會整頁導轉（甚至可能切換瀏覽器內容程序），回來後網址的 hash（例如揪團分享連結）
+                // 可能遺失，先存起來回來後還原。用 localStorage 而非 sessionStorage，
+                // 避免部分手機的 LINE 內建瀏覽器在登入導轉過程中把 sessionStorage 清空。
                 if (location.hash) {
-                    sessionStorage.setItem('pending_hash', location.hash.substring(1));
+                    localStorage.setItem('pending_hash', location.hash.substring(1));
                 }
-                liff.login();
+                // 明確帶入目前完整網址（含 hash）當作登入完成後的導轉目標，不依賴 SDK 預設行為
+                liff.login({ redirectUri: location.href });
                 return;
             }
             userProfile = await liff.getProfile();
             window.userProfile = userProfile;
             if (typeof GatherModule !== 'undefined') GatherModule.checkUnreadEdits();
 
-            const pendingHash = sessionStorage.getItem('pending_hash');
+            const pendingHash = localStorage.getItem('pending_hash');
             if (pendingHash) {
-                sessionStorage.removeItem('pending_hash');
+                localStorage.removeItem('pending_hash');
                 history.replaceState({ page: pendingHash, data: null }, '', `#${pendingHash}`);
             } else if (!location.hash) {
                 history.replaceState({ page: 'page-home', data: null }, '', '#page-home');
@@ -350,7 +353,14 @@ function initializeGameDetailsPageFromHash(gameIdString) {
     // =================================================================
     // =================================================================
 async function initializeProfilePage() {
-    if (!userProfile) return;
+    if (!userProfile) {
+        // 個人資料尚未成功載入時，不要留一個永遠卡在「讀取中...」的空白畫面，給使用者可以重試的出口
+        appContent.innerHTML = `<div style="text-align:center; padding: 60px 20px;">
+            <p style="color: var(--color-danger, #c0392b); margin-bottom: 16px;">無法載入您的個人資料，請重新整理再試一次。</p>
+            <button class="cta-button" onclick="location.reload()">重新整理</button>
+        </div>`;
+        return;
+    }
     const displayNameElement = document.getElementById('display-name');
     if (displayNameElement) displayNameElement.textContent = '讀取中...';
     
