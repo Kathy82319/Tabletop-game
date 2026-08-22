@@ -840,9 +840,12 @@ function sbOpenQrModal() {
     const qrDiv = document.getElementById('sb-qrcode');
     qrDiv.innerHTML = '';
     new QRCode(qrDiv, {
-        text:   sbGetJoinUrl(sbSessionId),
-        width:  180,
-        height: 180
+        text:        sbGetJoinUrl(sbSessionId),
+        width:       220,
+        height:      220,
+        colorDark:   '#000000',
+        colorLight:  '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
     });
 
     sbStartPolling('sb-waiting-players', false);
