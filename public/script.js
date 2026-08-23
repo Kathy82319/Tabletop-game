@@ -983,7 +983,7 @@ function renderGames() {
         if(!container) return;
         let filteredGames = allGames.filter(g => g.is_visible === 1);
         const keyword = activeFilters.keyword.toLowerCase().trim();
-        if (keyword) { filteredGames = filteredGames.filter(g => g.name.toLowerCase().includes(keyword) || g.description.toLowerCase().includes(keyword)); }
+        if (keyword) { filteredGames = filteredGames.filter(g => g.name.toLowerCase().includes(keyword)); }
         if (activeFilters.tag) {
             filteredGames = filteredGames.filter(g => {
                 const autoTags = [
