@@ -13,7 +13,7 @@ export async function onRequestGet(context) {
                   COUNT(CASE WHEN m.status != 'rejected' THEN 1 END) as member_count
            FROM GroupGatherings g
            LEFT JOIN GroupGatheringMembers m ON g.id = m.gathering_id
-           WHERE g.status IN ('approved', 'failed', 'cancelled')
+           WHERE g.status IN ('approved', 'cancelled')
            GROUP BY g.id
            ORDER BY g.event_date DESC, g.start_time DESC`
         : `SELECT g.id, g.organizer_name, g.organizer_user_id, g.name, g.event_date, g.start_time, g.end_time,
