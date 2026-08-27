@@ -997,6 +997,16 @@ const GatherModule = (() => {
     function showCreateForm() {
         document.getElementById('gather-main-view').style.display = 'none';
         document.getElementById('gather-create-view').style.display = 'block';
+
+        // 每次重新打開發起揪團表單，都要清掉上一次送出殘留的狀態（成功訊息、被鎖住的送出按鈕），
+        // 否則連續發起第二個揪團時，畫面還停在上次的「揪團發布成功！」、送出按鈕也還是鎖住的，點了沒反應
+        const statusEl = document.getElementById('gather-create-status');
+        if (statusEl) statusEl.textContent = '';
+        const submitBtn = document.getElementById('gather-create-form')?.querySelector('[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '發布揪團';
+        }
     }
 
     function initCreateForm() {
@@ -1083,6 +1093,8 @@ const GatherModule = (() => {
                     statusEl.textContent = '揪團發布成功！';
                     statusEl.style.color = '#27ae60';
                     form.reset();
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '發布揪團';
                     setTimeout(() => setGatherSubView('gather-main'), 1500);
                 } catch (err) {
                     statusEl.textContent = err.message;
