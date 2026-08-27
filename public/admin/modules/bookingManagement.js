@@ -147,6 +147,9 @@ async function openManageDatesModal() {
             dateFormat: "Y-m-d",
             defaultDate: initialEnabledDates,
         });
+        // defaultDate 若含有很久以前設定的公休日，flatpickr 開啟時會直接跳去顯示那個月份；
+        // 這裡強制打開時一律先顯示「現在」的月份，已選取的日期仍會保留，只是不會被拿來決定要顯示哪個月
+        flatpickrInstance_admin.jumpToDate(new Date());
 
         ui.showModal('#booking-settings-modal');
     } catch (error) {
