@@ -1159,8 +1159,12 @@ const GatherModule = (() => {
     }
 
     window.addEventListener('popstate', e => {
-        const view = (e.state && e.state.gatherSubView) || 'gather-main';
-        setGatherSubView(view, false);
+        // 只有「明確帶有 gatherSubView 記錄」的歷史紀錄才由這裡處理分頁切換。
+        // 場地預約流程（選日期/時段等）是靠 hash 切換頁面，那些歷史紀錄不會有 gatherSubView，
+        // 之前預設一律跳回「gather-main」，導致預約流程中任何一次 popstate 都會被誤判成要跳回揪團分頁。
+        if (e.state && e.state.gatherSubView) {
+            setGatherSubView(e.state.gatherSubView, false);
+        }
     });
 
     // ---- 初始化（在 booking 頁面載入時呼叫）----
