@@ -1193,10 +1193,6 @@ function sbRenderTemplateTable() {
 
     head.innerHTML = '<th>玩家</th>' + sbCategories.map(cat => `<th>${cat}</th>`).join('') + '<th>總分</th>';
 
-    // 每個計分欄位至少留 68px，欄位一多就讓外層橫向捲動，避免欄位被擠到只剩兩個字加點點點
-    const table = document.getElementById('sb-template-table');
-    if (table) table.style.minWidth = (88 + 56 + sbCategories.length * 68) + 'px';
-
     body.innerHTML = sbPlayers.map(p => {
         const isSelf = !!(p.line_user_id && p.line_user_id === myId);
         const canEdit = !sbLocked && (isOwner || isSelf);

@@ -2697,13 +2697,11 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 .sb-template-table-scroll {
     width: 100%;
-    overflow-x: auto;
 }
 #sb-template-table {
     width: 100%;
     table-layout: fixed;
-    border-collapse: separate;
-    border-spacing: 0;
+    border-collapse: collapse;
 }
 #sb-template-table th,
 #sb-template-table td {
@@ -2721,19 +2719,15 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 #sb-template-table th:first-child,
 #sb-template-table td:first-child {
-    width: 88px;
+    width: 25%;
     text-align: left;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    position: sticky;
-    left: 0;
-    z-index: 2;
-    background: rgb(249, 245, 235);
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.25;
 }
 #sb-template-table th:last-child,
 #sb-template-table td:last-child {
-    width: 56px;
+    width: 48px;
     font-weight: bold;
     color: var(--color-frame-gold);
 }
@@ -2981,12 +2975,12 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .sb-waiting-player {
-    background: rgba(46, 204, 113, 0.15);
-    border: 1px solid rgba(46, 204, 113, 0.35);
+    background: rgba(74, 55, 40, 0.08);
+    border: 1px solid rgba(74, 55, 40, 0.2);
     border-radius: 20px;
     padding: 4px 14px;
     font-size: 0.9rem;
-    color: #2ecc71;
+    color: var(--color-text-primary);
 }
 
 .sb-waiting-empty {
