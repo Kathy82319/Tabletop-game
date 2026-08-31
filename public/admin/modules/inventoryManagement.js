@@ -970,6 +970,45 @@ function renderBarcodeFields(barcodeList) {
     list.forEach(value => addBarcodeFieldRow(value));
 }
 
+// --- Help Card Fields (編輯商品：可上傳多張幫助卡圖片) ---
+
+let helpCardFieldCounter = 0;
+
+// 逗號分隔字串 <-> 陣列，跟多組條碼的 extra_barcodes 用同一套慣例
+function parseHelpCardImages(helpCardImagesStr) {
+    return (helpCardImagesStr || '').split(',').map(u => u.trim()).filter(Boolean);
+}
+
+function addHelpCardFieldRow(value = '') {
+    const container = document.getElementById('edit-game-help-card-list');
+    if (!container) return;
+    const n = ++helpCardFieldCounter;
+    const urlId = `help-card-img-url-${n}`;
+    const previewId = `help-card-img-preview-${n}`;
+
+    const row = document.createElement('div');
+    row.className = 'help-card-field-row form-group';
+    row.innerHTML = `
+        <div class="img-upload-row">
+            <input type="url" class="help-card-image-input" id="${urlId}" placeholder="貼上網址，或點右側上傳" value="${escapeHtml(value)}">
+            <label class="img-upload-btn" title="上傳圖片到 R2">
+                📁
+                <input type="file" accept="image/*" data-target="${urlId}" data-preview="${previewId}" style="display:none" class="r2-file-input">
+            </label>
+            <button type="button" class="remove-help-card-field-btn action-btn" style="background:var(--danger-color); color:#fff; padding:4px 10px;">&times;</button>
+        </div>
+        <img id="${previewId}" class="img-preview" style="display:${value ? 'block' : 'none'};" src="${escapeHtml(value)}">
+    `;
+    container.appendChild(row);
+}
+
+function renderHelpCardFields(imageList) {
+    const container = document.getElementById('edit-game-help-card-list');
+    if (!container) return;
+    container.innerHTML = '';
+    imageList.forEach(value => addHelpCardFieldRow(value));
+}
+
 // --- Modal ---
 
 function openEditGameModal(gameId) {
@@ -987,6 +1026,7 @@ function openEditGameModal(gameId) {
 
         document.getElementById('edit-game-name').value = game.name;
         renderBarcodeFields(gameBarcodes(game));
+        renderHelpCardFields(parseHelpCardImages(game.help_card_images));
         document.getElementById('edit-game-image').value = game.image_url || '';
         document.getElementById('edit-game-image-2').value = game.image_url_2 || '';
         document.getElementById('edit-game-image-3').value = game.image_url_3 || '';
@@ -1027,6 +1067,7 @@ function openEditGameModal(gameId) {
         document.getElementById('edit-late-fee').value = 50;
 
         renderBarcodeFields([]);
+        renderHelpCardFields([]);
         initTagChips('');
         updateBackupStock();
     }
@@ -1044,10 +1085,14 @@ async function handleEditGameFormSubmit(e) {
     const barcodes = Array.from(document.querySelectorAll('#edit-game-barcode-list .edit-game-barcode-input'))
         .map(el => el.value.trim())
         .filter(Boolean);
+    const helpCardImages = Array.from(document.querySelectorAll('#edit-game-help-card-list .help-card-image-input'))
+        .map(el => el.value.trim())
+        .filter(Boolean);
 
     const updatedData = {
         name: document.getElementById('edit-game-name').value,
         barcodes,
+        helpCardImages,
         tags: document.getElementById('edit-game-tags').value,
         image_url: document.getElementById('edit-game-image').value,
         image_url_2: document.getElementById('edit-game-image-2').value,
@@ -1080,6 +1125,7 @@ async function handleEditGameFormSubmit(e) {
                     ...updatedData,
                     barcode: barcodes[0] || null,
                     extra_barcodes: barcodes.slice(1).join(','),
+                    help_card_images: helpCardImages.join(','),
                     is_visible: totalStock > 0 ? 1 : 0,
                     for_sale_stock: forSaleStock
                 };
@@ -1286,6 +1332,15 @@ function setupEventListeners() {
         const isLastRow = e.target.closest('.barcode-field-row') === rows[rows.length - 1];
         if (isLastRow && e.target.value.trim()) {
             addBarcodeFieldRow('', true); // 掃完自動開下一格，方便連續掃描多組條碼
+        }
+    });
+
+    document.getElementById('edit-game-help-card-add-btn')?.addEventListener('click', () => {
+        addHelpCardFieldRow('');
+    });
+    document.getElementById('edit-game-help-card-list')?.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-help-card-field-btn')) {
+            e.target.closest('.help-card-field-row')?.remove();
         }
     });
 

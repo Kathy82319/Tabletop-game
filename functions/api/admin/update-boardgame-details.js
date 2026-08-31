@@ -40,6 +40,11 @@ export async function onRequest(context) {
   
     const db = context.env.DB;
 
+    // body.helpCardImages 為幫助卡圖片網址陣列，存成逗號分隔字串
+    const helpCardImages = Array.isArray(body.helpCardImages)
+        ? body.helpCardImages.map(u => String(u || '').trim()).filter(Boolean).join(',')
+        : '';
+
     // body.barcodes 為條碼陣列（第一筆為主要條碼），也相容舊的單一 body.barcode
     const rawBarcodes = Array.isArray(body.barcodes) ? body.barcodes : (body.barcode ? [body.barcode] : []);
     const barcodes = [...new Set(rawBarcodes.map(b => String(b || '').trim()).filter(Boolean))];
@@ -68,7 +73,7 @@ export async function onRequest(context) {
          min_players = ?, max_players = ?, difficulty = ?, play_time = ?,
          total_stock = ?, for_rent_stock = ?, for_sale_stock = ?,
          sale_price = ?, rent_price = ?, deposit = ?, late_fee_per_day = ?,
-         is_visible = ?, supplementary_info = ?
+         is_visible = ?, supplementary_info = ?, help_card_images = ?
        WHERE game_id = ?`
     );
     const is_visible = Number(body.total_stock) > 0 ? 1 : 0;
@@ -80,7 +85,7 @@ export async function onRequest(context) {
         Number(body.total_stock), Number(body.for_rent_stock), Number(body.for_sale_stock) || 0,
         Number(body.sale_price), Number(body.rent_price),
         Number(body.deposit), Number(body.late_fee_per_day),
-        is_visible, body.supplementary_info || '',
+        is_visible, body.supplementary_info || '', helpCardImages,
         body.gameId
     ).run();
 

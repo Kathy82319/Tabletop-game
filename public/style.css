@@ -1066,6 +1066,21 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     opacity: 0.7;
     transition: all 0.3s ease;
 }
+
+/* 幫助卡縮圖：張數不固定，用可換行的橫排取代固定欄數的 grid */
+.help-card-thumbnail-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.help-card-thumbnail {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: calc(var(--border-radius) / 2);
+    border: 1px solid var(--color-frame-gold);
+    cursor: pointer;
+}
 .details-image-thumbnail:hover, .details-image-thumbnail.active {
     opacity: 1;
     border: 2px solid var(--color-frame-gold);

@@ -78,6 +78,17 @@ document.addEventListener('DOMContentLoaded', () => {
             navigateTo('page-game-details', gameCard.dataset.gameId);
             return;
         }
+
+        const helpCardThumb = target.closest('.help-card-thumbnail');
+        if (helpCardThumb) {
+            document.getElementById('image-lightbox-img').src = helpCardThumb.dataset.src;
+            document.getElementById('image-lightbox-overlay').style.display = 'flex';
+            return;
+        }
+    });
+
+    document.getElementById('image-lightbox-overlay')?.addEventListener('click', () => {
+        document.getElementById('image-lightbox-overlay').style.display = 'none';
     });
 
     tabBar.addEventListener('click', (event) => {
@@ -920,7 +931,18 @@ async function initializeEditProfilePage() {
         }
         
         appContent.querySelector('#game-intro-content').innerHTML = (game.description || '暫無介紹。').replace(/\n/g, '<br>');
-        
+
+        const helpCardSection = appContent.querySelector('#game-help-card-section');
+        const helpCardImages = (game.help_card_images || '').split(',').map(u => u.trim()).filter(Boolean);
+        if (helpCardImages.length > 0) {
+            appContent.querySelector('#game-help-card-content').innerHTML = helpCardImages.map(src =>
+                `<img src="${src}" class="help-card-thumbnail" data-src="${src}">`
+            ).join('');
+            helpCardSection.style.display = 'block';
+        } else {
+            helpCardSection.style.display = 'none';
+        }
+
         const supplementarySection = appContent.querySelector('#game-supplementary-section');
         if (game.supplementary_info) {
             appContent.querySelector('#game-supplementary-content').innerHTML = game.supplementary_info.replace(/\n/g, '<br>');

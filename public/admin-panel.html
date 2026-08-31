@@ -801,6 +801,7 @@
                     <div class="modal-tab-nav">
                         <button type="button" class="modal-tab-btn active" data-modal-tab="intro">介紹</button>
                         <button type="button" class="modal-tab-btn" data-modal-tab="stock">庫存</button>
+                        <button type="button" class="modal-tab-btn" data-modal-tab="help">幫助卡</button>
                     </div>
 
                     <!-- 介紹 Tab -->
@@ -912,6 +913,15 @@
                                 <div class="form-group"><label for="edit-late-fee">每日逾期費</label><input type="number" id="edit-late-fee" min="0"></div>
                             </div>
                         </fieldset>
+                    </div>
+
+                    <!-- 幫助卡 Tab -->
+                    <div id="modal-tab-help" class="modal-tab-content">
+                        <div class="form-group">
+                            <label>幫助卡圖片 <small style="color:var(--text-light);">（規則小抄，可上傳多張，客人在遊戲介紹頁可以放大看）</small></label>
+                            <div id="edit-game-help-card-list"></div>
+                            <button type="button" id="edit-game-help-card-add-btn" class="action-btn" style="background-color: var(--info-color); padding: 4px 10px; font-size: 0.85rem; margin-top: 4px;">＋ 新增幫助卡圖片</button>
+                        </div>
                     </div>
                 </div>
                 <div class="form-actions">

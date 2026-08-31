@@ -78,6 +78,11 @@
             <p id="game-intro-content"></p>
         </div>
 
+        <div class="card details-section" id="game-help-card-section" style="display: none;">
+            <h3>🃏 幫助卡</h3>
+            <div id="game-help-card-content" class="help-card-thumbnail-row"></div>
+        </div>
+
         <div class="card details-section" id="game-supplementary-section" style="display: none;">
             <h3>📦 補充說明</h3>
             <p id="game-supplementary-content"></p>
@@ -958,6 +963,10 @@
     <script src="script.js"></script>
     <script src="tools.js"></script>
     <script src="group-gathering.js"></script>
+
+<div id="image-lightbox-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:2000; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
+    <img id="image-lightbox-img" src="" style="max-width:100%; max-height:100%; border-radius:8px;">
+</div>
 
 <div id="quiz-modal" class="modal-overlay" style="display: none;">
     <div class="modal-content quiz-modal-content">

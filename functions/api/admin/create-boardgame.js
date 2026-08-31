@@ -28,6 +28,10 @@ export async function onRequest(context) {
 
         const is_visible = total_stock > 0 ? 1 : 0;
 
+        const helpCardImages = Array.isArray(body.helpCardImages)
+            ? body.helpCardImages.map(u => String(u || '').trim()).filter(Boolean).join(',')
+            : '';
+
         const rawBarcodes = Array.isArray(body.barcodes) ? body.barcodes : (body.barcode ? [body.barcode] : []);
         const barcodes = [...new Set(rawBarcodes.map(b => String(b || '').trim()).filter(Boolean))];
         const primaryBarcode = barcodes[0] || null;
@@ -51,8 +55,8 @@ export async function onRequest(context) {
              min_players, max_players, difficulty, play_time,
              total_stock, for_rent_stock, for_sale_stock,
              sale_price, rent_price, deposit, late_fee_per_day,
-             is_visible, supplementary_info, display_order
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 999)`
+             is_visible, supplementary_info, help_card_images, display_order
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 999)`
         );
 
         await stmt.bind(
@@ -63,7 +67,7 @@ export async function onRequest(context) {
             total_stock, for_rent_stock, for_sale_stock,
             Number(body.sale_price) || 0, Number(body.rent_price) || 0,
             Number(body.deposit) || 0, Number(body.late_fee_per_day) || 50,
-            is_visible, body.supplementary_info || ''
+            is_visible, body.supplementary_info || '', helpCardImages
         ).run();
 
         if (extraBarcodes.length > 0) {
