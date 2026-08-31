@@ -2376,7 +2376,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     z-index: 20;
     max-height: 220px;
     overflow-y: auto;
-    background: rgba(74, 55, 40, 0.06);
+    background: var(--color-card-background);
     border: 1px solid rgba(74, 55, 40, 0.18);
     border-radius: 10px;
     box-shadow: 0 8px 20px rgba(74, 55, 40, 0.35);
@@ -2714,9 +2714,9 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 #sb-template-table th {
     color: rgba(74, 55, 40, 0.6);
     font-weight: bold;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.25;
 }
 #sb-template-table th:first-child,
 #sb-template-table td:first-child {
@@ -3251,7 +3251,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .sb-history-title {
     font-size: 0.78rem;
-    color: rgba(74, 55, 40, 0.3);
+    color: rgba(74, 55, 40, 0.55);
     text-align: center;
     margin: 0 0 10px 0;
     letter-spacing: 0.08em;
@@ -3275,7 +3275,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .sb-history-meta {
     font-size: 0.72rem;
-    color: rgba(74, 55, 40, 0.3);
+    color: rgba(74, 55, 40, 0.6);
 }
 
 .sb-history-summary {
