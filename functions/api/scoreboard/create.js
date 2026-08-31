@@ -14,11 +14,18 @@ export async function onRequestPost(context) {
     }
 
     let validGameId = null;
+    let categories = null;
     if (game_id) {
         const game = await env.DB.prepare(
             `SELECT game_id FROM BoardGames WHERE game_id = ?`
         ).bind(game_id).first();
-        if (game) validGameId = game.game_id;
+        if (game) {
+            validGameId = game.game_id;
+            const template = await env.DB.prepare(
+                `SELECT categories FROM ScoreTemplates WHERE game_id = ?`
+            ).bind(validGameId).first();
+            if (template) categories = JSON.parse(template.categories);
+        }
     }
 
     const session_id = crypto.randomUUID();
@@ -27,5 +34,5 @@ export async function onRequestPost(context) {
         `INSERT INTO ScoreboardSessions (session_id, game_name, owner_line_id, game_id) VALUES (?, ?, ?, ?)`
     ).bind(session_id, game_name.trim(), owner_line_id, validGameId).run();
 
-    return Response.json({ session_id });
+    return Response.json({ session_id, categories });
 }

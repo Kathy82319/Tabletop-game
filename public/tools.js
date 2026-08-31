@@ -644,6 +644,7 @@ let sbEvents      = [];
 let sbGameName    = '';
 let sbPollTimer   = null;
 let sbBoardGames  = [];
+let sbCategories  = null; // 這款遊戲若有專屬計分表格，存欄位名稱陣列；沒有就是 null（沿用預設 +/- 計分）
 
 const LIFF_ID = '2008076323-GN1e7naW';
 
@@ -682,6 +683,7 @@ function sbClose() {
 // ── 設定畫面 ──────────────────────────────────────────────────
 function sbShowSetup() {
     sbStopPolling();
+    sbCategories = null;
     document.getElementById('sb-setup').style.display    = 'flex';
     document.getElementById('sb-qr-panel').style.display = 'none';
     document.getElementById('sb-playing').style.display  = 'none';
@@ -810,6 +812,7 @@ async function sbCreate() {
         sbSessionId   = data.session_id;
         sbOwnerLineId = lineId;
         sbGameName    = gameName;
+        sbCategories  = data.categories || null;
 
         // 自動把創建者加入為玩家
         await fetch(`/api/scoreboard/${sbSessionId}/join`, {
@@ -913,8 +916,9 @@ async function sbFetchAndRender(containerId, isPlaying) {
     try {
         const res  = await fetch(`/api/scoreboard/${sbSessionId}`);
         const data = await res.json();
-        sbPlayers = data.players || [];
-        sbEvents  = data.events  || [];
+        sbPlayers    = data.players || [];
+        sbEvents     = data.events  || [];
+        sbCategories = data.categories || null;
         if (isPlaying) {
             sbRenderRankings(containerId);
             sbRenderLogIfOpen();
@@ -963,7 +967,7 @@ function sbRenderRankings(containerId) {
             </div>`;
 
         if (isOwner) {
-            card.onclick = () => sbOpenScorePopup(p);
+            card.onclick = () => sbOpenPlayerScore(p);
             const rBtn = card.querySelector('.sb-rename-btn');
             if (rBtn) {
                 rBtn.onclick = (e) => {
@@ -1150,6 +1154,69 @@ async function sbConfirmAddPlayer() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nickname, line_user_id: null })
+        });
+        await sbFetchAndRender('sb-rankings', true);
+    } catch (e) { /* 下次 polling 會同步 */ }
+}
+
+// ── 點玩家卡片：這款遊戲有專屬計分表格就開表格彈窗，否則走原本的 +/- 彈窗 ──
+function sbOpenPlayerScore(player) {
+    if (sbCategories && sbCategories.length > 0) {
+        sbOpenTemplateScorePopup(player);
+    } else {
+        sbOpenScorePopup(player);
+    }
+}
+
+// ── 專屬計分表格彈窗 ──────────────────────────────────────────
+function sbOpenTemplateScorePopup(player) {
+    const existing = player.category_scores || {};
+    const fieldsHtml = sbCategories.map((cat, i) => `
+        <div class="sb-template-field-row">
+            <label for="sb-template-input-${i}">${cat}</label>
+            <input type="number" inputmode="decimal" class="sb-template-score-input" id="sb-template-input-${i}" data-category="${cat}" value="${existing[cat] ?? ''}">
+        </div>
+    `).join('');
+
+    document.getElementById('sb-template-popup-player-name').textContent = player.nickname;
+    document.getElementById('sb-template-score-fields').innerHTML = fieldsHtml;
+    document.getElementById('sb-template-score-popup').style.display = 'flex';
+
+    const updateTotal = () => {
+        let total = 0;
+        document.querySelectorAll('.sb-template-score-input').forEach(input => {
+            const v = parseFloat(input.value);
+            if (!isNaN(v)) total += v;
+        });
+        document.getElementById('sb-template-popup-total').textContent = `小計：${total} 分`;
+    };
+    document.getElementById('sb-template-score-fields').oninput = updateTotal;
+    updateTotal();
+
+    document.getElementById('sb-template-popup-save').onclick = () => sbApplyTemplateScore(player.player_id);
+    document.getElementById('sb-template-popup-cancel').onclick = sbCloseTemplateScorePopup;
+}
+
+function sbCloseTemplateScorePopup() {
+    document.getElementById('sb-template-score-popup').style.display = 'none';
+}
+
+async function sbApplyTemplateScore(playerId) {
+    const categoryScores = {};
+    let hasInvalid = false;
+    document.querySelectorAll('.sb-template-score-input').forEach(input => {
+        const v = parseFloat(input.value);
+        if (input.value.trim() !== '' && isNaN(v)) hasInvalid = true;
+        categoryScores[input.dataset.category] = isNaN(v) ? 0 : v;
+    });
+    if (hasInvalid) return;
+
+    sbCloseTemplateScorePopup();
+    try {
+        await fetch(`/api/scoreboard/${sbSessionId}/score-template`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ player_id: playerId, category_scores: categoryScores, owner_line_id: sbOwnerLineId })
         });
         await sbFetchAndRender('sb-rankings', true);
     } catch (e) { /* 下次 polling 會同步 */ }

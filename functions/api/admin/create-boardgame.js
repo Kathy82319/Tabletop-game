@@ -76,6 +76,15 @@ export async function onRequest(context) {
             ));
         }
 
+        const scoreCategories = Array.isArray(body.scoreCategories)
+            ? body.scoreCategories.map(c => String(c || '').trim()).filter(Boolean)
+            : [];
+        if (scoreCategories.length > 0) {
+            await db.prepare(
+                'INSERT OR REPLACE INTO ScoreTemplates (game_id, categories) VALUES (?, ?)'
+            ).bind(newGameId, JSON.stringify(scoreCategories)).run();
+        }
+
         return new Response(JSON.stringify({ success: true, gameId: newGameId }), {
             status: 201,
             headers: { 'Content-Type': 'application/json' },

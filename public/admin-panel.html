@@ -802,6 +802,7 @@
                         <button type="button" class="modal-tab-btn active" data-modal-tab="intro">介紹</button>
                         <button type="button" class="modal-tab-btn" data-modal-tab="stock">庫存</button>
                         <button type="button" class="modal-tab-btn" data-modal-tab="help">幫助卡</button>
+                        <button type="button" class="modal-tab-btn" data-modal-tab="score">計分表格</button>
                     </div>
 
                     <!-- 介紹 Tab -->
@@ -921,6 +922,15 @@
                             <label>幫助卡圖片 <small style="color:var(--text-light);">（規則小抄，可上傳多張，客人在遊戲介紹頁可以放大看）</small></label>
                             <div id="edit-game-help-card-list"></div>
                             <button type="button" id="edit-game-help-card-add-btn" class="action-btn" style="background-color: var(--info-color); padding: 4px 10px; font-size: 0.85rem; margin-top: 4px;">＋ 新增幫助卡圖片</button>
+                        </div>
+                    </div>
+
+                    <!-- 計分表格 Tab -->
+                    <div id="modal-tab-score" class="modal-tab-content">
+                        <div class="form-group">
+                            <label>專屬計分欄位 <small style="color:var(--text-light);">（設定後，記分板計分這款遊戲時會改用這些欄位分別計分，取代預設的單一總分 +/-；欄位留空代表沿用預設計分方式）</small></label>
+                            <div id="edit-game-score-category-list"></div>
+                            <button type="button" id="edit-game-score-category-add-btn" class="action-btn" style="background-color: var(--info-color); padding: 4px 10px; font-size: 0.85rem; margin-top: 4px;">＋ 新增計分欄位</button>
                         </div>
                     </div>
                 </div>

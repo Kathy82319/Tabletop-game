@@ -99,6 +99,18 @@ export async function onRequest(context) {
     });
     await db.batch(barcodeSyncOps);
 
+    // body.scoreCategories 為計分欄位名稱陣列；有內容代表這款遊戲有專屬計分表格，空陣列/未提供代表沿用預設 +/- 計分
+    const scoreCategories = Array.isArray(body.scoreCategories)
+        ? body.scoreCategories.map(c => String(c || '').trim()).filter(Boolean)
+        : [];
+    if (scoreCategories.length > 0) {
+        await db.prepare(
+            'INSERT OR REPLACE INTO ScoreTemplates (game_id, categories) VALUES (?, ?)'
+        ).bind(body.gameId, JSON.stringify(scoreCategories)).run();
+    } else {
+        await db.prepare('DELETE FROM ScoreTemplates WHERE game_id = ?').bind(body.gameId).run();
+    }
+
     return new Response(JSON.stringify({ success: true, message: '成功更新桌遊詳細資訊！' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },

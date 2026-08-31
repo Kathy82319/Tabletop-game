@@ -8,7 +8,8 @@ export async function onRequest(context) {
         if (request.method === 'GET') {
             const stmt = db.prepare(`
                 SELECT bg.*,
-                    (SELECT group_concat(barcode, ',') FROM BoardGameBarcodes WHERE game_id = bg.game_id) AS extra_barcodes
+                    (SELECT group_concat(barcode, ',') FROM BoardGameBarcodes WHERE game_id = bg.game_id) AS extra_barcodes,
+                    (SELECT categories FROM ScoreTemplates WHERE game_id = bg.game_id) AS score_categories
                 FROM BoardGames bg
                 ORDER BY bg.display_order ASC, bg.name ASC
             `);

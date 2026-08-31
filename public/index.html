@@ -872,6 +872,19 @@
         </div>
     </div>
 
+    <!-- 專屬計分表格彈窗（遊戲有設定計分欄位時用這個取代上面的 +/- 彈窗）-->
+    <div id="sb-template-score-popup" class="sb-score-popup" style="display:none;">
+        <div class="sb-score-popup-inner">
+            <p id="sb-template-popup-player-name" class="sb-popup-player-name"></p>
+            <div id="sb-template-score-fields"></div>
+            <p id="sb-template-popup-total" class="sb-popup-current-score"></p>
+            <div class="sb-popup-btns">
+                <button id="sb-template-popup-cancel" class="sb-popup-btn" style="background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.15);">取消</button>
+                <button id="sb-template-popup-save" class="sb-popup-btn sb-popup-plus">儲存</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 手動新增玩家彈窗 -->
     <div id="sb-add-player-popup" class="sb-score-popup" style="display:none;">
         <div class="sb-score-popup-inner">

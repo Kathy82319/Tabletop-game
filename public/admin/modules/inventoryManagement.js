@@ -1009,6 +1009,40 @@ function renderHelpCardFields(imageList) {
     imageList.forEach(value => addHelpCardFieldRow(value));
 }
 
+// --- Score Category Fields (編輯商品：可設定專屬計分欄位) ---
+
+// game.score_categories 是 ScoreTemplates 存的 JSON 陣列字串（例如 ["建築分","資源分"]），沒有設定就是 null
+function parseScoreCategories(scoreCategoriesStr) {
+    if (!scoreCategoriesStr) return [];
+    try {
+        const arr = JSON.parse(scoreCategoriesStr);
+        return Array.isArray(arr) ? arr : [];
+    } catch {
+        return [];
+    }
+}
+
+function addScoreCategoryFieldRow(value = '', focus = false) {
+    const container = document.getElementById('edit-game-score-category-list');
+    if (!container) return;
+    const row = document.createElement('div');
+    row.className = 'score-category-field-row';
+    row.style.cssText = 'display:flex; gap:6px; margin-bottom:6px;';
+    row.innerHTML = `
+        <input type="text" class="edit-game-score-category-input" placeholder="例如：建築分" value="${escapeHtml(value)}" style="flex:1;">
+        <button type="button" class="remove-score-category-field-btn action-btn" style="background:var(--danger-color); color:#fff; padding:4px 10px;">&times;</button>
+    `;
+    container.appendChild(row);
+    if (focus) row.querySelector('input').focus();
+}
+
+function renderScoreCategoryFields(categoryList) {
+    const container = document.getElementById('edit-game-score-category-list');
+    if (!container) return;
+    container.innerHTML = '';
+    categoryList.forEach(value => addScoreCategoryFieldRow(value));
+}
+
 // --- Modal ---
 
 function openEditGameModal(gameId) {
@@ -1027,6 +1061,7 @@ function openEditGameModal(gameId) {
         document.getElementById('edit-game-name').value = game.name;
         renderBarcodeFields(gameBarcodes(game));
         renderHelpCardFields(parseHelpCardImages(game.help_card_images));
+        renderScoreCategoryFields(parseScoreCategories(game.score_categories));
         document.getElementById('edit-game-image').value = game.image_url || '';
         document.getElementById('edit-game-image-2').value = game.image_url_2 || '';
         document.getElementById('edit-game-image-3').value = game.image_url_3 || '';
@@ -1068,6 +1103,7 @@ function openEditGameModal(gameId) {
 
         renderBarcodeFields([]);
         renderHelpCardFields([]);
+        renderScoreCategoryFields([]);
         initTagChips('');
         updateBackupStock();
     }
@@ -1088,11 +1124,15 @@ async function handleEditGameFormSubmit(e) {
     const helpCardImages = Array.from(document.querySelectorAll('#edit-game-help-card-list .help-card-image-input'))
         .map(el => el.value.trim())
         .filter(Boolean);
+    const scoreCategories = Array.from(document.querySelectorAll('#edit-game-score-category-list .edit-game-score-category-input'))
+        .map(el => el.value.trim())
+        .filter(Boolean);
 
     const updatedData = {
         name: document.getElementById('edit-game-name').value,
         barcodes,
         helpCardImages,
+        scoreCategories,
         tags: document.getElementById('edit-game-tags').value,
         image_url: document.getElementById('edit-game-image').value,
         image_url_2: document.getElementById('edit-game-image-2').value,
@@ -1126,6 +1166,7 @@ async function handleEditGameFormSubmit(e) {
                     barcode: barcodes[0] || null,
                     extra_barcodes: barcodes.slice(1).join(','),
                     help_card_images: helpCardImages.join(','),
+                    score_categories: scoreCategories.length > 0 ? JSON.stringify(scoreCategories) : null,
                     is_visible: totalStock > 0 ? 1 : 0,
                     for_sale_stock: forSaleStock
                 };
@@ -1341,6 +1382,24 @@ function setupEventListeners() {
     document.getElementById('edit-game-help-card-list')?.addEventListener('click', (e) => {
         if (e.target.classList.contains('remove-help-card-field-btn')) {
             e.target.closest('.help-card-field-row')?.remove();
+        }
+    });
+
+    document.getElementById('edit-game-score-category-add-btn')?.addEventListener('click', () => {
+        addScoreCategoryFieldRow('', true);
+    });
+    document.getElementById('edit-game-score-category-list')?.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-score-category-field-btn')) {
+            e.target.closest('.score-category-field-row')?.remove();
+        }
+    });
+    document.getElementById('edit-game-score-category-list')?.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' || !e.target.classList.contains('edit-game-score-category-input')) return;
+        e.preventDefault();
+        const rows = document.querySelectorAll('#edit-game-score-category-list .score-category-field-row');
+        const isLastRow = e.target.closest('.score-category-field-row') === rows[rows.length - 1];
+        if (isLastRow && e.target.value.trim()) {
+            addScoreCategoryFieldRow('', true);
         }
     });
 
