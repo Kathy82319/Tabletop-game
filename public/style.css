@@ -1682,13 +1682,14 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .tool-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(15, 8, 3, 0.95);
+    background: var(--color-background-start);
+    background-image: radial-gradient(circle at top, var(--color-background-start), var(--color-background-end));
     z-index: 2000;
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 20px 16px 30px;
-    color: white;
+    color: var(--color-text-primary);
     font-family: var(--font-primary);
     overflow-y: auto;
 }
@@ -1696,9 +1697,9 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .tool-overlay-close {
     position: absolute;
     top: 18px; right: 18px;
-    background: rgba(255, 255, 255, 0.12);
-    color: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(74, 55, 40, 0.12);
+    color: rgba(74, 55, 40, 0.8);
+    border: 1px solid rgba(74, 55, 40, 0.25);
     border-radius: 20px;
     padding: 7px 16px;
     font-size: 0.85rem;
@@ -1709,7 +1710,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .tool-overlay-title {
     margin: 50px 0 20px;
     font-size: 1.4rem;
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(74, 55, 40, 0.9);
     border: none;
 }
 
@@ -1725,7 +1726,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     top: 50px;
     left: 0; right: 0;
     text-align: center;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(74, 55, 40, 0.6);
     font-size: 1rem;
     pointer-events: none;
     margin: 0;
@@ -1738,7 +1739,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     transform: translate(-50%, -50%);
     font-size: 9rem;
     font-weight: bold;
-    color: white;
+    color: var(--color-text-primary);
     pointer-events: none;
     opacity: 0;
     line-height: 1;
@@ -1766,7 +1767,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     pointer-events: none;
     font-size: 1.6rem;
     font-weight: bold;
-    color: white;
+    color: var(--color-text-primary);
 }
 
 .fp-circle.result {
@@ -1808,10 +1809,10 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .fp-num-input {
     width: 56px;
     padding: 6px 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(74, 55, 40, 0.1);
+    border: 1px solid rgba(74, 55, 40, 0.2);
     border-radius: 8px;
-    color: white;
+    color: var(--color-text-primary);
     font-size: 1rem;
     text-align: center;
     font-family: var(--font-primary);
@@ -1842,7 +1843,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 #fp-result-panel {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.88);
+    background: var(--color-background-start);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1864,7 +1865,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     border: 2px solid;
     border-radius: 14px;
     padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(74, 55, 40, 0.05);
     display: flex;
     align-items: center;
     gap: 14px;
@@ -1904,9 +1905,9 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .timer-preset-btn {
-    background: rgba(255, 255, 255, 0.08);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(74, 55, 40, 0.08);
+    color: var(--color-text-primary);
+    border: 1px solid rgba(74, 55, 40, 0.2);
     border-radius: 14px;
     padding: 22px 8px;
     font-size: 1.05rem;
@@ -1926,7 +1927,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .timer-custom-label {
     margin: 0 0 8px 0;
     font-size: 0.82rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(74, 55, 40, 0.4);
     text-align: center;
     letter-spacing: 0.05em;
 }
@@ -1940,10 +1941,10 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .timer-custom-row input[type="number"] {
     width: 60px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(74, 55, 40, 0.08);
+    border: 1px solid rgba(74, 55, 40, 0.2);
     border-radius: 10px;
-    color: white;
+    color: var(--color-text-primary);
     font-size: 1.3rem;
     font-family: var(--font-primary);
     text-align: center;
@@ -1963,7 +1964,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .timer-custom-unit {
     font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(74, 55, 40, 0.45);
 }
 
 #timer-custom-start {
@@ -2001,7 +2002,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .timer-ring-bg {
     fill: none;
-    stroke: rgba(255, 255, 255, 0.1);
+    stroke: rgba(74, 55, 40, 0.1);
     stroke-width: 10;
 }
 
@@ -2018,7 +2019,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .timer-ring-prog.done { stroke: #e74c3c; }
 
 @keyframes timer-flash-anim {
-    0%, 100% { background-color: rgba(15, 8, 3, 0.95); }
+    0%, 100% { background-color: var(--color-background-start); }
     50% { background-color: rgba(231, 76, 60, 0.75); }
 }
 
@@ -2034,7 +2035,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     justify-content: center;
     font-size: 3.6rem;
     font-weight: bold;
-    color: white;
+    color: var(--color-text-primary);
     letter-spacing: 2px;
 }
 
@@ -2046,9 +2047,9 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .timer-btns button {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(74, 55, 40, 0.1);
+    color: var(--color-text-primary);
+    border: 1px solid rgba(74, 55, 40, 0.25);
     border-radius: 20px;
     padding: 10px 28px;
     font-size: 1rem;
@@ -2062,7 +2063,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .dice-selector-label {
     margin: 0 0 8px 0;
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(74, 55, 40, 0.5);
     text-align: center;
 }
 
@@ -2075,9 +2076,9 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .dice-type-btn, .dice-count-btn {
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(74, 55, 40, 0.08);
+    color: rgba(74, 55, 40, 0.7);
+    border: 1px solid rgba(74, 55, 40, 0.2);
     border-radius: 10px;
     padding: 10px 16px;
     font-size: 1rem;
@@ -2106,7 +2107,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .dice-hint {
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(74, 55, 40, 0.3);
     font-size: 0.9rem;
     margin: 0;
 }
@@ -2120,15 +2121,15 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .dice-single {
     width: 76px; height: 76px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.35);
+    background: rgba(74, 55, 40, 0.1);
+    border: 2px solid rgba(74, 55, 40, 0.35);
     border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 2.2rem;
     font-weight: bold;
-    color: white;
+    color: var(--color-text-primary);
     line-height: 1;
 }
 
@@ -2146,7 +2147,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .dice-total-line {
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(74, 55, 40, 0.5);
     margin: 0;
 }
 
@@ -2220,10 +2221,10 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .player-name-input {
     flex: 1;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(74, 55, 40, 0.08);
+    border: 1px solid rgba(74, 55, 40, 0.2);
     border-radius: 10px;
-    color: white;
+    color: var(--color-text-primary);
     font-size: 1rem;
     font-family: var(--font-primary);
     padding: 12px 14px;
@@ -2236,10 +2237,10 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .remove-player-btn {
     width: 36px; height: 36px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(74, 55, 40, 0.06);
+    border: 1px solid rgba(74, 55, 40, 0.15);
     border-radius: 8px;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(74, 55, 40, 0.4);
     font-size: 1.2rem;
     cursor: pointer;
     flex-shrink: 0;
@@ -2249,9 +2250,9 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .add-player-btn {
     background: transparent;
-    border: 1px dashed rgba(255, 255, 255, 0.25);
+    border: 1px dashed rgba(74, 55, 40, 0.25);
     border-radius: 10px;
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(74, 55, 40, 0.45);
     font-size: 0.9rem;
     font-family: var(--font-primary);
     padding: 10px;
@@ -2273,9 +2274,9 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .tool-secondary-btn {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(74, 55, 40, 0.1);
+    color: rgba(74, 55, 40, 0.6);
+    border: 1px solid rgba(74, 55, 40, 0.2);
     border-radius: 20px;
     padding: 10px 28px;
     font-size: 0.9rem;
@@ -2287,7 +2288,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 /* 共用 option 按鈕 (隊數 / 起始值 selector 等) */
 .tools-section-label {
     font-size: 0.82rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(74, 55, 40, 0.4);
     text-align: center;
     margin: 0 0 8px 0;
 }
@@ -2301,9 +2302,9 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .tools-option-btn {
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(74, 55, 40, 0.08);
+    color: rgba(74, 55, 40, 0.6);
+    border: 1px solid rgba(74, 55, 40, 0.2);
     border-radius: 10px;
     padding: 10px 22px;
     font-size: 1rem;
@@ -2320,10 +2321,10 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .tools-number-input {
     width: 80px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(74, 55, 40, 0.08);
+    border: 1px solid rgba(74, 55, 40, 0.2);
     border-radius: 10px;
-    color: white;
+    color: var(--color-text-primary);
     font-size: 1.2rem;
     font-family: var(--font-primary);
     text-align: center;
@@ -2344,10 +2345,10 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .sb-game-name-input {
     width: 100%;
     padding: 10px 14px;
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(74, 55, 40, 0.07);
+    border: 1px solid rgba(74, 55, 40, 0.18);
     border-radius: 10px;
-    color: white;
+    color: var(--color-text-primary);
     font-size: 1rem;
     font-family: var(--font-primary);
     text-align: center;
@@ -2375,15 +2376,15 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     z-index: 20;
     max-height: 220px;
     overflow-y: auto;
-    background: #2a2320;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(74, 55, 40, 0.06);
+    border: 1px solid rgba(74, 55, 40, 0.18);
     border-radius: 10px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 8px 20px rgba(74, 55, 40, 0.35);
 }
 .sb-game-suggestion-item {
     padding: 10px 14px;
     font-size: 0.92rem;
-    color: rgba(255, 255, 255, 0.85);
+    color: rgba(74, 55, 40, 0.85);
     cursor: pointer;
     text-align: left;
 }
@@ -2393,7 +2394,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     color: var(--color-frame-gold-light);
 }
 .sb-game-suggestion-item + .sb-game-suggestion-item {
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid rgba(74, 55, 40, 0.06);
 }
 
 /* 進行畫面：本輪記分按鈕與排名列表拉開距離 */
@@ -2410,7 +2411,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .sb-game-title {
     font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(74, 55, 40, 0.5);
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2429,13 +2430,13 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .sb-round-header span {
     font-size: 1.1rem;
     font-weight: bold;
-    color: white;
+    color: var(--color-text-primary);
 }
 
 .sb-round-cancel-btn {
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(74, 55, 40, 0.45);
     font-size: 0.9rem;
     cursor: pointer;
     font-family: var(--font-primary);
@@ -2450,8 +2451,8 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .sb-round-row {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(74, 55, 40, 0.05);
+    border: 1px solid rgba(74, 55, 40, 0.1);
     border-radius: 12px;
     padding: 12px 14px;
     display: flex;
@@ -2467,22 +2468,22 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .sb-round-row-name {
     font-size: 0.95rem;
-    color: white;
+    color: var(--color-text-primary);
 }
 
 .sb-round-row-cur {
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(74, 55, 40, 0.4);
 }
 
 .sb-round-delta,
 .sb-round-note {
     width: 100%;
     padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(74, 55, 40, 0.08);
+    border: 1px solid rgba(74, 55, 40, 0.15);
     border-radius: 8px;
-    color: white;
+    color: var(--color-text-primary);
     font-size: 0.95rem;
     font-family: var(--font-primary);
 }
@@ -2504,7 +2505,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 /* 計分紀錄：輪次區塊 */
 .sb-log-round {
     padding: 10px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(74, 55, 40, 0.08);
 }
 
 .sb-log-round:last-child { border-bottom: none; }
@@ -2516,12 +2517,12 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     margin-bottom: 6px;
     font-size: 0.82rem;
     font-weight: bold;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(74, 55, 40, 0.6);
 }
 
 .sb-log-note {
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.35);
+    color: rgba(74, 55, 40, 0.35);
     font-style: italic;
     margin-left: 4px;
 }
@@ -2534,8 +2535,8 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .sb-player-card {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(74, 55, 40, 0.06);
+    border: 1px solid rgba(74, 55, 40, 0.12);
     border-radius: 14px;
     padding: 12px 14px;
     display: flex;
@@ -2559,7 +2560,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     width: 30px;
     text-align: center;
     flex-shrink: 0;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(74, 55, 40, 0.5);
 }
 
 .sb-player-card.sb-first .sb-rank { color: var(--color-frame-gold); }
@@ -2567,7 +2568,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .sb-name {
     flex: 1;
     font-size: 1rem;
-    color: white;
+    color: var(--color-text-primary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2576,14 +2577,14 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .sb-score {
     font-size: 1.5rem;
     font-weight: bold;
-    color: white;
+    color: var(--color-text-primary);
     min-width: 48px;
     text-align: right;
 }
 
 .sb-score-unit {
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.35);
+    color: rgba(74, 55, 40, 0.35);
     margin-left: 2px;
 }
 
@@ -2594,10 +2595,10 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .sb-btn {
     flex: 1;
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.13);
+    background: rgba(74, 55, 40, 0.07);
+    border: 1px solid rgba(74, 55, 40, 0.13);
     border-radius: 8px;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(74, 55, 40, 0.8);
     font-size: 0.88rem;
     padding: 8px 4px;
     cursor: pointer;
@@ -2618,7 +2619,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     left: 50%; bottom: 0;
     transform: translateX(-50%);
     width: 100%; max-width: 420px;
-    background: #1a1008;
+    background: var(--color-card-background);
     border-top: 1px solid rgba(184, 134, 11, 0.4);
     border-radius: 20px 20px 0 0;
     padding: 20px 20px 30px;
@@ -2632,17 +2633,17 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 #sb-popup-label,
 #counter-popup-label {
     font-size: 1rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(74, 55, 40, 0.6);
     margin: 0;
 }
 
 #sb-popup-input,
 #counter-popup-input {
     width: 100%;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(74, 55, 40, 0.08);
+    border: 1px solid rgba(74, 55, 40, 0.25);
     border-radius: 12px;
-    color: white;
+    color: var(--color-text-primary);
     font-size: 1.6rem;
     font-family: var(--font-primary);
     text-align: center;
@@ -2678,42 +2679,85 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 #sb-popup-minus, #counter-popup-minus { background: rgba(231, 76, 60, 0.25); color: #e74c3c; border: 1px solid rgba(231,76,60,0.4); }
 #sb-popup-plus,  #counter-popup-plus  { background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid rgba(46,204,113,0.35); }
 
-/* 專屬計分表格彈窗 */
-#sb-template-score-fields {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-.sb-template-field-row {
+/* 專屬計分表格（共同編輯表格，取代單一玩家的彈窗） */
+#sb-template-lock-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
+    margin-bottom: 10px;
 }
-.sb-template-field-row label {
-    color: rgba(255, 255, 255, 0.7);
+#sb-template-lock-status {
+    font-size: 0.85rem;
+    color: rgba(74, 55, 40, 0.6);
+}
+#sb-template-lock-status.locked {
+    color: var(--color-frame-gold);
+    font-weight: bold;
+}
+.sb-template-table-scroll {
+    width: 100%;
+    overflow-x: auto;
+}
+#sb-template-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+#sb-template-table th,
+#sb-template-table td {
+    padding: 8px 4px;
+    text-align: center;
+    font-size: 0.85rem;
+    border-bottom: 1px solid rgba(74, 55, 40, 0.12);
+}
+#sb-template-table th {
+    color: rgba(74, 55, 40, 0.6);
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#sb-template-table th:first-child,
+#sb-template-table td:first-child {
+    width: 78px;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#sb-template-table th:last-child,
+#sb-template-table td:last-child {
+    width: 56px;
+    font-weight: bold;
+    color: var(--color-frame-gold);
+}
+#sb-template-table tr.sb-template-row-self td:first-child {
+    color: var(--color-frame-gold);
+}
+.sb-template-cell-input {
+    width: 100%;
+    max-width: 64px;
+    background: rgba(74, 55, 40, 0.08);
+    border: 1px solid rgba(74, 55, 40, 0.25);
+    border-radius: 8px;
+    color: var(--color-text-primary);
     font-size: 0.95rem;
-    flex-shrink: 0;
-}
-.sb-template-score-input {
-    width: 100px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 10px;
-    color: white;
-    font-size: 1.1rem;
     font-family: var(--font-primary);
     text-align: center;
-    padding: 8px;
+    padding: 6px 2px;
+    box-sizing: border-box;
 }
-.sb-template-score-input:focus { outline: none; border-color: var(--color-frame-gold); }
+.sb-template-cell-input:focus { outline: none; border-color: var(--color-frame-gold); }
+.sb-template-cell-readonly {
+    color: rgba(74, 55, 40, 0.7);
+}
 
 #sb-popup-cancel,
 #counter-popup-cancel {
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.35);
+    color: rgba(74, 55, 40, 0.35);
     font-size: 0.85rem;
     cursor: pointer;
     font-family: var(--font-primary);
@@ -2723,9 +2767,9 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 /* 計分紀錄按鈕 */
 .sb-log-open-btn {
     align-self: flex-end;
-    background: rgba(255, 255, 255, 0.07);
-    color: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(74, 55, 40, 0.07);
+    color: rgba(74, 55, 40, 0.5);
+    border: 1px solid rgba(74, 55, 40, 0.15);
     border-radius: 20px;
     padding: 7px 16px;
     font-size: 0.82rem;
@@ -2739,7 +2783,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     position: absolute;
     bottom: 0; left: 0; right: 0;
     max-height: 65%;
-    background: #160e04;
+    background: rgba(74, 55, 40, 0.06);
     border-radius: 20px 20px 0 0;
     border-top: 1px solid rgba(184, 134, 11, 0.35);
     display: flex;
@@ -2758,16 +2802,16 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     align-items: center;
     justify-content: space-between;
     padding: 16px 18px 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(74, 55, 40, 0.08);
     flex-shrink: 0;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(74, 55, 40, 0.7);
     font-size: 0.95rem;
 }
 
 .sb-log-header button {
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(74, 55, 40, 0.4);
     font-size: 1.1rem;
     cursor: pointer;
     padding: 4px 8px;
@@ -2785,12 +2829,12 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     align-items: baseline;
     gap: 10px;
     padding: 9px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid rgba(74, 55, 40, 0.04);
 }
 
 .sb-log-time {
     font-size: 0.72rem;
-    color: rgba(255, 255, 255, 0.25);
+    color: rgba(74, 55, 40, 0.25);
     flex-shrink: 0;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.02em;
@@ -2799,7 +2843,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .sb-log-name {
     flex: 1;
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(74, 55, 40, 0.7);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2816,13 +2860,20 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .sb-log-after {
     font-size: 0.78rem;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(74, 55, 40, 0.3);
     flex-shrink: 0;
+}
+
+.sb-log-detail {
+    flex: 1 1 100%;
+    font-size: 0.82rem;
+    color: rgba(74, 55, 40, 0.55);
+    order: 3;
 }
 
 #sb-log-empty {
     text-align: center;
-    color: rgba(255, 255, 255, 0.2);
+    color: rgba(74, 55, 40, 0.2);
     font-size: 0.85rem;
     padding: 30px;
     margin: 0;
@@ -2832,7 +2883,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 #sb-score-popup {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(74, 55, 40, 0.6);
     z-index: 200;
     display: flex;
     align-items: flex-end;
@@ -2842,7 +2893,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .sb-score-popup-inner {
     width: 100%;
     max-width: 420px;
-    background: #1a1008;
+    background: var(--color-card-background);
     border-top: 1px solid rgba(184, 134, 11, 0.4);
     border-radius: 20px 20px 0 0;
     padding: 20px 20px 30px;
@@ -2855,13 +2906,13 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 #sb-popup-player-name {
     font-size: 1.1rem;
     font-weight: bold;
-    color: white;
+    color: var(--color-text-primary);
     margin: 0;
 }
 
 #sb-popup-current-score {
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(74, 55, 40, 0.5);
     margin: 0;
 }
 
@@ -2869,7 +2920,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 #sb-rename-popup {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(74, 55, 40, 0.6);
     z-index: 2100;
     display: flex;
     align-items: flex-end;
@@ -2880,7 +2931,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .sb-qr-modal {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.75);
+    background: rgba(74, 55, 40, 0.75);
     z-index: 150;
     display: flex;
     align-items: flex-end;
@@ -2890,7 +2941,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .sb-qr-modal-inner {
     width: 100%;
     max-width: 420px;
-    background: #1a1008;
+    background: var(--color-card-background);
     border-top: 1px solid rgba(184, 134, 11, 0.4);
     border-radius: 20px 20px 0 0;
     padding: 20px 20px 32px;
@@ -2909,7 +2960,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 /* ── 記分板：QR 等待區 ──────────────────────────────────────── */
 .sb-qr-hint {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(74, 55, 40, 0.5);
     font-size: 0.9rem;
     text-align: center;
     margin: 0;
@@ -2934,7 +2985,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .sb-waiting-empty {
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(74, 55, 40, 0.3);
     font-size: 0.9rem;
     text-align: center;
     width: 100%;
@@ -3061,9 +3112,9 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 /* ── 記分板：修改暱稱按鈕 ───────────────────────────────────── */
 .sb-rename-btn {
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: rgba(255, 255, 255, 0.6);
+    background: rgba(74, 55, 40, 0.07);
+    border: 1px solid rgba(74, 55, 40, 0.15);
+    color: rgba(74, 55, 40, 0.6);
     font-size: 0.82rem;
     line-height: 1;
     cursor: pointer;
@@ -3082,7 +3133,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .sb-remove-btn {
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.25);
+    color: rgba(74, 55, 40, 0.25);
     font-size: 1.1rem;
     line-height: 1;
     cursor: pointer;
@@ -3166,7 +3217,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     position: absolute;
     bottom: 0; left: 0; right: 0;
     max-height: 65%;
-    background: #160e04;
+    background: rgba(74, 55, 40, 0.06);
     border-radius: 20px 20px 0 0;
     border-top: 1px solid rgba(184, 134, 11, 0.35);
     display: flex;
@@ -3177,7 +3228,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 #counter-log-empty {
     text-align: center;
-    color: rgba(255, 255, 255, 0.2);
+    color: rgba(74, 55, 40, 0.2);
     font-size: 0.85rem;
     padding: 30px;
     margin: 0;
@@ -3187,7 +3238,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     width: 100%;
     margin-top: 24px;
     padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(74, 55, 40, 0.08);
 }
 
 /* 記分板歷史紀錄 */
@@ -3195,12 +3246,12 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     width: 100%;
     margin-top: 24px;
     padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(74, 55, 40, 0.08);
 }
 
 .sb-history-title {
     font-size: 0.78rem;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(74, 55, 40, 0.3);
     text-align: center;
     margin: 0 0 10px 0;
     letter-spacing: 0.08em;
@@ -3213,8 +3264,8 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .sb-history-item {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(74, 55, 40, 0.04);
+    border: 1px solid rgba(74, 55, 40, 0.09);
     border-radius: 12px;
     padding: 12px 14px;
     display: flex;
@@ -3224,12 +3275,12 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .sb-history-meta {
     font-size: 0.72rem;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(74, 55, 40, 0.3);
 }
 
 .sb-history-summary {
     font-size: 0.88rem;
-    color: rgba(255, 255, 255, 0.65);
+    color: rgba(74, 55, 40, 0.65);
     line-height: 1.5;
 }
 
@@ -3251,9 +3302,9 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .sb-history-new-btn {
-    background: rgba(255, 255, 255, 0.07);
-    color: rgba(255, 255, 255, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(74, 55, 40, 0.07);
+    color: rgba(74, 55, 40, 0.4);
+    border: 1px solid rgba(74, 55, 40, 0.12);
     border-radius: 20px;
     padding: 5px 14px;
     font-size: 0.78rem;
@@ -3268,8 +3319,8 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 /* Setup：資源定義列 */
 .counter-res-def {
     width: 100%;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(74, 55, 40, 0.04);
+    border: 1px solid rgba(74, 55, 40, 0.1);
     border-radius: 12px;
     padding: 10px 12px;
     margin-bottom: 8px;
@@ -3286,10 +3337,10 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .counter-res-name-input {
     flex: 1;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(74, 55, 40, 0.08);
+    border: 1px solid rgba(74, 55, 40, 0.2);
     border-radius: 8px;
-    color: white;
+    color: var(--color-text-primary);
     font-size: 0.95rem;
     font-family: var(--font-primary);
     padding: 8px 12px;
@@ -3312,16 +3363,16 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .counter-res-field label {
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.35);
+    color: rgba(74, 55, 40, 0.35);
     white-space: nowrap;
 }
 
 .counter-res-num-input {
     flex: 1;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(74, 55, 40, 0.08);
+    border: 1px solid rgba(74, 55, 40, 0.15);
     border-radius: 8px;
-    color: white;
+    color: var(--color-text-primary);
     font-size: 0.95rem;
     font-family: var(--font-primary);
     text-align: center;
@@ -3344,8 +3395,8 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 }
 
 .counter-player-card {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(74, 55, 40, 0.06);
+    border: 1px solid rgba(74, 55, 40, 0.12);
     border-radius: 16px;
     padding: 14px 16px;
     position: relative;
@@ -3366,7 +3417,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .counter-player-name-label {
     font-size: 1rem;
-    color: white;
+    color: var(--color-text-primary);
     font-weight: bold;
 }
 
@@ -3407,15 +3458,15 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .counter-res-label-text {
     flex: 1;
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(74, 55, 40, 0.55);
 }
 
 .counter-res-ctrl-btn {
     width: 34px; height: 34px;
     border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.07);
-    color: white;
+    border: 1px solid rgba(74, 55, 40, 0.2);
+    background: rgba(74, 55, 40, 0.07);
+    color: var(--color-text-primary);
     font-size: 1.2rem;
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
@@ -3432,7 +3483,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .counter-res-value-display {
     font-size: 1.15rem;
     font-weight: bold;
-    color: white;
+    color: var(--color-text-primary);
     min-width: 60px;
     text-align: center;
     flex-shrink: 0;
@@ -3440,13 +3491,13 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .counter-res-max-text {
     font-size: 0.78rem;
-    color: rgba(255, 255, 255, 0.25);
+    color: rgba(74, 55, 40, 0.25);
 }
 
 /* 進度條 */
 .counter-progress-track {
     height: 6px;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(74, 55, 40, 0.08);
     border-radius: 3px;
     overflow: hidden;
 }
@@ -3484,10 +3535,10 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .role-emoji-select {
     flex: 0 0 48px;
     width: 48px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(74, 55, 40, 0.08);
+    border: 1px solid rgba(74, 55, 40, 0.2);
     border-radius: 8px;
-    color: white;
+    color: var(--color-text-primary);
     font-size: 1.25rem;
     padding: 0;
     text-align: center;
@@ -3501,16 +3552,16 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .role-name-field {
     flex: 1 1 0;
     min-width: 0;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(74, 55, 40, 0.08);
+    border: 1px solid rgba(74, 55, 40, 0.2);
     border-radius: 8px;
-    color: white;
+    color: var(--color-text-primary);
     font-size: 0.95rem;
     font-family: var(--font-primary);
     padding: 10px 10px;
 }
 
-.role-name-field::placeholder { color: rgba(255,255,255,0.3); }
+.role-name-field::placeholder { color: rgba(74, 55, 40,0.3); }
 .role-name-field:focus { outline: none; border-color: var(--color-frame-gold); }
 
 .role-count-input {
@@ -3518,10 +3569,10 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     width: 44px;
     min-width: 44px;
     max-width: 44px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(74, 55, 40, 0.08);
+    border: 1px solid rgba(74, 55, 40, 0.2);
     border-radius: 8px;
-    color: white;
+    color: var(--color-text-primary);
     font-size: 1rem;
     font-family: var(--font-primary);
     text-align: center;
@@ -3536,10 +3587,10 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .role-desc-input {
     width: 100%;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(74, 55, 40, 0.05);
+    border: 1px solid rgba(74, 55, 40, 0.12);
     border-radius: 8px;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(74, 55, 40, 0.6);
     font-size: 0.82rem;
     font-family: var(--font-primary);
     padding: 7px 10px;
@@ -3547,7 +3598,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     box-sizing: border-box;
 }
 
-.role-desc-input::placeholder { color: rgba(255,255,255,0.2); }
+.role-desc-input::placeholder { color: rgba(74, 55, 40,0.2); }
 .role-desc-input:focus { outline: none; border-color: rgba(184,134,11,0.4); }
 
 /* 玩家/角色數量狀態 */
@@ -3582,7 +3633,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .roles-handoff-hint {
     font-size: 1rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(74, 55, 40, 0.4);
     margin: 0;
     letter-spacing: 0.05em;
 }
@@ -3590,22 +3641,22 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .roles-handoff-name {
     font-size: 3rem;
     font-weight: bold;
-    color: white;
+    color: var(--color-text-primary);
     margin: 8px 0;
     text-align: center;
 }
 
 .roles-handoff-sub {
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.25);
+    color: rgba(74, 55, 40, 0.25);
     margin: 0 0 32px;
 }
 
 .roles-ready-btn {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(74, 55, 40, 0.08);
+    border: 1px solid rgba(74, 55, 40, 0.2);
     border-radius: 24px;
-    color: white;
+    color: var(--color-text-primary);
     font-size: 1rem;
     font-family: var(--font-primary);
     padding: 14px 40px;
@@ -3639,7 +3690,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .roles-card-name {
     font-size: 2.6rem;
     font-weight: bold;
-    color: white;
+    color: var(--color-text-primary);
     margin: 0;
     text-align: center;
     letter-spacing: 4px;
@@ -3647,7 +3698,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .roles-card-desc {
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(74, 55, 40, 0.45);
     text-align: center;
     margin: 0;
     line-height: 1.6;
@@ -3680,14 +3731,14 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .roles-playing-title {
     font-size: 1.4rem;
-    color: white;
+    color: var(--color-text-primary);
     margin: 0;
     border: none;
 }
 
 .roles-playing-sub {
     font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(74, 55, 40, 0.4);
     margin: 0;
 }
 
@@ -3703,7 +3754,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .roles-unlock-hint {
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(74, 55, 40, 0.45);
     text-align: center;
     margin: 0;
 }
@@ -3733,8 +3784,8 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     display: flex;
     align-items: center;
     gap: 14px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(74, 55, 40, 0.06);
+    border: 1px solid rgba(74, 55, 40, 0.1);
     border-radius: 14px;
     padding: 14px 16px;
     animation: roles-reveal-in 0.4s ease both;
@@ -3748,7 +3799,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .roles-reveal-player {
     flex: 1;
     font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(74, 55, 40, 0.6);
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -3760,7 +3811,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .roles-reveal-role {
     font-size: 1.05rem;
     font-weight: bold;
-    color: white;
+    color: var(--color-text-primary);
     flex-shrink: 0;
 }
 /* ================================================================
@@ -3788,7 +3839,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     border-left: 14px solid transparent;
     border-right: 14px solid transparent;
     border-top: 22px solid #b8860b;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+    filter: drop-shadow(0 2px 4px rgba(74, 55, 40,0.6));
     position: relative;
     z-index: 5;
     margin-bottom: -3px;
@@ -3797,7 +3848,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .wheel-canvas-wrap {
     border-radius: 50%;
     overflow: hidden;
-    box-shadow: 0 6px 32px rgba(0,0,0,0.6), 0 0 0 3px rgba(184,134,11,0.35);
+    box-shadow: 0 6px 32px rgba(74, 55, 40,0.6), 0 0 0 3px rgba(184,134,11,0.35);
     position: relative;
     z-index: 1;
 }
@@ -3817,7 +3868,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     transform: translateX(-50%);
     width: 100%;
     max-width: 420px;
-    background: #1a1008;
+    background: var(--color-card-background);
     border-top: 1px solid rgba(184,134,11,0.4);
     border-radius: 20px 20px 0 0;
     padding: 22px 20px 36px;
@@ -3831,7 +3882,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
 .wheel-result-label {
     font-size: 0.82rem;
-    color: rgba(255,255,255,0.4);
+    color: rgba(74, 55, 40,0.4);
     margin: 0;
     letter-spacing: 1px;
 }
@@ -3839,7 +3890,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .wheel-result-name {
     font-size: 2.2rem;
     font-weight: bold;
-    color: white;
+    color: var(--color-text-primary);
     text-align: center;
     word-break: break-all;
     max-width: 320px;

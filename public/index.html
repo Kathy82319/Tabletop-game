@@ -844,6 +844,21 @@
             </div>
         </div>
         <div id="sb-rankings"></div>
+
+        <!-- 專屬計分表格（遊戲有設定計分欄位時，取代上面的 sb-rankings 卡片，改成大家一起編輯的表格）-->
+        <div id="sb-template-table-wrap" style="display:none;">
+            <div id="sb-template-lock-bar">
+                <span id="sb-template-lock-status"></span>
+                <button id="sb-template-lock-btn" class="tool-secondary-btn">儲存並鎖定計分</button>
+            </div>
+            <div class="sb-template-table-scroll">
+                <table id="sb-template-table">
+                    <thead><tr id="sb-template-table-head"></tr></thead>
+                    <tbody id="sb-template-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
         <button id="sb-add-player-btn" class="tool-secondary-btn" style="display:none; margin-top:8px;">＋ 新增玩家</button>
         <button class="tool-secondary-btn" id="sb-reset-btn" style="margin-top:8px;">新局</button>
     </div>
@@ -855,7 +870,7 @@
             <button id="sb-log-close-btn">✕</button>
         </div>
         <div id="sb-log-list"></div>
-        <p id="sb-log-empty" style="text-align:center; color:rgba(255,255,255,0.3); padding:20px;">還沒有任何紀錄</p>
+        <p id="sb-log-empty" style="text-align:center; color:rgba(74,55,40,0.4); padding:20px;">還沒有任何紀錄</p>
     </div>
 
     <!-- 分數輸入彈窗 -->
@@ -872,26 +887,13 @@
         </div>
     </div>
 
-    <!-- 專屬計分表格彈窗（遊戲有設定計分欄位時用這個取代上面的 +/- 彈窗）-->
-    <div id="sb-template-score-popup" class="sb-score-popup" style="display:none;">
-        <div class="sb-score-popup-inner">
-            <p id="sb-template-popup-player-name" class="sb-popup-player-name"></p>
-            <div id="sb-template-score-fields"></div>
-            <p id="sb-template-popup-total" class="sb-popup-current-score"></p>
-            <div class="sb-popup-btns">
-                <button id="sb-template-popup-cancel" class="sb-popup-btn" style="background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.15);">取消</button>
-                <button id="sb-template-popup-save" class="sb-popup-btn sb-popup-plus">儲存</button>
-            </div>
-        </div>
-    </div>
-
     <!-- 手動新增玩家彈窗 -->
     <div id="sb-add-player-popup" class="sb-score-popup" style="display:none;">
         <div class="sb-score-popup-inner">
             <p class="sb-popup-player-name">新增玩家</p>
             <input type="text" id="sb-add-player-input" class="sb-popup-input" style="font-size:1.2rem;" placeholder="輸入玩家名稱">
             <div class="sb-popup-btns">
-                <button id="sb-add-player-cancel" class="sb-popup-btn" style="background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.15);">取消</button>
+                <button id="sb-add-player-cancel" class="sb-popup-btn" style="background:rgba(74,55,40,0.08); color:rgba(74,55,40,0.6); border:1px solid rgba(74,55,40,0.15);">取消</button>
                 <button id="sb-add-player-confirm" class="sb-popup-btn sb-popup-plus">確認新增</button>
             </div>
         </div>
@@ -905,7 +907,7 @@
         <input type="text" id="sb-rename-input" class="sb-popup-input" style="font-size:1.2rem;" placeholder="輸入新暱稱" maxlength="20">
         <p id="sb-rename-error" style="color:#e74c3c; font-size:0.85rem; margin:0; display:none;"></p>
         <div class="sb-popup-btns">
-            <button id="sb-rename-cancel" class="sb-popup-btn" style="background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.15);">取消</button>
+            <button id="sb-rename-cancel" class="sb-popup-btn" style="background:rgba(74,55,40,0.08); color:rgba(74,55,40,0.6); border:1px solid rgba(74,55,40,0.15);">取消</button>
             <button id="sb-rename-confirm" class="sb-popup-btn sb-popup-plus">確認修改</button>
         </div>
     </div>

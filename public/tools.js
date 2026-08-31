@@ -645,6 +645,8 @@ let sbGameName    = '';
 let sbPollTimer   = null;
 let sbBoardGames  = [];
 let sbCategories  = null; // 這款遊戲若有專屬計分表格，存欄位名稱陣列；沒有就是 null（沿用預設 +/- 計分）
+let sbLocked      = false; // 專屬計分表格是否已被團主鎖定（永久，沒有解鎖 API）
+let sbSaveTimers  = {}; // 每位玩家一個 debounce 計時器，用於共同編輯表格的自動儲存
 
 const LIFF_ID = '2008076323-GN1e7naW';
 
@@ -684,6 +686,7 @@ function sbClose() {
 function sbShowSetup() {
     sbStopPolling();
     sbCategories = null;
+    sbLocked = false;
     document.getElementById('sb-setup').style.display    = 'flex';
     document.getElementById('sb-qr-panel').style.display = 'none';
     document.getElementById('sb-playing').style.display  = 'none';
@@ -919,8 +922,19 @@ async function sbFetchAndRender(containerId, isPlaying) {
         sbPlayers    = data.players || [];
         sbEvents     = data.events  || [];
         sbCategories = data.categories || null;
+        sbLocked     = !!(data.session && data.session.locked);
         if (isPlaying) {
-            sbRenderRankings(containerId);
+            if (sbCategories && sbCategories.length > 0) {
+                document.getElementById('sb-rankings').style.display = 'none';
+                document.getElementById('sb-template-table-wrap').style.display = 'block';
+                // 有人正在某一格輸入時先不要整表重繪，避免打字打到一半游標被打斷
+                const activeInTable = document.activeElement?.classList?.contains('sb-template-cell-input');
+                if (!activeInTable) sbRenderTemplateTable();
+            } else {
+                document.getElementById('sb-rankings').style.display = '';
+                document.getElementById('sb-template-table-wrap').style.display = 'none';
+                sbRenderRankings(containerId);
+            }
             sbRenderLogIfOpen();
         } else {
             sbRenderWaiting(containerId);
@@ -967,7 +981,7 @@ function sbRenderRankings(containerId) {
             </div>`;
 
         if (isOwner) {
-            card.onclick = () => sbOpenPlayerScore(p);
+            card.onclick = () => sbOpenScorePopup(p);
             const rBtn = card.querySelector('.sb-rename-btn');
             if (rBtn) {
                 rBtn.onclick = (e) => {
@@ -1023,21 +1037,30 @@ function sbRenderLog() {
 
         if (ev.event_type === 'score') {
             const pos = ev.delta >= 0;
-            el.innerHTML =
-                `<span class="sb-log-time">${ts}</span>` +
-                `<span class="sb-log-name">${ev.nickname}</span>` +
-                `<span class="sb-log-delta ${pos ? 'pos' : 'neg'}">${pos ? '+' : ''}${ev.delta}</span>` +
-                `<span class="sb-log-after">→ ${ev.new_score} 分</span>`;
+            if (ev.detail) {
+                // 專屬計分表格改的：顯示欄位層級的異動，而不是只有總分差額
+                el.innerHTML =
+                    `<span class="sb-log-time">${ts}</span>` +
+                    `<span class="sb-log-name">${ev.nickname}</span>` +
+                    `<span class="sb-log-detail">${ev.detail}</span>` +
+                    `<span class="sb-log-after">總分 → ${ev.new_score} 分</span>`;
+            } else {
+                el.innerHTML =
+                    `<span class="sb-log-time">${ts}</span>` +
+                    `<span class="sb-log-name">${ev.nickname}</span>` +
+                    `<span class="sb-log-delta ${pos ? 'pos' : 'neg'}">${pos ? '+' : ''}${ev.delta}</span>` +
+                    `<span class="sb-log-after">→ ${ev.new_score} 分</span>`;
+            }
         } else if (ev.event_type === 'join') {
             el.innerHTML =
                 `<span class="sb-log-time">${ts}</span>` +
                 `<span class="sb-log-name">${ev.nickname}</span>` +
-                `<span class="sb-log-delta" style="color:rgba(255,255,255,0.4);">加入</span>`;
+                `<span class="sb-log-delta" style="color:rgba(74,55,40,0.4);">加入</span>`;
         } else if (ev.event_type === 'leave') {
             el.innerHTML =
                 `<span class="sb-log-time">${ts}</span>` +
                 `<span class="sb-log-name">${ev.nickname}</span>` +
-                `<span class="sb-log-delta" style="color:rgba(255,255,255,0.3);">離開</span>`;
+                `<span class="sb-log-delta" style="color:rgba(74,55,40,0.3);">離開</span>`;
         }
         list.appendChild(el);
     });
@@ -1159,67 +1182,94 @@ async function sbConfirmAddPlayer() {
     } catch (e) { /* 下次 polling 會同步 */ }
 }
 
-// ── 點玩家卡片：這款遊戲有專屬計分表格就開表格彈窗，否則走原本的 +/- 彈窗 ──
-function sbOpenPlayerScore(player) {
-    if (sbCategories && sbCategories.length > 0) {
-        sbOpenTemplateScorePopup(player);
+// ── 專屬計分表格：共同編輯表格（每人可編輯自己那一列，團主可編輯全部）──
+function sbRenderTemplateTable() {
+    const head = document.getElementById('sb-template-table-head');
+    const body = document.getElementById('sb-template-table-body');
+    if (!head || !body) return;
+
+    const myId = window.userProfile?.userId;
+    const isOwner = sbOwnerLineId === myId;
+
+    head.innerHTML = '<th>玩家</th>' + sbCategories.map(cat => `<th>${cat}</th>`).join('') + '<th>總分</th>';
+
+    body.innerHTML = sbPlayers.map(p => {
+        const isSelf = !!(p.line_user_id && p.line_user_id === myId);
+        const canEdit = !sbLocked && (isOwner || isSelf);
+        const existing = p.category_scores || {};
+
+        const cells = sbCategories.map(cat => {
+            const val = existing[cat] ?? '';
+            return canEdit
+                ? `<td><input type="number" inputmode="decimal" class="sb-template-cell-input" data-player-id="${p.player_id}" data-category="${cat}" value="${val}"></td>`
+                : `<td><span class="sb-template-cell-readonly">${val === '' ? '—' : val}</span></td>`;
+        }).join('');
+
+        return `<tr class="${isSelf ? 'sb-template-row-self' : ''}">
+            <td>${p.nickname}${isSelf ? '（你）' : ''}</td>
+            ${cells}
+            <td>${p.score}</td>
+        </tr>`;
+    }).join('');
+
+    // 鎖定列：只有團主看得到「儲存並鎖定」按鈕
+    const statusEl = document.getElementById('sb-template-lock-status');
+    const lockBtn  = document.getElementById('sb-template-lock-btn');
+    if (sbLocked) {
+        statusEl.textContent = '🔒 已鎖定，無法再修改';
+        statusEl.classList.add('locked');
+        lockBtn.style.display = 'none';
     } else {
-        sbOpenScorePopup(player);
+        statusEl.textContent = isOwner ? '每人可編輯自己那一列，改完會自動儲存' : '編輯自己那一列即可，會自動儲存';
+        statusEl.classList.remove('locked');
+        lockBtn.style.display = isOwner ? 'inline-block' : 'none';
+        lockBtn.onclick = sbLockTemplateTable;
     }
-}
 
-// ── 專屬計分表格彈窗 ──────────────────────────────────────────
-function sbOpenTemplateScorePopup(player) {
-    const existing = player.category_scores || {};
-    const fieldsHtml = sbCategories.map((cat, i) => `
-        <div class="sb-template-field-row">
-            <label for="sb-template-input-${i}">${cat}</label>
-            <input type="number" inputmode="decimal" class="sb-template-score-input" id="sb-template-input-${i}" data-category="${cat}" value="${existing[cat] ?? ''}">
-        </div>
-    `).join('');
-
-    document.getElementById('sb-template-popup-player-name').textContent = player.nickname;
-    document.getElementById('sb-template-score-fields').innerHTML = fieldsHtml;
-    document.getElementById('sb-template-score-popup').style.display = 'flex';
-
-    const updateTotal = () => {
-        let total = 0;
-        document.querySelectorAll('.sb-template-score-input').forEach(input => {
-            const v = parseFloat(input.value);
-            if (!isNaN(v)) total += v;
-        });
-        document.getElementById('sb-template-popup-total').textContent = `小計：${total} 分`;
+    body.oninput = (e) => {
+        if (!e.target.classList.contains('sb-template-cell-input')) return;
+        sbScheduleTemplateSave(e.target.dataset.playerId);
     };
-    document.getElementById('sb-template-score-fields').oninput = updateTotal;
-    updateTotal();
-
-    document.getElementById('sb-template-popup-save').onclick = () => sbApplyTemplateScore(player.player_id);
-    document.getElementById('sb-template-popup-cancel').onclick = sbCloseTemplateScorePopup;
 }
 
-function sbCloseTemplateScorePopup() {
-    document.getElementById('sb-template-score-popup').style.display = 'none';
+// 每一格輸入都用 debounce 自動儲存「整列」（API 是整列覆蓋，不是單一欄位增量）
+function sbScheduleTemplateSave(playerId) {
+    if (sbSaveTimers[playerId]) clearTimeout(sbSaveTimers[playerId]);
+    sbSaveTimers[playerId] = setTimeout(() => sbApplyTemplateScore(playerId), 600);
 }
 
 async function sbApplyTemplateScore(playerId) {
     const categoryScores = {};
     let hasInvalid = false;
-    document.querySelectorAll('.sb-template-score-input').forEach(input => {
+    document.querySelectorAll(`.sb-template-cell-input[data-player-id="${playerId}"]`).forEach(input => {
         const v = parseFloat(input.value);
         if (input.value.trim() !== '' && isNaN(v)) hasInvalid = true;
         categoryScores[input.dataset.category] = isNaN(v) ? 0 : v;
     });
     if (hasInvalid) return;
 
-    sbCloseTemplateScorePopup();
     try {
         await fetch(`/api/scoreboard/${sbSessionId}/score-template`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ player_id: playerId, category_scores: categoryScores, owner_line_id: sbOwnerLineId })
+            body: JSON.stringify({ player_id: playerId, category_scores: categoryScores, caller_line_id: window.userProfile?.userId })
         });
         await sbFetchAndRender('sb-rankings', true);
     } catch (e) { /* 下次 polling 會同步 */ }
+}
+
+async function sbLockTemplateTable() {
+    if (!confirm('鎖定後所有人都無法再修改分數，確定要儲存並鎖定嗎？')) return;
+    try {
+        const res = await fetch(`/api/scoreboard/${sbSessionId}/lock`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ owner_line_id: sbOwnerLineId })
+        });
+        const data = await res.json();
+        if (data.error) { alert(data.error); return; }
+        await sbFetchAndRender('sb-rankings', true);
+    } catch (e) { alert('鎖定失敗，請重試'); }
 }
 
 // ── 分數彈窗 ──────────────────────────────────────────────────
@@ -1817,7 +1867,7 @@ function counterRender() {
             const res    = player.resources[ri];
             const hasMax = res.maxVal !== null;
             const ratio  = hasMax ? Math.max(0, res.value) / res.maxVal : 1;
-            const color  = hasMax ? counterBarColor(ratio) : 'rgba(255,255,255,0.5)';
+            const color  = hasMax ? counterBarColor(ratio) : 'rgba(74,55,40,0.6)';
             const valDisplay = hasMax
                 ? `<span style="color:${color}">${res.value}</span><span class="counter-res-max-text"> / ${res.maxVal}</span>`
                 : `<span>${res.value}</span>`;
