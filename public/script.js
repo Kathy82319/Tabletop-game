@@ -427,11 +427,11 @@ async function initializeProfilePage() {
     async function fetchClassContribution() {
         try {
             const response = await fetch('/api/get-class-contribution');
-            if (!response.ok) throw new Error('無法取得職業貢獻度資料');
+            if (!response.ok) throw new Error('無法取得職業公會排行資料');
             classContributionData = await response.json();
             return classContributionData;
         } catch (error) {
-            console.error('呼叫職業貢獻度 API 失敗:', error);
+            console.error('呼叫職業公會排行 API 失敗:', error);
             classContributionData = null;
             return null;
         }

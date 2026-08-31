@@ -46,7 +46,7 @@ function renderChart() {
         data: {
             labels,
             datasets: [{
-                label: '職業貢獻度',
+                label: '職業公會排行',
                 data: values,
                 backgroundColor: labels.map((_, i) => colors[i % colors.length]),
                 borderRadius: 6,
@@ -142,6 +142,6 @@ export const init = async () => {
         }
     } catch (error) {
         console.error(error);
-        ui.toast.error('載入職業貢獻度資料失敗');
+        ui.toast.error('載入職業公會排行資料失敗');
     }
 };
