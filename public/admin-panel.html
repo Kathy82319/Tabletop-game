@@ -24,9 +24,7 @@
             <a href="#bookings">訂位管理</a>
             <a href="#exp-history">經驗紀錄</a>
             <a href="#class-contribution">職業公會排行</a>
-            <a href="#news">情報管理</a>
-            <a href="#drafts">訊息草稿</a>
-            <a href="#store-info">店家資訊</a>
+            <a href="#misc">其他設定</a>
             <a href="#scan">掃碼加點</a>
             <a href="#scoreboards">記分板紀錄</a>
             <a href="#group-gatherings">揪團管理</a>
@@ -378,58 +376,67 @@
             </div>
         </div>
 
-        <div id="page-news" class="page">
+        <div id="page-misc" class="page">
             <div class="page-header">
-                <h2>情報管理</h2>
-                <button id="add-news-btn" class="action-btn btn-save">新增情報</button>
+                <h2>其他設定</h2>
             </div>
-            <table>
-                <thead>
-                    <tr><th>標題</th><th>分類</th><th>發布日期</th><th>狀態</th><th>操作</th></tr>
-                </thead>
-                <tbody id="news-list-tbody"></tbody>
-            </table>
-        </div>
-        <div id="page-drafts" class="page">
-            <div class="page-header">
-                <h2>訊息草稿管理</h2>
-                <button id="add-draft-btn" class="action-btn btn-save">新增草稿</button>
+
+            <div id="page-news">
+                <div class="page-header">
+                    <h3>情報管理</h3>
+                    <button id="add-news-btn" class="action-btn btn-save">新增情報</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>標題</th><th>分類</th><th>發布日期</th><th>狀態</th><th>操作</th></tr>
+                    </thead>
+                    <tbody id="news-list-tbody"></tbody>
+                </table>
             </div>
-            <table>
-                <thead>
-                    <tr><th>標題</th><th>內容預覽</th><th>操作</th></tr>
-                </thead>
-                <tbody id="draft-list-tbody"></tbody>
-            </table>
-        </div>
 
+            <hr style="border-color: var(--border-color); margin: 30px 0;">
 
-        <div id="page-store-info" class="page">
-            <div class="page-header"><h2>店家資訊管理</h2></div>
-            <form id="store-info-form">
-                <div class="form-group"><label for="info-address">地址</label><input type="text" id="info-address" required></div>
-                <div class="form-group"><label for="info-phone">電話</label><input type="text" id="info-phone" required></div>
-                <div class="form-group"><label for="info-hours">營業時間 (換行請直接按 Enter)</label><textarea id="info-hours" rows="5" required></textarea></div>
-                <div class="form-group"><label for="info-desc">公會介紹</label><textarea id="info-desc" rows="8" required></textarea></div>
-                
-<hr style="border-color: var(--border-color); margin: 30px 0;">
-<h3 style="text-align: center; color: var(--text-light);">預約頁面文字設定</h3>
-<div class="form-group">
-    <label for="info-booking-announcement">預約頁公告 (支援換行)</label>
-    <textarea id="info-booking-announcement" rows="4" required></textarea>
-</div>
-<div class="form-group">
-    <label for="info-booking-button">預約按鈕文字</label>
-    <textarea id="info-booking-button" rows="2" required></textarea>
-</div>
-<div class="form-group">
-    <label for="info-booking-promo">優惠文字</label>
-    <textarea id="info-booking-promo" rows="2" required></textarea>
-</div>           
-                
-                
-                <div class="form-actions"><button type="submit" class="action-btn btn-save">儲存變更</button></div>
-            </form>
+            <div id="page-drafts">
+                <div class="page-header">
+                    <h3>訊息草稿管理</h3>
+                    <button id="add-draft-btn" class="action-btn btn-save">新增草稿</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>標題</th><th>內容預覽</th><th>操作</th></tr>
+                    </thead>
+                    <tbody id="draft-list-tbody"></tbody>
+                </table>
+            </div>
+
+            <hr style="border-color: var(--border-color); margin: 30px 0;">
+
+            <div id="page-store-info">
+                <div class="page-header"><h3>店家資訊管理</h3></div>
+                <form id="store-info-form">
+                    <div class="form-group"><label for="info-address">地址</label><input type="text" id="info-address" required></div>
+                    <div class="form-group"><label for="info-phone">電話</label><input type="text" id="info-phone" required></div>
+                    <div class="form-group"><label for="info-hours">營業時間 (換行請直接按 Enter)</label><textarea id="info-hours" rows="5" required></textarea></div>
+                    <div class="form-group"><label for="info-desc">公會介紹</label><textarea id="info-desc" rows="8" required></textarea></div>
+
+                    <hr style="border-color: var(--border-color); margin: 30px 0;">
+                    <h3 style="text-align: center; color: var(--text-light);">預約頁面文字設定</h3>
+                    <div class="form-group">
+                        <label for="info-booking-announcement">預約頁公告 (支援換行)</label>
+                        <textarea id="info-booking-announcement" rows="4" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="info-booking-button">預約按鈕文字</label>
+                        <textarea id="info-booking-button" rows="2" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="info-booking-promo">優惠文字</label>
+                        <textarea id="info-booking-promo" rows="2" required></textarea>
+                    </div>
+
+                    <div class="form-actions"><button type="submit" class="action-btn btn-save">儲存變更</button></div>
+                </form>
+            </div>
         </div>
 
 <div id="page-scan" class="page">
