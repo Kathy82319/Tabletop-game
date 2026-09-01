@@ -1310,13 +1310,21 @@ async function sbApplyScore(playerId, sign) {
 }
 
 // ── 玩家加入頁（掃 QR code 後）────────────────────────────────
-let sjSessionId  = null;
-let sjPlayerId   = null;
-let sjPollTimer  = null;
+let sjSessionId   = null;
+let sjPlayerId    = null;
+let sjPollTimer   = null;
+let sjOwnerLineId = null;
+let sjCategories  = null;
+let sjLocked      = false;
+let sjSaveTimers  = {};
 
 async function initializeScoreboardJoinPage(sessionId) {
-    sjSessionId = sessionId;
-    sjPlayerId  = null;
+    sjSessionId   = sessionId;
+    sjPlayerId    = null;
+    sjOwnerLineId = null;
+    sjCategories  = null;
+    sjLocked      = false;
+    sjSaveTimers  = {};
     if (sjPollTimer) { clearInterval(sjPollTimer); sjPollTimer = null; }
 
     document.getElementById('sj-nickname-panel').style.display = 'block';
@@ -1389,29 +1397,117 @@ async function sjFetchAndRender() {
         const res  = await fetch(`/api/scoreboard/${sjSessionId}`);
         const data = await res.json();
         document.getElementById('sj-view-game-name').textContent = data.session?.game_name || '';
+        sjOwnerLineId = data.session?.owner_line_id || null;
+        sjLocked      = !!(data.session && data.session.locked);
+        sjCategories  = data.categories || null;
         const players = data.players || [];
-        const container = document.getElementById('sj-rankings');
-        container.innerHTML = '';
-        players.forEach((p, rank) => {
-            const card = document.createElement('div');
-            card.className = 'sb-player-card' + (rank === 0 ? ' sb-first' : '');
-            const isSelf = p.player_id === sjPlayerId;
-            const renameBtn = isSelf
-                ? `<button class="sb-rename-btn" title="修改我的暱稱">✎</button>`
-                : '';
-            card.innerHTML = `
-                <div class="sb-card-top">
-                    <span class="sb-rank">${rank === 0 ? '👑' : rank + 1}</span>
-                    <span class="sb-name">${p.nickname}</span>
-                    <span class="sb-score">${p.score}<span class="sb-score-unit"> 分</span></span>
-                    ${renameBtn}
-                </div>`;
-            if (isSelf) {
-                card.querySelector('.sb-rename-btn').onclick = () => sjRenamePlayer(p);
-            }
-            container.appendChild(card);
-        });
+
+        if (sjCategories && sjCategories.length > 0) {
+            document.getElementById('sj-rankings').style.display = 'none';
+            document.getElementById('sj-template-table-wrap').style.display = 'block';
+            // 有人正在某一格輸入時先不要整表重繪，避免打字打到一半游標被打斷
+            const activeInTable = document.activeElement?.classList?.contains('sb-template-cell-input');
+            if (!activeInTable) sjRenderTemplateTable(players);
+        } else {
+            document.getElementById('sj-rankings').style.display = '';
+            document.getElementById('sj-template-table-wrap').style.display = 'none';
+            sjRenderRankings(players);
+        }
     } catch (e) { /* 等下次 */ }
+}
+
+function sjRenderRankings(players) {
+    const container = document.getElementById('sj-rankings');
+    container.innerHTML = '';
+    players.forEach((p, rank) => {
+        const card = document.createElement('div');
+        card.className = 'sb-player-card' + (rank === 0 ? ' sb-first' : '');
+        const isSelf = p.player_id === sjPlayerId;
+        const renameBtn = isSelf
+            ? `<button class="sb-rename-btn" title="修改我的暱稱">✎</button>`
+            : '';
+        card.innerHTML = `
+            <div class="sb-card-top">
+                <span class="sb-rank">${rank === 0 ? '👑' : rank + 1}</span>
+                <span class="sb-name">${p.nickname}</span>
+                <span class="sb-score">${p.score}<span class="sb-score-unit"> 分</span></span>
+                ${renameBtn}
+            </div>`;
+        if (isSelf) {
+            card.querySelector('.sb-rename-btn').onclick = () => sjRenamePlayer(p);
+        }
+        container.appendChild(card);
+    });
+}
+
+// ── 玩家加入頁：專屬計分表格（跟主持人畫面共用同一份資料，各自編輯自己那一列）──
+function sjRenderTemplateTable(players) {
+    const head = document.getElementById('sj-template-table-head');
+    const body = document.getElementById('sj-template-table-body');
+    if (!head || !body) return;
+
+    const myId = window.userProfile?.userId;
+    const isOwner = !!(sjOwnerLineId && sjOwnerLineId === myId);
+
+    head.innerHTML = '<th>玩家</th>' + sjCategories.map(cat => `<th>${cat}</th>`).join('') + '<th>總分</th>';
+
+    body.innerHTML = players.map(p => {
+        const isSelf = p.player_id === sjPlayerId;
+        const canEdit = !sjLocked && (isOwner || isSelf);
+        const existing = p.category_scores || {};
+
+        const cells = sjCategories.map(cat => {
+            const val = existing[cat] ?? '';
+            return canEdit
+                ? `<td><input type="number" inputmode="decimal" class="sb-template-cell-input" data-player-id="${p.player_id}" data-category="${cat}" value="${val}"></td>`
+                : `<td><span class="sb-template-cell-readonly">${val === '' ? '—' : val}</span></td>`;
+        }).join('');
+
+        return `<tr class="${isSelf ? 'sb-template-row-self' : ''}">
+            <td>${p.nickname}${isSelf ? '（你）' : ''}</td>
+            ${cells}
+            <td>${p.score}</td>
+        </tr>`;
+    }).join('');
+
+    const statusEl = document.getElementById('sj-template-lock-status');
+    if (sjLocked) {
+        statusEl.textContent = '🔒 已鎖定，無法再修改';
+        statusEl.classList.add('locked');
+    } else {
+        statusEl.textContent = '編輯自己那一列即可，會自動儲存';
+        statusEl.classList.remove('locked');
+    }
+
+    body.oninput = (e) => {
+        if (!e.target.classList.contains('sb-template-cell-input')) return;
+        sjScheduleTemplateSave(e.target.dataset.playerId);
+    };
+}
+
+function sjScheduleTemplateSave(playerId) {
+    if (sjSaveTimers[playerId]) clearTimeout(sjSaveTimers[playerId]);
+    sjSaveTimers[playerId] = setTimeout(() => sjApplyTemplateScore(playerId), 600);
+}
+
+async function sjApplyTemplateScore(playerId) {
+    const categoryScores = {};
+    let hasInvalid = false;
+    document.querySelectorAll(`#sj-template-table-body .sb-template-cell-input[data-player-id="${playerId}"]`).forEach(input => {
+        const v = parseFloat(input.value);
+        if (input.value.trim() !== '' && isNaN(v)) hasInvalid = true;
+        categoryScores[input.dataset.category] = isNaN(v) ? 0 : v;
+    });
+    if (hasInvalid) return;
+
+    try {
+        await fetch(`/api/scoreboard/${sjSessionId}/score-template`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ player_id: playerId, category_scores: categoryScores, caller_line_id: window.userProfile?.userId })
+        });
+        await sjFetchAndRender();
+    } catch (e) { /* 下次 polling 會同步 */ }
 }
 
 // ── 修改自己的暱稱（玩家加入頁）───────────────────────────────

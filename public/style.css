@@ -2679,38 +2679,45 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 #sb-popup-minus, #counter-popup-minus { background: rgba(231, 76, 60, 0.25); color: #e74c3c; border: 1px solid rgba(231,76,60,0.4); }
 #sb-popup-plus,  #counter-popup-plus  { background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid rgba(46,204,113,0.35); }
 
-/* 專屬計分表格（共同編輯表格，取代單一玩家的彈窗） */
-#sb-template-lock-bar {
+/* 專屬計分表格（共同編輯表格，取代單一玩家的彈窗）── #sb- 是主持人畫面，#sj- 是掃 QR 加入的玩家畫面，共用同一套樣式 */
+#sb-template-lock-bar,
+#sj-template-lock-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
     margin-bottom: 10px;
 }
-#sb-template-lock-status {
+#sb-template-lock-status,
+#sj-template-lock-status {
     font-size: 0.85rem;
     color: rgba(74, 55, 40, 0.6);
 }
-#sb-template-lock-status.locked {
+#sb-template-lock-status.locked,
+#sj-template-lock-status.locked {
     color: var(--color-frame-gold);
     font-weight: bold;
 }
 .sb-template-table-scroll {
     width: 100%;
 }
-#sb-template-table {
+#sb-template-table,
+#sj-template-table {
     width: 100%;
     table-layout: fixed;
     border-collapse: collapse;
 }
 #sb-template-table th,
-#sb-template-table td {
+#sb-template-table td,
+#sj-template-table th,
+#sj-template-table td {
     padding: 8px 4px;
     text-align: center;
     font-size: 0.85rem;
     border-bottom: 1px solid rgba(74, 55, 40, 0.12);
 }
-#sb-template-table th {
+#sb-template-table th,
+#sj-template-table th {
     color: rgba(74, 55, 40, 0.6);
     font-weight: bold;
     white-space: normal;
@@ -2718,7 +2725,9 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     line-height: 1.25;
 }
 #sb-template-table th:first-child,
-#sb-template-table td:first-child {
+#sb-template-table td:first-child,
+#sj-template-table th:first-child,
+#sj-template-table td:first-child {
     width: 25%;
     text-align: left;
     white-space: normal;
@@ -2726,12 +2735,15 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     line-height: 1.25;
 }
 #sb-template-table th:last-child,
-#sb-template-table td:last-child {
+#sb-template-table td:last-child,
+#sj-template-table th:last-child,
+#sj-template-table td:last-child {
     width: 48px;
     font-weight: bold;
     color: var(--color-frame-gold);
 }
-#sb-template-table tr.sb-template-row-self td:first-child {
+#sb-template-table tr.sb-template-row-self td:first-child,
+#sj-template-table tr.sb-template-row-self td:first-child {
     color: var(--color-frame-gold);
 }
 .sb-template-cell-input {
