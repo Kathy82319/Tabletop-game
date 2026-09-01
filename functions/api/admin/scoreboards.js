@@ -17,7 +17,7 @@ export async function onRequest(context) {
             ).bind(detail).all();
 
             const { results: events } = await env.DB.prepare(
-                `SELECT event_type, nickname, delta, new_score, created_at FROM ScoreboardEvents WHERE session_id = ? ORDER BY created_at DESC LIMIT 200`
+                `SELECT event_type, nickname, delta, new_score, detail, created_at FROM ScoreboardEvents WHERE session_id = ? ORDER BY created_at DESC LIMIT 200`
             ).bind(detail).all();
 
             return Response.json({ session, players, events });

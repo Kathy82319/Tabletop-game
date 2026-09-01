@@ -90,10 +90,13 @@ async function openDetail(sessionId, gameName) {
                 if (ev.event_type === 'score') {
                     const sign = ev.delta >= 0 ? '+' : '';
                     const color = ev.delta >= 0 ? '#2a7a4a' : '#c0392b';
+                    const changeCell = ev.detail
+                        ? `<span style="color:#555;">${ev.detail}</span>`
+                        : `<span style="color:${color}; font-weight:bold;">${sign}${ev.delta}</span>`;
                     return `<tr>
                         <td>${ts}</td>
                         <td>${ev.nickname}</td>
-                        <td style="color:${color}; font-weight:bold;">${sign}${ev.delta}</td>
+                        <td>${changeCell}</td>
                         <td>${ev.new_score} 分</td>
                     </tr>`;
                 } else {
