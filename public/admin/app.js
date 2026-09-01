@@ -8,16 +8,13 @@ const App = {
     router: {
         'dashboard': './modules/dashboard.js',
         'users': './modules/userManagement.js',
-        'inventory': './modules/inventoryManagement.js',
-        'sales-history': './modules/salesHistory.js',
+        'inventory': './modules/inventoryPage.js',
         'rentals': './modules/rentalManagement.js',
         'bookings': './modules/bookingManagement.js',
-        'exp-history': './modules/expHistory.js',
         'misc': './modules/miscSettings.js',
-        'scan': './modules/scanAndPoint.js',
+        'scan': './modules/scanPage.js',
         'membership-settings': './modules/membershipSettings.js',
         'class-contribution': './modules/classContribution.js',
-        'scoreboards': './modules/scoreboardManagement.js',
         'group-gatherings': './modules/groupGatheringManagement.js',
     },
 
