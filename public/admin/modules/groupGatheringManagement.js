@@ -30,7 +30,7 @@ function renderGameTags(games) {
     if (!games || games.length === 0) return '—';
     return games.map(g => {
         const tags = [];
-        if (g.has_played) tags.push('<span class="admin-gg-tag">有玩過</span>');
+        if (g.has_played) tags.push('<span class="admin-gg-tag">徵有玩過的</span>');
         if (g.beginner_friendly) tags.push('<span class="admin-gg-tag admin-gg-tag-beginner">適合新手</span>');
         return `${escapeHtml(g.name)}${tags.join('')}`;
     }).join(' / ');

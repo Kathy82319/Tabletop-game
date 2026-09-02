@@ -97,7 +97,7 @@ const GatherModule = (() => {
         if (!games || games.length === 0) return '<span style="color:var(--color-text-secondary);">未指定</span>';
         return games.map(g => {
             const tags = [];
-            if (g.has_played) tags.push('<span class="gg-tag gg-tag-played">有玩過</span>');
+            if (g.has_played) tags.push('<span class="gg-tag gg-tag-played">徵有玩過的</span>');
             if (g.beginner_friendly) tags.push('<span class="gg-tag gg-tag-beginner">適合新手</span>');
             return `<div class="gg-game-row"><strong>${escapeHtml(g.name)}</strong>${tags.join('')}</div>`;
         }).join('');
@@ -911,7 +911,7 @@ const GatherModule = (() => {
     function gameSlotHtml(game = {}) {
         return `
             <input type="text" class="gc-game-name" placeholder="遊戲名稱" value="${escapeHtml(game.name || '')}">
-            <label class="gc-game-tag-label"><input type="checkbox" class="gc-game-played" ${game.has_played ? 'checked' : ''}> 有玩過</label>
+            <label class="gc-game-tag-label"><input type="checkbox" class="gc-game-played" ${game.has_played ? 'checked' : ''}> 徵有玩過的</label>
             <label class="gc-game-tag-label"><input type="checkbox" class="gc-game-beginner" ${game.beginner_friendly ? 'checked' : ''}> 適合新手</label>
             <button type="button" class="gc-remove-game-btn">✕</button>`;
     }
