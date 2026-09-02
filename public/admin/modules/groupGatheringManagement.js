@@ -77,6 +77,7 @@ function renderGatheringsTable() {
                 <button class="action-btn btn-gg-approve" data-id="${g.id}" style="background:var(--success-color);">同意</button>
                 <button class="action-btn btn-gg-reject"  data-id="${g.id}" style="background:var(--danger-color);">拒絕</button>
                 ` : ''}
+                <button class="action-btn btn-gg-delete" data-id="${g.id}" data-name="${escapeHtml(g.organizer_name)}" style="background:var(--danger-color);">刪除</button>
             </td>
         </tr>`).join('');
 }
@@ -119,7 +120,10 @@ async function showDetail(id) {
             <div style="display:flex; gap:10px; margin-top:16px;">
                 <button class="action-btn btn-gg-approve" data-id="${g.id}" style="background:var(--success-color); flex:1;">✓ 同意成團</button>
                 <button class="action-btn btn-gg-reject"  data-id="${g.id}" style="background:var(--danger-color); flex:1;">✕ 拒絕</button>
-            </div>` : ''}`;
+            </div>` : ''}
+            <div style="margin-top:16px;">
+                <button class="action-btn btn-gg-delete" data-id="${g.id}" data-name="${escapeHtml(g.organizer_name)}" style="background:var(--danger-color); width:100%;">刪除此揪團</button>
+            </div>`;
     } catch (err) {
         content.innerHTML = `<p style="color:red;">載入失敗: ${err.message}</p>`;
     }
@@ -147,6 +151,18 @@ async function rejectGathering(id) {
         loadGatherings(currentFilter);
     } catch (err) {
         ui.toast.error(`操作失敗: ${err.message}`);
+    }
+}
+
+async function deleteGathering(id, name) {
+    if (!confirm(`確定要永久刪除「${name}」的揪團 #${id} 嗎？\n此操作無法復原，包含成員名單、編輯紀錄都會一併刪除。`)) return;
+    try {
+        await api.deleteGroupGathering(id);
+        ui.toast.success('已刪除揪團');
+        closeModal();
+        loadGatherings(currentFilter);
+    } catch (err) {
+        ui.toast.error(`刪除失敗: ${err.message}`);
     }
 }
 
@@ -213,6 +229,7 @@ export async function init() {
         if (btn.classList.contains('btn-gg-view'))    await showDetail(id);
         if (btn.classList.contains('btn-gg-approve')) await approveGathering(id);
         if (btn.classList.contains('btn-gg-reject'))  await rejectGathering(id);
+        if (btn.classList.contains('btn-gg-delete'))  await deleteGathering(id, btn.dataset.name);
     });
 
     // Modal 內按鈕（approve / reject）
@@ -222,6 +239,7 @@ export async function init() {
         const id = btn.dataset.id;
         if (btn.classList.contains('btn-gg-approve')) await approveGathering(id);
         if (btn.classList.contains('btn-gg-reject'))  await rejectGathering(id);
+        if (btn.classList.contains('btn-gg-delete'))  await deleteGathering(id, btn.dataset.name);
     });
 
     pageElement.querySelector('#gg-modal-close').addEventListener('click', closeModal);

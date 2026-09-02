@@ -106,4 +106,5 @@ bulkCreateGames: (data) => request('/api/admin/bulk-create-games', { method: 'PO
     getGroupGatheringDetail: (id) => request(`/api/admin/group-gatherings/${id}`),
     approveGroupGathering: (id) => request(`/api/admin/group-gatherings/${id}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json' } }),
     rejectGroupGathering: (id, reason = '') => request(`/api/admin/group-gatherings/${id}/reject`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) }),
+    deleteGroupGathering: (id) => request(`/api/admin/group-gatherings/${id}`, { method: 'DELETE' }),
 };
