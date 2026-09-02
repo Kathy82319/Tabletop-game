@@ -972,21 +972,37 @@ async function initializeEditProfilePage() {
         loadGameScoreboard(game.game_id);
     }
 
+    let currentScoresGameId = null;
+
     async function loadGameScoreboard(gameId) {
-        const section = document.getElementById('game-my-scores-section');
-        const content = document.getElementById('game-my-scores-content');
+        const section     = document.getElementById('game-my-scores-section');
+        const content     = document.getElementById('game-my-scores-content');
+        const rangeSelect = document.getElementById('game-scores-range-select');
         if (!userProfile) { section.style.display = 'none'; return; }
 
+        currentScoresGameId = gameId;
+        if (rangeSelect && !rangeSelect.dataset.bound) {
+            rangeSelect.addEventListener('change', () => {
+                if (currentScoresGameId) loadGameScoreboard(currentScoresGameId);
+            });
+            rangeSelect.dataset.bound = 'true';
+        }
+
         try {
-            const res  = await fetch(`/api/boardgames/${gameId}/scores`, { headers: getLiffAuthHeaders() });
+            const months = rangeSelect ? rangeSelect.value : '3';
+            const res  = await fetch(`/api/boardgames/${gameId}/scores?months=${months}`, { headers: getLiffAuthHeaders() });
             if (!res.ok) { section.style.display = 'none'; return; }
             const data = await res.json();
             const records = data.records || [];
 
-            if (records.length === 0) { section.style.display = 'none'; return; }
+            if (records.length === 0) {
+                content.innerHTML = '<p style="text-align:center; color:var(--color-text-secondary); font-size:0.85rem; padding:8px 0;">這個時間範圍內尚無紀錄</p>';
+                section.style.display = 'block';
+                return;
+            }
 
             content.innerHTML = records.map((r, idx) => {
-                const d = new Date(r.created_at);
+                const d = parseUtcTimestamp(r.created_at);
                 const dateStr = `${d.getMonth() + 1}/${d.getDate()}`;
                 return `<div class="my-score-item">
                     <span class="my-score-who"><span class="my-score-rank">${idx + 1}</span>${escapeHtml(r.nickname)}<span class="my-score-date">· ${dateStr}</span></span>

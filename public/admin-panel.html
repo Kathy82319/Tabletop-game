@@ -65,11 +65,22 @@
                     </div>
 
                     <div id="contribution-chart-section" style="background:white; border-radius:10px; padding:1.5rem; box-shadow:0 2px 6px rgba(0,0,0,0.07);">
-                        <h3 style="margin:0 0 1rem; font-size:1rem; color:var(--text-dark);">職業公會排行分佈</h3>
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:1rem;">
+                            <h3 style="margin:0; font-size:1rem; color:var(--text-dark);">職業公會排行分佈</h3>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <input type="month" id="contribution-month-select" style="padding:4px 8px; border:1px solid var(--border-color); border-radius:4px;">
+                                <button id="btn-save-contribution-month" class="action-btn btn-save" style="padding:5px 12px; font-size:0.85rem;">儲存本月結算</button>
+                            </div>
+                        </div>
                         <div style="position:relative; height:300px;">
                             <canvas id="contribution-chart"></canvas>
                         </div>
                         <p id="contribution-chart-empty" style="text-align:center; color:var(--text-light); display:none;">尚無貢獻度資料</p>
+                        <table id="contribution-month-table" style="margin-top:1rem;">
+                            <thead><tr><th>職業</th><th style="width:140px;">當月貢獻度</th></tr></thead>
+                            <tbody id="contribution-month-tbody"></tbody>
+                        </table>
+                        <p style="font-size:0.8rem; color:var(--text-light); margin:8px 0 0;">數字會先自動帶入該月實際加點總和，可手動調整後按「儲存本月結算」；已儲存的月份之後仍可隨時回來修改。</p>
                     </div>
                 </div>
 
@@ -431,32 +442,39 @@
         <div id="scan-user-panel" style="display: none;"></div>
         <div id="scan-form-panel">
             <div id="qr-reader" style="width: 100%; max-width: 500px; margin: 0 auto;"></div>
+            <div style="text-align:center; margin: 10px auto; max-width: 500px;">
+                <button id="scan-contribution-only-btn" type="button" class="action-btn" style="background:var(--text-light); color:#fff;">不指定會員，只新增職業貢獻度</button>
+            </div>
             <div id="scan-result" style="display: none; max-width: 500px; margin: 0 auto;">
 
-                <div class="form-group">
-                    <label for="scan-user-search">搜尋會員 (姓名/暱稱/手機/ID)</label>
-                    <input type="text" id="scan-user-search" placeholder="或手動搜尋會員...">
-                    <ul id="scan-user-search-results" style="display: none; border: 1px solid #ccc; list-style: none; padding: 0; margin-top: 5px; max-height: 150px; overflow-y: auto; cursor: pointer; z-index: 10;"></ul>
-                </div>
+                <p id="scan-contribution-only-hint" style="display:none; color:var(--text-light); font-size:0.88rem; margin: 0 0 10px;">不指定會員，只會新增職業貢獻度，不會給經驗值。</p>
 
-                <div class="form-group">
-                    <label for="user-id-display">目標使用者 ID:</label>
-                    <input type="text" id="user-id-display" readonly style="background-color: #e9ecef; cursor: not-allowed;">
-                </div>
+                <div id="scan-member-fields">
+                    <div class="form-group">
+                        <label for="scan-user-search">搜尋會員 (姓名/暱稱/手機/ID)</label>
+                        <input type="text" id="scan-user-search" placeholder="或手動搜尋會員...">
+                        <ul id="scan-user-search-results" style="display: none; border: 1px solid #ccc; list-style: none; padding: 0; margin-top: 5px; max-height: 150px; overflow-y: auto; cursor: pointer; z-index: 10;"></ul>
+                    </div>
 
-                <div class="form-group">
-                    <label for="reason-select">新增原因</label>
-                    <select id="reason-select">
-                        <option value="消費回饋">消費回饋 (預設)</option>
-                        <option value="參與活動">參與活動</option>
-                        <option value="other">其他 (自訂)</option>
-                    </select>
-                    <input type="text" id="custom-reason-input" placeholder="請輸入自訂原因" style="display: none; margin-top: 10px;">
-                </div>
+                    <div class="form-group">
+                        <label for="user-id-display">目標使用者 ID:</label>
+                        <input type="text" id="user-id-display" readonly style="background-color: #e9ecef; cursor: not-allowed;">
+                    </div>
 
-                <div class="form-group">
-                    <label for="exp-input">經驗值點數</label>
-                    <input type="number" id="exp-input" value="2" min="1" max="1000" required>
+                    <div class="form-group">
+                        <label for="reason-select">新增原因</label>
+                        <select id="reason-select">
+                            <option value="消費回饋">消費回饋 (預設)</option>
+                            <option value="參與活動">參與活動</option>
+                            <option value="other">其他 (自訂)</option>
+                        </select>
+                        <input type="text" id="custom-reason-input" placeholder="請輸入自訂原因" style="display: none; margin-top: 10px;">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="exp-input">經驗值點數</label>
+                        <input type="number" id="exp-input" value="2" min="1" max="1000" required>
+                    </div>
                 </div>
 
                 <div class="form-group">

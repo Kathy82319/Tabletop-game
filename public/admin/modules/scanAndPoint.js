@@ -5,6 +5,15 @@ import { ui } from '../ui.js';
 
 let html5QrCode = null;
 let cachedClasses = [];
+let contributionOnlyMode = false; // true = 不指定會員，只新增職業貢獻度（例如用一代金幣折抵消費，不給經驗值但仍要算貢獻度）
+
+function exitContributionOnlyMode() {
+    contributionOnlyMode = false;
+    const fields = document.getElementById('scan-member-fields');
+    const hint   = document.getElementById('scan-contribution-only-hint');
+    if (fields) fields.style.display = '';
+    if (hint) hint.style.display = 'none';
+}
 
 // ── 常用顧客（localStorage）──────────────────────────────────────────────────
 
@@ -90,6 +99,7 @@ function setupQuickPanelEvents() {
             const userId = item.dataset.userId;
             const name = item.dataset.name;
             stopScanner();
+            exitContributionOnlyMode();
             document.getElementById('user-id-display').value = userId;
             document.getElementById('scan-user-search').value = name;
             document.getElementById('qr-reader').style.display = 'none';
@@ -255,6 +265,7 @@ function startScanner() {
 
     const qrCodeSuccessCallback = (decodedText, decodedResult) => {
         stopScanner();
+        exitContributionOnlyMode();
         userIdDisplay.value = decodedText;
         qrReader.style.display = 'none';
         scanResultContainer.style.display = 'block';
@@ -289,6 +300,33 @@ async function handleSubmitExp() {
     const expInput = document.getElementById('exp-input');
     const statusContainer = document.getElementById('scan-status-container');
 
+    const contributionClass = document.getElementById('contribution-class-select')?.value || '';
+    const contributionValue = parseInt(document.getElementById('contribution-value-input')?.value, 10) || 0;
+
+    // 不指定會員：只新增職業貢獻度，不給經驗值
+    if (contributionOnlyMode) {
+        if (!contributionClass || contributionValue <= 0) {
+            return ui.toast.error('請選擇職業並輸入貢獻值！');
+        }
+        const button = document.getElementById('submit-exp-btn');
+        button.disabled = true;
+        button.textContent = '新增中...';
+        statusContainer.textContent = '';
+        try {
+            const result = await api.addPoints({ contributionClass, contributionValue });
+            ui.toast.success(result.message || `成功新增貢獻值 +${contributionValue}（${contributionClass}）。`);
+            document.getElementById('contribution-value-input').value = '5';
+            const classSelect = document.getElementById('contribution-class-select');
+            if (classSelect) classSelect.value = '';
+        } catch (error) {
+            ui.toast.error(`新增失敗: ${error.message}`);
+        } finally {
+            button.disabled = false;
+            button.textContent = '確認新增';
+        }
+        return;
+    }
+
     if (!userId) {
         return ui.toast.error('請先掃描或選取顧客！');
     }
@@ -310,9 +348,6 @@ async function handleSubmitExp() {
     button.disabled = true;
     button.textContent = '新增中...';
     statusContainer.textContent = '';
-
-    const contributionClass = document.getElementById('contribution-class-select')?.value || '';
-    const contributionValue = parseInt(document.getElementById('contribution-value-input')?.value, 10) || 0;
 
     try {
         const result = await api.addPoints({ userId, expValue, reason, contributionClass, contributionValue });
@@ -353,6 +388,7 @@ function setupEventListeners() {
     
     document.getElementById('rescan-btn').addEventListener('click', () => {
         stopScanner();
+        exitContributionOnlyMode();
         showManualInputInterface();
         const panel = document.getElementById('scan-user-panel');
         panel.style.display = 'none';
@@ -363,11 +399,26 @@ function setupEventListeners() {
         if (contribInput) contribInput.value = '5';
     });
 
+    document.getElementById('scan-contribution-only-btn')?.addEventListener('click', () => {
+        stopScanner();
+        contributionOnlyMode = true;
+        document.getElementById('qr-reader').style.display = 'none';
+        document.getElementById('scan-result').style.display = 'block';
+        document.getElementById('scan-member-fields').style.display = 'none';
+        document.getElementById('scan-contribution-only-hint').style.display = 'block';
+        userIdDisplay.value = '';
+        document.getElementById('scan-user-search').value = '';
+        const panel = document.getElementById('scan-user-panel');
+        if (panel) { panel.style.display = 'none'; panel.innerHTML = ''; }
+        document.getElementById('submit-exp-btn').disabled = false;
+    });
+
     const userSearchInput = document.getElementById('scan-user-search');
     const userSearchResults = document.getElementById('scan-user-search-results');
     const submitExpBtn = document.getElementById('submit-exp-btn');
 
     const observer = new MutationObserver(() => {
+        if (contributionOnlyMode) return; // 貢獻度模式下不需要選會員，不要被這裡覆蓋成 disabled
         submitExpBtn.disabled = !userIdDisplay.value;
     });
     observer.observe(userIdDisplay, { attributes: true, childList: true, subtree: true, characterData: true });
@@ -395,6 +446,7 @@ function setupEventListeners() {
     userSearchResults.addEventListener('click', (e) => {
         if (e.target.tagName === 'LI') {
             stopScanner();
+            exitContributionOnlyMode();
             userIdDisplay.value = e.target.dataset.userId;
             userSearchInput.value = e.target.textContent;
             document.getElementById('qr-reader').style.display = 'none';

@@ -2,6 +2,13 @@ import { ui } from '../ui.js';
 
 let allSessions = [];
 
+// D1 的 created_at 存的是 UTC 時間、格式沒有帶時區，瀏覽器會誤當成本地時間解析，
+// 導致顯示時間跟實際時間差了時區時數（台灣快 8 小時）。補上 T 和 Z 讓瀏覽器正確視為 UTC。
+function parseUtcTimestamp(str) {
+    if (!str) return new Date(NaN);
+    return new Date(str.replace(' ', 'T') + 'Z');
+}
+
 // ── 渲染列表 ──────────────────────────────────────────────────
 function renderList(list) {
     const tbody = document.getElementById('sb-admin-tbody');
@@ -13,7 +20,7 @@ function renderList(list) {
     }
 
     tbody.innerHTML = list.map(s => {
-        const d       = new Date(s.created_at);
+        const d       = parseUtcTimestamp(s.created_at);
         const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
         const owner   = s.owner_name || s.owner_line_id;
         return `
@@ -73,7 +80,7 @@ async function openDetail(sessionId, gameName) {
         playersEl.innerHTML = players.length === 0
             ? '<tr><td colspan="3" style="text-align:center; color:#888;">無玩家資料</td></tr>'
             : players.map(p => {
-                const jd = new Date(p.joined_at);
+                const jd = parseUtcTimestamp(p.joined_at);
                 const jt = `${jd.getMonth()+1}/${jd.getDate()} ${jd.getHours().toString().padStart(2,'0')}:${jd.getMinutes().toString().padStart(2,'0')}`;
                 return `<tr><td>${p.nickname}</td><td>${p.score} 分</td><td>${jt}</td></tr>`;
             }).join('');
@@ -85,7 +92,7 @@ async function openDetail(sessionId, gameName) {
             eventsEl.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#888;">尚無紀錄</td></tr>';
         } else {
             eventsEl.innerHTML = events.map(ev => {
-                const d  = new Date(ev.created_at);
+                const d  = parseUtcTimestamp(ev.created_at);
                 const ts = `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
                 if (ev.event_type === 'score') {
                     const sign = ev.delta >= 0 ? '+' : '';

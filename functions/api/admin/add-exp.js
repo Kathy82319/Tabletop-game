@@ -6,8 +6,28 @@ export async function onRequest(context) {
       return new Response('Invalid request method.', { status: 405 });
     }
     const { userId, expValue, reason, contributionValue, contributionClass } = await context.request.json();
+    const db = context.env.DB;
 
-    if (!userId || typeof userId !== 'string') {
+    // 沒有指定會員：只單純新增職業貢獻度，不給經驗值（例如顧客用一代金幣折抵消費，不給經驗值但仍要算貢獻度）
+    if (!userId) {
+        const contrib = Number(contributionValue);
+        if (!contributionClass || isNaN(contrib) || contrib <= 0) {
+            return new Response(JSON.stringify({ error: '請選擇職業並輸入有效的貢獻值。' }), { status: 400 });
+        }
+        await db.prepare(
+            'INSERT INTO ContributionHistory (user_id, class_name, contribution_value) VALUES (NULL, ?, ?)'
+        ).bind(contributionClass, contrib).run();
+
+        return new Response(JSON.stringify({
+            success: true,
+            message: `成功新增貢獻值 +${contrib}（${contributionClass}）。`
+        }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+        });
+    }
+
+    if (typeof userId !== 'string') {
         return new Response(JSON.stringify({ error: '無效的使用者 ID。' }), { status: 400 });
     }
     const exp = Number(expValue);
@@ -18,7 +38,6 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({ error: '原因為必填，且長度不可超過 100 字。' }), { status: 400 });
     }
 
-    const db = context.env.DB;
     const userStmt = db.prepare('SELECT level, current_exp, perk_claimed_level, nickname, line_display_name FROM Users WHERE user_id = ?');
     let user = await userStmt.bind(userId).first();
     if (!user) {

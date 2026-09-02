@@ -94,76 +94,119 @@ async function renderActivityFeed() {
     }
 }
 
-// ---- 貢獻度圖表 ----
+// ---- 貢獻度圖表（按月結算，可手動調整）----
 let contributionChartInstance = null;
+let currentContributionItems = [];
 
-async function loadContributionChart() {
+function currentYearMonth() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function renderContributionChart(items) {
     const canvas = document.getElementById('contribution-chart');
     const emptyMsg = document.getElementById('contribution-chart-empty');
     if (!canvas) return;
 
-    try {
-        const data = await api.getContributionStats();
-        if (!data || data.length === 0) {
-            canvas.style.display = 'none';
-            if (emptyMsg) emptyMsg.style.display = 'block';
-            return;
-        }
+    const data = (items || []).filter(d => d.value > 0);
+    if (data.length === 0) {
+        canvas.style.display = 'none';
+        if (emptyMsg) emptyMsg.style.display = 'block';
+        if (contributionChartInstance) { contributionChartInstance.destroy(); contributionChartInstance = null; }
+        return;
+    }
+    canvas.style.display = 'block';
+    if (emptyMsg) emptyMsg.style.display = 'none';
 
-        const total = data.reduce((sum, d) => sum + d.total, 0);
-        const labels = data.map(d => d.class_name);
-        const values = data.map(d => d.total);
-        const percentages = data.map(d => ((d.total / total) * 100).toFixed(1));
+    const total = data.reduce((sum, d) => sum + d.value, 0);
+    const labels = data.map(d => d.name);
+    const values = data.map(d => d.value);
+    const percentages = data.map(d => ((d.value / total) * 100).toFixed(1));
 
-        const colors = [
-            '#4e79a7','#f28e2b','#e15759','#76b7b2',
-            '#59a14f','#edc948','#b07aa1','#ff9da7'
-        ];
+    const colors = [
+        '#4e79a7','#f28e2b','#e15759','#76b7b2',
+        '#59a14f','#edc948','#b07aa1','#ff9da7'
+    ];
 
-        if (contributionChartInstance) contributionChartInstance.destroy();
+    if (contributionChartInstance) contributionChartInstance.destroy();
 
-        contributionChartInstance = new Chart(canvas, {
-            type: 'bar',
-            data: {
-                labels,
-                datasets: [{
-                    label: '貢獻度',
-                    data: values,
-                    backgroundColor: labels.map((_, i) => colors[i % colors.length]),
-                    borderRadius: 6,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => ` ${ctx.parsed.y} 點（佔 ${percentages[ctx.dataIndex]}%）`
-                        }
-                    }
-                },
-                scales: {
-                    y: { beginAtZero: true, ticks: { precision: 0 }, grace: '15%' },
-                    x: { ticks: { font: { size: 13 } } }
-                }
-            },
-            plugins: [{
-                id: 'percentageLabels',
-                afterDatasetsDraw(chart) {
-                    const { ctx } = chart;
-                    chart.data.datasets.forEach((dataset, i) => {
-                        chart.getDatasetMeta(i).data.forEach((bar, idx) => {
-                            ctx.fillStyle = '#444';
-                            ctx.font = 'bold 12px sans-serif';
-                            ctx.textAlign = 'center';
-                            ctx.fillText(`${percentages[idx]}%`, bar.x, bar.y - 6);
-                        });
-                    });
-                }
+    contributionChartInstance = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: '貢獻度',
+                data: values,
+                backgroundColor: labels.map((_, i) => colors[i % colors.length]),
+                borderRadius: 6,
             }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => ` ${ctx.parsed.y} 點（佔 ${percentages[ctx.dataIndex]}%）`
+                    }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 }, grace: '15%' },
+                x: { ticks: { font: { size: 13 } } }
+            }
+        },
+        plugins: [{
+            id: 'percentageLabels',
+            afterDatasetsDraw(chart) {
+                const { ctx } = chart;
+                chart.data.datasets.forEach((dataset, i) => {
+                    chart.getDatasetMeta(i).data.forEach((bar, idx) => {
+                        ctx.fillStyle = '#444';
+                        ctx.font = 'bold 12px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(`${percentages[idx]}%`, bar.x, bar.y - 6);
+                    });
+                });
+            }
+        }]
+    });
+}
+
+function renderContributionMonthTable(items) {
+    const tbody = document.getElementById('contribution-month-tbody');
+    if (!tbody) return;
+    if (!items || items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#888;">尚無職業資料，請先至「顧客管理 → 會員制度設定 → 職業管理」新增職業。</td></tr>';
+        return;
+    }
+    tbody.innerHTML = items.map(item => `
+        <tr>
+            <td>${item.name}</td>
+            <td><input type="number" class="contribution-month-value" data-id="${item.id}" value="${item.value}" style="width:100px; box-sizing:border-box;"></td>
+        </tr>
+    `).join('');
+
+    tbody.querySelectorAll('.contribution-month-value').forEach(input => {
+        input.addEventListener('input', () => {
+            const id = Number(input.dataset.id);
+            const item = currentContributionItems.find(i => i.id === id);
+            if (item) item.value = Number(input.value) || 0;
+            renderContributionChart(currentContributionItems);
         });
+    });
+}
+
+async function loadContributionMonth(month) {
+    const monthInput = document.getElementById('contribution-month-select');
+    if (monthInput) monthInput.value = month;
+
+    try {
+        const data = await api.getClassContributionMonth(month);
+        currentContributionItems = data.items || [];
+        renderContributionMonthTable(currentContributionItems);
+        renderContributionChart(currentContributionItems);
     } catch (error) {
         console.error('貢獻度圖表載入失敗', error);
     }
@@ -212,6 +255,33 @@ const setupEventListeners = () => {
         });
         markAllBtn.dataset.listenerAttached = 'true';
     }
+
+    // 職業公會排行：切換月份 / 儲存本月結算
+    const monthInput = document.getElementById('contribution-month-select');
+    if (monthInput && !monthInput.dataset.listenerAttached) {
+        monthInput.addEventListener('change', () => {
+            if (monthInput.value) loadContributionMonth(monthInput.value);
+        });
+        monthInput.dataset.listenerAttached = 'true';
+    }
+
+    const saveMonthBtn = document.getElementById('btn-save-contribution-month');
+    if (saveMonthBtn && !saveMonthBtn.dataset.listenerAttached) {
+        saveMonthBtn.addEventListener('click', async () => {
+            const month = monthInput?.value || currentYearMonth();
+            saveMonthBtn.disabled = true;
+            try {
+                const items = currentContributionItems.map(i => ({ id: i.id, value: i.value }));
+                await api.saveClassContributionMonth({ month, items });
+                ui.toast.success(`已儲存 ${month} 的職業公會排行`);
+            } catch {
+                ui.toast.error('儲存失敗');
+            } finally {
+                saveMonthBtn.disabled = false;
+            }
+        });
+        saveMonthBtn.dataset.listenerAttached = 'true';
+    }
 };
 
 export const init = async (context, param) => {
@@ -231,7 +301,7 @@ export const init = async (context, param) => {
         const stats = await api.getDashboardStats();
         renderStats(stats);
         await Promise.all([
-            loadContributionChart(),
+            loadContributionMonth(document.getElementById('contribution-month-select')?.value || currentYearMonth()),
             renderActivityFeed(),
         ]);
         setupEventListeners();

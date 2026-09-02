@@ -3,6 +3,15 @@
 // 每個小工具獨立一個區塊，統一由 initializeToolsPage() 掛載
 // =================================================================
 
+// D1 的 created_at 存的是 UTC 時間、格式沒有帶時區（"YYYY-MM-DD HH:MM:SS"），
+// 瀏覽器會誤當成本地時間解析，導致顯示時間跟實際時間差了時區時數（台灣快 8 小時）。
+// 補上 T 和 Z 讓瀏覽器正確視為 UTC，畫面上才會自動換算成使用者的本地時間。
+// （定義在這裡是因為 tools.js 會比 script.js 的 DOMContentLoaded callback 更早執行完成，全域函式兩邊都能用。）
+function parseUtcTimestamp(str) {
+    if (!str) return new Date(NaN);
+    return new Date(str.replace(' ', 'T') + 'Z');
+}
+
 // 取得 LIFF access token，供後端驗證真實身份用（不可信任前端自稱的 line_user_id）
 function getLiffAuthHeaders() {
     const headers = { 'Content-Type': 'application/json' };
@@ -768,7 +777,7 @@ async function sbLoadRecentSessions() {
         section.style.display = 'block';
         list.innerHTML = '';
         owned.slice(0, 3).forEach(entry => {
-            const d = new Date(entry.created_at);
+            const d = parseUtcTimestamp(entry.created_at);
             const dateStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
             const item = document.createElement('div');
             item.className = 'sb-history-item';
@@ -1030,7 +1039,7 @@ function sbRenderLog() {
     list.innerHTML = '';
 
     sbEvents.forEach(ev => {
-        const d  = new Date(ev.created_at);
+        const d  = parseUtcTimestamp(ev.created_at);
         const ts = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
         const el = document.createElement('div');
         el.className = 'sb-log-entry';
@@ -1580,7 +1589,7 @@ async function initializeGameHistoryPage() {
 
         container.innerHTML = '';
         list.forEach(entry => {
-            const d = new Date(entry.created_at);
+            const d = parseUtcTimestamp(entry.created_at);
             const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
             const badge   = entry.is_owner ? '<span class="game-history-owner-badge">建立者</span>' : '';
             const item    = document.createElement('div');
@@ -1634,7 +1643,7 @@ async function ghOpenDetail(sessionId, gameName) {
             eventsEl.innerHTML = '<p style="color:var(--color-text-secondary); font-size:0.85rem;">尚無紀錄</p>';
         } else {
             eventsEl.innerHTML = events.map(ev => {
-                const d  = new Date(ev.created_at);
+                const d  = parseUtcTimestamp(ev.created_at);
                 const ts = `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
                 if (ev.event_type === 'score') {
                     const pos   = ev.delta >= 0;

@@ -94,7 +94,15 @@
         </div>
 
         <div class="card details-section" id="game-my-scores-section" style="display: none;">
-            <h3>🏆 分數排行榜</h3>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+                <h3 style="margin:0;">🏆 分數排行榜</h3>
+                <select id="game-scores-range-select" style="padding:5px 10px; border-radius:8px; border:1px solid rgba(74,55,40,0.25); background:var(--color-card-background); color:var(--color-text-primary); font-size:0.85rem;">
+                    <option value="3">最近 3 個月</option>
+                    <option value="6">最近半年</option>
+                    <option value="12">最近一年</option>
+                    <option value="0">不限時間</option>
+                </select>
+            </div>
             <div id="game-my-scores-content"></div>
         </div>
     </div>
