@@ -971,12 +971,13 @@ const GatherModule = (() => {
         update();
     }
 
-    function bindDeadlineDateConstraints(dateEl, deadlineDateEl) {
+    // 活動日期改用 flatpickr，只能選到店家在「管理公休日」開放的日期，跟預約系統同一份資料，
+    // 公休日／未開放的日子直接在選單裡就選不到，不用等送出才報錯。
+    async function initEventDatePicker(dateEl, deadlineDateEl) {
         const today = new Date().toISOString().split('T')[0];
-        dateEl.min = today;
         deadlineDateEl.min = today;
-        function syncMax() {
-            const eventDate = dateEl.value;
+
+        function syncMax(eventDate) {
             if (eventDate) {
                 const dayBefore = new Date(eventDate);
                 dayBefore.setDate(dayBefore.getDate() - 1);
@@ -986,11 +987,32 @@ const GatherModule = (() => {
                 deadlineDateEl.max = '';
             }
         }
-        dateEl.addEventListener('change', syncMax);
-        syncMax();
+
+        let enabledDates = [];
+        try {
+            const res  = await fetch('/api/bookings-check?month-init=true');
+            const data = await res.json();
+            enabledDates = data.enabledDates || [];
+        } catch { /* 拿不到就先不限制，避免整個表單壞掉 */ }
+
+        const hint = document.getElementById('gc-date-hint');
+        if (enabledDates.length === 0) {
+            if (hint) hint.style.display = 'block';
+            dateEl.disabled = true;
+            return;
+        }
+
+        flatpickr(dateEl, {
+            dateFormat: 'Y-m-d',
+            minDate: 'today',
+            enable: enabledDates,
+            locale: 'zh_tw',
+            onChange: (selectedDates, dateStr) => syncMax(dateStr)
+        });
     }
 
     function validateGatherFields({ eventDate, startTime, endTime, deadlineDate, deadlineHour, games }) {
+        if (!eventDate) return { error: '請選擇活動日期' };
         if (games.length === 0) return { error: '請至少填寫一款遊戲名稱' };
         if (endTime && startTime && endTime <= startTime) return { error: '預計結束時間必須晚於開始時間' };
         const deadlineDateTime = new Date(`${deadlineDate}T${deadlineHour}:00:00`);
@@ -1042,7 +1064,7 @@ const GatherModule = (() => {
         // 活動日期 / 截止日期不能選過去，且截止日期不能晚於活動日期
         const gcDateEl = document.getElementById('gc-date');
         const gcDeadlineDateEl = document.getElementById('gc-deadline-date');
-        if (gcDateEl && gcDeadlineDateEl) bindDeadlineDateConstraints(gcDateEl, gcDeadlineDateEl);
+        if (gcDateEl && gcDeadlineDateEl) initEventDatePicker(gcDateEl, gcDeadlineDateEl);
 
         form.addEventListener('submit', async (e) => {
                 e.preventDefault();
