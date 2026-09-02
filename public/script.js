@@ -557,12 +557,11 @@ function renderClassContribution(data) {
     const maxValue = Math.max(1, ...items.map(item => item.value || 0));
 
     list.innerHTML = items.map((item, i) => {
-        const icon = item.icon_url ? `<img src="${item.icon_url}" class="hourglass-item-icon">` : '';
         const percent = Math.round(((item.value || 0) / maxValue) * 100);
         const color = colors[i % colors.length];
         return `
             <div class="hourglass-item">
-                <div class="hourglass-item-label">${icon}${item.name}</div>
+                <div class="hourglass-item-label">${item.name}</div>
                 <div class="hourglass-frame">
                     <div class="hourglass-fill-track">
                         <div class="hourglass-fill" style="height:${percent}%; background-color:${color};"></div>
