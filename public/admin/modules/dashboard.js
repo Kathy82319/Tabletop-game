@@ -198,12 +198,12 @@ function renderContributionMonthTable(items) {
     });
 }
 
-async function loadContributionMonth(month, live = false) {
+async function loadContributionMonth(month) {
     const monthInput = document.getElementById('contribution-month-select');
     if (monthInput) monthInput.value = month;
 
     try {
-        const data = await api.getClassContributionMonth(month, live);
+        const data = await api.getClassContributionMonth(month);
         currentContributionItems = data.items || [];
         renderContributionMonthTable(currentContributionItems);
         renderContributionChart(currentContributionItems);
@@ -256,30 +256,13 @@ const setupEventListeners = () => {
         markAllBtn.dataset.listenerAttached = 'true';
     }
 
-    // 職業公會排行：切換月份 / 儲存本月結算
+    // 職業公會排行：切換月份 / 儲存調整（數字預設一律即時計算，這裡只負責存「除錯/調整平衡」用的位移量）
     const monthInput = document.getElementById('contribution-month-select');
     if (monthInput && !monthInput.dataset.listenerAttached) {
         monthInput.addEventListener('change', () => {
             if (monthInput.value) loadContributionMonth(monthInput.value);
         });
         monthInput.dataset.listenerAttached = 'true';
-    }
-
-    const refreshMonthBtn = document.getElementById('btn-refresh-contribution-month');
-    if (refreshMonthBtn && !refreshMonthBtn.dataset.listenerAttached) {
-        refreshMonthBtn.addEventListener('click', async () => {
-            const month = monthInput?.value || currentYearMonth();
-            refreshMonthBtn.disabled = true;
-            try {
-                await loadContributionMonth(month, true);
-                ui.toast.success('已重新帶入目前的即時貢獻度，記得按「儲存本月結算」才會留住這次的數字');
-            } catch {
-                ui.toast.error('重新載入失敗');
-            } finally {
-                refreshMonthBtn.disabled = false;
-            }
-        });
-        refreshMonthBtn.dataset.listenerAttached = 'true';
     }
 
     const saveMonthBtn = document.getElementById('btn-save-contribution-month');
@@ -290,7 +273,8 @@ const setupEventListeners = () => {
             try {
                 const items = currentContributionItems.map(i => ({ id: i.id, value: i.value }));
                 await api.saveClassContributionMonth({ month, items });
-                ui.toast.success(`已儲存 ${month} 的職業公會排行`);
+                ui.toast.success(`已儲存 ${month} 的調整`);
+                await loadContributionMonth(month);
             } catch {
                 ui.toast.error('儲存失敗');
             } finally {
