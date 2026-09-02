@@ -11,6 +11,7 @@ const App = {
         'inventory': './modules/inventoryPage.js',
         'rentals': './modules/rentalManagement.js',
         'bookings': './modules/bookingManagement.js',
+        'booking-hours': './modules/bookingHours.js',
         'misc': './modules/miscSettings.js',
         'scan': './modules/scanPage.js',
         'membership-settings': './modules/membershipSettings.js',

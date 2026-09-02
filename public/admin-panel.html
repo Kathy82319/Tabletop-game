@@ -21,6 +21,7 @@
             <a href="#inventory">庫存管理</a>
             <a href="#rentals">桌遊租借</a>
             <a href="#bookings">訂位管理</a>
+            <a href="#booking-hours">公休日／營業時間</a>
             <a href="#class-contribution">職業公會排行</a>
             <a href="#misc">其他設定</a>
             <a href="#scan">掃碼加點</a>
@@ -252,7 +253,6 @@
         <div>
             <button id="switch-to-calendar-view-btn" class="action-btn" style="background-color: var(--info-color); margin-right: 10px;">切換至行事曆</button>
             <button id="create-booking-btn" class="action-btn btn-save" style="margin-right: 10px;">手動建立預約</button>
-            <button id="manage-booking-dates-btn" class="action-btn" style="background-color: #ffc107; color: #000;">管理公休日</button>
         </div>
     </div>
 
@@ -282,6 +282,61 @@
         </table>
     </div>
 </div>
+
+<div id="page-booking-hours" class="page">
+    <div class="page-header">
+        <h2>公休日／營業時間</h2>
+    </div>
+    <p style="color:var(--text-light); font-size:0.88rem; margin-top:-0.8rem;">
+        預設每天都是正常營業（12:00–22:00），點選日期可以設定當天公休或自訂開店/關店時間；設定會同步顯示在顧客的預約與揪團頁面，公休日／未開放的時段也不能被選到。
+    </p>
+
+    <div class="calendar-header">
+        <button id="bh-prev-month-btn">&lt;</button>
+        <h3 id="bh-month-year"></h3>
+        <button id="bh-next-month-btn">&gt;</button>
+    </div>
+    <div id="bh-calendar-grid"></div>
+
+    <div style="display:flex; gap:16px; margin-top:12px; font-size:0.85rem; color:var(--text-light); align-items:center;">
+        <span><span class="bh-legend-dot bh-legend-closed"></span> 公休</span>
+        <span><span class="bh-legend-dot bh-legend-custom"></span> 自訂時間</span>
+    </div>
+</div>
+
+<!-- 編輯單一天的公休/營業時間 -->
+<div id="bh-edit-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width:420px;">
+        <div class="modal-header">
+            <h3 id="bh-edit-title">設定日期</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:14px;">
+            <div class="form-group" style="margin:0;">
+                <label style="display:block; font-weight:normal;"><input type="radio" name="bh-status" value="normal" checked style="width:auto;"> 正常營業</label>
+                <label style="display:block; font-weight:normal;"><input type="radio" name="bh-status" value="closed" style="width:auto;"> 公休</label>
+                <label style="display:block; font-weight:normal;"><input type="radio" name="bh-status" value="custom" style="width:auto;"> 自訂營業時間</label>
+            </div>
+            <div class="form-group" id="bh-closed-label-group" style="display:none; margin:0;">
+                <label for="bh-closed-label">公休標籤（會顯示給顧客看）</label>
+                <input type="text" id="bh-closed-label" value="公休" maxlength="10">
+            </div>
+            <div class="form-group" id="bh-custom-hours-group" style="display:none; margin:0;">
+                <label>營業時間</label>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <input type="time" id="bh-open-time" value="12:00">
+                    <span>–</span>
+                    <input type="time" id="bh-close-time" value="22:00">
+                </div>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="button" class="action-btn btn-cancel">取消</button>
+            <button type="button" id="bh-save-btn" class="action-btn btn-save">儲存</button>
+        </div>
+    </div>
+</div>
+
         <div id="page-class-contribution" class="page">
             <div class="page-header">
                 <h2>職業公會排行</h2>
@@ -599,20 +654,6 @@
     </div>
 </div>    
 
-<div id="booking-settings-modal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>管理可預約日 (可複選)</h3>
-            <button class="modal-close">&times;</button>
-        </div>
-        <div id="booking-datepicker-admin-container"></div>
-        <div class="form-actions">
-            <button type="button" id="open-month-btn" class="action-btn" style="background-color: var(--info-color); float: left;">開啟本月所有日期</button>
-            <button type="button" class="action-btn btn-cancel">取消</button>
-            <button type="button" id="save-booking-settings-btn" class="action-btn btn-save">儲存變更</button>
-        </div>
-    </div>
-</div>
 
 <div id="user-details-modal" class="modal-overlay">
         <div class="modal-content">

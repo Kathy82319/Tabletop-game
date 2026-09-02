@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeFilters = { keyword: '', tag: null };
     let bookingData = {};
     let dailyAvailability = { limit: TOTAL_TABLES, booked: 0, available: TOTAL_TABLES };
-    let disabledDatesByAdmin = [];
+    let dateOverridesMap = {}; // 'YYYY-MM-DD' -> {is_closed, closed_label, open_time, close_time}，公休日／自訂營業時間
 
     // 使用者輸入（暱稱等）在插入 innerHTML 前必須跳脫，避免儲存型 XSS
     function escapeHtml(str) {
@@ -1190,10 +1190,11 @@ async function initializeBookingPage(stepId) {
         appContent.querySelector('#go-to-booking-step-btn').innerText = storeInfo.booking_button_text || '開始預約';
         appContent.querySelector('#booking-promo-text').innerText = storeInfo.booking_promo_text || '';
 
-        const response = await fetch('/api/bookings-check?month-init=true');
-        if (!response.ok) throw new Error(`無法載入可預約日期 (狀態: ${response.status})`);
-        const data = await response.json();
-        enabledDatesByAdmin = data.enabledDates || [];
+        const overridesRes = await fetch('/api/booking-date-overrides');
+        if (!overridesRes.ok) throw new Error(`無法載入公休日設定 (狀態: ${overridesRes.status})`);
+        const overridesList = await overridesRes.json();
+        dateOverridesMap = {};
+        (overridesList || []).forEach(o => { dateOverridesMap[o.date] = o; });
 
     } catch (error) {
         console.error("初始化預約頁面API失敗:", error);
@@ -1221,31 +1222,46 @@ async function initializeBookingPage(stepId) {
         const datepickerContainer = appContent.querySelector("#booking-datepicker-container");
         if (!datepickerContainer || datepickerContainer.dataset.fpInit) return;
         datepickerContainer.dataset.fpInit = '1';
-        if (enabledDatesByAdmin.length === 0) {
-            datepickerContainer.innerHTML = '<p style="text-align:center; color: var(--color-danger);">目前沒有開放預約的日期。</p>';
-        } else {
-            flatpickr(datepickerContainer, {
-                inline: true, minDate: "today", dateFormat: "Y-m-d", locale: "zh_tw",
-                enable: enabledDatesByAdmin,
-                onChange: (selectedDates, dateStr) => {
-                    bookingData.date = dateStr;
-                    fetchAndRenderSlots(dateStr);
-                },
-                onClick: (selectedDates, dateStr, instance) => {
-                  setTimeout(() => {
-                    const clickedElement = instance.selectedDateElem;
-                    if (clickedElement && clickedElement.classList.contains('flatpickr-disabled')) {
-                        const slotsPlaceholder = appContent.querySelector('#slots-placeholder');
-                        if (slotsPlaceholder) {
-                            slotsPlaceholder.textContent = '此日期未開放預約';
-                            slotsPlaceholder.style.display = 'block';
-                            appContent.querySelector('#booking-slots-container').innerHTML = '';
-                        }
-                    }
-                  }, 10);
+
+        flatpickr(datepickerContainer, {
+            inline: true, minDate: "today", dateFormat: "Y-m-d", locale: "zh_tw",
+            disable: [(date) => {
+                const ds = flatpickr.formatDate(date, "Y-m-d");
+                return !!(dateOverridesMap[ds] && dateOverridesMap[ds].is_closed);
+            }],
+            onDayCreate: (dObj, dStr, fp, dayElem) => {
+                const ds = flatpickr.formatDate(dayElem.dateObj, "Y-m-d");
+                const o = dateOverridesMap[ds];
+                if (o && o.is_closed) {
+                    const label = document.createElement('span');
+                    label.className = 'fp-day-note fp-day-note-closed';
+                    label.textContent = o.closed_label || '公休';
+                    dayElem.appendChild(label);
+                } else if (o && (o.open_time || o.close_time)) {
+                    const label = document.createElement('span');
+                    label.className = 'fp-day-note fp-day-note-custom';
+                    label.textContent = `${o.open_time || ''}起`;
+                    dayElem.appendChild(label);
                 }
-            });
-        }
+            },
+            onChange: (selectedDates, dateStr) => {
+                bookingData.date = dateStr;
+                fetchAndRenderSlots(dateStr);
+            },
+            onClick: (selectedDates, dateStr, instance) => {
+              setTimeout(() => {
+                const clickedElement = instance.selectedDateElem;
+                if (clickedElement && clickedElement.classList.contains('flatpickr-disabled')) {
+                    const slotsPlaceholder = appContent.querySelector('#slots-placeholder');
+                    if (slotsPlaceholder) {
+                        slotsPlaceholder.textContent = '此日期公休，暫不開放預約';
+                        slotsPlaceholder.style.display = 'block';
+                        appContent.querySelector('#booking-slots-container').innerHTML = '';
+                    }
+                }
+              }, 10);
+            }
+        });
     };
 
     const userData = await fetchGameData();
@@ -1319,6 +1335,11 @@ function showBookingStep(stepId) {
             const todayStr = now.toISOString().split('T')[0];
             const isToday = (date === todayStr);
 
+            // 該日期若有設定自訂營業時間，開店前／關店後的時段要擋掉
+            const override  = dateOverridesMap[date];
+            const rangeOpen  = (override && override.open_time)  || null;
+            const rangeClose = (override && override.close_time) || null;
+
             slotsContainer.innerHTML = AVAILABLE_TIME_SLOTS.map(slot => {
                 let isDisabled = false;
                 if (isToday) {
@@ -1329,6 +1350,8 @@ function showBookingStep(stepId) {
                         isDisabled = true;
                     }
                 }
+                if (rangeOpen && slot < rangeOpen) isDisabled = true;
+                if (rangeClose && slot >= rangeClose) isDisabled = true;
                 return `<button class="slot-button" ${isDisabled ? 'disabled' : ''}>${slot}</button>`;
             }).join('');
             

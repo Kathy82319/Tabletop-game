@@ -951,6 +951,30 @@ const GatherModule = (() => {
         syncAddBtn();
     }
 
+    // 目前選擇的活動日期若店家有設定自訂營業時間，會存在這裡，用來限制開始/結束時間的選項
+    let gcDateOverrides = {}; // 'YYYY-MM-DD' -> {is_closed, closed_label, open_time, close_time}，跟預約頁共用同一份公休日資料
+    let gcDateHours = null;   // {open_time, close_time}｜null
+
+    function withinGcHours(t) {
+        if (!gcDateHours) return true;
+        if (gcDateHours.open_time && t < gcDateHours.open_time) return false;
+        if (gcDateHours.close_time && t > gcDateHours.close_time) return false;
+        return true;
+    }
+
+    function applyGcHoursToStartTime(startTimeEl) {
+        if (!startTimeEl) return;
+        Array.from(startTimeEl.options).forEach(opt => {
+            if (!opt.value) return;
+            const disabled = !withinGcHours(opt.value);
+            opt.disabled = disabled;
+            opt.hidden = disabled;
+        });
+        if (startTimeEl.value && !withinGcHours(startTimeEl.value)) {
+            startTimeEl.value = '';
+        }
+    }
+
     function bindEndTimeFilter(startTimeEl, endTimeEl) {
         function update() {
             const start = startTimeEl?.value;
@@ -958,7 +982,7 @@ const GatherModule = (() => {
             if (!endTimeEl) return;
             endTimeEl.innerHTML = '<option value="">請選擇結束時間</option>';
             GATHER_TIME_SLOTS.forEach(t => {
-                if (!start || t > start) {
+                if ((!start || t > start) && withinGcHours(t)) {
                     const opt = document.createElement('option');
                     opt.value = t;
                     opt.textContent = t;
@@ -971,8 +995,8 @@ const GatherModule = (() => {
         update();
     }
 
-    // 活動日期改用 flatpickr，只能選到店家在「管理公休日」開放的日期，跟預約系統同一份資料，
-    // 公休日／未開放的日子直接在選單裡就選不到，不用等送出才報錯。
+    // 活動日期改用 flatpickr，跟預約系統共用同一份公休日／自訂營業時間資料：
+    // 公休日直接選不到、還會顯示公休標籤；自訂時間的日子會連動限制開始/結束時間的選項。
     async function initEventDatePicker(dateEl, deadlineDateEl) {
         const today = new Date().toISOString().split('T')[0];
         deadlineDateEl.min = today;
@@ -988,26 +1012,44 @@ const GatherModule = (() => {
             }
         }
 
-        let enabledDates = [];
         try {
-            const res  = await fetch('/api/bookings-check?month-init=true');
+            const res  = await fetch('/api/booking-date-overrides');
             const data = await res.json();
-            enabledDates = data.enabledDates || [];
+            gcDateOverrides = {};
+            (data || []).forEach(o => { gcDateOverrides[o.date] = o; });
         } catch { /* 拿不到就先不限制，避免整個表單壞掉 */ }
-
-        const hint = document.getElementById('gc-date-hint');
-        if (enabledDates.length === 0) {
-            if (hint) hint.style.display = 'block';
-            dateEl.disabled = true;
-            return;
-        }
 
         flatpickr(dateEl, {
             dateFormat: 'Y-m-d',
             minDate: 'today',
-            enable: enabledDates,
             locale: 'zh_tw',
-            onChange: (selectedDates, dateStr) => syncMax(dateStr)
+            disable: [(date) => {
+                const ds = flatpickr.formatDate(date, 'Y-m-d');
+                return !!(gcDateOverrides[ds] && gcDateOverrides[ds].is_closed);
+            }],
+            onDayCreate: (dObj, dStr, fp, dayElem) => {
+                const ds = flatpickr.formatDate(dayElem.dateObj, 'Y-m-d');
+                const o = gcDateOverrides[ds];
+                if (o && o.is_closed) {
+                    const label = document.createElement('span');
+                    label.className = 'fp-day-note fp-day-note-closed';
+                    label.textContent = o.closed_label || '公休';
+                    dayElem.appendChild(label);
+                } else if (o && (o.open_time || o.close_time)) {
+                    const label = document.createElement('span');
+                    label.className = 'fp-day-note fp-day-note-custom';
+                    label.textContent = `${o.open_time || ''}起`;
+                    dayElem.appendChild(label);
+                }
+            },
+            onChange: (selectedDates, dateStr) => {
+                syncMax(dateStr);
+                const o = gcDateOverrides[dateStr];
+                gcDateHours = (o && !o.is_closed && (o.open_time || o.close_time)) ? o : null;
+                const startTimeEl = document.getElementById('gc-start-time');
+                applyGcHoursToStartTime(startTimeEl);
+                startTimeEl?.dispatchEvent(new Event('change'));
+            }
         });
     }
 

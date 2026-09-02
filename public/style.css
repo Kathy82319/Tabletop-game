@@ -912,6 +912,21 @@ input[readonly] {
 span.arrowUp:after { border-bottom-color: var(--color-text-primary) !important; }
 span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 
+/* 公休日／自訂營業時間標籤：疊在日期格子下緣，讓顧客一眼看到公休原因或當天的開店時間 */
+.flatpickr-day { position: relative; }
+.fp-day-note {
+    position: absolute;
+    bottom: 1px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.5rem;
+    line-height: 1;
+    white-space: nowrap;
+    pointer-events: none;
+}
+.fp-day-note-closed { color: var(--color-danger); }
+.fp-day-note-custom { color: var(--color-frame-gold); }
+
 #booking-slots-container {
     display: grid;
     grid-template-columns: repeat(3, 1fr);

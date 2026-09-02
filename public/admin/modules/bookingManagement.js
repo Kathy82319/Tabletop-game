@@ -7,12 +7,10 @@ let calendarBookings = [];
 let currentView = 'list';
 let currentCalendarDate = new Date();
 const AVAILABLE_TIME_SLOTS = ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30'];
-let flatpickrInstance_admin = null;
-let initialEnabledDates = [];
 
 let pageElement, bookingListTbody, calendarViewContainer, listViewContainer,
-    calendarGrid, calendarMonthYear, createBookingBtn, manageDatesBtn,
-    createBookingModal, createBookingForm, bookingSettingsModal;
+    calendarGrid, calendarMonthYear, createBookingBtn,
+    createBookingModal, createBookingForm;
 
 // 預約聯絡人姓名/會員暱稱等皆為使用者輸入，插入 innerHTML 前必須跳脫，避免儲存型 XSS
 function escapeHtml(str) {
@@ -130,86 +128,6 @@ async function loadAndRenderCalendar() {
 function changeMonth(direction) {
     currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
     renderCalendar(currentCalendarDate);
-}
-
-/**
- * 開啟並初始化管理公休日的視窗
- */
-async function openManageDatesModal() {
-    try {
-        initialEnabledDates = await api.getBookingSettings();
-        const container = document.getElementById('booking-datepicker-admin-container');
-        if (!container) return;
-
-        flatpickrInstance_admin = flatpickr(container, {
-            inline: true,
-            mode: 'multiple',
-            dateFormat: "Y-m-d",
-            defaultDate: initialEnabledDates,
-        });
-        // defaultDate 若含有很久以前設定的公休日，flatpickr 開啟時會直接跳去顯示那個月份；
-        // 這裡強制打開時一律先顯示「現在」的月份，已選取的日期仍會保留，只是不會被拿來決定要顯示哪個月
-        flatpickrInstance_admin.jumpToDate(new Date());
-
-        ui.showModal('#booking-settings-modal');
-    } catch (error) {
-        ui.toast.error(`載入日期設定失敗: ${error.message}`);
-    }
-}
-
-/**
- * 儲存公休日變更
- */
-async function handleSaveBookingSettings() {
-    if (!flatpickrInstance_admin) return;
-    const button = document.getElementById('save-booking-settings-btn');
-    button.disabled = true;
-    button.textContent = '儲存中...';
-
-    try {
-        const selectedDates = flatpickrInstance_admin.selectedDates.map(d => flatpickr.formatDate(d, "Y-m-d"));
-        const initialSet = new Set(initialEnabledDates);
-        const selectedSet = new Set(selectedDates);
-
-        const datesToAdd = selectedDates.filter(d => !initialSet.has(d));
-        const datesToRemove = initialEnabledDates.filter(d => !selectedSet.has(d));
-
-        const promises = [
-            ...datesToAdd.map(date => api.saveBookingSettings({ action: 'add', date })),
-            ...datesToRemove.map(date => api.saveBookingSettings({ action: 'remove', date }))
-        ];
-
-        await Promise.all(promises);
-        ui.toast.success('可預約日期已更新！');
-        ui.hideModal('#booking-settings-modal');
-    } catch (error) {
-        ui.toast.error(`儲存失敗: ${error.message}`);
-    } finally {
-        button.disabled = false;
-        button.textContent = '儲存變更';
-    }
-}
-
-/**
- * 開啟當前月份的所有日期
- */
-async function handleOpenMonth() {
-    if (!flatpickrInstance_admin) return;
-    const year = flatpickrInstance_admin.currentYear;
-    const month = flatpickrInstance_admin.currentMonth;
-
-    const confirmed = await ui.confirm(`確定要將 ${year} 年 ${month + 1} 月的所有日期都設定為可預約嗎？`);
-    if (!confirmed) return;
-
-    try {
-        await api.saveBookingSettings({ action: 'open_month', year, month });
-        ui.toast.success(`${month + 1} 月已全部開放！`);
-        const updatedDates = await api.getBookingSettings();
-        initialEnabledDates = updatedDates;
-        flatpickrInstance_admin.setDate(updatedDates, true);
-    } catch (error) {
-        ui.toast.error(`操作失敗: ${error.message}`);
-    }
 }
 
 /**
@@ -419,10 +337,6 @@ function setupEventListeners() {
     });
     createBookingForm.addEventListener('submit', handleCreateBookingFormSubmit);
 
-    manageDatesBtn.addEventListener('click', openManageDatesModal);
-    document.getElementById('save-booking-settings-btn').addEventListener('click', handleSaveBookingSettings);
-    document.getElementById('open-month-btn').addEventListener('click', handleOpenMonth);
-
     pageElement.dataset.initialized = 'true';
 }
 
@@ -437,11 +351,9 @@ export const init = async (context, param) => {
     calendarGrid = pageElement.querySelector('#calendar-grid');
     calendarMonthYear = pageElement.querySelector('#calendar-month-year');
     createBookingBtn = pageElement.querySelector('#create-booking-btn');
-    manageDatesBtn = pageElement.querySelector('#manage-booking-dates-btn');
     createBookingModal = document.getElementById('create-booking-modal');
     createBookingForm = document.getElementById('create-booking-form');
-    bookingSettingsModal = document.getElementById('booking-settings-modal');
-    
+
     if(!pageElement) return;
 
     switchView('list');

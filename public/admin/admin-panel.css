@@ -162,6 +162,43 @@
     background-color: var(--danger-color);
     color: white;
 }
+
+/* 公休日／營業時間 分頁 */
+#bh-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border: 1px solid var(--border-color);
+    background-color: white;
+}
+#bh-calendar-grid .calendar-day {
+    cursor: pointer;
+    min-height: 80px;
+    transition: background-color 0.15s;
+}
+#bh-calendar-grid .calendar-day:not(.day-other-month):hover {
+    background-color: var(--light-gray);
+}
+.bh-day-badge {
+    font-size: 0.72rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+    display: inline-block;
+    color: white;
+}
+.bh-day-badge.bh-closed { background-color: var(--danger-color); }
+.bh-day-badge.bh-custom { background-color: var(--info-color); }
+.bh-legend-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+.bh-legend-dot.bh-legend-closed { background-color: var(--danger-color); }
+.bh-legend-dot.bh-legend-custom { background-color: var(--info-color); }
+
 @media (max-width: 768px) {
     .details-grid {
         grid-template-columns: 1fr;

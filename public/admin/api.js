@@ -75,6 +75,9 @@ bulkCreateGames: (data) => request('/api/admin/bulk-create-games', { method: 'PO
     updateBookingStatus: (bookingId, status) => request('/api/admin/update-booking-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookingId, status }) }),
     getBookingSettings: () => request('/api/admin/booking-settings'),
     saveBookingSettings: (body) => request('/api/admin/booking-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
+    getBookingDateOverrides: () => request('/api/admin/booking-date-overrides'),
+    saveBookingDateOverride: (data) => request('/api/admin/booking-date-overrides', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+    deleteBookingDateOverride: (date) => request('/api/admin/booking-date-overrides', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date }) }),
 
     getRecentPointedUsers: () => request('/api/admin/recent-pointed-users'),
     getExpHistory: () => request('/api/admin/exp-history-list'),
