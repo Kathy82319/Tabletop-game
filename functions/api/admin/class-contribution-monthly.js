@@ -11,6 +11,9 @@ export async function onRequest(context) {
             const now   = new Date();
             const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             const month = url.searchParams.get('month') || defaultMonth;
+            // live=1：忽略之前儲存過的數字，一律回傳目前 ContributionHistory 即時算出的實際貢獻度
+            // （儲存過的月份預設會一直顯示儲存當下的快照，不會自動跟著之後新增的加點變動）
+            const live  = url.searchParams.get('live') === '1';
 
             const [{ results: classes }, { results: autoTotals }, { results: saved }] = await Promise.all([
                 db.prepare(`SELECT id, name FROM GameAssets WHERE type = 'class' ORDER BY display_order, id`).all(),
@@ -30,8 +33,8 @@ export async function onRequest(context) {
             const items = (classes || []).map(c => ({
                 id: c.id,
                 name: c.name,
-                value: savedMap[c.id] !== undefined ? savedMap[c.id] : (autoMap[c.name] || 0),
-                isAdjusted: savedMap[c.id] !== undefined
+                value: (!live && savedMap[c.id] !== undefined) ? savedMap[c.id] : (autoMap[c.name] || 0),
+                isAdjusted: !live && savedMap[c.id] !== undefined
             }));
 
             return Response.json({ month, items });

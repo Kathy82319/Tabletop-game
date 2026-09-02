@@ -70,6 +70,7 @@
                             <h3 style="margin:0; font-size:1rem; color:var(--text-dark);">職業公會排行分佈</h3>
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <input type="month" id="contribution-month-select" style="padding:4px 8px; border:1px solid var(--border-color); border-radius:4px;">
+                                <button id="btn-refresh-contribution-month" class="action-btn" style="background-color:var(--info-color); padding:5px 12px; font-size:0.85rem;" title="忽略之前儲存的數字，重新帶入目前實際的貢獻度總和">重新帶入即時資料</button>
                                 <button id="btn-save-contribution-month" class="action-btn btn-save" style="padding:5px 12px; font-size:0.85rem;">儲存本月結算</button>
                             </div>
                         </div>
@@ -81,7 +82,7 @@
                             <thead><tr><th>職業</th><th style="width:140px;">當月貢獻度</th></tr></thead>
                             <tbody id="contribution-month-tbody"></tbody>
                         </table>
-                        <p style="font-size:0.8rem; color:var(--text-light); margin:8px 0 0;">數字會先自動帶入該月實際加點總和，可手動調整後按「儲存本月結算」；已儲存的月份之後仍可隨時回來修改。</p>
+                        <p style="font-size:0.8rem; color:var(--text-light); margin:8px 0 0;">數字會先自動帶入該月實際加點總和，可手動調整後按「儲存本月結算」；已儲存的月份會維持儲存當下的數字，不會自動跟著之後新增的加點變動，想同步最新數字請按「重新帶入即時資料」。</p>
                     </div>
                 </div>
 

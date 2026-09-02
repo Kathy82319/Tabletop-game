@@ -198,12 +198,12 @@ function renderContributionMonthTable(items) {
     });
 }
 
-async function loadContributionMonth(month) {
+async function loadContributionMonth(month, live = false) {
     const monthInput = document.getElementById('contribution-month-select');
     if (monthInput) monthInput.value = month;
 
     try {
-        const data = await api.getClassContributionMonth(month);
+        const data = await api.getClassContributionMonth(month, live);
         currentContributionItems = data.items || [];
         renderContributionMonthTable(currentContributionItems);
         renderContributionChart(currentContributionItems);
@@ -263,6 +263,23 @@ const setupEventListeners = () => {
             if (monthInput.value) loadContributionMonth(monthInput.value);
         });
         monthInput.dataset.listenerAttached = 'true';
+    }
+
+    const refreshMonthBtn = document.getElementById('btn-refresh-contribution-month');
+    if (refreshMonthBtn && !refreshMonthBtn.dataset.listenerAttached) {
+        refreshMonthBtn.addEventListener('click', async () => {
+            const month = monthInput?.value || currentYearMonth();
+            refreshMonthBtn.disabled = true;
+            try {
+                await loadContributionMonth(month, true);
+                ui.toast.success('已重新帶入目前的即時貢獻度，記得按「儲存本月結算」才會留住這次的數字');
+            } catch {
+                ui.toast.error('重新載入失敗');
+            } finally {
+                refreshMonthBtn.disabled = false;
+            }
+        });
+        refreshMonthBtn.dataset.listenerAttached = 'true';
     }
 
     const saveMonthBtn = document.getElementById('btn-save-contribution-month');

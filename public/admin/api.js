@@ -88,7 +88,7 @@ bulkCreateGames: (data) => request('/api/admin/bulk-create-games', { method: 'PO
     getContributionStats: () => request('/api/admin/contribution-stats'),
     getClassContribution: () => request('/api/admin/class-contribution'),
     saveClassContribution: (data) => request('/api/admin/class-contribution', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
-    getClassContributionMonth: (month) => request(`/api/admin/class-contribution-monthly?month=${encodeURIComponent(month)}`),
+    getClassContributionMonth: (month, live = false) => request(`/api/admin/class-contribution-monthly?month=${encodeURIComponent(month)}${live ? '&live=1' : ''}`),
     saveClassContributionMonth: (data) => request('/api/admin/class-contribution-monthly', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
 
     getAllNews: () => request('/api/admin/get-all-news'),
