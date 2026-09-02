@@ -52,6 +52,12 @@ const GatherModule = (() => {
         return STATUS_LABEL[g.status] || g.status;
     }
 
+    // 「店家開團」跟一般玩家「揪團中」用不同顏色的標籤，一眼就能分辨
+    function getStatusClass(g) {
+        if (g.status === 'open' && g.is_store_organizer) return 'gg-status-store';
+        return STATUS_CLASS[g.status] || '';
+    }
+
     function formatDeadline(dt) {
         if (!dt) return '';
         const d = new Date(dt.replace(' ', 'T'));
@@ -105,7 +111,7 @@ const GatherModule = (() => {
 
     function renderGatherCard(g, showMyStatus = false) {
         const statusLabel = getStatusLabel(g);
-        const statusClass = STATUS_CLASS[g.status] || '';
+        const statusClass = getStatusClass(g);
         const maxText = g.max_participants ? `${(g.member_count || 0) + 1} / ${g.max_participants}` : `${(g.member_count || 0) + 1} 人`;
         const myBadge = showMyStatus && g.my_status && g.my_status !== 'organizer'
             ? `<span class="gg-my-badge">${g.my_status === 'approved' ? '已通過' : g.my_status === 'rejected' ? '未通過' : '已報名'}</span>` : '';
@@ -380,7 +386,7 @@ const GatherModule = (() => {
             content.innerHTML = `
                 <div class="gg-detail">
                     <div class="gg-detail-header">
-                        <span class="gg-status-badge ${STATUS_CLASS[g.status] || ''}">${getStatusLabel(g)}</span>
+                        <span class="gg-status-badge ${getStatusClass(g)}">${getStatusLabel(g)}</span>
                         <h2>${g.name ? escapeHtml(g.name) : (escapeHtml(g.organizer_name) + ' 的揪團')}</h2>
                         ${iconActionsHtml ? `<div class="gg-icon-actions">${iconActionsHtml}</div>` : ''}
                     </div>

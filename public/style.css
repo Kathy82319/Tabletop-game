@@ -4210,6 +4210,7 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
 .gg-status-pending { background: #cce5ff; color: #004085; }
 .gg-status-approved { background: #fff3cd; color: #856404; }
 .gg-status-failed  { background: #f8d7da; color: #721c24; }
+.gg-status-store   { background: #e2d9f3; color: #4a2f7a; }
 
 /* 我的揪團標記 */
 .gg-my-badge {
