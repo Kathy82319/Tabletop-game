@@ -889,7 +889,7 @@ input[readonly] {
 
 /* 日期選擇器 Flatpickr 樣式覆蓋 */
 .flatpickr-calendar {
-    background: var(--color-card-background) !important;
+    background: rgb(249, 245, 235) !important;
     border-radius: var(--border-radius) !important;
     border: 1px solid var(--color-frame-gold) !important;
     box-shadow: var(--box-shadow) !important;
