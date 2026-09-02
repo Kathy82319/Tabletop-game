@@ -411,6 +411,7 @@ function setupEventListeners() {
         const panel = document.getElementById('scan-user-panel');
         if (panel) { panel.style.display = 'none'; panel.innerHTML = ''; }
         document.getElementById('submit-exp-btn').disabled = false;
+        populateClassSelect(''); // 這個模式跳過了會員載入流程，職業下拉選單要在這裡自己填
     });
 
     const userSearchInput = document.getElementById('scan-user-search');
