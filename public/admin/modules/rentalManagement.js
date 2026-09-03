@@ -191,6 +191,8 @@ function addGameToSelection(game) {
         <input type="number" class="game-rent-price-input" title="租金" style="${inputStyle}" min="0" value="${Number(game.rent_price) || 0}">
         <span class="tag-field-label">押金</span>
         <input type="number" class="game-deposit-input" title="押金" style="${inputStyle}" min="0" value="${Number(game.deposit) || 0}">
+        <span class="tag-field-label">逾期費/日</span>
+        <input type="number" class="game-late-fee-input" title="每日逾期費" style="${inputStyle}" min="0" value="${Number(game.late_fee_per_day) || 50}">
         <span class="tag-field-label">重量(g)</span>
         <input type="number" class="game-weight-input" title="重量(g)" style="${inputStyle}" min="0" required>
         <button type="button" class="remove-game-btn">&times;</button>
@@ -199,28 +201,21 @@ function addGameToSelection(game) {
     container.appendChild(tag);
     document.getElementById('rental-game-search').value = '';
     document.getElementById('game-search-results').style.display = 'none';
-    updateRentalPrice();
+    updateRentalTotals();
 }
 
+// 租金/押金/逾期費都是每款遊戲各自填寫，這裡加總起來顯示在合計欄位，
+// 逾期費刻意加總而不是取最大值，避免租借多款遊戲時逾期只需要付一款的錢。
 function updateRentalTotals() {
-    let totalRent = 0, totalDeposit = 0;
+    let totalRent = 0, totalDeposit = 0, totalLateFee = 0;
     document.querySelectorAll('#rental-games-container .selected-game-tag').forEach(tag => {
         totalRent += Number(tag.querySelector('.game-rent-price-input')?.value) || 0;
         totalDeposit += Number(tag.querySelector('.game-deposit-input')?.value) || 0;
+        totalLateFee += Number(tag.querySelector('.game-late-fee-input')?.value) || 0;
     });
     document.getElementById('rental-rent-price').value = totalRent;
     document.getElementById('rental-deposit').value = totalDeposit;
-}
-
-function updateRentalPrice() {
-    updateRentalTotals();
-    let maxLateFee = 50;
-    selectedRentalGames.forEach(game => {
-        if ((Number(game.late_fee_per_day) || 0) > maxLateFee) {
-            maxLateFee = Number(game.late_fee_per_day);
-        }
-    });
-    document.getElementById('rental-late-fee').value = maxLateFee;
+    document.getElementById('rental-late-fee').value = totalLateFee;
 }
 
 async function handleCreateRentalFormSubmit(event) {
@@ -241,17 +236,17 @@ async function handleCreateRentalFormSubmit(event) {
             gameId: el.dataset.gameId,
             weight: el.querySelector('.game-weight-input').value,
             rentPrice: el.querySelector('.game-rent-price-input').value,
-            deposit: el.querySelector('.game-deposit-input').value
+            deposit: el.querySelector('.game-deposit-input').value,
+            lateFee: el.querySelector('.game-late-fee-input').value
         });
     });
 
     const data = {
         userId: form.querySelector('#rental-user-id').value || null,
-        games: gamesData, // 每款遊戲各自帶自己的租金／押金，方便個別給優惠
+        games: gamesData, // 每款遊戲各自帶自己的租金／押金／逾期費，方便個別給優惠
         dueDate: form.querySelector('#rental-due-date').value,
         name: form.querySelector('#rental-contact-name').value.trim(),
         phone: phone,
-        lateFeePerDay: form.querySelector('#rental-late-fee').value,
     };
     
     if (data.games.length === 0) return ui.toast.error('請至少選擇一款遊戲。');
@@ -403,7 +398,7 @@ export function initializeCreateRentalModalEventListeners() {
     });
 
     document.getElementById('rental-games-container')?.addEventListener('input', (e) => {
-        if (e.target.classList.contains('game-rent-price-input') || e.target.classList.contains('game-deposit-input')) {
+        if (e.target.classList.contains('game-rent-price-input') || e.target.classList.contains('game-deposit-input') || e.target.classList.contains('game-late-fee-input')) {
             updateRentalTotals();
         }
     });
@@ -449,7 +444,7 @@ export function initializeCreateRentalModalEventListeners() {
             const tag = e.target.closest('.selected-game-tag');
             selectedRentalGames.delete(tag.dataset.gameId);
             tag.remove();
-            updateRentalPrice();
+            updateRentalTotals();
         }
     });
 
@@ -568,7 +563,7 @@ rentalStatusFilter.addEventListener('click', e => {
             const tag = e.target.closest('.selected-game-tag');
             selectedRentalGames.delete(tag.dataset.gameId);
             tag.remove();
-            updateRentalPrice();
+            updateRentalTotals();
         }
     });
 
