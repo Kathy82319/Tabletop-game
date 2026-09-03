@@ -116,14 +116,7 @@ async function showDetail(id) {
                         <span class="gg-member-badge ${m.status === 'approved' ? 'badge-approved' : m.status === 'rejected' ? 'badge-rejected' : ''}">${m.status === 'approved' ? '通過' : m.status === 'rejected' ? '未通過' : '待定'}</span>
                     </div>`).join('')}
             </div>
-            ${g.status === 'pending_approval' ? `
-            <div style="display:flex; gap:10px; margin-top:16px;">
-                <button class="action-btn btn-gg-approve" data-id="${g.id}" style="background:var(--success-color); flex:1;">✓ 同意成團</button>
-                <button class="action-btn btn-gg-reject"  data-id="${g.id}" style="background:var(--danger-color); flex:1;">✕ 拒絕</button>
-            </div>` : ''}
-            <div style="margin-top:16px;">
-                <button class="action-btn btn-gg-delete" data-id="${g.id}" data-name="${escapeHtml(g.organizer_name)}" style="background:var(--danger-color); width:100%;">刪除此揪團</button>
-            </div>`;
+            `;
     } catch (err) {
         content.innerHTML = `<p style="color:red;">載入失敗: ${err.message}</p>`;
     }
@@ -227,16 +220,6 @@ export async function init() {
         if (!btn) return;
         const id = btn.dataset.id;
         if (btn.classList.contains('btn-gg-view'))    await showDetail(id);
-        if (btn.classList.contains('btn-gg-approve')) await approveGathering(id);
-        if (btn.classList.contains('btn-gg-reject'))  await rejectGathering(id);
-        if (btn.classList.contains('btn-gg-delete'))  await deleteGathering(id, btn.dataset.name);
-    });
-
-    // Modal 內按鈕（approve / reject）
-    pageElement.querySelector('#gg-detail-modal').addEventListener('click', async e => {
-        const btn = e.target.closest('[class*="btn-gg-"]');
-        if (!btn) return;
-        const id = btn.dataset.id;
         if (btn.classList.contains('btn-gg-approve')) await approveGathering(id);
         if (btn.classList.contains('btn-gg-reject'))  await rejectGathering(id);
         if (btn.classList.contains('btn-gg-delete'))  await deleteGathering(id, btn.dataset.name);
