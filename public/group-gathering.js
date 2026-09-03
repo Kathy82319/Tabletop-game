@@ -489,7 +489,7 @@ const GatherModule = (() => {
                     </div>
                     <div class="input-group">
                         <label>活動日期</label>
-                        <input type="date" id="ge-date" required value="${g.event_date}">
+                        <input type="text" id="ge-date" placeholder="選擇活動日期" required value="${g.event_date}">
                     </div>
                     <div class="input-group">
                         <label>開始 / 預計結束時間</label>
@@ -555,7 +555,7 @@ const GatherModule = (() => {
 
         const dateEl = document.getElementById('ge-date');
         const deadlineDateEl = document.getElementById('ge-deadline-date');
-        bindDeadlineDateConstraints(dateEl, deadlineDateEl);
+        initEventDatePicker(dateEl, deadlineDateEl, startTimeEl);
 
         const limitBtns = content.querySelectorAll('.ge-limit-btn');
         limitBtns.forEach(btn => {
@@ -997,7 +997,8 @@ const GatherModule = (() => {
 
     // 活動日期改用 flatpickr，跟預約系統共用同一份公休日／自訂營業時間資料：
     // 公休日直接選不到、還會顯示公休標籤；自訂時間的日子會連動限制開始/結束時間的選項。
-    async function initEventDatePicker(dateEl, deadlineDateEl) {
+    // 建立揪團（gc-*）跟編輯揪團（ge-*）共用這個函式，所以開始時間欄位要當參數傳進來，不能寫死 id。
+    async function initEventDatePicker(dateEl, deadlineDateEl, startTimeEl) {
         const today = new Date().toISOString().split('T')[0];
         deadlineDateEl.min = today;
 
@@ -1018,6 +1019,15 @@ const GatherModule = (() => {
             gcDateOverrides = {};
             (data || []).forEach(o => { gcDateOverrides[o.date] = o; });
         } catch { /* 拿不到就先不限制，避免整個表單壞掉 */ }
+
+        // 編輯表單一開始就帶著既有的活動日期，這裡要先套用一次該日期的營業時間限制，
+        // 不然 gcDateHours 會停留在上一次開別的表單時的殘留值
+        const initialDate = dateEl.value || null;
+        const initialOverride = initialDate ? gcDateOverrides[initialDate] : null;
+        gcDateHours = (initialOverride && !initialOverride.is_closed && (initialOverride.open_time || initialOverride.close_time))
+            ? initialOverride : null;
+        applyGcHoursToStartTime(startTimeEl);
+        startTimeEl?.dispatchEvent(new Event('change')); // 讓結束時間的選項也照這個日期的營業時間重新過濾一次
 
         flatpickr(dateEl, {
             dateFormat: 'Y-m-d',
@@ -1046,7 +1056,6 @@ const GatherModule = (() => {
                 syncMax(dateStr);
                 const o = gcDateOverrides[dateStr];
                 gcDateHours = (o && !o.is_closed && (o.open_time || o.close_time)) ? o : null;
-                const startTimeEl = document.getElementById('gc-start-time');
                 applyGcHoursToStartTime(startTimeEl);
                 startTimeEl?.dispatchEvent(new Event('change'));
             }
@@ -1106,7 +1115,7 @@ const GatherModule = (() => {
         // 活動日期 / 截止日期不能選過去，且截止日期不能晚於活動日期
         const gcDateEl = document.getElementById('gc-date');
         const gcDeadlineDateEl = document.getElementById('gc-deadline-date');
-        if (gcDateEl && gcDeadlineDateEl) initEventDatePicker(gcDateEl, gcDeadlineDateEl);
+        if (gcDateEl && gcDeadlineDateEl) initEventDatePicker(gcDateEl, gcDeadlineDateEl, startTimeEl);
 
         form.addEventListener('submit', async (e) => {
                 e.preventDefault();
