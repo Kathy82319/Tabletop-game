@@ -38,14 +38,13 @@ export async function onRequest(context) {
 
         const itemRentPrice = Number(item.rentPrice);
         const itemDeposit = Number(item.deposit);
-        const itemLateFee = Number(item.lateFee);
         if (isNaN(itemRentPrice) || itemRentPrice < 0) throw new Error(`遊戲 ID ${rawGameId} 的租金必須是有效的非負數。`);
         if (isNaN(itemDeposit) || itemDeposit < 0) throw new Error(`遊戲 ID ${rawGameId} 的押金必須是有效的非負數。`);
-        if (isNaN(itemLateFee) || itemLateFee < 0) throw new Error(`遊戲 ID ${rawGameId} 的每日逾期費必須是有效的非負數。`);
 
-        const game = await db.prepare('SELECT name, for_rent_stock FROM BoardGames WHERE game_id = ?').bind(gameId).first();
+        const game = await db.prepare('SELECT name, for_rent_stock, late_fee_per_day FROM BoardGames WHERE game_id = ?').bind(gameId).first();
         if (!game) throw new Error(`找不到 ID 為 ${gameId} 的遊戲。`);
         if (game.for_rent_stock <= 0) throw new Error(`《${game.name}》目前已無可租借庫存。`);
+        const itemLateFee = Number(game.late_fee_per_day) || 50;
 
         allGameNames.push(`${game.name} (重量: ${gameWeight}g)`);
         totalRentPrice += itemRentPrice;
@@ -83,7 +82,7 @@ export async function onRequest(context) {
                     `1. 收取遊戲押金，於歸還桌遊、確認內容物無誤後退還。\n` +
                     `2. 內容物需現場清點，若歸還時有缺少或損毀，將不退還押金。\n` +
                     `3. 最短租期為3天，租借當日即算第一天。\n` +
-                    `4. 逾期歸還，每逾期一天將從押金合計扣除 ${totalLateFee} 元（已加總本次租借的所有遊戲）。\n\n` +
+                    `4. 逾期歸還，每逾期一天將從押金合計扣除 ${totalLateFee} 元。\n\n` +
                     `如上面資訊沒有問題，請回覆「ok」並視為同意租借規則。\n`+
                     `感謝您的預約！`;
 

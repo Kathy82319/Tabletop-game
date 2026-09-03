@@ -191,8 +191,6 @@ function addGameToSelection(game) {
         <input type="number" class="game-rent-price-input" title="租金" style="${inputStyle}" min="0" value="${Number(game.rent_price) || 0}">
         <span class="tag-field-label">押金</span>
         <input type="number" class="game-deposit-input" title="押金" style="${inputStyle}" min="0" value="${Number(game.deposit) || 0}">
-        <span class="tag-field-label">逾期費/日</span>
-        <input type="number" class="game-late-fee-input" title="每日逾期費" style="${inputStyle}" min="0" value="${Number(game.late_fee_per_day) || 50}">
         <span class="tag-field-label">重量(g)</span>
         <input type="number" class="game-weight-input" title="重量(g)" style="${inputStyle}" min="0" required>
         <button type="button" class="remove-game-btn">&times;</button>
@@ -204,17 +202,22 @@ function addGameToSelection(game) {
     updateRentalTotals();
 }
 
-// 租金/押金/逾期費都是每款遊戲各自填寫，這裡加總起來顯示在合計欄位，
-// 逾期費刻意加總而不是取最大值，避免租借多款遊戲時逾期只需要付一款的錢。
+// 租金/押金是每款遊戲各自填寫，加總後顯示在合計欄位；
+// 逾期費不用列出來一款一款調，直接加總每款遊戲原本設定的逾期費（不取最大值，避免多款遊戲逾期只算一款的錢）。
 function updateRentalTotals() {
-    let totalRent = 0, totalDeposit = 0, totalLateFee = 0;
+    let totalRent = 0, totalDeposit = 0;
     document.querySelectorAll('#rental-games-container .selected-game-tag').forEach(tag => {
         totalRent += Number(tag.querySelector('.game-rent-price-input')?.value) || 0;
         totalDeposit += Number(tag.querySelector('.game-deposit-input')?.value) || 0;
-        totalLateFee += Number(tag.querySelector('.game-late-fee-input')?.value) || 0;
     });
     document.getElementById('rental-rent-price').value = totalRent;
     document.getElementById('rental-deposit').value = totalDeposit;
+
+    // 逾期費不用一款一款列出來調整，直接用每款遊戲本身設定的每日逾期費加總顯示即可
+    let totalLateFee = 0;
+    selectedRentalGames.forEach(game => {
+        totalLateFee += Number(game.late_fee_per_day) || 50;
+    });
     document.getElementById('rental-late-fee').value = totalLateFee;
 }
 
@@ -236,8 +239,7 @@ async function handleCreateRentalFormSubmit(event) {
             gameId: el.dataset.gameId,
             weight: el.querySelector('.game-weight-input').value,
             rentPrice: el.querySelector('.game-rent-price-input').value,
-            deposit: el.querySelector('.game-deposit-input').value,
-            lateFee: el.querySelector('.game-late-fee-input').value
+            deposit: el.querySelector('.game-deposit-input').value
         });
     });
 
@@ -398,7 +400,7 @@ export function initializeCreateRentalModalEventListeners() {
     });
 
     document.getElementById('rental-games-container')?.addEventListener('input', (e) => {
-        if (e.target.classList.contains('game-rent-price-input') || e.target.classList.contains('game-deposit-input') || e.target.classList.contains('game-late-fee-input')) {
+        if (e.target.classList.contains('game-rent-price-input') || e.target.classList.contains('game-deposit-input')) {
             updateRentalTotals();
         }
     });
