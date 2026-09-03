@@ -163,7 +163,7 @@
     color: white;
 }
 
-/* 公休日／營業時間 分頁 */
+/* 營業日曆 分頁 */
 #bh-calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);

@@ -21,7 +21,6 @@
             <a href="#inventory">庫存管理</a>
             <a href="#rentals">桌遊租借</a>
             <a href="#bookings">訂位管理</a>
-            <a href="#booking-hours">公休日／營業時間</a>
             <a href="#class-contribution">職業公會排行</a>
             <a href="#misc">其他設定</a>
             <a href="#scan">掃碼加點</a>
@@ -155,64 +154,72 @@
 <div id="page-inventory" class="page">
     <div class="page-header">
         <h2>庫存管理</h2>
-        <div>
-            <button id="btn-download-csv-template" class="action-btn" style="background-color: var(--info-color);">下載 CSV 模板</button>
-            <button id="btn-import-csv" class="action-btn" style="background-color: var(--success-color);">從 CSV 匯入</button>
-            <button id="btn-add-new-product" class="action-btn btn-save" style="margin-left: 10px;">新增單筆產品</button>
-            <button id="btn-batch-sell" class="action-btn" style="background-color: #6f42c1; color:#fff; margin-left: 10px;">批次販售</button>
-        </div>
-    </div>
-    <div class="filter-bar">
-        <div id="game-search-container" class="search-chip-container">
-            <input type="text" id="game-search-input" placeholder="搜尋名稱或標籤，按空白鍵/Enter 加入篩選條件...">
-        </div>
-        <div id="inventory-stock-filter" class="filter-group">
-            <button class="active" data-filter="all">全部庫存</button>
-            <button data-filter="in_stock">有庫存</button>
-            <button data-filter="out_of_stock">無庫存</button>
-        </div>
     </div>
 
-    <table id="inventory-table">
-        <thead>
-            <tr>
-                <th><input type="checkbox" id="inventory-select-all" title="全選可販售商品"></th>
-                <th>順序</th>
-                <th>遊戲 (ID / 標籤)</th>
-                <th>庫存</th>
-                <th>定價</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody id="game-list-tbody"></tbody>
-    </table>
+    <div class="sub-nav-tabs">
+        <button class="sub-tab-btn active" data-target="view-inventory-list">庫存清單</button>
+        <button class="sub-tab-btn" data-target="view-sales-history">販售紀錄</button>
+    </div>
 
-    <hr style="border-color: var(--border-color); margin: 30px 0;">
-
-    <div id="page-sales-history">
+    <div id="view-inventory-list" class="sub-view-container">
         <div class="page-header">
-            <h3>販售紀錄</h3>
+            <div></div>
+            <div>
+                <button id="btn-download-csv-template" class="action-btn" style="background-color: var(--info-color);">下載 CSV 模板</button>
+                <button id="btn-import-csv" class="action-btn" style="background-color: var(--success-color);">從 CSV 匯入</button>
+                <button id="btn-add-new-product" class="action-btn btn-save" style="margin-left: 10px;">新增單筆產品</button>
+                <button id="btn-batch-sell" class="action-btn" style="background-color: #6f42c1; color:#fff; margin-left: 10px;">批次販售</button>
+            </div>
         </div>
-        <div class="filter-bar" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:1rem;">
-            <input type="search" id="sales-search-input" placeholder="搜尋商品名稱..." style="flex:1; min-width:160px; padding:8px;">
-            <input type="date" id="sales-date-start" style="padding:8px; border:1px solid var(--border-color); border-radius:4px;">
-            <span style="color:var(--text-light);">至</span>
-            <input type="date" id="sales-date-end" style="padding:8px; border:1px solid var(--border-color); border-radius:4px;">
-            <button id="sales-clear-filter-btn" class="action-btn" style="background:var(--text-light); color:#fff;">清除篩選</button>
+        <div class="filter-bar">
+            <div id="game-search-container" class="search-chip-container">
+                <input type="text" id="game-search-input" placeholder="搜尋名稱或標籤，按空白鍵/Enter 加入篩選條件...">
+            </div>
+            <div id="inventory-stock-filter" class="filter-group">
+                <button class="active" data-filter="all">全部庫存</button>
+                <button data-filter="in_stock">有庫存</button>
+                <button data-filter="out_of_stock">無庫存</button>
+            </div>
         </div>
-        <table>
+
+        <table id="inventory-table">
             <thead>
                 <tr>
-                    <th>訂單編號</th>
-                    <th>結帳時間</th>
-                    <th>品項數</th>
-                    <th>總金額</th>
-                    <th>明細</th>
+                    <th><input type="checkbox" id="inventory-select-all" title="全選可販售商品"></th>
+                    <th>順序</th>
+                    <th>遊戲 (ID / 標籤)</th>
+                    <th>庫存</th>
+                    <th>定價</th>
                     <th>操作</th>
                 </tr>
             </thead>
-            <tbody id="sales-history-tbody"></tbody>
+            <tbody id="game-list-tbody"></tbody>
         </table>
+    </div>
+
+    <div id="view-sales-history" class="sub-view-container" style="display:none;">
+        <div id="page-sales-history">
+            <div class="filter-bar" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:1rem;">
+                <input type="search" id="sales-search-input" placeholder="搜尋商品名稱..." style="flex:1; min-width:160px; padding:8px;">
+                <input type="date" id="sales-date-start" style="padding:8px; border:1px solid var(--border-color); border-radius:4px;">
+                <span style="color:var(--text-light);">至</span>
+                <input type="date" id="sales-date-end" style="padding:8px; border:1px solid var(--border-color); border-radius:4px;">
+                <button id="sales-clear-filter-btn" class="action-btn" style="background:var(--text-light); color:#fff;">清除篩選</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>訂單編號</th>
+                        <th>結帳時間</th>
+                        <th>品項數</th>
+                        <th>總金額</th>
+                        <th>明細</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="sales-history-tbody"></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -250,57 +257,67 @@
 <div id="page-bookings" class="page">
     <div class="page-header">
         <h2>訂位管理</h2>
-        <div>
-            <button id="switch-to-calendar-view-btn" class="action-btn" style="background-color: var(--info-color); margin-right: 10px;">切換至行事曆</button>
-            <button id="create-booking-btn" class="action-btn btn-save" style="margin-right: 10px;">手動建立預約</button>
-        </div>
     </div>
 
-    <div id="calendar-view-container" style="display: none;">
-        <div class="calendar-header">
-            <button id="calendar-prev-month-btn">&lt;</button>
-            <h3 id="calendar-month-year"></h3>
-            <button id="calendar-next-month-btn">&gt;</button>
-        </div>
-        <div id="calendar-grid"></div>
+    <div class="sub-nav-tabs">
+        <button class="sub-tab-btn active" data-target="view-booking-list">訂位總表</button>
+        <button class="sub-tab-btn" data-target="view-booking-hours">營業日曆</button>
     </div>
 
-    <div id="list-view-container">
-        <div class="filter-bar">
-            <div id="booking-status-filter" class="filter-group">
-                <button class="active" data-filter="today">今日預約</button>
-                <button data-filter="confirmed">未來預約</button>
-                <button data-filter="checked-in">已報到</button>
-                <button data-filter="cancelled">已取消</button>
+    <div id="view-booking-list" class="sub-view-container">
+        <div class="page-header">
+            <div></div>
+            <div>
+                <button id="switch-to-calendar-view-btn" class="action-btn" style="background-color: var(--info-color); margin-right: 10px;">切換至行事曆</button>
+                <button id="create-booking-btn" class="action-btn btn-save" style="margin-right: 10px;">手動建立預約</button>
             </div>
         </div>
-        <table>
-            <thead>
-                <tr><th>時間</th><th>客戶</th><th>人數</th><th>預約項目</th><th>狀態</th><th>操作</th></tr>
-            </thead>
-            <tbody id="booking-list-tbody"></tbody>
-        </table>
-    </div>
-</div>
 
-<div id="page-booking-hours" class="page">
-    <div class="page-header">
-        <h2>公休日／營業時間</h2>
-    </div>
-    <p style="color:var(--text-light); font-size:0.88rem; margin-top:-0.8rem;">
-        預設每天都是正常營業（12:00–22:00），點選日期可以設定當天公休或自訂開店/關店時間；設定會同步顯示在顧客的預約與揪團頁面，公休日／未開放的時段也不能被選到。
-    </p>
+        <div id="calendar-view-container" style="display: none;">
+            <div class="calendar-header">
+                <button id="calendar-prev-month-btn">&lt;</button>
+                <h3 id="calendar-month-year"></h3>
+                <button id="calendar-next-month-btn">&gt;</button>
+            </div>
+            <div id="calendar-grid"></div>
+        </div>
 
-    <div class="calendar-header">
-        <button id="bh-prev-month-btn">&lt;</button>
-        <h3 id="bh-month-year"></h3>
-        <button id="bh-next-month-btn">&gt;</button>
+        <div id="list-view-container">
+            <div class="filter-bar">
+                <div id="booking-status-filter" class="filter-group">
+                    <button class="active" data-filter="today">今日預約</button>
+                    <button data-filter="confirmed">未來預約</button>
+                    <button data-filter="checked-in">已報到</button>
+                    <button data-filter="cancelled">已取消</button>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr><th>時間</th><th>客戶</th><th>人數</th><th>預約項目</th><th>狀態</th><th>操作</th></tr>
+                </thead>
+                <tbody id="booking-list-tbody"></tbody>
+            </table>
+        </div>
     </div>
-    <div id="bh-calendar-grid"></div>
 
-    <div style="display:flex; gap:16px; margin-top:12px; font-size:0.85rem; color:var(--text-light); align-items:center;">
-        <span><span class="bh-legend-dot bh-legend-closed"></span> 公休</span>
-        <span><span class="bh-legend-dot bh-legend-custom"></span> 自訂時間</span>
+    <div id="view-booking-hours" class="sub-view-container" style="display:none;">
+        <div id="page-booking-hours">
+            <p style="color:var(--text-light); font-size:0.88rem; margin-top:0;">
+                預設每天都是正常營業（12:00–22:00），點選日期可以設定當天公休或自訂開店/關店時間；設定會同步顯示在顧客的預約與揪團頁面，公休日／未開放的時段也不能被選到。
+            </p>
+
+            <div class="calendar-header">
+                <button id="bh-prev-month-btn">&lt;</button>
+                <h3 id="bh-month-year"></h3>
+                <button id="bh-next-month-btn">&gt;</button>
+            </div>
+            <div id="bh-calendar-grid"></div>
+
+            <div style="display:flex; gap:16px; margin-top:12px; font-size:0.85rem; color:var(--text-light); align-items:center;">
+                <span><span class="bh-legend-dot bh-legend-closed"></span> 公休</span>
+                <span><span class="bh-legend-dot bh-legend-custom"></span> 自訂時間</span>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -381,109 +398,118 @@
                 <h2>其他設定</h2>
             </div>
 
-            <div id="page-news">
-                <div class="page-header">
-                    <h3>情報管理</h3>
-                    <button id="add-news-btn" class="action-btn btn-save">新增情報</button>
-                </div>
-                <table>
-                    <thead>
-                        <tr><th>標題</th><th>分類</th><th>發布日期</th><th>狀態</th><th>操作</th></tr>
-                    </thead>
-                    <tbody id="news-list-tbody"></tbody>
-                </table>
+            <div class="sub-nav-tabs">
+                <button class="sub-tab-btn active" data-target="view-misc-news">情報管理</button>
+                <button class="sub-tab-btn" data-target="view-misc-drafts">訊息草稿</button>
+                <button class="sub-tab-btn" data-target="view-misc-store-info">店家資訊</button>
+                <button class="sub-tab-btn" data-target="view-misc-scoreboards">記分板紀錄</button>
             </div>
 
-            <hr style="border-color: var(--border-color); margin: 30px 0;">
-
-            <div id="page-drafts">
-                <div class="page-header">
-                    <h3>訊息草稿管理</h3>
-                    <button id="add-draft-btn" class="action-btn btn-save">新增草稿</button>
+            <div id="view-misc-news" class="sub-view-container">
+                <div id="page-news">
+                    <div class="page-header">
+                        <h3>情報管理</h3>
+                        <button id="add-news-btn" class="action-btn btn-save">新增情報</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr><th>標題</th><th>分類</th><th>發布日期</th><th>狀態</th><th>操作</th></tr>
+                        </thead>
+                        <tbody id="news-list-tbody"></tbody>
+                    </table>
                 </div>
-                <table>
-                    <thead>
-                        <tr><th>標題</th><th>內容預覽</th><th>操作</th></tr>
-                    </thead>
-                    <tbody id="draft-list-tbody"></tbody>
-                </table>
             </div>
 
-            <hr style="border-color: var(--border-color); margin: 30px 0;">
-
-            <div id="page-store-info">
-                <div class="page-header"><h3>店家資訊管理</h3></div>
-                <form id="store-info-form">
-                    <div class="form-group"><label for="info-address">地址</label><input type="text" id="info-address" required></div>
-                    <div class="form-group"><label for="info-phone">電話</label><input type="text" id="info-phone" required></div>
-                    <div class="form-group"><label for="info-hours">營業時間 (換行請直接按 Enter)</label><textarea id="info-hours" rows="5" required></textarea></div>
-                    <div class="form-group"><label for="info-desc">公會介紹</label><textarea id="info-desc" rows="8" required></textarea></div>
-
-                    <hr style="border-color: var(--border-color); margin: 30px 0;">
-                    <h3 style="text-align: center; color: var(--text-light);">預約頁面文字設定</h3>
-                    <div class="form-group">
-                        <label for="info-booking-announcement">預約頁公告 (支援換行)</label>
-                        <textarea id="info-booking-announcement" rows="4" required></textarea>
+            <div id="view-misc-drafts" class="sub-view-container" style="display:none;">
+                <div id="page-drafts">
+                    <div class="page-header">
+                        <h3>訊息草稿管理</h3>
+                        <button id="add-draft-btn" class="action-btn btn-save">新增草稿</button>
                     </div>
-                    <div class="form-group">
-                        <label for="info-booking-button">預約按鈕文字</label>
-                        <textarea id="info-booking-button" rows="2" required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="info-booking-promo">優惠文字</label>
-                        <textarea id="info-booking-promo" rows="2" required></textarea>
-                    </div>
-
-                    <div class="form-actions"><button type="submit" class="action-btn btn-save">儲存變更</button></div>
-                </form>
+                    <table>
+                        <thead>
+                            <tr><th>標題</th><th>內容預覽</th><th>操作</th></tr>
+                        </thead>
+                        <tbody id="draft-list-tbody"></tbody>
+                    </table>
+                </div>
             </div>
 
-            <hr style="border-color: var(--border-color); margin: 30px 0;">
+            <div id="view-misc-store-info" class="sub-view-container" style="display:none;">
+                <div id="page-store-info">
+                    <div class="page-header"><h3>店家資訊管理</h3></div>
+                    <form id="store-info-form">
+                        <div class="form-group"><label for="info-address">地址</label><input type="text" id="info-address" required></div>
+                        <div class="form-group"><label for="info-phone">電話</label><input type="text" id="info-phone" required></div>
+                        <div class="form-group"><label for="info-hours">營業時間 (換行請直接按 Enter)</label><textarea id="info-hours" rows="5" required></textarea></div>
+                        <div class="form-group"><label for="info-desc">公會介紹</label><textarea id="info-desc" rows="8" required></textarea></div>
 
-            <div id="page-scoreboards">
-                <div class="page-header">
-                    <h3>記分板紀錄</h3>
-                </div>
-
-                <div class="filter-bar" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:1rem;">
-                    <input type="search" id="sb-admin-search" placeholder="搜尋遊戲名稱 / 建立者..." style="flex:1; min-width:180px; padding:8px;">
-                    <button id="sb-admin-clear-btn" class="action-btn" style="background:var(--text-light); color:#fff;">清除篩選</button>
-                </div>
-
-                <table>
-                    <thead>
-                        <tr>
-                            <th>遊戲名稱</th>
-                            <th>建立者</th>
-                            <th>建立時間</th>
-                            <th>玩家數</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="sb-admin-tbody"></tbody>
-                </table>
-
-                <!-- 場次詳細 Modal -->
-                <div id="sb-admin-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-                    <div style="background:#fff; border-radius:8px; width:90%; max-width:640px; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
-                        <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border-color);">
-                            <h3 id="sb-admin-modal-title" style="margin:0;"></h3>
-                            <button id="sb-admin-modal-close" class="action-btn btn-cancel" style="padding:4px 12px;">✕ 關閉</button>
+                        <hr style="border-color: var(--border-color); margin: 30px 0;">
+                        <h3 style="text-align: center; color: var(--text-light);">預約頁面文字設定</h3>
+                        <div class="form-group">
+                            <label for="info-booking-announcement">預約頁公告 (支援換行)</label>
+                            <textarea id="info-booking-announcement" rows="4" required></textarea>
                         </div>
-                        <div style="overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px;">
-                            <div>
-                                <h4 style="margin:0 0 8px; color:var(--text-dark);">最終分數</h4>
-                                <table>
-                                    <thead><tr><th>暱稱</th><th>分數</th><th>加入時間</th></tr></thead>
-                                    <tbody id="sb-admin-modal-players"></tbody>
-                                </table>
+                        <div class="form-group">
+                            <label for="info-booking-button">預約按鈕文字</label>
+                            <textarea id="info-booking-button" rows="2" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="info-booking-promo">優惠文字</label>
+                            <textarea id="info-booking-promo" rows="2" required></textarea>
+                        </div>
+
+                        <div class="form-actions"><button type="submit" class="action-btn btn-save">儲存變更</button></div>
+                    </form>
+                </div>
+            </div>
+
+            <div id="view-misc-scoreboards" class="sub-view-container" style="display:none;">
+                <div id="page-scoreboards">
+                    <div class="page-header">
+                        <h3>記分板紀錄</h3>
+                    </div>
+
+                    <div class="filter-bar" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:1rem;">
+                        <input type="search" id="sb-admin-search" placeholder="搜尋遊戲名稱 / 建立者..." style="flex:1; min-width:180px; padding:8px;">
+                        <button id="sb-admin-clear-btn" class="action-btn" style="background:var(--text-light); color:#fff;">清除篩選</button>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>遊戲名稱</th>
+                                <th>建立者</th>
+                                <th>建立時間</th>
+                                <th>玩家數</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sb-admin-tbody"></tbody>
+                    </table>
+
+                    <!-- 場次詳細 Modal -->
+                    <div id="sb-admin-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+                        <div style="background:#fff; border-radius:8px; width:90%; max-width:640px; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+                            <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border-color);">
+                                <h3 id="sb-admin-modal-title" style="margin:0;"></h3>
+                                <button id="sb-admin-modal-close" class="action-btn btn-cancel" style="padding:4px 12px;">✕ 關閉</button>
                             </div>
-                            <div>
-                                <h4 style="margin:0 0 8px; color:var(--text-dark);">遊戲紀錄</h4>
-                                <table>
-                                    <thead><tr><th>時間</th><th>玩家</th><th>異動</th><th>結果</th></tr></thead>
-                                    <tbody id="sb-admin-modal-events"></tbody>
-                                </table>
+                            <div style="overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px;">
+                                <div>
+                                    <h4 style="margin:0 0 8px; color:var(--text-dark);">最終分數</h4>
+                                    <table>
+                                        <thead><tr><th>暱稱</th><th>分數</th><th>加入時間</th></tr></thead>
+                                        <tbody id="sb-admin-modal-players"></tbody>
+                                    </table>
+                                </div>
+                                <div>
+                                    <h4 style="margin:0 0 8px; color:var(--text-dark);">遊戲紀錄</h4>
+                                    <table>
+                                        <thead><tr><th>時間</th><th>玩家</th><th>異動</th><th>結果</th></tr></thead>
+                                        <tbody id="sb-admin-modal-events"></tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
