@@ -2,6 +2,10 @@
 import { api } from '../api.js';
 import { ui } from '../ui.js';
 
+function escapeHtml(str) {
+    return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 const renderStats = (stats) => {
     const updateText = (id, text) => {
         const el = document.getElementById(id);
@@ -14,6 +18,37 @@ const renderStats = (stats) => {
     updateText('stat-new-members', stats.new_members_this_month ?? 0);
     updateText('stat-total-members', `共 ${stats.total_members ?? 0} 位會員`);
 };
+
+// ---- 今日預約名單 ----
+const BOOKING_STATUS_LABEL = { confirmed: '預約成功', 'checked-in': '已報到', cancelled: '已取消' };
+
+async function loadTodayBookings() {
+    const list = document.getElementById('today-bookings-list');
+    if (!list) return;
+
+    try {
+        const bookings = await api.getBookings('today');
+        if (!bookings || bookings.length === 0) {
+            list.innerHTML = '<p style="text-align:center; color:var(--text-light); font-size:0.85rem; margin:0;">今天目前沒有預約。</p>';
+            return;
+        }
+
+        list.innerHTML = bookings.map(b => {
+            const statusLabel = BOOKING_STATUS_LABEL[b.status] || b.status;
+            const statusColor = b.status === 'checked-in' ? 'var(--text-light)' : (b.status === 'cancelled' ? 'var(--danger-color)' : 'var(--success-color)');
+            return `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border-color); ${b.status === 'cancelled' ? 'opacity:0.5;' : ''}">
+                    <div>
+                        <div style="font-weight:600; font-size:0.9rem;">${escapeHtml(b.contact_name)}</div>
+                        <div style="font-size:0.78rem; color:var(--text-light);">${b.time_slot}・${b.num_of_people} 人${b.item ? `・${escapeHtml(b.item)}` : ''}</div>
+                    </div>
+                    <span style="font-size:0.78rem; font-weight:600; color:${statusColor};">${statusLabel}</span>
+                </div>`;
+        }).join('');
+    } catch (error) {
+        list.innerHTML = '<p style="text-align:center; color:var(--danger-color); font-size:0.85rem; margin:0;">載入今日預約失敗。</p>';
+    }
+}
 
 // ---- 動態類別判斷 ----
 function getActivityCategory(message) {
@@ -304,6 +339,7 @@ export const init = async (context, param) => {
         await Promise.all([
             loadContributionMonth(document.getElementById('contribution-month-select')?.value || currentYearMonth()),
             renderActivityFeed(),
+            loadTodayBookings(),
         ]);
         setupEventListeners();
     } catch (error) {

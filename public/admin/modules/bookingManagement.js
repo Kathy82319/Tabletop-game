@@ -42,7 +42,7 @@ function renderBookingList(bookings) {
             <td>${escapeHtml(booking.item) || '-'}</td>
             <td>${statusText}</td>
             <td class="actions-cell">
-                <button class="action-btn btn-check-in" data-booking-id="${booking.booking_id}" style="background-color: var(--success-color);" ${booking.status !== 'confirmed' ? 'disabled' : ''}>報到</button>
+                ${booking.status === 'confirmed' ? `<button class="action-btn btn-check-in" data-booking-id="${booking.booking_id}" style="background-color: var(--success-color);">報到</button>` : ''}
                 <button class="action-btn btn-cancel-booking" data-booking-id="${booking.booking_id}" style="background-color: var(--danger-color);" ${booking.status === 'cancelled' ? 'disabled' : ''}>取消</button>
             </td>`;
     });
