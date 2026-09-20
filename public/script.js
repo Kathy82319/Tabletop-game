@@ -341,6 +341,9 @@ function initializeGameDetailsPageFromHash(gameIdString) {
             }
             userProfile = await liff.getProfile();
             window.userProfile = userProfile;
+            // 冒險者介面改版預覽開關：只有這個 LINE 帳號會看到新版，其他會員維持舊版；
+            // 確認新版沒問題後，把這個判斷式拿掉（或直接改成 true）就會變成所有人都看新版。
+            window.isPreviewUser = userProfile.userId === 'U43e4e5c607aa74a030f61505ebd5e888';
             if (typeof GatherModule !== 'undefined') GatherModule.checkUnreadEdits();
 
             const pendingHash = localStorage.getItem('pending_hash');
