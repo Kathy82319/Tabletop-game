@@ -537,7 +537,73 @@ function updateProfileDisplay(data) {
         document.getElementById('user-equipment').innerHTML = data.equipment || '無';
         document.getElementById('user-equipment-desc').innerHTML = data.equipment_description || '無';
     }
+
+    // 冒險者介面改版預覽：只有 window.isPreviewUser 看得到欄位收合式的新版介面，其他人維持舊版
+    const oldDetailsSection = document.querySelector('.profile-details-section');
+    const newDetailsSection = document.getElementById('profile-details-section-v2');
+    if (window.isPreviewUser && newDetailsSection) {
+        if (oldDetailsSection) oldDetailsSection.style.display = 'none';
+        newDetailsSection.style.display = 'flex';
+        renderProfileSlotsV2(assets);
+    } else {
+        if (oldDetailsSection) oldDetailsSection.style.display = '';
+        if (newDetailsSection) newDetailsSection.style.display = 'none';
+    }
 }
+
+// 改版預覽：把稱號／成就／技能／裝備畫成可收合的圖示格子（點欄位展開→點圖示看介紹）
+function renderProfileSlotsV2(assets) {
+    const configs = [
+        { type: 'title', gridId: 'slot-grid-title' },
+        { type: 'achievement', gridId: 'slot-grid-achievement' },
+        { type: 'skill', gridId: 'slot-grid-skill' },
+        { type: 'equipment', gridId: 'slot-grid-equipment' },
+    ];
+
+    configs.forEach(({ type, gridId }) => {
+        const grid = document.getElementById(gridId);
+        if (!grid) return;
+        const field = grid.closest('.profile-slot-field');
+        const items = assets.filter(a => a.type === type);
+
+        field?.querySelectorAll('.profile-slot-empty').forEach(el => el.remove());
+
+        if (items.length === 0) {
+            grid.innerHTML = '';
+            const p = document.createElement('p');
+            p.className = 'profile-slot-empty';
+            p.textContent = '尚無項目';
+            field?.appendChild(p);
+            return;
+        }
+
+        grid.innerHTML = items.map(a => {
+            const desc = a.custom_description || a.default_desc || '無說明';
+            const iconUrl = a.icon_url || '';
+            const iconHtml = iconUrl
+                ? `<img src="${escapeHtml(iconUrl)}" class="profile-slot-icon" alt="">`
+                : `<div class="profile-slot-icon no-icon">❔</div>`;
+            // 用 data-* 存資料、事件委派讀取，不用把文字塞進 onclick 字串，避免要處理 JS 字串跳脫的問題
+            return `<button type="button" class="profile-slot-item" data-name="${escapeHtml(a.name)}" data-desc="${escapeHtml(desc)}" data-icon="${escapeHtml(iconUrl)}">
+                ${iconHtml}
+                <span class="profile-slot-item-name">${escapeHtml(a.name)}</span>
+            </button>`;
+        }).join('');
+    });
+}
+
+// 改版預覽：點欄位標題展開／收合圖示格子、點圖示彈出介紹（用事件委派，避免每次重新渲染都要重綁）
+document.addEventListener('click', (e) => {
+    const header = e.target.closest('.profile-slot-header');
+    if (header) {
+        header.closest('.profile-slot-field')?.classList.toggle('open');
+        return;
+    }
+    const item = e.target.closest('.profile-slot-item');
+    if (item) {
+        showAssetPopover(item.dataset.name, item.dataset.desc, item.dataset.icon);
+    }
+});
 
 function renderClassContribution(data) {
     const section = document.getElementById('profile-contribution-section');
@@ -576,10 +642,20 @@ function renderClassContribution(data) {
     }).join('');
 }
 
-window.showAssetPopover = function(name, desc) {
+window.showAssetPopover = function(name, desc, iconUrl) {
     document.getElementById('asset-popover-title').textContent = name;
     document.getElementById('asset-popover-desc').textContent = desc;
-    
+
+    const iconEl = document.getElementById('asset-popover-icon');
+    if (iconEl) {
+        if (iconUrl) {
+            iconEl.src = iconUrl;
+            iconEl.style.display = 'block';
+        } else {
+            iconEl.style.display = 'none';
+        }
+    }
+
     document.getElementById('popover-backdrop').style.display = 'block';
     document.getElementById('asset-popover').style.display = 'block';
 };

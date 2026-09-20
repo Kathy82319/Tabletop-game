@@ -221,6 +221,38 @@
                 <div id="user-equipment-desc">--</div>
             </div>
         </div>
+
+        <!-- 改版預覽：欄位收合式呈現，只有 window.isPreviewUser 為 true 時才會顯示 -->
+        <div class="profile-details-section-v2" id="profile-details-section-v2" style="display:none;">
+            <div class="profile-slot-field" data-slot="title">
+                <button class="profile-slot-header" type="button">
+                    <span class="profile-slot-label">🏅 稱號</span>
+                    <span class="profile-slot-toggle">›</span>
+                </button>
+                <div class="profile-slot-grid" id="slot-grid-title"></div>
+            </div>
+            <div class="profile-slot-field" data-slot="achievement">
+                <button class="profile-slot-header" type="button">
+                    <span class="profile-slot-label">🏆 成就</span>
+                    <span class="profile-slot-toggle">›</span>
+                </button>
+                <div class="profile-slot-grid" id="slot-grid-achievement"></div>
+            </div>
+            <div class="profile-slot-field" data-slot="skill">
+                <button class="profile-slot-header" type="button">
+                    <span class="profile-slot-label">✨ 技能</span>
+                    <span class="profile-slot-toggle">›</span>
+                </button>
+                <div class="profile-slot-grid" id="slot-grid-skill"></div>
+            </div>
+            <div class="profile-slot-field" data-slot="equipment">
+                <button class="profile-slot-header" type="button">
+                    <span class="profile-slot-label">🎒 裝備</span>
+                    <span class="profile-slot-toggle">›</span>
+                </button>
+                <div class="profile-slot-grid" id="slot-grid-equipment"></div>
+            </div>
+        </div>
     </div>
 
     <div class="profile-actions">
@@ -1098,6 +1130,7 @@
 
 <div id="popover-backdrop" onclick="closeAssetPopover()"></div>
     <div id="asset-popover">
+        <img id="asset-popover-icon" style="display:none;">
         <h3 id="asset-popover-title">--</h3>
         <p id="asset-popover-desc">--</p>
         <button class="popover-close-btn" onclick="closeAssetPopover()">關閉</button>
