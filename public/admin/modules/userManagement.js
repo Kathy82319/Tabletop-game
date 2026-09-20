@@ -488,21 +488,12 @@ function renderUserDetails(data) {
     const displayName = profile.nickname || profile.line_display_name;
     document.querySelector('#user-details-modal #user-details-title').textContent = displayName;
     
-    // 「一袋金幣」的內容金額跟著等級走（每升一級 +100），直接依目前等級即時算出來，不用手動改敘述文字
-    const getAssetDesc = (a) => {
-        if (a.name === '一袋金幣') {
-            const amount = (profile.level || 1) * 100;
-            return `內有${amount}元金幣(一次能使用${amount}金幣)可用來購買1000元以上遊戲或折抵遊戲租借費用(不能折扣到0元)或入場費折抵(一次可使用${amount}金幣)`;
-        }
-        return a.custom_description || a.default_desc || '無說明';
-    };
-
     const renderAssetsHtml = (type) => {
         const items = profile.user_assets ? profile.user_assets.filter(a => a.type === type) : [];
         if (items.length === 0) return '<span style="color:#aaa;">無</span>';
         return items.map(a => {
             const icon = a.icon_url ? `<img src="${a.icon_url}" style="height: 1.2em; vertical-align: middle; margin-right: 4px; border-radius: 2px;">` : '';
-            const desc = getAssetDesc(a);
+            const desc = a.custom_description || a.default_desc || '無說明';
             return `<span style="display: inline-block; background: #e9ecef; padding: 3px 10px; border-radius: 12px; cursor: help; border: 1px solid #ced4da;" title="${desc}">${icon}${a.name}</span>`;
         }).join('');
     };

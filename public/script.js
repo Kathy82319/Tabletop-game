@@ -487,23 +487,13 @@ function updateProfileDisplay(data) {
 
     const assets = data.user_assets || [];
 
-    // 「一袋金幣」的內容金額跟著等級走（每升一級 +100），直接依目前等級即時算出來，
-    // 不用再手動去後臺一個一個會員改敘述文字
-    const getAssetDesc = (a) => {
-        if (a.name === '一袋金幣') {
-            const amount = (data.level || 1) * 100;
-            return `內有${amount}元金幣(一次能使用${amount}金幣)可用來購買1000元以上遊戲或折抵遊戲租借費用(不能折扣到0元)或入場費折抵(一次可使用${amount}金幣)`;
-        }
-        return a.custom_description || a.default_desc || '無說明';
-    };
-
     const renderInteractiveTags = (type) => {
         const items = assets.filter(a => a.type === type);
         if (items.length === 0) return '<span>無</span>';
-
+        
         return items.map(a => {
             const icon = a.icon_url ? `<img src="${a.icon_url}" style="height: 1.1em; vertical-align: middle; margin-right: 3px; border-radius: 2px;">` : '';
-            const desc = getAssetDesc(a);
+            const desc = a.custom_description || a.default_desc || '無說明';
             return `<span style="display: inline-block; padding: 2px 0; cursor: pointer; color: #333; text-decoration: underline dotted #999; text-underline-offset: 3px;" onclick="showAssetPopover('${a.name}', '${desc}')">${icon}${a.name}</span>`;
         }).join('<span style="color: #ccc; margin: 0 4px;">|</span>'); // 用直槓分隔
     };
@@ -512,7 +502,7 @@ function updateProfileDisplay(data) {
         const items = assets.filter(a => a.type === type);
         const tagContainer = document.getElementById(tagContainerId);
         const descContainer = document.getElementById(descContainerId);
-
+        
         if (items.length === 0) {
             if(tagContainer) tagContainer.innerHTML = '<span>無</span>';
             if(descContainer) descContainer.innerHTML = '無';
@@ -525,10 +515,10 @@ function updateProfileDisplay(data) {
                 return `<span style="display: inline-block; background: #e9ecef; padding: 2px 8px; border-radius: 12px; border: 1px solid #ced4da; font-size: 0.9em;">${icon}${a.name}</span>`;
             }).join('');
         }
-
+        
         if(descContainer) {
             descContainer.innerHTML = items.map(a => {
-                const desc = getAssetDesc(a);
+                const desc = a.custom_description || a.default_desc || '無說明';
                 return `<div style="margin-bottom: 3px;"><strong style="color: #444;">${a.name}:</strong> <span style="color: #666;">${desc}</span></div>`;
             }).join('');
         }
