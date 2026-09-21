@@ -643,7 +643,7 @@ function renderMonsterBattle(data) {
         attacksLeftEl.textContent = '尚未設定職業，無法攻擊';
         attackBtn.disabled = true;
     } else if (!availableAttacks || availableAttacks <= 0) {
-        attacksLeftEl.textContent = '你目前沒有攻擊機會';
+        attacksLeftEl.textContent = '你還有 0 次攻擊機會';
         attackBtn.disabled = true;
     } else {
         attacksLeftEl.textContent = `你還有 ${availableAttacks} 次攻擊機會`;

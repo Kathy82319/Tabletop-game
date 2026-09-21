@@ -5,27 +5,8 @@ export async function onRequest(context) {
     if (context.request.method !== 'POST') {
       return new Response('Invalid request method.', { status: 405 });
     }
-    const { userId, expValue, reason, contributionValue, contributionClass } = await context.request.json();
+    const { userId, expValue, reason } = await context.request.json();
     const db = context.env.DB;
-
-    // 沒有指定會員：只單純新增職業貢獻度，不給經驗值（例如顧客用一代金幣折抵消費，不給經驗值但仍要算貢獻度）
-    if (!userId) {
-        const contrib = Number(contributionValue);
-        if (!contributionClass || isNaN(contrib) || contrib <= 0) {
-            return new Response(JSON.stringify({ error: '請選擇職業並輸入有效的貢獻值。' }), { status: 400 });
-        }
-        await db.prepare(
-            'INSERT INTO ContributionHistory (user_id, class_name, contribution_value) VALUES (NULL, ?, ?)'
-        ).bind(contributionClass, contrib).run();
-
-        return new Response(JSON.stringify({
-            success: true,
-            message: `成功新增貢獻值 +${contrib}（${contributionClass}）。`
-        }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-        });
-    }
 
     if (typeof userId !== 'string') {
         return new Response(JSON.stringify({ error: '無效的使用者 ID。' }), { status: 400 });
@@ -69,14 +50,6 @@ export async function onRequest(context) {
         const activityMessage = `${userName} 已升級至 LV ${currentLevel}！請記得提供升級福利。`;
         operations.push(
             db.prepare('INSERT INTO Activities (message, is_read) VALUES (?, 0)').bind(activityMessage)
-        );
-    }
-
-    const contrib = Number(contributionValue);
-    if (contributionClass && !isNaN(contrib) && contrib > 0) {
-        operations.push(
-            db.prepare('INSERT INTO ContributionHistory (user_id, class_name, contribution_value) VALUES (?, ?, ?)')
-              .bind(userId, contributionClass, contrib)
         );
     }
 
