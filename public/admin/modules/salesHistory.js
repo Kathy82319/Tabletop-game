@@ -1,5 +1,6 @@
 // public/admin/modules/salesHistory.js
 import { api } from '../api.js';
+import { parseUtcTimestamp } from '../ui.js';
 
 let allOrders = [];
 let filteredOrders = [];
@@ -59,7 +60,7 @@ function renderSalesHistory(list) {
         const mainRow = `
             <tr>
                 <td>#${order.order_id}</td>
-                <td>${new Date(order.created_at).toLocaleString()}</td>
+                <td>${parseUtcTimestamp(order.created_at).toLocaleString()}</td>
                 <td>${order.items.length}</td>
                 <td>$${order.total_amount}</td>
                 <td>
@@ -85,11 +86,11 @@ function applyFilterAndRender() {
 
     filteredOrders = allOrders.filter(order => {
         if (term && !order.items.some(item => (item.game_name || '').toLowerCase().includes(term))) return false;
-        if (dateStart && new Date(order.created_at) < new Date(dateStart)) return false;
+        if (dateStart && parseUtcTimestamp(order.created_at) < new Date(dateStart)) return false;
         if (dateEnd) {
             const end = new Date(dateEnd);
             end.setHours(23, 59, 59, 999);
-            if (new Date(order.created_at) > end) return false;
+            if (parseUtcTimestamp(order.created_at) > end) return false;
         }
         return true;
     });

@@ -1,6 +1,6 @@
 // public/admin/modules/expHistory.js
 import { api } from '../api.js';
-import { ui } from '../ui.js';
+import { ui, parseUtcTimestamp } from '../ui.js';
 
 let allExpHistory = [];
 let filteredHistory = [];
@@ -30,7 +30,7 @@ function renderExpHistory(list) {
                 <div class="main-info">${displayName}</div>
                 <div class="sub-info">${record.user_id}</div>
             </td>
-            <td>${new Date(record.created_at).toLocaleString()}</td>
+            <td>${parseUtcTimestamp(record.created_at).toLocaleString()}</td>
             <td>${record.reason}</td>
             <td>${record.exp_added}</td>
             <td>
@@ -57,11 +57,11 @@ function applyFilterAndRender() {
                           (record.user_id || '').toLowerCase().includes(userTerm);
             if (!match) return false;
         }
-        if (dateStart && new Date(record.created_at) < new Date(dateStart)) return false;
+        if (dateStart && parseUtcTimestamp(record.created_at) < new Date(dateStart)) return false;
         if (dateEnd) {
             const end = new Date(dateEnd);
             end.setHours(23, 59, 59, 999);
-            if (new Date(record.created_at) > end) return false;
+            if (parseUtcTimestamp(record.created_at) > end) return false;
         }
         if (!isNaN(minExp) && minExp > 0 && record.exp_added < minExp) return false;
         return true;
@@ -341,7 +341,7 @@ function renderContribHistory(list) {
                 <div class="main-info">${displayName}</div>
                 <div class="sub-info">${record.user_id}</div>
             </td>
-            <td>${new Date(record.created_at).toLocaleString()}</td>
+            <td>${parseUtcTimestamp(record.created_at).toLocaleString()}</td>
             <td>${record.class_name}</td>
             <td>${record.contribution_value}</td>
             <td>

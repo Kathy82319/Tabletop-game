@@ -1,6 +1,6 @@
 // public/admin/modules/dashboard.js
 import { api } from '../api.js';
-import { ui } from '../ui.js';
+import { ui, parseUtcTimestamp } from '../ui.js';
 
 function escapeHtml(str) {
     return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -97,7 +97,7 @@ async function renderActivityFeed() {
 
         container.innerHTML = data.map(act => {
             const cat = getActivityCategory(act.message);
-            const time = new Date(act.created_at).toLocaleString('zh-TW', options);
+            const time = parseUtcTimestamp(act.created_at).toLocaleString('zh-TW', options);
             const isRead = act.is_read === 1;
             return `
             <div class="activity-item${isRead ? ' is-read' : ''}" data-id="${act.activity_id}">

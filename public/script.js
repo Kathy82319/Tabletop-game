@@ -848,7 +848,7 @@ async function initializeMyBookingsPage() {
                 return;
             }
             container.innerHTML = records.map(record => {
-                const date = new Date(record.created_at).toLocaleDateString('sv'); 
+                const date = parseUtcTimestamp(record.created_at).toLocaleDateString('sv');
                 const expClass = record.exp_added > 0 ? 'exp-gain' : 'exp-loss';
                 const expSign = record.exp_added > 0 ? '+' : '';
                 return `

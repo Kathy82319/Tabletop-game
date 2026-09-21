@@ -1,5 +1,12 @@
 // public/admin/ui.js
 
+// D1 的 created_at 存的是 UTC 時間、格式沒有帶時區，瀏覽器會誤當成本地時間解析，
+// 導致顯示時間跟實際時間差了時區時數（台灣快 8 小時）。補上 T 和 Z 讓瀏覽器正確視為 UTC。
+export function parseUtcTimestamp(str) {
+    if (!str) return new Date(NaN);
+    return new Date(str.replace(' ', 'T') + 'Z');
+}
+
 export const ui = {
     showPage(pageId) {
         document.querySelectorAll('.page').forEach(page => {

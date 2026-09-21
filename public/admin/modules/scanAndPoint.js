@@ -1,7 +1,7 @@
 // public/admin/modules/scanAndPoint.js
 
 import { api } from '../api.js';
-import { ui } from '../ui.js';
+import { ui, parseUtcTimestamp } from '../ui.js';
 
 let html5QrCode = null;
 
@@ -145,7 +145,7 @@ function renderScanUserPanel(data) {
     };
 
     const recentExp = (exp_history || []).slice(0, 5).map(e =>
-        `<tr><td>${new Date(e.created_at).toLocaleDateString()}</td><td>${e.reason}</td><td style="color:var(--success-color);font-weight:bold;">+${e.exp_added}</td></tr>`
+        `<tr><td>${parseUtcTimestamp(e.created_at).toLocaleDateString()}</td><td>${e.reason}</td><td style="color:var(--success-color);font-weight:bold;">+${e.exp_added}</td></tr>`
     ).join('');
 
     const pinned = isPinned(profile.user_id);
