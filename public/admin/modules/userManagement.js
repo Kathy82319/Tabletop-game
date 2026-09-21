@@ -133,8 +133,11 @@ function openEditAssetModal(assetId = null) {
     document.getElementById('edit-asset-desc-label').textContent = typeInfo.desc;
     
     const deleteBtn = document.getElementById('delete-asset-btn');
-    
+
     const prevAssetIcon = document.getElementById('prev-asset-icon');
+
+    const attackGroup = document.getElementById('edit-asset-attack-group');
+    if (attackGroup) attackGroup.style.display = currentAssetType === 'class' ? 'block' : 'none';
 
     if (assetId) {
         const asset = allAssets.find(a => a.id == assetId);
@@ -143,6 +146,8 @@ function openEditAssetModal(assetId = null) {
             document.getElementById('edit-asset-name').value = asset.name;
             document.getElementById('edit-asset-desc').value = asset.description;
             document.getElementById('edit-asset-icon').value = asset.icon_url || '';
+            document.getElementById('edit-asset-attack-min').value = asset.attack_min ?? '';
+            document.getElementById('edit-asset-attack-max').value = asset.attack_max ?? '';
             if (prevAssetIcon) {
                 if (asset.icon_url) { prevAssetIcon.src = asset.icon_url; prevAssetIcon.style.display = 'block'; }
                 else { prevAssetIcon.style.display = 'none'; }
@@ -153,10 +158,12 @@ function openEditAssetModal(assetId = null) {
     } else {
         document.getElementById('edit-asset-id').value = '';
         document.getElementById('edit-asset-icon').value = ''; // 【新增】清空圖示網址
+        document.getElementById('edit-asset-attack-min').value = '';
+        document.getElementById('edit-asset-attack-max').value = '';
         if (prevAssetIcon) prevAssetIcon.style.display = 'none';
         deleteBtn.style.display = 'none';
     }
-    
+
     ui.showModal('#edit-asset-modal');
 }
 
@@ -171,7 +178,9 @@ async function handleAssetSave(e) {
         type: document.getElementById('edit-asset-type').value,
         name: document.getElementById('edit-asset-name').value,
         description: document.getElementById('edit-asset-desc').value,
-        icon_url: document.getElementById('edit-asset-icon').value
+        icon_url: document.getElementById('edit-asset-icon').value,
+        attack_min: document.getElementById('edit-asset-attack-min').value || null,
+        attack_max: document.getElementById('edit-asset-attack-max').value || null
     };
     
     try {

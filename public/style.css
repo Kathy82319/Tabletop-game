@@ -622,6 +622,101 @@ input[readonly] {
     border-color: #3d8f77;
 }
 
+/* 改版預覽：公會討伐戰（打怪呈現職業貢獻度） */
+.monster-battle-section {
+    font-family: var(--font-primary);
+}
+.monster-battle-title {
+    font-weight: bold;
+    color: #444;
+    margin-bottom: 10px;
+}
+.monster-name {
+    font-size: 1.05rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 6px;
+    text-align: center;
+}
+.monster-hp-bar-track {
+    position: relative;
+    height: 22px;
+    background: #EFEBE9;
+    border: 1px solid #D7CCC8;
+    border-radius: 11px;
+    overflow: hidden;
+}
+.monster-hp-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
+    transition: width 0.5s ease;
+}
+.monster-hp-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+.monster-battle-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+}
+.monster-attacks-left {
+    font-size: 0.82rem;
+    color: #777;
+}
+.monster-attack-btn {
+    background: linear-gradient(180deg, #e74c3c, #c0392b);
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 20px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s ease, opacity 0.2s ease;
+}
+.monster-attack-btn:active {
+    transform: scale(0.94);
+}
+.monster-attack-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+.monster-damage-popup {
+    position: relative;
+    height: 0;
+    text-align: center;
+}
+.monster-damage-popup .damage-float {
+    position: absolute;
+    left: 50%;
+    top: -4px;
+    transform: translateX(-50%);
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #e74c3c;
+    animation: damage-float-up 0.9s ease-out forwards;
+    pointer-events: none;
+}
+.monster-damage-popup .damage-float.defeated {
+    color: #d4a017;
+    font-size: 1.1rem;
+    white-space: nowrap;
+}
+@keyframes damage-float-up {
+    0%   { opacity: 1; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, -30px); }
+}
+
 /* 職業公會排行 (沙漏) */
 .profile-contribution-title {
     font-weight: bold;

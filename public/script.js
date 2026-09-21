@@ -413,6 +413,7 @@ async function initializeProfilePage() {
         ]);
         updateProfileDisplay(userData);
         renderClassContribution(classContributionData);
+        if (window.isPreviewUser) loadMonsterBattle();
     } catch (error) {
         console.error("無法更新個人資料畫面:", error);
         if (displayNameElement) displayNameElement.textContent = '資料載入失敗';
@@ -602,6 +603,103 @@ document.addEventListener('click', (e) => {
     const item = e.target.closest('.profile-slot-item');
     if (item) {
         showAssetPopover(item.dataset.name, item.dataset.desc, item.dataset.icon);
+    }
+});
+
+// 改版預覽：公會討伐戰（打怪呈現職業貢獻度，僅 window.isPreviewUser 帳號可見）
+let monsterAttacking = false;
+
+function renderMonsterBattle(data) {
+    const section = document.getElementById('monster-battle-section');
+    const divider = document.getElementById('monster-battle-divider');
+    if (!section) return;
+
+    if (!data || !data.monster) {
+        section.style.display = 'none';
+        if (divider) divider.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+    if (divider) divider.style.display = 'block';
+
+    const { monster, userClass, availableAttacks } = data;
+    const percent = monster.max_hp > 0 ? Math.max(0, Math.round((monster.current_hp / monster.max_hp) * 100)) : 0;
+
+    document.getElementById('monster-name').textContent = monster.name;
+    document.getElementById('monster-hp-fill').style.width = `${percent}%`;
+    document.getElementById('monster-hp-text').textContent = `${monster.current_hp} / ${monster.max_hp}`;
+
+    const attackBtn = document.getElementById('monster-attack-btn');
+    const attacksLeftEl = document.getElementById('monster-attacks-left');
+
+    if (!userClass || userClass === '無') {
+        attacksLeftEl.textContent = '尚未設定職業，無法攻擊';
+        attackBtn.disabled = true;
+    } else if (!availableAttacks || availableAttacks <= 0) {
+        attacksLeftEl.textContent = '你目前沒有攻擊機會，消費或入場累積經驗值後再來吧！';
+        attackBtn.disabled = true;
+    } else {
+        attacksLeftEl.textContent = `你還有 ${availableAttacks} 次攻擊機會`;
+        attackBtn.disabled = monsterAttacking;
+    }
+}
+
+async function loadMonsterBattle() {
+    try {
+        const res = await fetch('/api/monster-status', { headers: getLiffAuthHeaders() });
+        if (!res.ok) { document.getElementById('monster-battle-section').style.display = 'none'; return; }
+        const data = await res.json();
+        renderMonsterBattle(data);
+    } catch (e) {
+        document.getElementById('monster-battle-section').style.display = 'none';
+    }
+}
+
+async function handleMonsterAttack() {
+    if (monsterAttacking) return;
+    monsterAttacking = true;
+    const attackBtn = document.getElementById('monster-attack-btn');
+    attackBtn.disabled = true;
+
+    try {
+        const res = await fetch('/api/attack-monster', {
+            method: 'POST',
+            headers: getLiffAuthHeaders(),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) {
+            throw new Error(data.error || '攻擊失敗');
+        }
+
+        // 傷害飄字動畫
+        const popup = document.getElementById('monster-damage-popup');
+        const dmgEl = document.createElement('div');
+        dmgEl.className = 'damage-float';
+        dmgEl.textContent = `-${data.damage}`;
+        popup.appendChild(dmgEl);
+        setTimeout(() => dmgEl.remove(), 900);
+
+        if (data.defeated) {
+            const celebrateEl = document.createElement('div');
+            celebrateEl.className = 'damage-float defeated';
+            celebrateEl.textContent = `🎉 擊敗了 ${data.monsterName}！新的怪物出現了`;
+            popup.appendChild(celebrateEl);
+            setTimeout(() => celebrateEl.remove(), 1600);
+        }
+
+        await loadMonsterBattle();
+    } catch (error) {
+        alert(error.message || '攻擊失敗，請稍後再試');
+    } finally {
+        monsterAttacking = false;
+        attackBtn.disabled = false;
+    }
+}
+
+document.addEventListener('click', (e) => {
+    if (e.target.closest('#monster-attack-btn')) {
+        handleMonsterAttack();
     }
 });
 

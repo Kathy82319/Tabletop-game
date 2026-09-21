@@ -10,18 +10,21 @@ export async function onRequest(context) {
         }
 
         if (request.method === 'POST') {
-            const { id, type, name, description, icon_url } = await request.json();
-            
+            const { id, type, name, description, icon_url, attack_min, attack_max } = await request.json();
+
             if (!type || !name) {
                 return new Response(JSON.stringify({ error: '類型與名稱為必填' }), { status: 400 });
             }
 
+            const attackMin = attack_min !== undefined && attack_min !== null && attack_min !== '' ? Number(attack_min) : null;
+            const attackMax = attack_max !== undefined && attack_max !== null && attack_max !== '' ? Number(attack_max) : null;
+
             if (id) {
-                await db.prepare("UPDATE GameAssets SET type = ?, name = ?, description = ?, icon_url = ? WHERE id = ?")
-                        .bind(type, name, description || '', icon_url || null, id).run();
+                await db.prepare("UPDATE GameAssets SET type = ?, name = ?, description = ?, icon_url = ?, attack_min = ?, attack_max = ? WHERE id = ?")
+                        .bind(type, name, description || '', icon_url || null, attackMin, attackMax, id).run();
             } else {
-                await db.prepare("INSERT INTO GameAssets (type, name, description, icon_url) VALUES (?, ?, ?, ?)")
-                        .bind(type, name, description || '', icon_url || null).run();
+                await db.prepare("INSERT INTO GameAssets (type, name, description, icon_url, attack_min, attack_max) VALUES (?, ?, ?, ?, ?, ?)")
+                        .bind(type, name, description || '', icon_url || null, attackMin, attackMax).run();
             }
             return new Response(JSON.stringify({ success: true }), { status: 200 });
         }

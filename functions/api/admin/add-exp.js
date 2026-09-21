@@ -55,8 +55,10 @@ export async function onRequest(context) {
     }
 
     const operations = [];
+    // 打怪攻擊次數：每次加點都「重設」成這次加的經驗值點數，不是累加──沒用完的攻擊次數不會留到下次，
+    // 用意是讓會員記得在下次來之前先點掉，避免囤積攻擊次數
     operations.push(
-      db.prepare('UPDATE Users SET level = ?, current_exp = ? WHERE user_id = ?').bind(currentLevel, currentExp, userId)
+      db.prepare('UPDATE Users SET level = ?, current_exp = ?, available_attacks = ? WHERE user_id = ?').bind(currentLevel, currentExp, exp, userId)
     );
     operations.push(
       db.prepare('INSERT INTO ExpHistory (user_id, exp_added, reason) VALUES (?, ?, ?)').bind(userId, exp, reason)
