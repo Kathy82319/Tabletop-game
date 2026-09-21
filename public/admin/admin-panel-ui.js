@@ -88,8 +88,10 @@ document.addEventListener('input', function(e) {
         previewId = 'prev-news-img';
     } else if (input.id === 'edit-asset-icon') {
         previewId = 'prev-asset-icon';
-    } else if (input.id === 'monster-image-input') {
-        previewId = 'prev-monster-image';
+    } else if (input.id === 'monster-slot1-image-input') {
+        previewId = 'prev-monster-slot1-image';
+    } else if (input.id === 'monster-slot2-image-input') {
+        previewId = 'prev-monster-slot2-image';
     } else {
         return;
     }

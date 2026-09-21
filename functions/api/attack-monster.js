@@ -57,10 +57,21 @@ export async function onRequestPost(context) {
         operations.push(
             db.prepare('UPDATE MonsterState SET is_active = 0, defeated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(monster.id)
         );
-        // 新怪物先沿用同樣的名稱／圖片／血量上限，之後可以再到後臺「其他設定→公會討伐戰」調整
+
+        // 換池子裡的「另一隻」怪物上場（交錯輪流），不是沿用剛打死的這隻——
+        // 這樣團主就算來不及在怪物死掉的當下手動更新，下一隻也已經是預先設定好的怪物，不會開天窗
+        const currentSlot = monster.template_slot === 2 ? 2 : 1;
+        const nextSlot = currentSlot === 1 ? 2 : 1;
+        const nextTemplate = await db.prepare(
+            'SELECT name, image_url, max_hp FROM MonsterTemplates WHERE slot = ?'
+        ).bind(nextSlot).first();
+
+        // 保底：怪物池那個插槽萬一還沒設定過，就沿用剛打死那隻的資料，不讓打怪功能整個壞掉
+        const next = nextTemplate || { name: monster.name, image_url: monster.image_url, max_hp: monster.max_hp };
+
         operations.push(
-            db.prepare('INSERT INTO MonsterState (name, image_url, max_hp, current_hp, is_active) VALUES (?, ?, ?, ?, 1)')
-              .bind(monster.name, monster.image_url || null, monster.max_hp, monster.max_hp)
+            db.prepare('INSERT INTO MonsterState (name, image_url, max_hp, current_hp, is_active, template_slot) VALUES (?, ?, ?, ?, 1, ?)')
+              .bind(next.name, next.image_url || null, next.max_hp, next.max_hp, nextTemplate ? nextSlot : currentSlot)
         );
     }
 

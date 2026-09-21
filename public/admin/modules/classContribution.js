@@ -11,7 +11,10 @@ const colors = [
 ];
 
 function currentValues() {
-    return items.map(item => item.value || 0);
+    return items.map(item => {
+        const input = document.querySelector(`.class-contribution-value[data-id="${item.id}"]`);
+        return Number(input?.value) || 0;
+    });
 }
 
 function renderChart() {
@@ -85,10 +88,24 @@ function renderTable() {
         return `
             <tr>
                 <td style="text-align:left;">${iconHtml}${item.name}</td>
-                <td>${item.value}</td>
+                <td><input type="number" class="class-contribution-value" data-id="${item.id}" value="${item.value}" style="width:80px; box-sizing:border-box;"></td>
                 <td><input type="checkbox" class="class-contribution-visible" data-id="${item.id}" ${checked} style="width:auto;"></td>
             </tr>`;
     }).join('');
+
+    tbody.querySelectorAll('.class-contribution-value').forEach(input => {
+        input.addEventListener('input', renderChart);
+    });
+}
+
+async function loadData() {
+    const data = await api.getClassContribution();
+    items = data.items || [];
+
+    document.getElementById('class-contribution-toggle').checked = !!data.showOnProfile;
+
+    renderTable();
+    renderChart();
 }
 
 async function handleSave() {
@@ -98,8 +115,9 @@ async function handleSave() {
     const payload = {
         showOnProfile: toggle.checked,
         items: items.map(item => {
+            const input = document.querySelector(`.class-contribution-value[data-id="${item.id}"]`);
             const visibleInput = document.querySelector(`.class-contribution-visible[data-id="${item.id}"]`);
-            return { id: item.id, isVisible: !!visibleInput?.checked };
+            return { id: item.id, value: Number(input?.value) || 0, isVisible: !!visibleInput?.checked };
         })
     };
 
@@ -107,6 +125,7 @@ async function handleSave() {
         saveBtn.disabled = true;
         await api.saveClassContribution(payload);
         ui.toast.success('儲存成功');
+        await loadData();
     } catch (error) {
         ui.toast.error(error.message);
     } finally {
@@ -119,13 +138,7 @@ export const init = async () => {
     if (!page) return;
 
     try {
-        const data = await api.getClassContribution();
-        items = data.items || [];
-
-        document.getElementById('class-contribution-toggle').checked = !!data.showOnProfile;
-
-        renderTable();
-        renderChart();
+        await loadData();
 
         const saveBtn = document.getElementById('btn-save-class-contribution');
         if (saveBtn && !saveBtn.dataset.listenerAttached) {

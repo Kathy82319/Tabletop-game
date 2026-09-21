@@ -37,6 +37,8 @@ export const api = {
     saveGameAsset: (data) => request('/api/admin/game-assets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
     getMonsterState: () => request('/api/admin/monster-state'),
     saveMonsterState: (data) => request('/api/admin/monster-state', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+    getMonsterTemplates: () => request('/api/admin/monster-templates'),
+    saveMonsterTemplates: (data) => request('/api/admin/monster-templates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
     deleteGameAsset: (id) => request('/api/admin/game-assets', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }),
 
     checkAuthStatus: () => request('/api/admin/auth/status'),
