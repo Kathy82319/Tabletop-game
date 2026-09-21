@@ -479,11 +479,14 @@ function updateProfileDisplay(data) {
         ).join('');
     }
 
+    const avatarContainerEl = overlayEl ? overlayEl.closest('.profile-avatar-container') : null;
     if (data.class_icon_url && classIconEl && overlayEl) {
-        classIconEl.src = data.class_icon_url; 
-        overlayEl.style.display = 'block'; 
+        classIconEl.src = data.class_icon_url;
+        overlayEl.style.display = 'block';
+        if (avatarContainerEl) avatarContainerEl.classList.add('has-class-icon');
     } else if (overlayEl) {
-        overlayEl.style.display = 'none'; 
+        overlayEl.style.display = 'none';
+        if (avatarContainerEl) avatarContainerEl.classList.remove('has-class-icon');
     }
 
     const assets = data.user_assets || [];
