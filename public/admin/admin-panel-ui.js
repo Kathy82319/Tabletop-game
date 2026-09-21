@@ -86,6 +86,8 @@ document.addEventListener('input', function(e) {
                     input.id === 'edit-game-image-2' ? 'prev-img-2' : 'prev-img-3';
     } else if (input.id === 'edit-news-image') {
         previewId = 'prev-news-img';
+    } else if (input.id === 'edit-asset-icon') {
+        previewId = 'prev-asset-icon';
     } else {
         return;
     }

@@ -134,6 +134,8 @@ function openEditAssetModal(assetId = null) {
     
     const deleteBtn = document.getElementById('delete-asset-btn');
     
+    const prevAssetIcon = document.getElementById('prev-asset-icon');
+
     if (assetId) {
         const asset = allAssets.find(a => a.id == assetId);
         if(asset) {
@@ -141,12 +143,17 @@ function openEditAssetModal(assetId = null) {
             document.getElementById('edit-asset-name').value = asset.name;
             document.getElementById('edit-asset-desc').value = asset.description;
             document.getElementById('edit-asset-icon').value = asset.icon_url || '';
+            if (prevAssetIcon) {
+                if (asset.icon_url) { prevAssetIcon.src = asset.icon_url; prevAssetIcon.style.display = 'block'; }
+                else { prevAssetIcon.style.display = 'none'; }
+            }
             deleteBtn.style.display = 'inline-block';
             deleteBtn.onclick = () => handleAssetDelete(asset.id);
         }
     } else {
         document.getElementById('edit-asset-id').value = '';
         document.getElementById('edit-asset-icon').value = ''; // 【新增】清空圖示網址
+        if (prevAssetIcon) prevAssetIcon.style.display = 'none';
         deleteBtn.style.display = 'none';
     }
     
