@@ -631,6 +631,27 @@ input[readonly] {
     color: #444;
     margin-bottom: 10px;
 }
+.monster-image {
+    display: block;
+    width: 140px;
+    height: 140px;
+    object-fit: contain;
+    margin: 0 auto 8px;
+    border-radius: 12px;
+    background: rgba(74, 55, 40, 0.05);
+    padding: 8px;
+    box-sizing: border-box;
+}
+.monster-image.hit {
+    animation: monster-hit-shake 0.35s ease;
+}
+@keyframes monster-hit-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px) rotate(-1deg); }
+    40% { transform: translateX(5px) rotate(1deg); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(3px); }
+}
 .monster-name {
     font-size: 1.05rem;
     font-weight: bold;

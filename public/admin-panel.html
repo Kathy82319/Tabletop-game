@@ -410,6 +410,7 @@
                 <button class="sub-tab-btn" data-target="view-misc-drafts">訊息草稿</button>
                 <button class="sub-tab-btn" data-target="view-misc-store-info">店家資訊</button>
                 <button class="sub-tab-btn" data-target="view-misc-scoreboards">記分板紀錄</button>
+                <button class="sub-tab-btn" data-target="view-misc-monster">公會討伐戰</button>
             </div>
 
             <div id="view-misc-news" class="sub-view-container">
@@ -521,6 +522,41 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div id="view-misc-monster" class="sub-view-container" style="display:none;">
+                <div class="page-header">
+                    <h3>公會討伐戰（打怪呈現職業貢獻度）</h3>
+                </div>
+                <p style="color:var(--text-light); font-size:0.88rem; margin-top:-0.8rem;">目前全站共用同一隻怪物，血量歸零後會自動換下一隻（沿用同樣的血量上限）。這裡可以修改目前這隻怪物的名稱、圖片、血量。</p>
+                <form id="monster-state-form" style="max-width:420px;">
+                    <div class="form-group">
+                        <label for="monster-name-input">怪物名稱</label>
+                        <input type="text" id="monster-name-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>怪物圖片</label>
+                        <div class="img-upload-row">
+                            <input type="url" id="monster-image-input" placeholder="貼上網址，或點右側上傳">
+                            <label class="img-upload-btn" title="上傳圖片到 R2">
+                                📁
+                                <input type="file" accept="image/*" data-target="monster-image-input" data-preview="prev-monster-image" style="display:none" class="r2-file-input">
+                            </label>
+                        </div>
+                        <img id="prev-monster-image" class="img-preview" style="display:none">
+                    </div>
+                    <div class="form-group">
+                        <label for="monster-max-hp-input">血量上限</label>
+                        <input type="number" id="monster-max-hp-input" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="monster-current-hp-input">目前血量</label>
+                        <input type="number" id="monster-current-hp-input" min="0" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="action-btn btn-save">儲存</button>
+                    </div>
+                </form>
             </div>
         </div>
 

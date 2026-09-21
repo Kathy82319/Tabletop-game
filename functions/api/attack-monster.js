@@ -22,7 +22,7 @@ export async function onRequestPost(context) {
         return Response.json({ error: '尚未設定職業，無法攻擊。' }, { status: 400 });
     }
     if (!user.available_attacks || user.available_attacks <= 0) {
-        return Response.json({ error: '目前沒有可用的攻擊次數，消費或入場累積經驗值後再來吧！' }, { status: 400 });
+        return Response.json({ error: '目前沒有可用的攻擊次數。' }, { status: 400 });
     }
 
     const classAsset = await db.prepare(
@@ -57,10 +57,10 @@ export async function onRequestPost(context) {
         operations.push(
             db.prepare('UPDATE MonsterState SET is_active = 0, defeated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(monster.id)
         );
-        // 新怪物先沿用同樣的血量上限，之後可以再到後臺職業管理旁邊調整難度
+        // 新怪物先沿用同樣的名稱／圖片／血量上限，之後可以再到後臺「其他設定→公會討伐戰」調整
         operations.push(
-            db.prepare('INSERT INTO MonsterState (name, max_hp, current_hp, is_active) VALUES (?, ?, ?, 1)')
-              .bind(monster.name, monster.max_hp, monster.max_hp)
+            db.prepare('INSERT INTO MonsterState (name, image_url, max_hp, current_hp, is_active) VALUES (?, ?, ?, ?, 1)')
+              .bind(monster.name, monster.image_url || null, monster.max_hp, monster.max_hp)
         );
     }
 

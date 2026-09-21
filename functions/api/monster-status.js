@@ -13,7 +13,7 @@ export async function onRequestGet(context) {
     const db = env.DB;
 
     const [monster, user] = await Promise.all([
-        db.prepare(`SELECT name, max_hp, current_hp FROM MonsterState WHERE is_active = 1 ORDER BY id DESC LIMIT 1`).first(),
+        db.prepare(`SELECT name, image_url, max_hp, current_hp FROM MonsterState WHERE is_active = 1 ORDER BY id DESC LIMIT 1`).first(),
         db.prepare('SELECT class, available_attacks FROM Users WHERE user_id = ?').bind(profile.userId).first(),
     ]);
 

@@ -630,6 +630,12 @@ function renderMonsterBattle(data) {
     document.getElementById('monster-hp-fill').style.width = `${percent}%`;
     document.getElementById('monster-hp-text').textContent = `${monster.current_hp} / ${monster.max_hp}`;
 
+    const imageEl = document.getElementById('monster-image');
+    if (imageEl) {
+        if (monster.image_url) { imageEl.src = monster.image_url; imageEl.style.display = 'block'; }
+        else { imageEl.style.display = 'none'; }
+    }
+
     const attackBtn = document.getElementById('monster-attack-btn');
     const attacksLeftEl = document.getElementById('monster-attacks-left');
 
@@ -637,7 +643,7 @@ function renderMonsterBattle(data) {
         attacksLeftEl.textContent = '尚未設定職業，無法攻擊';
         attackBtn.disabled = true;
     } else if (!availableAttacks || availableAttacks <= 0) {
-        attacksLeftEl.textContent = '你目前沒有攻擊機會，消費或入場累積經驗值後再來吧！';
+        attacksLeftEl.textContent = '你目前沒有攻擊機會';
         attackBtn.disabled = true;
     } else {
         attacksLeftEl.textContent = `你還有 ${availableAttacks} 次攻擊機會`;
@@ -672,13 +678,20 @@ async function handleMonsterAttack() {
             throw new Error(data.error || '攻擊失敗');
         }
 
-        // 傷害飄字動畫
+        // 傷害飄字 + 怪物圖片震動動畫
         const popup = document.getElementById('monster-damage-popup');
         const dmgEl = document.createElement('div');
         dmgEl.className = 'damage-float';
         dmgEl.textContent = `-${data.damage}`;
         popup.appendChild(dmgEl);
         setTimeout(() => dmgEl.remove(), 900);
+
+        const monsterImageEl = document.getElementById('monster-image');
+        if (monsterImageEl && monsterImageEl.style.display !== 'none') {
+            monsterImageEl.classList.remove('hit');
+            void monsterImageEl.offsetWidth; // 強制重新觸發動畫
+            monsterImageEl.classList.add('hit');
+        }
 
         if (data.defeated) {
             const celebrateEl = document.createElement('div');

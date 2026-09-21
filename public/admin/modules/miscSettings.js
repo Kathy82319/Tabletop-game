@@ -5,6 +5,7 @@ import { init as initNews } from './newsManagement.js';
 import { init as initDrafts } from './draftsManagement.js';
 import { init as initStoreInfo } from './storeInfo.js';
 import { init as initScoreboards } from './scoreboardManagement.js';
+import { init as initMonster } from './monsterManagement.js';
 
 function setupSubTabs() {
     const page = document.getElementById('page-misc');
@@ -28,4 +29,5 @@ export const init = async (context, param) => {
     await initDrafts(context, param);
     await initStoreInfo(context, param);
     await initScoreboards();
+    await initMonster();
 };
