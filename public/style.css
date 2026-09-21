@@ -635,15 +635,7 @@ input[readonly] {
     border-color: #3d8f77;
 }
 
-/* 改版預覽：公會討伐戰（打怪呈現職業貢獻度） */
-.monster-battle-section {
-    font-family: var(--font-primary);
-}
-.monster-battle-title {
-    font-weight: bold;
-    color: #444;
-    margin-bottom: 10px;
-}
+/* 改版預覽：公會討伐戰（打怪呈現職業貢獻度），內容放在「出去冒險」收合欄位裡 */
 .monster-image {
     display: block;
     width: 100%;
@@ -976,6 +968,14 @@ input[readonly] {
 }
 .profile-slot-field.open .profile-slot-grid {
     display: flex;
+}
+.profile-slot-body {
+    display: none;
+    padding: 4px 14px 14px;
+    font-family: var(--font-primary);
+}
+.profile-slot-field.open .profile-slot-body {
+    display: block;
 }
 .profile-slot-item {
     display: flex;

@@ -613,18 +613,15 @@ document.addEventListener('click', (e) => {
 let monsterAttacking = false;
 
 function renderMonsterBattle(data) {
-    const section = document.getElementById('monster-battle-section');
-    const divider = document.getElementById('monster-battle-divider');
+    const section = document.getElementById('field-adventure');
     if (!section) return;
 
     if (!data || !data.monster) {
         section.style.display = 'none';
-        if (divider) divider.style.display = 'none';
         return;
     }
 
-    section.style.display = 'block';
-    if (divider) divider.style.display = 'block';
+    section.style.display = '';
 
     const { monster, userClass, availableAttacks } = data;
     const percent = monster.max_hp > 0 ? Math.max(0, Math.round((monster.current_hp / monster.max_hp) * 100)) : 0;
@@ -657,11 +654,11 @@ function renderMonsterBattle(data) {
 async function loadMonsterBattle() {
     try {
         const res = await fetch('/api/monster-status', { headers: getLiffAuthHeaders() });
-        if (!res.ok) { document.getElementById('monster-battle-section').style.display = 'none'; return; }
+        if (!res.ok) { document.getElementById('field-adventure').style.display = 'none'; return; }
         const data = await res.json();
         renderMonsterBattle(data);
     } catch (e) {
-        document.getElementById('monster-battle-section').style.display = 'none';
+        document.getElementById('field-adventure').style.display = 'none';
     }
 }
 

@@ -188,23 +188,6 @@
 
         <div class="profile-divider"></div>
 
-        <!-- 改版預覽：打怪呈現職業貢獻度，僅 window.isPreviewUser 帳號可見 -->
-        <div class="monster-battle-section" id="monster-battle-section" style="display:none;">
-            <div class="monster-battle-title">⚔️ 公會討伐戰</div>
-            <img id="monster-image" class="monster-image" style="display:none;" alt="">
-            <div class="monster-name" id="monster-name">--</div>
-            <div class="monster-hp-bar-track">
-                <div class="monster-hp-bar-fill" id="monster-hp-fill" style="width:100%;"></div>
-                <span class="monster-hp-text" id="monster-hp-text">-- / --</span>
-            </div>
-            <div class="monster-battle-footer">
-                <span class="monster-attacks-left" id="monster-attacks-left">你目前沒有攻擊機會</span>
-                <button type="button" class="monster-attack-btn" id="monster-attack-btn" disabled>⚔️ 攻擊！</button>
-            </div>
-            <div class="monster-damage-popup" id="monster-damage-popup"></div>
-        </div>
-        <div class="profile-divider" id="monster-battle-divider" style="display:none;"></div>
-
         <div class="profile-contribution-section" id="profile-contribution-section" style="display:none;">
             <div class="profile-contribution-title">職業公會排行</div>
             <div class="profile-contribution-list" id="profile-contribution-list"></div>
@@ -241,6 +224,26 @@
 
         <!-- 改版預覽：欄位收合式呈現，只有 window.isPreviewUser 為 true 時才會顯示 -->
         <div class="profile-details-section-v2" id="profile-details-section-v2" style="display:none;">
+            <!-- 改版預覽：打怪呈現職業貢獻度，僅 window.isPreviewUser 帳號可見 -->
+            <div class="profile-slot-field" id="field-adventure" style="display:none;">
+                <button class="profile-slot-header" type="button">
+                    <span class="profile-slot-label">⚔️ 出去冒險</span>
+                    <span class="profile-slot-toggle">›</span>
+                </button>
+                <div class="profile-slot-body">
+                    <div class="monster-name" id="monster-name">--</div>
+                    <img id="monster-image" class="monster-image" style="display:none;" alt="">
+                    <div class="monster-hp-bar-track">
+                        <div class="monster-hp-bar-fill" id="monster-hp-fill" style="width:100%;"></div>
+                        <span class="monster-hp-text" id="monster-hp-text">-- / --</span>
+                    </div>
+                    <div class="monster-battle-footer">
+                        <span class="monster-attacks-left" id="monster-attacks-left">你目前沒有攻擊機會</span>
+                        <button type="button" class="monster-attack-btn" id="monster-attack-btn" disabled>⚔️ 攻擊！</button>
+                    </div>
+                    <div class="monster-damage-popup" id="monster-damage-popup"></div>
+                </div>
+            </div>
             <div class="profile-slot-field" data-slot="title">
                 <button class="profile-slot-header" type="button">
                     <span class="profile-slot-label">🏅 稱號</span>
