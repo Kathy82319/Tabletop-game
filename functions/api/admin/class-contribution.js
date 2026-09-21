@@ -7,7 +7,9 @@ export async function onRequest(context) {
         if (request.method === 'GET') {
             const [{ results: items }, storeInfo] = await Promise.all([
                 db.prepare(
-                    `SELECT ga.id, ga.name, ga.icon_url, COALESCE(cc.value, 0) AS value, COALESCE(cc.is_visible, 1) AS is_visible
+                    `SELECT ga.id, ga.name, ga.icon_url,
+                            COALESCE((SELECT SUM(ch.contribution_value) FROM ContributionHistory ch WHERE ch.class_name = ga.name), 0) AS value,
+                            COALESCE(cc.is_visible, 1) AS is_visible
                      FROM GameAssets ga
                      LEFT JOIN ClassContributionDisplay cc ON cc.class_asset_id = ga.id
                      WHERE ga.type = 'class'
@@ -35,9 +37,9 @@ export async function onRequest(context) {
                 ...items.map(item =>
                     db.prepare(
                         `INSERT INTO ClassContributionDisplay (class_asset_id, value, is_visible, updated_at)
-                         VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-                         ON CONFLICT(class_asset_id) DO UPDATE SET value = excluded.value, is_visible = excluded.is_visible, updated_at = CURRENT_TIMESTAMP`
-                    ).bind(item.id, Number(item.value) || 0, item.isVisible ? 1 : 0)
+                         VALUES (?, 0, ?, CURRENT_TIMESTAMP)
+                         ON CONFLICT(class_asset_id) DO UPDATE SET is_visible = excluded.is_visible, updated_at = CURRENT_TIMESTAMP`
+                    ).bind(item.id, item.isVisible ? 1 : 0)
                 )
             ];
 

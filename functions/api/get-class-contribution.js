@@ -11,7 +11,8 @@ export async function onRequest(context) {
 
         const [{ results: items }, storeInfo] = await Promise.all([
             db.prepare(
-                `SELECT ga.id, ga.name, ga.icon_url, cc.value AS value
+                `SELECT ga.id, ga.name, ga.icon_url,
+                        COALESCE((SELECT SUM(ch.contribution_value) FROM ContributionHistory ch WHERE ch.class_name = ga.name), 0) AS value
                  FROM GameAssets ga
                  JOIN ClassContributionDisplay cc ON cc.class_asset_id = ga.id
                  WHERE ga.type = 'class' AND cc.is_visible = 1

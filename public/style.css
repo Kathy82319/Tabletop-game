@@ -633,8 +633,10 @@ input[readonly] {
 }
 .monster-image {
     display: block;
-    width: 160px;
-    height: 160px;
+    width: 100%;
+    max-width: 320px;
+    aspect-ratio: 1 / 1;
+    height: auto;
     object-fit: cover;
     margin: 0 auto 8px;
     border-radius: 12px;
