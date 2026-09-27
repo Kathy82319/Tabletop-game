@@ -1091,54 +1091,81 @@ input[readonly] {
 }
 
 /* 寶箱本體：箱身 + 蓋子分開兩塊 div，蓋子用 3D rotateX 繞著跟箱身相接的那條邊「掀開」，
-   而不是平面 rotate() 那種在畫面上打轉的轉法 */
+   而不是平面 rotate() 那種在畫面上打轉的轉法。木紋用 repeating-linear-gradient 做直紋，
+   加上漸層陰影營造立體感，四角用小圓點模擬金屬鉚釘 */
+.chest-ground-shadow {
+    position: absolute;
+    left: 50%;
+    bottom: 6px;
+    width: 74px;
+    height: 12px;
+    background: radial-gradient(ellipse, rgba(60, 39, 18, 0.4) 0%, rgba(60, 39, 18, 0) 72%);
+    transform: translateX(-50%);
+}
 .chest-3d {
     position: absolute;
     left: 50%;
     bottom: 10px;
     transform: translateX(-50%);
-    width: 84px;
-    height: 60px;
-    perspective: 240px;
+    width: 92px;
+    height: 68px;
+    perspective: 260px;
+}
+.chest-wood {
+    background-image:
+        repeating-linear-gradient(90deg, rgba(0,0,0,0.14) 0px, rgba(0,0,0,0.14) 1.5px, transparent 1.5px, transparent 11px),
+        linear-gradient(180deg, #b0794a 0%, #8b5a2b 45%, #6b4420 100%);
+    box-shadow:
+        inset 0 2px 2px rgba(255,255,255,0.3),
+        inset 0 -4px 5px rgba(0,0,0,0.35);
 }
 .chest-box {
     position: absolute;
     left: 0;
     bottom: 0;
-    width: 84px;
-    height: 38px;
+    width: 92px;
+    height: 42px;
     box-sizing: border-box;
-    background: #8b5a2b;
-    border: 3px solid #5c3a1a;
-    border-radius: 0 0 8px 8px;
+    border: 2px solid #3c2712;
+    border-radius: 0 0 10px 10px;
     overflow: hidden;
 }
 .chest-box-band {
     position: absolute;
     top: 0; bottom: 0; left: 50%;
-    width: 13px;
-    margin-left: -6.5px;
-    background: #d4a017;
+    width: 15px;
+    margin-left: -7.5px;
+    background: linear-gradient(180deg, #f3cb5c, #c8930c 55%, #a8760a 100%);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.5), inset 0 -2px 3px rgba(0,0,0,0.3);
 }
 .chest-lock {
     position: absolute;
-    top: 5px; left: 50%;
-    width: 10px; height: 12px;
-    margin-left: -5px;
-    background: #f4d160;
-    border: 1.5px solid #8a6d1f;
-    border-radius: 2px;
+    top: 7px; left: 50%;
+    width: 12px; height: 14px;
+    margin-left: -6px;
+    background: radial-gradient(circle at 35% 30%, #fff0b8, #d4a017 55%, #8a6d1f 100%);
+    border: 1px solid #6b5216;
+    border-radius: 3px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+.chest-lock::after {
+    content: '';
+    position: absolute;
+    left: 50%; top: 55%;
+    width: 3px; height: 5px;
+    background: #6b5216;
+    transform: translate(-50%, -50%);
+    border-radius: 1px;
 }
 .chest-lid {
     position: absolute;
     left: 0;
-    bottom: 38px;
-    width: 84px;
-    height: 24px;
+    bottom: 42px;
+    width: 92px;
+    height: 27px;
     box-sizing: border-box;
-    background: #a56a35;
-    border: 3px solid #5c3a1a;
-    border-radius: 10px 10px 3px 3px;
+    border: 2px solid #3c2712;
+    border-radius: 16px 16px 4px 4px;
     overflow: hidden;
     transform-style: preserve-3d;
     transform-origin: 50% 100%;
@@ -1148,10 +1175,24 @@ input[readonly] {
 .chest-lid-band {
     position: absolute;
     top: 0; bottom: 0; left: 50%;
-    width: 13px;
-    margin-left: -6.5px;
-    background: #d4a017;
+    width: 15px;
+    margin-left: -7.5px;
+    background: linear-gradient(180deg, #f3cb5c, #c8930c 55%, #a8760a 100%);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.5), inset 0 -2px 3px rgba(0,0,0,0.3);
 }
+.chest-box::before, .chest-box::after,
+.chest-lid::before, .chest-lid::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff3c4, #c9971b 70%);
+    box-shadow: 0 0 1px rgba(0,0,0,0.5);
+}
+.chest-box::before, .chest-lid::before { left: 5px; }
+.chest-box::after,  .chest-lid::after  { right: 5px; }
 .chest-stage.opening .chest-lid {
     transform: rotateX(-108deg);
 }
