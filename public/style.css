@@ -1065,16 +1065,16 @@ input[readonly] {
 }
 .chest-stage {
     position: relative;
-    width: 140px;
-    height: 130px;
+    width: 110px;
+    height: 110px;
     margin: 0 auto;
 }
 .chest-glow {
     position: absolute;
-    top: 50%;
+    top: 58%;
     left: 50%;
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     background: radial-gradient(circle, rgba(255,236,160,0.95) 0%, rgba(255,214,80,0.5) 45%, rgba(255,214,80,0) 75%);
     transform: translate(-50%, -50%) scale(0);
@@ -1090,51 +1090,107 @@ input[readonly] {
     100% { transform: translate(-50%, -50%) scale(4.2); opacity: 0; }
 }
 
-#chest-svg { position: relative; display: block; margin: 0 auto; }
+/* 寶箱本體：箱身 + 蓋子分開兩塊 div，蓋子用 3D rotateX 繞著跟箱身相接的那條邊「掀開」，
+   而不是平面 rotate() 那種在畫面上打轉的轉法 */
+.chest-3d {
+    position: absolute;
+    left: 50%;
+    bottom: 10px;
+    transform: translateX(-50%);
+    width: 84px;
+    height: 60px;
+    perspective: 240px;
+}
+.chest-box {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 84px;
+    height: 38px;
+    box-sizing: border-box;
+    background: #8b5a2b;
+    border: 3px solid #5c3a1a;
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+}
+.chest-box-band {
+    position: absolute;
+    top: 0; bottom: 0; left: 50%;
+    width: 13px;
+    margin-left: -6.5px;
+    background: #d4a017;
+}
+.chest-lock {
+    position: absolute;
+    top: 5px; left: 50%;
+    width: 10px; height: 12px;
+    margin-left: -5px;
+    background: #f4d160;
+    border: 1.5px solid #8a6d1f;
+    border-radius: 2px;
+}
 .chest-lid {
-    transform-box: fill-box;
+    position: absolute;
+    left: 0;
+    bottom: 38px;
+    width: 84px;
+    height: 24px;
+    box-sizing: border-box;
+    background: #a56a35;
+    border: 3px solid #5c3a1a;
+    border-radius: 10px 10px 3px 3px;
+    overflow: hidden;
+    transform-style: preserve-3d;
     transform-origin: 50% 100%;
-    transform: rotate(0deg);
+    transform: rotateX(0deg);
     transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.chest-stage.opening .chest-lid {
-    transform: rotate(-115deg) translate(-4px, -3px);
+.chest-lid-band {
+    position: absolute;
+    top: 0; bottom: 0; left: 50%;
+    width: 13px;
+    margin-left: -6.5px;
+    background: #d4a017;
 }
-.chest-stage.shaking #chest-svg {
+.chest-stage.opening .chest-lid {
+    transform: rotateX(-108deg);
+}
+.chest-stage.shaking .chest-3d {
     animation: chest-shake 0.55s ease-in-out;
 }
 @keyframes chest-shake {
-    0%, 100% { transform: translateX(0) rotate(0); }
-    15%      { transform: translateX(-4px) rotate(-3deg); }
-    30%      { transform: translateX(4px) rotate(3deg); }
-    45%      { transform: translateX(-4px) rotate(-2deg); }
-    60%      { transform: translateX(4px) rotate(2deg); }
-    75%      { transform: translateX(-2px) rotate(-1deg); }
+    0%, 100% { transform: translateX(-50%) rotate(0); }
+    15%      { transform: translateX(-50%) translateX(-4px) rotate(-3deg); }
+    30%      { transform: translateX(-50%) translateX(4px) rotate(3deg); }
+    45%      { transform: translateX(-50%) translateX(-4px) rotate(-2deg); }
+    60%      { transform: translateX(-50%) translateX(4px) rotate(2deg); }
+    75%      { transform: translateX(-50%) translateX(-2px) rotate(-1deg); }
 }
 
 .chest-item-reveal {
     position: absolute;
-    top: 38%;
+    top: 52%;
     left: 50%;
-    font-size: 2.2rem;
+    font-size: 3.4rem;
     line-height: 1;
     transform: translate(-50%, -50%) scale(0);
     opacity: 0;
     pointer-events: none;
+    z-index: 1;
 }
 .chest-stage.opening .chest-item-reveal {
     animation: chest-item-pop 0.6s 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 @keyframes chest-item-pop {
     0%   { transform: translate(-50%, -50%) scale(0) translateY(0);   opacity: 0; }
-    60%  { transform: translate(-50%, -50%) scale(1.25) translateY(-22px); opacity: 1; }
-    100% { transform: translate(-50%, -50%) scale(1) translateY(-16px); opacity: 1; }
+    60%  { transform: translate(-50%, -50%) scale(1.2) translateY(-26px); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1) translateY(-20px); opacity: 1; }
 }
 
 .chest-sparkles { position: absolute; inset: 0; pointer-events: none; }
 .chest-sparkles span {
     position: absolute;
-    top: 40%;
+    top: 58%;
     left: 50%;
     width: 6px;
     height: 6px;
