@@ -545,13 +545,16 @@ function updateProfileDisplay(data) {
     // 冒險者介面改版預覽：只有 window.isPreviewUser 看得到欄位收合式的新版介面，其他人維持舊版
     const oldDetailsSection = document.querySelector('.profile-details-section');
     const newDetailsSection = document.getElementById('profile-details-section-v2');
+    const chestDemoField = document.getElementById('field-chest-demo');
     if (window.isPreviewUser && newDetailsSection) {
         if (oldDetailsSection) oldDetailsSection.style.display = 'none';
         newDetailsSection.style.display = 'flex';
         renderProfileSlotsV2(assets);
+        if (chestDemoField) chestDemoField.style.display = '';
     } else {
         if (oldDetailsSection) oldDetailsSection.style.display = '';
         if (newDetailsSection) newDetailsSection.style.display = 'none';
+        if (chestDemoField) chestDemoField.style.display = 'none';
     }
 }
 
@@ -607,6 +610,44 @@ document.addEventListener('click', (e) => {
     if (item) {
         showAssetPopover(item.dataset.name, item.dataset.desc, item.dataset.icon);
     }
+});
+
+// 改版預覽：開寶箱動畫 demo（搖晃→開蓋+光暈→道具彈出+星星特效→顯示結果），還沒接真正的道具資料
+function openChestDemo() {
+    const overlay = document.getElementById('chest-modal-overlay');
+    const stage = document.getElementById('chest-stage');
+    const resultText = document.getElementById('chest-result-text');
+    const closeBtn = document.getElementById('chest-modal-close-btn');
+    if (!overlay || !stage) return;
+
+    stage.classList.remove('shaking', 'opening');
+    resultText.textContent = '';
+    resultText.classList.remove('show');
+    closeBtn.style.display = 'none';
+    overlay.style.display = 'flex';
+
+    // 觸發 reflow，確保移除 class 後重新加上時動畫會重新播放
+    void stage.offsetWidth;
+    stage.classList.add('shaking');
+
+    setTimeout(() => {
+        stage.classList.remove('shaking');
+        stage.classList.add('opening');
+    }, 550);
+
+    setTimeout(() => {
+        resultText.textContent = '🎉 獲得：神秘卷軸';
+        resultText.classList.add('show');
+        closeBtn.style.display = 'inline-block';
+    }, 550 + 950);
+}
+
+document.getElementById('chest-open-btn')?.addEventListener('click', openChestDemo);
+document.getElementById('chest-modal-close-btn')?.addEventListener('click', () => {
+    document.getElementById('chest-modal-overlay').style.display = 'none';
+});
+document.getElementById('chest-modal-overlay')?.addEventListener('click', (e) => {
+    if (e.target.id === 'chest-modal-overlay') e.target.style.display = 'none';
 });
 
 // 改版預覽：公會討伐戰（打怪呈現職業貢獻度，僅 window.isPreviewUser 帳號可見）
