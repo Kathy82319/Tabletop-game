@@ -21,14 +21,14 @@ export async function onRequest(context) {
     const { realName, nickname, phone, email, preferredGames } = body;
 
     const errors = [];
-    if (!nickname || typeof nickname !== 'string' || nickname.trim().length === 0 || nickname.length > 50) {
-        errors.push('暱稱為必填，且長度不可超過 50 字。');
+    if (!realName || typeof realName !== 'string' || realName.trim().length === 0 || realName.length > 50) {
+        errors.push('姓名為必填，且長度不可超過 50 字。');
     }
     if (!phone || !/^\d{10}$/.test(phone)) {
         errors.push('請輸入有效的 10 碼手機號碼。');
     }
-    if (realName && (typeof realName !== 'string' || realName.length > 50)) {
-        errors.push('真實姓名長度不可超過 50 字。');
+    if (nickname && (typeof nickname !== 'string' || nickname.length > 50)) {
+        errors.push('綽號長度不可超過 50 字。');
     }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         errors.push('請輸入有效的電子信箱格式。');
@@ -48,9 +48,9 @@ export async function onRequest(context) {
       'UPDATE Users SET real_name = ?, nickname = ?, phone = ?, email = ?, preferred_games = ?, line_display_name = ?, line_picture_url = ? WHERE user_id = ?'
     );
     const result = await stmt.bind(
-        realName || '',
-        nickname, 
-        phone, 
+        realName.trim(),
+        nickname || '',
+        phone,
         email || '',
         preferredGamesString,
         displayName,

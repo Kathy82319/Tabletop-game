@@ -969,7 +969,8 @@ async function initializeEditProfilePage() {
     const otherInput = document.getElementById('preferred-games-other-input');
 
     if (gamesContainer && otherContainer && otherInput) {
-        const allStandardTags = [...new Set(allGames.flatMap(g => (g.tags || '').split(',')).map(t => t.trim()).filter(Boolean))];
+        const hiddenPreferenceTags = ['販售', '可租借', '租借', '僅供現場玩', '其他'];
+        const allStandardTags = [...new Set(allGames.flatMap(g => (g.tags || '').split(',')).map(t => t.trim()).filter(t => t && !hiddenPreferenceTags.includes(t)))];
         
         const userTags = new Set((userData.preferred_games || '').split(',').map(tag => tag.trim()).filter(Boolean));
         
