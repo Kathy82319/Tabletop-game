@@ -642,12 +642,20 @@ function openChestDemo() {
     }, 550 + 950);
 }
 
-document.getElementById('chest-open-btn')?.addEventListener('click', openChestDemo);
-document.getElementById('chest-modal-close-btn')?.addEventListener('click', () => {
-    document.getElementById('chest-modal-overlay').style.display = 'none';
-});
-document.getElementById('chest-modal-overlay')?.addEventListener('click', (e) => {
-    if (e.target.id === 'chest-modal-overlay') e.target.style.display = 'none';
+// 用事件委派綁定（跟上面 .profile-slot-header 同樣道理）：page-profile 的內容是從
+// #page-templates 複製到 #app-content 才會出現，掛在 document 上才不會綁到還不存在的節點
+document.addEventListener('click', (e) => {
+    if (e.target.closest('#chest-open-btn')) {
+        openChestDemo();
+        return;
+    }
+    if (e.target.closest('#chest-modal-close-btn')) {
+        document.getElementById('chest-modal-overlay').style.display = 'none';
+        return;
+    }
+    if (e.target.id === 'chest-modal-overlay') {
+        e.target.style.display = 'none';
+    }
 });
 
 // 改版預覽：公會討伐戰（打怪呈現職業貢獻度，僅 window.isPreviewUser 帳號可見）
