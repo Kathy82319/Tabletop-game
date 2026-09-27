@@ -321,6 +321,11 @@ td { font-size: 0.9rem; }
 
 .compound-cell .main-info { font-weight: bold; }
 .compound-cell .sub-info { font-size: 0.8rem; color: var(--text-light); }
+.tag-display { display: inline-block; padding: 2px 10px; border-radius: 12px; background: #eee; color: #555; font-size: 0.85rem; }
+.tag-display.tag-member { background: #d4e9fb; color: #1a5a96; }
+.tag-display.tag-tenant { background: #d9f0d9; color: #2f7a2f; }
+.tag-display.tag-blacklist { background: #dcdcdc; color: #555; }
+.note-indicator { margin-left: 6px; cursor: help; }
 .action-btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; border: none; border-radius: 5px; cursor: pointer; color: white; }
 .btn-edit { background-color: var(--warning-color); color: #212529; }
 .btn-sync { background-color: var(--info-color); }

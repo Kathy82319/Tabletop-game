@@ -18,13 +18,21 @@ function escapeHtml(str) {
 /**
  * 渲染使用者列表表格
  */
+// 標籤對應的底色 class，方便一眼掃到會員/租客/黑名單
+function tagColorClass(tag) {
+    if (tag === '會員') return 'tag-member';
+    if (tag === '租客') return 'tag-tenant';
+    if (tag === '黑名單') return 'tag-blacklist';
+    return '';
+}
+
 function renderUserList(users) {
     const userListTbody = document.getElementById('user-list-tbody');
     if (!userListTbody) return;
 
     userListTbody.innerHTML = '';
     if (users.length === 0) {
-        userListTbody.innerHTML = '<tr><td colspan="6">沒有符合條件的使用者。</td></tr>';
+        userListTbody.innerHTML = '<tr><td colspan="8">沒有符合條件的使用者。</td></tr>';
         return;
     }
 
@@ -32,9 +40,9 @@ function renderUserList(users) {
         const row = userListTbody.insertRow();
         row.dataset.userId = user.user_id;
         row.style.cursor = 'pointer';
-        
+
         const displayName = user.nickname ? `${escapeHtml(user.line_display_name)} (${escapeHtml(user.nickname)})` : escapeHtml(user.line_display_name);
-        
+
         const needsPerk = user.level > 1 && user.level > (user.perk_claimed_level || 0);
         const levelDisplay = needsPerk ? `${user.level} ⭐` : user.level;
 
@@ -43,16 +51,31 @@ function renderUserList(users) {
             actionsHTML += ` <button class="action-btn btn-claim-perk-list" data-userid="${user.user_id}" style="background-color: var(--success-color);">✅ 福利已給</button>`;
         }
 
+        const classSubLine = [
+            user.skill_names ? `技:${escapeHtml(user.skill_names)}` : '',
+            user.equipment_names ? `裝:${escapeHtml(user.equipment_names)}` : ''
+        ].filter(Boolean).join('　');
+
+        const tagCls = tagColorClass(user.tag);
+        const noteHtml = user.notes
+            ? `<span class="note-indicator" title="${escapeHtml(user.notes)}">📝</span>`
+            : '';
+
         row.innerHTML = `
             <td class="compound-cell" style="text-align: left;">
                 <div class="main-info">${displayName || 'N/A'}</div>
                 <div class="sub-info">${user.user_id}</div>
             </td>
+            <td>${escapeHtml(user.real_name) || '-'}</td>
+            <td>${escapeHtml(user.phone) || '-'}</td>
             <td>${levelDisplay}</td>
             <td>${user.current_exp} / 10</td>
-            <td>${user.class || '無'}</td>
-            <td><span class="tag-display">${user.tag || '無'}</span></td>
-            <td class="actions-cell">${actionsHTML}</td> 
+            <td class="compound-cell" style="text-align: left;">
+                <div class="main-info">${escapeHtml(user.class) || '無'}</div>
+                ${classSubLine ? `<div class="sub-info">${classSubLine}</div>` : ''}
+            </td>
+            <td><span class="tag-display ${tagCls}">${escapeHtml(user.tag) || '無'}</span>${noteHtml}</td>
+            <td class="actions-cell">${actionsHTML}</td>
         `;
 
         if (needsPerk) {
@@ -336,7 +359,7 @@ async function openEditUserModal(userId) {
 
     const tagSelect = document.getElementById('edit-tag-select');
     const tagInput = document.getElementById('edit-tag-other-input');
-    const defaultTags = ['無', '會員', '員工', '黑名單'];
+    const defaultTags = ['無', '會員', '租客', '員工', '黑名單'];
     tagSelect.innerHTML = '';
     defaultTags.forEach(t => tagSelect.add(new Option(t, t)));
     tagSelect.add(new Option('其他', 'other'));
@@ -719,7 +742,7 @@ export const init = async (context, param) => {
     const userListTbody = document.getElementById('user-list-tbody');
     if (!userListTbody) return;
 
-    userListTbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">正在載入顧客資料...</td></tr>';
+    userListTbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">正在載入顧客資料...</td></tr>';
     
     try {
         const [users, assets] = await Promise.all([
@@ -735,6 +758,6 @@ export const init = async (context, param) => {
 
     } catch (error) {
         console.error('載入失敗:', error);
-        userListTbody.innerHTML = `<tr><td colspan="6" style="color: red;">讀取失敗: ${error.message}</td></tr>`;
+        userListTbody.innerHTML = `<tr><td colspan="8" style="color: red;">讀取失敗: ${error.message}</td></tr>`;
     }
 };

@@ -8,8 +8,10 @@ export async function onRequest(context) {
     const db = context.env.DB;
 
     const stmt = db.prepare(
-      `SELECT user_id, line_display_name, nickname, real_name, phone, level, current_exp, tag, class, perk, notes, perk_claimed_level, skill, skill_description, equipment, equipment_description
-        FROM Users ORDER BY created_at DESC`
+      `SELECT u.user_id, u.line_display_name, u.nickname, u.real_name, u.phone, u.level, u.current_exp, u.tag, u.class, u.perk, u.notes, u.perk_claimed_level,
+              (SELECT GROUP_CONCAT(ga.name, '、') FROM UserAssets ua JOIN GameAssets ga ON ga.id = ua.asset_id WHERE ua.user_id = u.user_id AND ga.type = 'skill') AS skill_names,
+              (SELECT GROUP_CONCAT(ga.name, '、') FROM UserAssets ua JOIN GameAssets ga ON ga.id = ua.asset_id WHERE ua.user_id = u.user_id AND ga.type = 'equipment') AS equipment_names
+         FROM Users u ORDER BY u.created_at DESC`
     );
     const { results } = await stmt.all();
 
