@@ -8,7 +8,7 @@ export async function onRequest(context) {
     try {
         if (request.method === 'GET') {
             const monster = await db.prepare(
-                `SELECT id, name, image_url, max_hp, current_hp, template_slot FROM MonsterState WHERE is_active = 1 ORDER BY id DESC LIMIT 1`
+                `SELECT id, name, image_url, max_hp, current_hp, template_id FROM MonsterState WHERE is_active = 1 ORDER BY id DESC LIMIT 1`
             ).first();
             return Response.json(monster || null);
         }

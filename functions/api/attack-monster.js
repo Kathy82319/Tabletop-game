@@ -58,20 +58,27 @@ export async function onRequestPost(context) {
             db.prepare('UPDATE MonsterState SET is_active = 0, defeated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(monster.id)
         );
 
-        // 換池子裡的「另一隻」怪物上場（交錯輪流），不是沿用剛打死的這隻——
+        // 換池子裡「下一隻」怪物上場，依照清單順序輪流、繞一圈後回到第一隻——
         // 這樣團主就算來不及在怪物死掉的當下手動更新，下一隻也已經是預先設定好的怪物，不會開天窗
-        const currentSlot = monster.template_slot === 2 ? 2 : 1;
-        const nextSlot = currentSlot === 1 ? 2 : 1;
-        const nextTemplate = await db.prepare(
-            'SELECT name, image_url, max_hp FROM MonsterTemplates WHERE slot = ?'
-        ).bind(nextSlot).first();
+        const { results: templates } = await db.prepare(
+            'SELECT id, name, image_url, max_hp FROM MonsterTemplates ORDER BY display_order, id'
+        ).all();
 
-        // 保底：怪物池那個插槽萬一還沒設定過，就沿用剛打死那隻的資料，不讓打怪功能整個壞掉
-        const next = nextTemplate || { name: monster.name, image_url: monster.image_url, max_hp: monster.max_hp };
+        let next = null;
+        let nextTemplateId = null;
+        if (templates && templates.length > 0) {
+            const currentIndex = templates.findIndex(t => t.id === monster.template_id);
+            const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % templates.length;
+            next = templates[nextIndex];
+            nextTemplateId = next.id;
+        } else {
+            // 保底：怪物池是空的就沿用剛打死那隻的資料，不讓打怪功能整個壞掉
+            next = { name: monster.name, image_url: monster.image_url, max_hp: monster.max_hp };
+        }
 
         operations.push(
-            db.prepare('INSERT INTO MonsterState (name, image_url, max_hp, current_hp, is_active, template_slot) VALUES (?, ?, ?, ?, 1, ?)')
-              .bind(next.name, next.image_url || null, next.max_hp, next.max_hp, nextTemplate ? nextSlot : currentSlot)
+            db.prepare('INSERT INTO MonsterState (name, image_url, max_hp, current_hp, is_active, template_id) VALUES (?, ?, ?, ?, 1, ?)')
+              .bind(next.name, next.image_url || null, next.max_hp, next.max_hp, nextTemplateId)
         );
     }
 
