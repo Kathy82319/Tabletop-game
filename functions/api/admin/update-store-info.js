@@ -8,9 +8,10 @@ export async function onRequest(context) {
 
     const body = await context.request.json();
     
-    const { 
+    const {
         address, phone, opening_hours, description,
-        booking_announcement_text, booking_button_text, booking_promo_text
+        booking_announcement_text, booking_button_text, booking_promo_text,
+        booking_max_advance_days
     } = body;
 
     const errors = [];
@@ -30,6 +31,10 @@ export async function onRequest(context) {
     if (!booking_button_text || booking_button_text.length > 100) errors.push('預約按鈕文字不可為空，且長度不可超過 100 字。');
     if (!booking_promo_text || booking_promo_text.length > 200) errors.push('優惠文字不可為空，且長度不可超過 200 字。');
 
+    const maxAdvanceDays = Number(booking_max_advance_days);
+    if (!Number.isInteger(maxAdvanceDays) || maxAdvanceDays < 1 || maxAdvanceDays > 3650) {
+        errors.push('最多可提前預約天數必須是 1 到 3650 之間的整數。');
+    }
 
     if (errors.length > 0) {
         return new Response(JSON.stringify({ error: errors.join(' ') }), { status: 400 });
@@ -38,15 +43,17 @@ export async function onRequest(context) {
     const db = context.env.DB;
     
     const stmt = db.prepare(
-      `UPDATE StoreInfo SET 
+      `UPDATE StoreInfo SET
          address = ?, phone = ?, opening_hours = ?, description = ?,
-         booking_announcement_text = ?, booking_button_text = ?, booking_promo_text = ?
+         booking_announcement_text = ?, booking_button_text = ?, booking_promo_text = ?,
+         booking_max_advance_days = ?
        WHERE id = 1`
     );
 
     await stmt.bind(
         address, phone, opening_hours, description,
-        booking_announcement_text, booking_button_text, booking_promo_text
+        booking_announcement_text, booking_button_text, booking_promo_text,
+        maxAdvanceDays
     ).run();
 
     return new Response(JSON.stringify({ success: true, message: '成功更新店家資訊！' }), {

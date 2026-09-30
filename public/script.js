@@ -1406,6 +1406,8 @@ function renderGames() {
 // =================================================================
 // =================================================================
 
+let bookingMaxAdvanceDays = 60;
+
 async function initializeBookingPage(stepId) {
     const currentStep = stepId || 'step-preference';
     
@@ -1429,6 +1431,7 @@ async function initializeBookingPage(stepId) {
         appContent.querySelector('#booking-announcement-box').innerText = storeInfo.booking_announcement_text || '';
         appContent.querySelector('#go-to-booking-step-btn').innerText = storeInfo.booking_button_text || '開始預約';
         appContent.querySelector('#booking-promo-text').innerText = storeInfo.booking_promo_text || '';
+        bookingMaxAdvanceDays = Number(storeInfo.booking_max_advance_days) || 60;
 
         const overridesRes = await fetch('/api/booking-date-overrides');
         if (!overridesRes.ok) throw new Error(`無法載入公休日設定 (狀態: ${overridesRes.status})`);
@@ -1463,8 +1466,11 @@ async function initializeBookingPage(stepId) {
         if (!datepickerContainer || datepickerContainer.dataset.fpInit) return;
         datepickerContainer.dataset.fpInit = '1';
 
+        const maxBookingDate = new Date();
+        maxBookingDate.setDate(maxBookingDate.getDate() + bookingMaxAdvanceDays);
+
         flatpickr(datepickerContainer, {
-            inline: true, minDate: "today", dateFormat: "Y-m-d", locale: "zh_tw",
+            inline: true, minDate: "today", maxDate: maxBookingDate, dateFormat: "Y-m-d", locale: "zh_tw",
             disable: [(date) => {
                 const ds = flatpickr.formatDate(date, "Y-m-d");
                 return !!(dateOverridesMap[ds] && dateOverridesMap[ds].is_closed);

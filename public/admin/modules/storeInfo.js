@@ -19,7 +19,7 @@ function populateStoreInfoForm(info) {
     storeInfoForm.querySelector('#info-booking-announcement').value = info.booking_announcement_text || '';
     storeInfoForm.querySelector('#info-booking-button').value = info.booking_button_text || '';
     storeInfoForm.querySelector('#info-booking-promo').value = info.booking_promo_text || '';
-    
+    storeInfoForm.querySelector('#info-booking-max-advance-days').value = info.booking_max_advance_days || 60;
 }
 
 /**
@@ -38,6 +38,7 @@ async function handleFormSubmit(event) {
         booking_announcement_text: storeInfoForm.querySelector('#info-booking-announcement').value,
         booking_button_text: storeInfoForm.querySelector('#info-booking-button').value,
         booking_promo_text: storeInfoForm.querySelector('#info-booking-promo').value,
+        booking_max_advance_days: storeInfoForm.querySelector('#info-booking-max-advance-days').value,
     };
 
     button.textContent = '儲存中...';
