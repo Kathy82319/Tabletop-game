@@ -33,6 +33,16 @@ export async function onRequestPost(context) {
         return Response.json({ error: '請選擇 1 至 3 款遊戲' }, { status: 400 });
     }
 
+    const dateOverride = await env.DB.prepare(
+        `SELECT is_closed, closed_label, requires_call, call_label FROM BookingDateOverrides WHERE date = ?`
+    ).bind(event_date).first();
+    if (dateOverride?.is_closed) {
+        return Response.json({ error: `此日期${dateOverride.closed_label || '公休'}，暫不開放開團。` }, { status: 400 });
+    }
+    if (dateOverride?.requires_call) {
+        return Response.json({ error: dateOverride.call_label || '此日期為特殊日期，請來電預約。' }, { status: 400 });
+    }
+
     const share_token = crypto.randomUUID();
 
     await env.DB.prepare(

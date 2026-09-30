@@ -188,6 +188,7 @@
 }
 .bh-day-badge.bh-closed { background-color: var(--danger-color); }
 .bh-day-badge.bh-custom { background-color: var(--info-color); }
+.bh-day-badge.bh-call { background-color: var(--warning-color); color: #212529; }
 .bh-legend-dot {
     display: inline-block;
     width: 10px;
@@ -198,6 +199,7 @@
 }
 .bh-legend-dot.bh-legend-closed { background-color: var(--danger-color); }
 .bh-legend-dot.bh-legend-custom { background-color: var(--info-color); }
+.bh-legend-dot.bh-legend-call { background-color: var(--warning-color); }
 
 @media (max-width: 768px) {
     .details-grid {

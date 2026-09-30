@@ -48,6 +48,8 @@ function renderCalendar() {
         let badge = '';
         if (override && override.is_closed) {
             badge = `<div class="bh-day-badge bh-closed">${escapeHtml(override.closed_label || '公休')}</div>`;
+        } else if (override && override.requires_call) {
+            badge = `<div class="bh-day-badge bh-call">${escapeHtml(override.call_label || '特殊日期')}</div>`;
         } else if (override && (override.open_time || override.close_time)) {
             const open = override.open_time || '12:00';
             const close = override.close_time || '22:00';
@@ -75,12 +77,14 @@ function openEditModal(dateStr) {
 
     let status = 'normal';
     if (override && override.is_closed) status = 'closed';
+    else if (override && override.requires_call) status = 'call';
     else if (override && (override.open_time || override.close_time)) status = 'custom';
 
     editModal.querySelectorAll('input[name="bh-status"]').forEach(r => { r.checked = (r.value === status); });
     document.getElementById('bh-closed-label').value = (override && override.closed_label) || '公休';
     document.getElementById('bh-open-time').value = (override && override.open_time) || '12:00';
     document.getElementById('bh-close-time').value = (override && override.close_time) || '22:00';
+    document.getElementById('bh-call-label').value = (override && override.call_label) || '特殊日期，請來電預約';
 
     toggleFieldsByStatus(status);
     ui.showModal('#bh-edit-modal');
@@ -89,6 +93,7 @@ function openEditModal(dateStr) {
 function toggleFieldsByStatus(status) {
     document.getElementById('bh-closed-label-group').style.display = status === 'closed' ? 'block' : 'none';
     document.getElementById('bh-custom-hours-group').style.display = status === 'custom' ? 'block' : 'none';
+    document.getElementById('bh-call-label-group').style.display = status === 'call' ? 'block' : 'none';
 }
 
 async function handleSave() {
@@ -103,6 +108,9 @@ async function handleSave() {
         } else if (status === 'closed') {
             const label = document.getElementById('bh-closed-label').value.trim() || '公休';
             await api.saveBookingDateOverride({ date: editingDate, is_closed: true, closed_label: label });
+        } else if (status === 'call') {
+            const label = document.getElementById('bh-call-label').value.trim() || '特殊日期，請來電預約';
+            await api.saveBookingDateOverride({ date: editingDate, is_closed: false, requires_call: true, call_label: label });
         } else {
             const openTime = document.getElementById('bh-open-time').value || '12:00';
             const closeTime = document.getElementById('bh-close-time').value || '22:00';

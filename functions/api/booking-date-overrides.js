@@ -8,7 +8,7 @@ export async function onRequest(context) {
         const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
         const { results } = await env.DB.prepare(
-            `SELECT date, is_closed, closed_label, open_time, close_time
+            `SELECT date, is_closed, closed_label, open_time, close_time, requires_call, call_label
              FROM BookingDateOverrides
              WHERE date >= ?
              ORDER BY date ASC`

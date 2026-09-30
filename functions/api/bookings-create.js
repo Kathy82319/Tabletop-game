@@ -25,7 +25,7 @@ export async function onRequest(context) {
 
     const [storeInfo, dateOverride] = await Promise.all([
         db.prepare("SELECT booking_notify_user_id, booking_max_advance_days FROM StoreInfo WHERE id = 1").first(),
-        db.prepare("SELECT is_closed FROM BookingDateOverrides WHERE date = ?").bind(bookingDate).first(),
+        db.prepare("SELECT is_closed, closed_label, requires_call, call_label FROM BookingDateOverrides WHERE date = ?").bind(bookingDate).first(),
     ]);
 
     // 日期範圍檢查：不接受過去、超過開放天數、或公休日的預約，避免繞過前端日曆直接呼叫 API
@@ -40,7 +40,10 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({ error: '此日期不開放預約。' }), { status: 400 });
     }
     if (dateOverride && dateOverride.is_closed) {
-        return new Response(JSON.stringify({ error: '此日期公休，暫不開放預約。' }), { status: 400 });
+        return new Response(JSON.stringify({ error: `此日期${dateOverride.closed_label || '公休'}，暫不開放預約。` }), { status: 400 });
+    }
+    if (dateOverride && dateOverride.requires_call) {
+        return new Response(JSON.stringify({ error: dateOverride.call_label || '此日期為特殊日期，請來電預約。' }), { status: 400 });
     }
 
     const activityMessage = `收到新的預約: ${contactName} 預約了 ${bookingDate} ${timeSlot}，共 ${numOfPeople} 人。`;

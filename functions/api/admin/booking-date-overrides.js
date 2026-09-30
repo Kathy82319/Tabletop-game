@@ -8,7 +8,7 @@ export async function onRequest(context) {
     try {
         if (request.method === 'GET') {
             const { results } = await db.prepare(
-                `SELECT date, is_closed, closed_label, open_time, close_time
+                `SELECT date, is_closed, closed_label, open_time, close_time, requires_call, call_label
                  FROM BookingDateOverrides
                  ORDER BY date ASC`
             ).all();
@@ -16,24 +16,28 @@ export async function onRequest(context) {
         }
 
         if (request.method === 'POST') {
-            const { date, is_closed, closed_label, open_time, close_time } = await request.json();
+            const { date, is_closed, closed_label, open_time, close_time, requires_call, call_label } = await request.json();
             if (!date) return Response.json({ error: '缺少日期' }, { status: 400 });
 
             await db.prepare(
-                `INSERT INTO BookingDateOverrides (date, is_closed, closed_label, open_time, close_time, updated_at)
-                 VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                `INSERT INTO BookingDateOverrides (date, is_closed, closed_label, open_time, close_time, requires_call, call_label, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                  ON CONFLICT(date) DO UPDATE SET
                     is_closed = excluded.is_closed,
                     closed_label = excluded.closed_label,
                     open_time = excluded.open_time,
                     close_time = excluded.close_time,
+                    requires_call = excluded.requires_call,
+                    call_label = excluded.call_label,
                     updated_at = CURRENT_TIMESTAMP`
             ).bind(
                 date,
                 is_closed ? 1 : 0,
                 is_closed ? (closed_label || '公休') : null,
-                (!is_closed && open_time) ? open_time : null,
-                (!is_closed && close_time) ? close_time : null
+                (!is_closed && !requires_call && open_time) ? open_time : null,
+                (!is_closed && !requires_call && close_time) ? close_time : null,
+                requires_call ? 1 : 0,
+                requires_call ? (call_label || '特殊日期，請來電預約') : null
             ).run();
 
             return Response.json({ success: true });

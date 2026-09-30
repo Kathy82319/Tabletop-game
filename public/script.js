@@ -1473,7 +1473,8 @@ async function initializeBookingPage(stepId) {
             inline: true, minDate: "today", maxDate: maxBookingDate, dateFormat: "Y-m-d", locale: "zh_tw",
             disable: [(date) => {
                 const ds = flatpickr.formatDate(date, "Y-m-d");
-                return !!(dateOverridesMap[ds] && dateOverridesMap[ds].is_closed);
+                const o = dateOverridesMap[ds];
+                return !!(o && (o.is_closed || o.requires_call));
             }],
             onDayCreate: (dObj, dStr, fp, dayElem) => {
                 const ds = flatpickr.formatDate(dayElem.dateObj, "Y-m-d");
@@ -1482,6 +1483,11 @@ async function initializeBookingPage(stepId) {
                     const label = document.createElement('span');
                     label.className = 'fp-day-note fp-day-note-closed';
                     label.textContent = o.closed_label || '公休';
+                    dayElem.appendChild(label);
+                } else if (o && o.requires_call) {
+                    const label = document.createElement('span');
+                    label.className = 'fp-day-note fp-day-note-call';
+                    label.textContent = o.call_label || '請來電預約';
                     dayElem.appendChild(label);
                 } else if (o && (o.open_time || o.close_time)) {
                     const label = document.createElement('span');
@@ -1500,7 +1506,10 @@ async function initializeBookingPage(stepId) {
                 if (clickedElement && clickedElement.classList.contains('flatpickr-disabled')) {
                     const slotsPlaceholder = appContent.querySelector('#slots-placeholder');
                     if (slotsPlaceholder) {
-                        slotsPlaceholder.textContent = '此日期公休，暫不開放預約';
+                        const o = dateOverridesMap[dateStr];
+                        slotsPlaceholder.textContent = (o && o.requires_call)
+                            ? (o.call_label || '此日期為特殊日期，請來電預約')
+                            : '此日期公休，暫不開放預約';
                         slotsPlaceholder.style.display = 'block';
                         appContent.querySelector('#booking-slots-container').innerHTML = '';
                     }
