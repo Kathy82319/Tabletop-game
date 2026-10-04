@@ -589,6 +589,7 @@ const GatherModule = (() => {
 
             const hasLimitNow = content.querySelector('.ge-limit-btn.active')?.dataset.limit === 'yes';
             const maxPart = hasLimitNow ? parseInt(document.getElementById('ge-max-participants').value) : null;
+            if (!confirmSoloLimit(maxPart)) return;
 
             const payload = {
                 name: document.getElementById('ge-name').value.trim(),
@@ -1068,6 +1069,12 @@ const GatherModule = (() => {
         });
     }
 
+    // 人數上限包含團主本人：填 1 代表只有團主一人，別人都加不進來，先跳提醒確認
+    function confirmSoloLimit(maxPart) {
+        if (maxPart !== 1) return true;
+        return window.confirm('人數上限包含團主本人喔！您填的是 1 人，代表其他人都無法加入。\n\n確定要這樣設定嗎？（若要讓別人加入，請改成 2 人以上）');
+    }
+
     function validateGatherFields({ eventDate, startTime, endTime, deadlineDate, deadlineHour, games }) {
         if (!eventDate) return { error: '請選擇活動日期' };
         if (games.length === 0) return { error: '請至少填寫一款遊戲名稱' };
@@ -1150,6 +1157,7 @@ const GatherModule = (() => {
 
                 const hasLimit = document.querySelector('.gather-limit-btn.active')?.dataset.limit === 'yes';
                 const maxPart = hasLimit ? parseInt(document.getElementById('gc-max-participants').value) : null;
+                if (!confirmSoloLimit(maxPart)) return;
 
                 const payload = {
                     name: document.getElementById('gc-name').value.trim(),
