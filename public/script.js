@@ -1808,7 +1808,7 @@ const RecWizard = {
         const results = this.allGames.filter(game => {
             const isForSale = Number(game.for_sale_stock) > 0;
             const isForRent = Number(game.for_rent_stock) > 0;
-            const isOnsiteOnly = (game.tags || '').split(',').map(t => t.trim()).includes('僅供現場遊玩');
+            const isOnsiteOnly = (game.tags || '').split(',').map(t => t.trim()).includes('僅供現場玩');
 
             if (mode === 'buy' && (!isForSale || isOnsiteOnly)) return false;
             if (mode === 'rent' && (!isForRent || isOnsiteOnly)) return false;
