@@ -6,3 +6,8 @@
 export function nowTaiwanString() {
     return new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().replace('T', ' ').substring(0, 19);
 }
+
+// 台灣時間「現在 + N 分鐘」的字串，用來判斷「還剩不到 N 分鐘」這類提醒時間窗
+export function taiwanStringPlusMinutes(minutes) {
+    return new Date(Date.now() + 8 * 60 * 60 * 1000 + minutes * 60 * 1000).toISOString().replace('T', ' ').substring(0, 19);
+}
