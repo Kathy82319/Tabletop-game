@@ -326,7 +326,10 @@ function initializeGameDetailsPageFromHash(gameIdString) {
 
     async function initializeLiff() {
         try {
-            await liff.init({ liffId: myLiffId });
+            // withLoginOnExternalBrowser: 揪團連結常被用短網址（例如 reurl.cc）轉貼到 LINE 以外的地方
+            // （Threads、Messenger 的內建瀏覽器等），這種「不是在 LINE App 裡開」的情況下，
+            // 沒有這個參數登入／取得個人資料會不穩定甚至整個失敗，而且不是重試能解決的暫時性問題。
+            await liff.init({ liffId: myLiffId, withLoginOnExternalBrowser: true });
 
             if (!liff.isLoggedIn()) {
                 // LINE 登入會整頁導轉（甚至可能切換瀏覽器內容程序），回來後網址的 hash（例如揪團分享連結）
