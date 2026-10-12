@@ -339,12 +339,23 @@ function initializeGameDetailsPageFromHash(gameIdString) {
                 liff.login({ redirectUri: location.href });
                 return;
             }
-            userProfile = await liff.getProfile();
+            // 剛從 LINE 登入導轉回來時，liff.getProfile() 偶爾會因為 token 還沒就緒而失敗一次，
+            // 重試一次再放棄，避免玩家明明有登入卻被當成失敗處理
+            try {
+                userProfile = await liff.getProfile();
+            } catch (profileErr) {
+                console.warn('liff.getProfile() 第一次失敗，稍後重試一次', profileErr);
+                await new Promise(resolve => setTimeout(resolve, 800));
+                userProfile = await liff.getProfile();
+            }
             window.userProfile = userProfile;
             // 冒險者介面改版預覽開關：只有這個 LINE 帳號會看到新版，其他會員維持舊版；
             // 確認新版沒問題後，把這個判斷式拿掉（或直接改成 true）就會變成所有人都看新版。
             window.isPreviewUser = userProfile.userId === 'U43e4e5c607aa74a030f61505ebd5e888';
-            if (typeof GatherModule !== 'undefined') GatherModule.checkUnreadEdits();
+            // 這裡失敗不該連累整個 LIFF 初始化流程（例如害揪團連結打不開），只記錄不往外拋
+            if (typeof GatherModule !== 'undefined') {
+                GatherModule.checkUnreadEdits().catch(err => console.error('checkUnreadEdits 失敗（不影響其他功能）', err));
+            }
 
             const pendingHash = localStorage.getItem('pending_hash');
             if (pendingHash) {
@@ -359,9 +370,14 @@ function initializeGameDetailsPageFromHash(gameIdString) {
 
         } catch (err) {
             console.error("LIFF 初始化或 Profile 獲取失敗", err);
-            history.replaceState({ page: 'page-home', data: null }, '', '#page-home');
-            handleNavigation();
-            ensureBackBuffer();
+            // 以前這裡會把網址 hash 強制改成 #page-home，等於默默把人丟回首頁——
+            // 如果使用者本來是點揪團分享連結進來的，hash 就這樣被洗掉，重新整理也救不回來，
+            // 還以為「連結打不開」。現在改成保留原本的 hash，只顯示明確的錯誤訊息讓他重試，
+            // 重新整理成功後就能照原本的連結繼續進去。
+            appContent.innerHTML = `<div style="text-align:center; padding: 60px 20px;">
+                <p style="color: var(--color-danger, #c0392b); margin-bottom: 16px;">無法載入資料，請重新整理再試一次。</p>
+                <button class="cta-button" onclick="location.reload()">重新整理</button>
+            </div>`;
         }
     }
     // =================================================================
