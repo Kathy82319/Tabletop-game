@@ -636,8 +636,20 @@ const GatherModule = (() => {
 
         const shareBtn = document.getElementById('gg-share-btn');
         if (shareBtn) {
-            shareBtn.addEventListener('click', () => {
-                const shareUrl = `${location.origin}${location.pathname}#gather-share@${g.share_token}`;
+            shareBtn.addEventListener('click', async () => {
+                const longUrl = `${location.origin}${location.pathname}#gather-share@${g.share_token}`;
+                let shareUrl = longUrl;
+                // 短網址是加分項，拿不到就直接用原本的長連結分享，不卡住使用者
+                try {
+                    const res = await fetch(`/api/group-gatherings/${id}/short-link`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.url) shareUrl = data.url;
+                    }
+                } catch (err) {
+                    console.warn('取得短網址失敗，改用原本的長連結', err);
+                }
+
                 if (navigator.share) {
                     navigator.share({ title: `${g.organizer_name} 的揪團`, url: shareUrl });
                 } else if (navigator.clipboard) {
