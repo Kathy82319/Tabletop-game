@@ -255,10 +255,23 @@ input[readonly] {
     color: white;
 }
 
+/* 最新情報列表：電腦版用 Grid 排成多欄卡片，跟桌遊圖鑑同一套做法，避免每張卡都拉滿整個寬度 */
+#news-list-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    align-items: start;
+}
+@media (max-width: 768px) {
+    #news-list-container {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* 最新情報卡片 (由 script.js 生成) */
 .news-card {
     padding: 0;
-    margin-bottom: 20px;
+    margin-bottom: 0; /* Grid 的 gap 已經處理間距，避免跟 gap 疊加出雙倍空隙 */
     overflow: hidden; /* 確保圖片圓角生效 */
 }
 .news-card-header {
