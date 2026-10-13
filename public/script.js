@@ -126,6 +126,10 @@ function handleNavigation() {
     const prevPageId = (appContent.dataset.currentPage || '').split('@')[0];
 
     appContent.dataset.currentPage = hash;
+    // 詳情頁（新聞/桌遊）電腦版限制閱讀寬度並置中；樣板注入時 #page-xxx 這層外殼會被拆掉
+    // （appContent.innerHTML 吃的是樣板的 innerHTML，不是整個 template 節點），所以沒辦法直接用
+    // #page-news-details 當 CSS selector，改成在真正的容器 #app-content 上切換 class 才找得到東西。
+    appContent.classList.toggle('app-content--narrow', pageId === 'page-news-details' || pageId === 'page-game-details');
 
     // 只有切換到不同頁面才重新注入模板，同頁面步驟切換保留現有 DOM
     if (pageId !== prevPageId) {

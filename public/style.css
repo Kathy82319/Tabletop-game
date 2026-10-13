@@ -1686,9 +1686,9 @@ span.arrowDown:after { border-top-color: var(--color-text-primary) !important; }
     white-space: nowrap;
 }
 
-/* 詳情頁（新聞/桌遊）電腦版寬螢幕限制最大寬度並置中，避免內容被拉成滿版、大圖變超大不好閱讀 */
-#page-news-details,
-#page-game-details {
+/* 詳情頁（新聞/桌遊）電腦版寬螢幕限制最大寬度並置中，避免內容被拉成滿版、大圖變超大不好閱讀。
+   class 由 script.js 的 handleNavigation() 依目前頁面切換，見該處註解說明為什麼不能直接用 #page-xxx 當 selector。 */
+#app-content.app-content--narrow {
     max-width: 760px;
     margin: 0 auto;
 }
