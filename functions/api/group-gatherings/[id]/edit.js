@@ -11,7 +11,7 @@ const FIELD_LABELS = {
 };
 
 function formatValue(field, value) {
-    if (field === 'max_participants') return value ? `${value} 人` : '不限';
+    if (field === 'max_participants') return value ? `${value} 人（不含團主）` : '不限';
     if (field === 'games') return (value || []).map(g => g.name).join('、') || '（無）';
     if (field === 'note') return value || '（無）';
     return value ?? '（無）';
