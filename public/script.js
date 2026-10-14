@@ -330,30 +330,45 @@ function initializeGameDetailsPageFromHash(gameIdString) {
 
 // 共用的「資料載入失敗」畫面：這類失敗大多是因為在 LINE（或其他 App）內建的瀏覽器裡打開，
 // 那種瀏覽器的 Cookie／暫存資料常常中途被清掉，單純「重新整理」通常沒用，
-// 真正有效的是換成手機的預設瀏覽器（Chrome / Safari）開啟，所以導引使用者這樣做，
-// 並附上「複製連結」按鈕方便他們貼到預設瀏覽器。
+// 真正有效的是換成手機的預設瀏覽器（Chrome / Safari）開啟。
+// Android 可以用 intent:// 這個網址格式直接請系統跳出去用瀏覽器開，不用使用者自己複製貼上；
+// iOS 沒有對應的通用做法（蘋果沒開放這種跳轉），只能退回複製連結讓使用者自己貼到 Safari。
 function renderLiffLoadErrorUI(container, message = '無法載入資料') {
+    const isAndroid = /Android/i.test(navigator.userAgent || '');
+
     container.innerHTML = `<div style="text-align:center; padding: 60px 20px;">
         <p style="color: var(--color-danger, #c0392b); margin-bottom: 10px; font-weight: bold;">${message}</p>
         <p style="color: var(--color-text-secondary, #6b4f3a); margin-bottom: 20px; font-size: 0.9rem; line-height: 1.6;">
-            這通常是因為目前是用 LINE（或其他 App）內建的瀏覽器開啟。<br>
-            請點下方「複製連結」，改用手機的<strong>預設瀏覽器</strong>（Chrome / Safari）開啟試試看。
+            這通常是因為目前是用 LINE（或其他 App）內建的瀏覽器開啟，<br>
+            請改用手機的<strong>預設瀏覽器</strong>（Chrome / Safari）開啟試試看。
         </p>
-        <button class="cta-button" id="liff-error-copy-btn" style="margin-bottom: 10px;">複製連結</button>
+        ${isAndroid ? `<button class="cta-button" id="liff-error-open-btn" style="margin-bottom: 10px;">用瀏覽器開啟</button><br>` : ''}
+        <button class="cta-button" id="liff-error-copy-btn" style="margin-bottom: 10px; ${isAndroid ? 'background: var(--color-text-secondary, #6b4f3a);' : ''}">複製連結</button>
         <br>
         <button class="cta-button" onclick="location.reload()" style="background: var(--color-text-secondary, #6b4f3a);">重新整理</button>
     </div>`;
 
+    const copyToClipboard = (url, onDone) => {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(onDone).catch(() => prompt('複製此連結，改用預設瀏覽器開啟：', url));
+        } else {
+            prompt('複製此連結，改用預設瀏覽器開啟：', url);
+        }
+    };
+
+    const openBtn = document.getElementById('liff-error-open-btn');
+    if (openBtn) {
+        openBtn.addEventListener('click', () => {
+            // intent:// 是 Android 系統看得懂的網址格式，會直接跳出「選擇瀏覽器開啟」，繞過目前這個 App 內建的瀏覽器
+            const urlNoScheme = location.href.replace(/^https?:\/\//, '');
+            location.href = `intent://${urlNoScheme}#Intent;scheme=https;end`;
+        });
+    }
+
     const copyBtn = document.getElementById('liff-error-copy-btn');
     if (copyBtn) {
         copyBtn.addEventListener('click', () => {
-            const url = location.href;
-            const done = () => { copyBtn.textContent = '已複製！請到預設瀏覽器貼上'; };
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(url).then(done).catch(() => prompt('複製此連結，改用預設瀏覽器開啟：', url));
-            } else {
-                prompt('複製此連結，改用預設瀏覽器開啟：', url);
-            }
+            copyToClipboard(location.href, () => { copyBtn.textContent = '已複製！請到預設瀏覽器貼上'; });
         });
     }
 }
