@@ -324,9 +324,39 @@ function initializeGameDetailsPageFromHash(gameIdString) {
         appContent.innerHTML = `<p>找不到 ID 為 ${gameId} 的遊戲。</p>`;
         console.warn(`在 allGames 快取中找不到 ID 為 ${gameId} 的遊戲`);
     }
-}    
+}
 // =================================================================
 // =================================================================
+
+// 共用的「資料載入失敗」畫面：這類失敗大多是因為在 LINE（或其他 App）內建的瀏覽器裡打開，
+// 那種瀏覽器的 Cookie／暫存資料常常中途被清掉，單純「重新整理」通常沒用，
+// 真正有效的是換成手機的預設瀏覽器（Chrome / Safari）開啟，所以導引使用者這樣做，
+// 並附上「複製連結」按鈕方便他們貼到預設瀏覽器。
+function renderLiffLoadErrorUI(container, message = '無法載入資料') {
+    container.innerHTML = `<div style="text-align:center; padding: 60px 20px;">
+        <p style="color: var(--color-danger, #c0392b); margin-bottom: 10px; font-weight: bold;">${message}</p>
+        <p style="color: var(--color-text-secondary, #6b4f3a); margin-bottom: 20px; font-size: 0.9rem; line-height: 1.6;">
+            這通常是因為目前是用 LINE（或其他 App）內建的瀏覽器開啟。<br>
+            請點下方「複製連結」，改用手機的<strong>預設瀏覽器</strong>（Chrome / Safari）開啟試試看。
+        </p>
+        <button class="cta-button" id="liff-error-copy-btn" style="margin-bottom: 10px;">複製連結</button>
+        <br>
+        <button class="cta-button" onclick="location.reload()" style="background: var(--color-text-secondary, #6b4f3a);">重新整理</button>
+    </div>`;
+
+    const copyBtn = document.getElementById('liff-error-copy-btn');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+            const url = location.href;
+            const done = () => { copyBtn.textContent = '已複製！請到預設瀏覽器貼上'; };
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(done).catch(() => prompt('複製此連結，改用預設瀏覽器開啟：', url));
+            } else {
+                prompt('複製此連結，改用預設瀏覽器開啟：', url);
+            }
+        });
+    }
+}
 
     async function initializeLiff() {
         try {
@@ -379,12 +409,8 @@ function initializeGameDetailsPageFromHash(gameIdString) {
             console.error("LIFF 初始化或 Profile 獲取失敗", err);
             // 以前這裡會把網址 hash 強制改成 #page-home，等於默默把人丟回首頁——
             // 如果使用者本來是點揪團分享連結進來的，hash 就這樣被洗掉，重新整理也救不回來，
-            // 還以為「連結打不開」。現在改成保留原本的 hash，只顯示明確的錯誤訊息讓他重試，
-            // 重新整理成功後就能照原本的連結繼續進去。
-            appContent.innerHTML = `<div style="text-align:center; padding: 60px 20px;">
-                <p style="color: var(--color-danger, #c0392b); margin-bottom: 16px;">無法載入資料，請重新整理再試一次。</p>
-                <button class="cta-button" onclick="location.reload()">重新整理</button>
-            </div>`;
+            // 還以為「連結打不開」。現在改成保留原本的 hash，並用共用的錯誤畫面引導換瀏覽器開啟。
+            renderLiffLoadErrorUI(appContent);
         }
     }
     // =================================================================
@@ -392,10 +418,7 @@ function initializeGameDetailsPageFromHash(gameIdString) {
 async function initializeProfilePage() {
     if (!userProfile) {
         // 個人資料尚未成功載入時，不要留一個永遠卡在「讀取中...」的空白畫面，給使用者可以重試的出口
-        appContent.innerHTML = `<div style="text-align:center; padding: 60px 20px;">
-            <p style="color: var(--color-danger, #c0392b); margin-bottom: 16px;">無法載入您的個人資料，請重新整理再試一次。</p>
-            <button class="cta-button" onclick="location.reload()">重新整理</button>
-        </div>`;
+        renderLiffLoadErrorUI(appContent, '無法載入您的個人資料');
         return;
     }
     const displayNameElement = document.getElementById('display-name');
