@@ -35,14 +35,22 @@ export async function onRequest(context) {
         const isVisible = newTotalStock > 0 ? 1 : 0;
         const totalPrice = (game.sale_price || 0) * quantity;
 
+        // 跟批次結帳（checkout-sale.js）用同一套資料結構：先建立一筆訂單再寫明細並掛上 order_id，
+        // 不然這筆賣出紀錄的 order_id 會是 NULL，「販售紀錄」的查詢只抓 order_id 不是 NULL 的資料，
+        // 快速賣出的東西雖然庫存有正確扣掉，卻永遠不會出現在販售紀錄列表裡。
+        const orderInsert = await db.prepare(
+            'INSERT INTO SalesOrders (total_amount) VALUES (?)'
+        ).bind(totalPrice).run();
+        const orderId = orderInsert.meta.last_row_id;
+
         await db.batch([
             db.prepare(
                 'UPDATE BoardGames SET total_stock = ?, for_sale_stock = ?, is_visible = ? WHERE game_id = ?'
             ).bind(newTotalStock, newForSaleStock, isVisible, gameId),
             db.prepare(
-                `INSERT INTO Sales (game_id, game_name, quantity, unit_price, total_price)
-                 VALUES (?, ?, ?, ?, ?)`
-            ).bind(gameId, game.name, quantity, game.sale_price || 0, totalPrice)
+                `INSERT INTO Sales (game_id, game_name, quantity, unit_price, total_price, order_id, discount)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`
+            ).bind(gameId, game.name, quantity, game.sale_price || 0, totalPrice, orderId, 1)
         ]);
 
         return new Response(JSON.stringify({
