@@ -14,11 +14,12 @@ export async function onRequestGet(context) {
         return Response.json({ url: `https://tabletop-game.pages.dev/s/${existing.code}` });
     }
 
-    // 6 碼英數短碼，去掉容易看錯的 0/O/1/l/I；衝突機率極低，但還是重試幾次保險
+    // 4 碼英數短碼，去掉容易看錯的 0/O/1/l/I；56 種字元排列組合約 983 萬種，
+    // 以這個規模的揪團數量來說衝突機率可忽略，萬一真的撞到下面還有重試
     const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     const randomCode = () => {
         let code = '';
-        for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+        for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
         return code;
     };
 
