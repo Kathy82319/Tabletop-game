@@ -183,6 +183,9 @@
                         <span id="user-exp" class="profile-value">--</span>
                     </div>
                 </div>
+
+                <!-- 改版預覽：編輯檔案入口縮小成一個小連結，不再佔一整顆大按鈕的版面，僅 window.isPreviewUser 可見 -->
+                <a href="#" class="profile-quick-link" id="edit-profile-link-v2" data-navigate="page-edit-profile" style="display:none;">✏️ 編輯冒險者檔案</a>
             </div>
         </div>
 
@@ -244,35 +247,29 @@
                     <div class="monster-damage-popup" id="monster-damage-popup"></div>
                 </div>
             </div>
-            <div class="profile-slot-field" data-slot="title">
-                <button class="profile-slot-header" type="button">
-                    <span class="profile-slot-label">🏅 稱號</span>
-                    <span class="profile-slot-toggle">›</span>
-                </button>
-                <div class="profile-slot-grid" id="slot-grid-title"></div>
+            <!-- 改版預覽：我的收藏改成點了開新頁面的方塊，不再是原地展開 -->
+            <div class="collection-section">
+                <div class="collection-section-header"><span class="collection-section-title">🎒 我的收藏</span></div>
+                <div class="collection-tiles">
+                    <button type="button" class="collection-tile" data-navigate="page-collection" data-navigate-param="title">
+                        <span class="collection-tile-icon">🏅</span>
+                        <span class="collection-tile-label">稱號</span>
+                    </button>
+                    <button type="button" class="collection-tile" data-navigate="page-collection" data-navigate-param="achievement">
+                        <span class="collection-tile-icon">🏆</span>
+                        <span class="collection-tile-label">成就</span>
+                    </button>
+                    <button type="button" class="collection-tile" data-navigate="page-collection" data-navigate-param="skill">
+                        <span class="collection-tile-icon">✨</span>
+                        <span class="collection-tile-label">技能</span>
+                    </button>
+                    <button type="button" class="collection-tile" data-navigate="page-collection" data-navigate-param="equipment">
+                        <span class="collection-tile-icon">🎒</span>
+                        <span class="collection-tile-label">裝備</span>
+                    </button>
+                </div>
             </div>
-            <div class="profile-slot-field" data-slot="achievement">
-                <button class="profile-slot-header" type="button">
-                    <span class="profile-slot-label">🏆 成就</span>
-                    <span class="profile-slot-toggle">›</span>
-                </button>
-                <div class="profile-slot-grid" id="slot-grid-achievement"></div>
-            </div>
-            <div class="profile-slot-field" data-slot="skill">
-                <button class="profile-slot-header" type="button">
-                    <span class="profile-slot-label">✨ 技能</span>
-                    <span class="profile-slot-toggle">›</span>
-                </button>
-                <div class="profile-slot-grid" id="slot-grid-skill"></div>
-            </div>
-            <div class="profile-slot-field" data-slot="equipment">
-                <button class="profile-slot-header" type="button">
-                    <span class="profile-slot-label">🎒 裝備</span>
-                    <span class="profile-slot-toggle">›</span>
-                </button>
-                <div class="profile-slot-grid" id="slot-grid-equipment"></div>
-            </div>
-            <!-- 改版預覽：開寶箱動畫效果 demo，僅 window.isPreviewUser 帳號可見，還沒接真正的道具資料 -->
+            <!-- 改版預覽：開寶箱動畫效果 demo，僅 window.isPreviewUser 帳號可見，還沒接上真正的道具資料 -->
             <div class="profile-slot-field" id="field-chest-demo" style="display:none;">
                 <button class="profile-slot-header" type="button">
                     <span class="profile-slot-label">🎁 寶箱（動畫預覽）</span>
@@ -281,6 +278,25 @@
                 <div class="profile-slot-body">
                     <p style="margin:0 0 10px; font-size:0.82rem; color:#888;">這是開寶箱動畫效果的預覽，還沒接上真正的道具資料，先看看風格對不對。</p>
                     <button type="button" class="chest-demo-btn" id="chest-open-btn">點我開寶箱</button>
+                </div>
+            </div>
+
+            <!-- 改版預覽：經驗/租借/遊戲/揪團紀錄整合成一組精簡清單，取代原本各自一顆大按鈕 -->
+            <div class="activity-section">
+                <div class="collection-section-header"><span class="collection-section-title">📜 冒險與成長紀錄</span></div>
+                <div class="activity-list">
+                    <a href="#" class="activity-list-row" data-navigate="page-my-exp-history">
+                        <span>📈 經驗成長紀錄</span><span class="activity-list-arrow">›</span>
+                    </a>
+                    <a href="#" class="activity-list-row" data-navigate="page-game-history">
+                        <span>🎲 過往遊戲紀錄</span><span class="activity-list-arrow">›</span>
+                    </a>
+                    <a href="#" class="activity-list-row" data-navigate="page-rental-history">
+                        <span>📦 桌遊租借紀錄</span><span class="activity-list-arrow">›</span>
+                    </a>
+                    <a href="#" class="activity-list-row" data-navigate="page-my-gatherings">
+                        <span>🧑‍🤝‍🧑 我的揪團</span><span class="activity-list-arrow">›</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -419,6 +435,20 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- 改版預覽：我的收藏整頁列表，依 data-navigate-param 顯示稱號/成就/技能/裝備其中一類，僅 window.isPreviewUser 帳號可見 -->
+<div id="page-collection">
+    <button class="details-back-button">← 返回個人資料</button>
+    <h1 class="page-main-title" id="collection-page-title">我的收藏</h1>
+    <div class="collection-subnav" id="collection-subnav">
+        <button type="button" class="collection-subnav-btn" data-navigate="page-collection" data-navigate-param="title">🏅 稱號</button>
+        <button type="button" class="collection-subnav-btn" data-navigate="page-collection" data-navigate-param="achievement">🏆 成就</button>
+        <button type="button" class="collection-subnav-btn" data-navigate="page-collection" data-navigate-param="skill">✨ 技能</button>
+        <button type="button" class="collection-subnav-btn" data-navigate="page-collection" data-navigate-param="equipment">🎒 裝備</button>
+    </div>
+    <div class="profile-slot-grid-page" id="collection-grid"></div>
+    <p class="profile-slot-empty-page" id="collection-empty" style="display:none;">尚無項目</p>
 </div>
 
 <div id="page-edit-profile">

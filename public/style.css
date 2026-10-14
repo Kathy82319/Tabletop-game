@@ -1042,6 +1042,99 @@ input[readonly] {
     display: block;
 }
 
+/* 改版預覽：編輯檔案小連結，取代原本一整顆大按鈕 */
+.profile-quick-link {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 0.82rem;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    opacity: 0.85;
+}
+.profile-quick-link:hover { text-decoration: underline; }
+
+/* 改版預覽：「我的收藏」「冒險與成長紀錄」共用的小標題 */
+.collection-section-header { margin: 4px 0 8px; }
+.collection-section-title { font-size: 0.95rem; font-weight: bold; color: #444; }
+
+/* 改版預覽：我的收藏方塊（點下去開新頁面，不是原地展開） */
+.collection-section { margin-bottom: 4px; }
+.collection-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+.collection-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 4px;
+    border: 1px solid rgba(74, 55, 40, 0.18);
+    border-radius: 10px;
+    background: rgba(74, 55, 40, 0.03);
+    cursor: pointer;
+    font-family: inherit;
+}
+.collection-tile-icon { font-size: 1.6rem; }
+.collection-tile-label { font-size: 0.78rem; color: #555; }
+
+/* 改版預覽：冒險與成長紀錄清單（整合原本經驗/租借/遊戲/揪團紀錄四顆大按鈕） */
+.activity-section { margin-top: 4px; }
+.activity-list {
+    border: 1px solid rgba(74, 55, 40, 0.18);
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(74, 55, 40, 0.03);
+}
+.activity-list-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    text-decoration: none;
+    color: #444;
+    font-size: 0.92rem;
+    border-bottom: 1px solid rgba(74, 55, 40, 0.1);
+}
+.activity-list-row:last-child { border-bottom: none; }
+.activity-list-arrow { color: #999; }
+
+/* 改版預覽：「我的收藏」整頁列表的分類切換 */
+.collection-subnav {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    margin-bottom: 16px;
+}
+.collection-subnav-btn {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border: 1px solid var(--color-frame-gold);
+    border-radius: 16px;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-family: inherit;
+    cursor: pointer;
+}
+.collection-subnav-btn.active {
+    background: var(--color-frame-gold);
+    color: white;
+}
+
+/* 改版預覽：「我的收藏」整頁列表的圖示格子（固定顯示，不是收合式） */
+.profile-slot-grid-page {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+.profile-slot-empty-page {
+    color: #999;
+    font-size: 0.9rem;
+    text-align: center;
+    margin-top: 20px;
+}
+
 /* 改版預覽：開寶箱動畫 demo */
 .chest-demo-btn {
     display: inline-block;
