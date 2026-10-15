@@ -112,7 +112,7 @@ const GatherModule = (() => {
     function renderGatherCard(g, showMyStatus = false) {
         const statusLabel = getStatusLabel(g);
         const statusClass = getStatusClass(g);
-        const maxText = g.max_participants ? `${g.member_count || 0} / ${g.max_participants}` : `${(g.member_count || 0) + 1} 人`;
+        const maxText = g.max_participants ? `${g.member_count || 0} / ${g.max_participants}` : `${g.member_count || 0} 人`;
         const myBadge = showMyStatus && g.my_status && g.my_status !== 'organizer'
             ? `<span class="gg-my-badge">${g.my_status === 'approved' ? '已通過' : g.my_status === 'rejected' ? '未通過' : '已報名'}</span>` : '';
         const organizerBadge = showMyStatus && g.my_status === 'organizer'
@@ -400,7 +400,7 @@ const GatherModule = (() => {
                     </div>
                     <div class="gg-detail-section">
                         <span class="gg-detail-label">👥 人數</span>
-                        <span>${hasMemberLimit ? `已報名 ${memberCount} / ${g.max_participants} 人（不含團主）` : `${memberCount + 1} 人（不限）`}</span>
+                        <span>${hasMemberLimit ? `已報名 ${memberCount} / ${g.max_participants} 人（不含團主）` : `已報名 ${memberCount} 人（不限，不含團主）`}</span>
                     </div>
                     <div class="gg-detail-section">
                         <span class="gg-detail-label">🎲 遊戲</span>

@@ -68,7 +68,7 @@ function renderGatheringsTable() {
             <td>${g.id}</td>
             <td>${escapeHtml(g.organizer_name)}</td>
             <td>${g.event_date}<br>${g.start_time}–${g.end_time}</td>
-            <td>${g.max_participants ? `${g.member_count} / ${g.max_participants}（不含團主）` : `${g.member_count + 1} 人`}</td>
+            <td>${g.max_participants ? `${g.member_count} / ${g.max_participants}（不含團主）` : `${g.member_count} 人（不含團主）`}</td>
             <td class="admin-gg-games-cell">${renderGameTags(g.games)}</td>
             <td><span class="admin-gg-status-badge gg-s-${g.status}">${STATUS_LABEL[g.status] || g.status}</span></td>
             <td class="actions-cell">
@@ -101,7 +101,7 @@ async function showDetail(id) {
                 <tr><td>狀態</td><td>${STATUS_LABEL[g.status] || g.status}</td></tr>
                 <tr><td>日期時間</td><td>${g.event_date} ${g.start_time}–${g.end_time}</td></tr>
                 <tr><td>截止時間</td><td>${g.deadline}</td></tr>
-                <tr><td>人數限制</td><td>${g.max_participants ? `${approvedCount} / ${g.max_participants}（不含團主）` : `${approvedCount + 1} 人（不限）`}</td></tr>
+                <tr><td>人數限制</td><td>${g.max_participants ? `${approvedCount} / ${g.max_participants}（不含團主）` : `${approvedCount} 人（不限，不含團主）`}</td></tr>
                 <tr><td>遊戲</td><td>${renderGameTags(g.games)}</td></tr>
                 ${g.note ? `<tr><td>備註</td><td>${escapeHtml(g.note)}</td></tr>` : ''}
             </table>
