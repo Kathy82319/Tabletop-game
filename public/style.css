@@ -280,6 +280,11 @@ input[readonly] {
     padding: 10px 15px;
     background-color: rgba(184, 134, 11, 0.1); /* 暗金色透明背景 */
 }
+.news-card-pinned {
+    font-size: 0.78rem;
+    font-weight: bold;
+    color: #a94442;
+}
 .news-card-category {
     font-weight: bold;
     color: var(--color-frame-gold);
@@ -1133,6 +1138,52 @@ input[readonly] {
     font-size: 0.9rem;
     text-align: center;
     margin-top: 20px;
+}
+
+/* 改版預覽：「我的收藏」彈出視窗，取代原本開新頁面的做法，關閉/切換分類都不用離開冒險者資料頁 */
+#collection-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9000;
+    padding: 16px;
+    box-sizing: border-box;
+}
+#collection-modal-box {
+    background: var(--color-card-background, #fdf6e8);
+    border-radius: 16px;
+    padding: 18px 20px 24px;
+    width: 100%;
+    max-width: 380px;
+    max-height: 82vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    box-sizing: border-box;
+}
+#collection-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+#collection-modal-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: var(--color-text-primary, #4a3728);
+}
+#collection-modal-close {
+    border: none;
+    background: rgba(74, 55, 40, 0.08);
+    color: var(--color-text-primary, #4a3728);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1;
 }
 
 /* 改版預覽：開寶箱動畫 demo */

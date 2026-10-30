@@ -9,9 +9,9 @@ export async function onRequest(context) {
     const db = context.env.DB;
     
     const stmt = db.prepare(
-      `SELECT * FROM News 
-       WHERE is_published = 1 
-       ORDER BY published_date DESC`
+      `SELECT * FROM News
+       WHERE is_published = 1
+       ORDER BY is_pinned DESC, pin_order ASC, published_date DESC`
     );
     const { results } = await stmt.all();
 

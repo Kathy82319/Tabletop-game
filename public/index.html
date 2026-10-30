@@ -251,19 +251,19 @@
             <div class="collection-section">
                 <div class="collection-section-header"><span class="collection-section-title">🎒 我的收藏</span></div>
                 <div class="collection-tiles">
-                    <button type="button" class="collection-tile" data-navigate="page-collection" data-navigate-param="title">
+                    <button type="button" class="collection-tile" data-collection-type="title">
                         <span class="collection-tile-icon">🏅</span>
                         <span class="collection-tile-label">稱號</span>
                     </button>
-                    <button type="button" class="collection-tile" data-navigate="page-collection" data-navigate-param="achievement">
+                    <button type="button" class="collection-tile" data-collection-type="achievement">
                         <span class="collection-tile-icon">🏆</span>
                         <span class="collection-tile-label">成就</span>
                     </button>
-                    <button type="button" class="collection-tile" data-navigate="page-collection" data-navigate-param="skill">
+                    <button type="button" class="collection-tile" data-collection-type="skill">
                         <span class="collection-tile-icon">✨</span>
                         <span class="collection-tile-label">技能</span>
                     </button>
-                    <button type="button" class="collection-tile" data-navigate="page-collection" data-navigate-param="equipment">
+                    <button type="button" class="collection-tile" data-collection-type="equipment">
                         <span class="collection-tile-icon">🎒</span>
                         <span class="collection-tile-label">裝備</span>
                     </button>
@@ -324,6 +324,24 @@
             </div>
             <p class="chest-result-text" id="chest-result-text"></p>
             <button type="button" class="cta-button" id="chest-modal-close-btn" style="display:none;">關閉</button>
+        </div>
+    </div>
+
+    <!-- 改版預覽：我的收藏改成彈出視窗（不是整頁），分類切換、關閉都不用離開冒險者資料頁，僅 window.isPreviewUser 帳號可見 -->
+    <div id="collection-modal-overlay" style="display:none;">
+        <div id="collection-modal-box">
+            <div id="collection-modal-header">
+                <h3 id="collection-modal-title">我的收藏</h3>
+                <button type="button" id="collection-modal-close">✕</button>
+            </div>
+            <div class="collection-subnav" id="collection-modal-subnav">
+                <button type="button" class="collection-subnav-btn" data-collection-type="title">🏅 稱號</button>
+                <button type="button" class="collection-subnav-btn" data-collection-type="achievement">🏆 成就</button>
+                <button type="button" class="collection-subnav-btn" data-collection-type="skill">✨ 技能</button>
+                <button type="button" class="collection-subnav-btn" data-collection-type="equipment">🎒 裝備</button>
+            </div>
+            <div class="profile-slot-grid-page" id="collection-modal-grid"></div>
+            <p class="profile-slot-empty-page" id="collection-modal-empty" style="display:none;">尚無項目</p>
         </div>
     </div>
 
@@ -437,19 +455,6 @@
     </div>
 </div>
 
-<!-- 改版預覽：我的收藏整頁列表，依 data-navigate-param 顯示稱號/成就/技能/裝備其中一類，僅 window.isPreviewUser 帳號可見 -->
-<div id="page-collection">
-    <button class="details-back-button">← 返回個人資料</button>
-    <h1 class="page-main-title" id="collection-page-title">我的收藏</h1>
-    <div class="collection-subnav" id="collection-subnav">
-        <button type="button" class="collection-subnav-btn" data-navigate="page-collection" data-navigate-param="title">🏅 稱號</button>
-        <button type="button" class="collection-subnav-btn" data-navigate="page-collection" data-navigate-param="achievement">🏆 成就</button>
-        <button type="button" class="collection-subnav-btn" data-navigate="page-collection" data-navigate-param="skill">✨ 技能</button>
-        <button type="button" class="collection-subnav-btn" data-navigate="page-collection" data-navigate-param="equipment">🎒 裝備</button>
-    </div>
-    <div class="profile-slot-grid-page" id="collection-grid"></div>
-    <p class="profile-slot-empty-page" id="collection-empty" style="display:none;">尚無項目</p>
-</div>
 
 <div id="page-edit-profile">
     <button class="details-back-button" style="margin-bottom: 20px;">← 返回</button>

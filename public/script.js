@@ -159,7 +159,6 @@ function handleNavigation() {
         'page-scoreboard-join': () => initializeScoreboardJoinPage(data),
         'page-game-history': initializeGameHistoryPage,
         'page-my-gatherings': initializeMyGatheringsPage,
-        'page-collection': () => initializeCollectionPage(data),
     };
 
     if (pageInitializers[pageId]) {
@@ -222,10 +221,13 @@ function renderNews(filterCategory = 'ALL') {
                </div>`
             : '';
 
+        const pinnedBadge = news.is_pinned ? '<span class="news-card-pinned">📌 置頂</span>' : '';
+
         return `
         <div class="card news-card" data-news-id="${news.id}">
             <div class="news-card-header">
                 <span class="news-card-category">${news.category}</span>
+                ${pinnedBadge}
                 <span class="news-card-date">${news.published_date}</span>
             </div>
             <div class="news-card-content">
@@ -641,24 +643,27 @@ function buildAssetGridHtml(items) {
     }).join('');
 }
 
-// 改版預覽：「我的收藏」整頁列表，依 data-navigate-param（title/achievement/skill/equipment）切換分類
+// 改版預覽：「我的收藏」彈出視窗，依 data-collection-type（title/achievement/skill/equipment）切換分類，
+// 不用離開冒險者資料頁，切換分類、關閉都在同一個視窗裡完成，避免一直按上一頁
 const COLLECTION_TYPE_LABELS = { title: '🏅 稱號', achievement: '🏆 成就', skill: '✨ 技能', equipment: '🎒 裝備' };
 
-async function initializeCollectionPage(type) {
+async function openCollectionModal(type) {
     const activeType = COLLECTION_TYPE_LABELS[type] ? type : 'title';
+    const overlay = document.getElementById('collection-modal-overlay');
+    if (overlay) overlay.style.display = 'flex';
 
-    document.querySelectorAll('.collection-subnav-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.navigateParam === activeType);
+    document.querySelectorAll('#collection-modal-subnav .collection-subnav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.collectionType === activeType);
     });
-    const titleEl = document.getElementById('collection-page-title');
+    const titleEl = document.getElementById('collection-modal-title');
     if (titleEl) titleEl.textContent = COLLECTION_TYPE_LABELS[activeType];
 
     const data = await fetchGameData();
     const assets = (data && data.user_assets) || [];
     const items = assets.filter(a => a.type === activeType);
 
-    const grid = document.getElementById('collection-grid');
-    const empty = document.getElementById('collection-empty');
+    const grid = document.getElementById('collection-modal-grid');
+    const empty = document.getElementById('collection-modal-empty');
     if (!grid) return;
 
     if (items.length === 0) {
@@ -670,12 +675,28 @@ async function initializeCollectionPage(type) {
     }
 }
 
-// 改版預覽：點欄位標題展開／收合（出去冒險、寶箱 demo 還是用這個收合樣式）、點圖示格子彈出介紹、
-// 點任何有 data-navigate 的元素就導頁（用事件委派，避免每次重新渲染都要重綁）
+function closeCollectionModal() {
+    const overlay = document.getElementById('collection-modal-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+// 改版預覽：點欄位標題展開／收合（出去冒險、寶箱 demo 還是用這個收合樣式）、點「我的收藏」方塊或視窗內分類
+// 切換頁籤就開/切換收藏視窗、點視窗關閉鈕或背景關閉、點圖示格子彈出介紹、點任何有 data-navigate 的元素就導頁
+// （用事件委派，避免每次重新渲染都要重綁）
 document.addEventListener('click', (e) => {
     const header = e.target.closest('.profile-slot-header');
     if (header) {
         header.closest('.profile-slot-field')?.classList.toggle('open');
+        return;
+    }
+    const collectionTrigger = e.target.closest('[data-collection-type]');
+    if (collectionTrigger) {
+        e.preventDefault();
+        openCollectionModal(collectionTrigger.dataset.collectionType);
+        return;
+    }
+    if (e.target.id === 'collection-modal-close' || e.target.id === 'collection-modal-overlay') {
+        closeCollectionModal();
         return;
     }
     const item = e.target.closest('.profile-slot-item');

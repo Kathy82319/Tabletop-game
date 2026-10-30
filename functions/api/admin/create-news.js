@@ -7,7 +7,7 @@ export async function onRequest(context) {
     }
 
     const body = await context.request.json();
-    const { title, category, published_date, image_url, content, is_published } = body;
+    const { title, category, published_date, image_url, content, is_published, is_pinned, pin_order } = body;
 
     const errors = [];
     if (!title || typeof title !== 'string' || title.trim().length === 0 || title.length > 100) {
@@ -33,9 +33,12 @@ export async function onRequest(context) {
     const db = context.env.DB;
     
     const stmt = db.prepare(
-      'INSERT INTO News (title, category, published_date, image_url, content, is_published) VALUES (?, ?, ?, ?, ?, ?) RETURNING id'
+      'INSERT INTO News (title, category, published_date, image_url, content, is_published, is_pinned, pin_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id'
     );
-    const result = await stmt.bind(title, category, published_date, image_url || '', content || '', is_published ? 1 : 0).first();
+    const result = await stmt.bind(
+        title, category, published_date, image_url || '', content || '', is_published ? 1 : 0,
+        is_pinned ? 1 : 0, Number(pin_order) || 0
+    ).first();
     
     return new Response(JSON.stringify({ success: true, message: '情報新增成功！', id: result.id }), {
       status: 201, headers: { 'Content-Type': 'application/json' },

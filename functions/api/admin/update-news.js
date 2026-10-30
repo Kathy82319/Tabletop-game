@@ -7,7 +7,7 @@ export async function onRequest(context) {
     }
 
     const body = await context.request.json();
-    const { id, title, category, published_date, image_url, content, is_published } = body;
+    const { id, title, category, published_date, image_url, content, is_published, is_pinned, pin_order } = body;
 
     const errors = [];
     if (!id || typeof id !== 'number') {
@@ -36,9 +36,12 @@ export async function onRequest(context) {
     const db = context.env.DB;
     
     const stmt = db.prepare(
-      'UPDATE News SET title = ?, category = ?, published_date = ?, image_url = ?, content = ?, is_published = ? WHERE id = ?'
+      'UPDATE News SET title = ?, category = ?, published_date = ?, image_url = ?, content = ?, is_published = ?, is_pinned = ?, pin_order = ? WHERE id = ?'
     );
-    const result = await stmt.bind(title, category, published_date, image_url || '', content || '', is_published ? 1 : 0, id).run();
+    const result = await stmt.bind(
+        title, category, published_date, image_url || '', content || '', is_published ? 1 : 0,
+        is_pinned ? 1 : 0, Number(pin_order) || 0, id
+    ).run();
 
     if (result.meta.changes === 0) {
         return new Response(JSON.stringify({ error: `找不到 ID 為 ${id} 的情報。` }), { status: 404 });

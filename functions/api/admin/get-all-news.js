@@ -26,7 +26,7 @@ export async function onRequest(context) {
 
     const db = context.env.DB;
     
-    const stmt = db.prepare('SELECT * FROM News ORDER BY published_date DESC');
+    const stmt = db.prepare('SELECT * FROM News ORDER BY is_pinned DESC, pin_order ASC, published_date DESC');
     const { results } = await stmt.all();
 
     return new Response(JSON.stringify(results || []), {

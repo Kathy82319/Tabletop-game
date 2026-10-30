@@ -23,9 +23,10 @@ function renderNewsList(newsList) {
         const row = tbody.insertRow();
         const statusText = news.is_published ? '已發布' : '草稿';
         const statusColor = news.is_published ? 'var(--success-color)' : 'var(--secondary-color)';
+        const pinnedBadge = news.is_pinned ? ' 📌' : '';
 
         row.innerHTML = `
-            <td>${news.title}</td>
+            <td>${news.title}${pinnedBadge}</td>
             <td>${news.category}</td>
             <td>${news.published_date}</td>
             <td><span style="color: ${statusColor};">${statusText}</span></td>
@@ -75,6 +76,8 @@ function openEditNewsModal(newsId = null) {
         if (prevNewsImg) { if (newsItem.image_url) { prevNewsImg.src = newsItem.image_url; prevNewsImg.style.display = 'block'; } else { prevNewsImg.style.display = 'none'; } }
         form.querySelector('#edit-news-content').value = newsItem.content || '';
         form.querySelector('#edit-news-published').checked = newsItem.is_published;
+        form.querySelector('#edit-news-pinned').checked = !!newsItem.is_pinned;
+        form.querySelector('#edit-news-pin-order').value = newsItem.pin_order || 0;
         deleteBtn.style.display = 'inline-block';
         deleteBtn.dataset.newsId = newsId;
 
@@ -85,7 +88,18 @@ function openEditNewsModal(newsId = null) {
         if (prevNewsImg) prevNewsImg.style.display = 'none';
     }
 
+    togglePinOrderVisibility();
     ui.showModal('#edit-news-modal');
+}
+
+/**
+ * 「置頂顯示」勾選時才顯示排序欄位，沒勾就不需要管排序
+ */
+function togglePinOrderVisibility() {
+    const checkbox = document.getElementById('edit-news-pinned');
+    const group = document.getElementById('edit-news-pin-order-group');
+    if (!checkbox || !group) return;
+    group.style.display = checkbox.checked ? 'block' : 'none';
 }
 
 /**
@@ -106,6 +120,8 @@ async function handleNewsFormSubmit(event) {
         image_url: form.querySelector('#edit-news-image').value.trim(),
         content: form.querySelector('#edit-news-content').value.trim(),
         is_published: form.querySelector('#edit-news-published').checked,
+        is_pinned: form.querySelector('#edit-news-pinned').checked,
+        pin_order: parseInt(form.querySelector('#edit-news-pin-order').value, 10) || 0,
     };
 
     button.disabled = true;
@@ -169,6 +185,7 @@ function setupEventListeners() {
 
     document.getElementById('edit-news-form').addEventListener('submit', handleNewsFormSubmit);
     document.getElementById('delete-news-btn').addEventListener('click', handleDeleteNews);
+    document.getElementById('edit-news-pinned').addEventListener('change', togglePinOrderVisibility);
 
     page.dataset.initialized = 'true';
 }
