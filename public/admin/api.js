@@ -99,6 +99,7 @@ bulkCreateGames: (data) => request('/api/admin/bulk-create-games', { method: 'PO
     getAllNews: () => request('/api/admin/get-all-news'),
     createNews: (data) => request('/api/admin/create-news', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
     updateNews: (data) => request('/api/admin/update-news', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+    updateNewsOrder: (orderedNewsIds) => request('/api/admin/update-news-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderedNewsIds }) }),
     deleteNews: (id) => request('/api/admin/delete-news', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }),
 
     getMessageDrafts: () => request('/api/admin/message-drafts'),

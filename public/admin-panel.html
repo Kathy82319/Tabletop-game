@@ -407,9 +407,10 @@
                         <h3>情報管理</h3>
                         <button id="add-news-btn" class="action-btn btn-save">新增情報</button>
                     </div>
+                    <p style="color:var(--text-light); font-size:0.88rem; margin-top:-0.8rem;">拖曳最左邊的 ⠿ 可以調整順序；有勾選「置頂顯示」的情報會固定排在客人端最前面，順序就是依照這裡拖曳的前後。</p>
                     <table>
                         <thead>
-                            <tr><th>標題</th><th>分類</th><th>發布日期</th><th>狀態</th><th>操作</th></tr>
+                            <tr><th>順序</th><th>標題</th><th>分類</th><th>發布日期</th><th>狀態</th><th>操作</th></tr>
                         </thead>
                         <tbody id="news-list-tbody"></tbody>
                     </table>
@@ -807,11 +808,9 @@
                 <div class="form-group"><label style="display: flex; align-items: center;"><input type="checkbox" id="edit-news-published" checked style="width: auto; margin-right: 10px;">立即發布</label></div>
                 <div class="form-group">
                     <label style="display: flex; align-items: center;"><input type="checkbox" id="edit-news-pinned" style="width: auto; margin-right: 10px;">置頂顯示</label>
+                    <p style="color:var(--text-light); font-size:0.85rem; margin:4px 0 0;">多筆置頂時的前後順序，回列表後直接拖曳 ⠿ 排列即可，不用在這裡輸入數字。</p>
                 </div>
-                <div class="form-group" id="edit-news-pin-order-group" style="display: none;">
-                    <label for="edit-news-pin-order">置頂排序（數字越小越前面，多筆置頂時用來排前後）</label>
-                    <input type="number" id="edit-news-pin-order" value="0" style="width: 100px;">
-                </div>
+                <input type="hidden" id="edit-news-pin-order" value="0">
                 <div class="form-actions">
                     <button type="button" class="action-btn btn-cancel">取消</button>
                     <button type="submit" class="action-btn btn-save">儲存</button>

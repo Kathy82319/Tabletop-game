@@ -558,6 +558,15 @@ td { font-size: 0.9rem; }
 .draggable-row { cursor: default; }
 .drag-handle-cell { text-align: left !important; }
 .drag-handle { cursor: move; display: inline-block; width: 20px; font-size: 1.2rem; color: #999; margin-right: 5px; }
+
+/* 上面的 bare .modal-content 規則是為了 #edit-game-modal 寫的 flex+max-height 版型，
+   但沒有限定範圍，連帶套用到其他彈窗，內容一多（例如勾選置頂後多出一個欄位）
+   就會把「儲存」按鈕擠出可視範圍、點不到。這裡單獨修正情報編輯視窗，改成會自己捲動。 */
+#edit-news-modal .modal-content {
+    display: block;
+    max-height: 85vh;
+    overflow-y: auto;
+}
 #edit-game-modal .modal-content { max-width: 800px; }
 .edit-game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .grid-span-2 { grid-column: span 2; }

@@ -4,6 +4,7 @@ import { ui } from '../ui.js';
 
 let allNews = [];
 let flatpickrInstance = null;
+let sortableNews = null;
 
 /**
  * 渲染情報列表
@@ -15,25 +16,67 @@ function renderNewsList(newsList) {
 
     tbody.innerHTML = '';
     if (newsList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5">目前沒有任何情報。</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6">目前沒有任何情報。</td></tr>';
         return;
     }
 
     newsList.forEach(news => {
         const row = tbody.insertRow();
+        row.className = 'draggable-row';
+        row.dataset.newsId = news.id;
+
         const statusText = news.is_published ? '已發布' : '草稿';
         const statusColor = news.is_published ? 'var(--success-color)' : 'var(--secondary-color)';
         const pinnedBadge = news.is_pinned ? ' 📌' : '';
 
-        row.innerHTML = `
-            <td>${news.title}${pinnedBadge}</td>
-            <td>${news.category}</td>
-            <td>${news.published_date}</td>
-            <td><span style="color: ${statusColor};">${statusText}</span></td>
-            <td class="actions-cell">
-                <button class="action-btn btn-edit-news" data-news-id="${news.id}" style="background-color: var(--warning-color); color: #000;">編輯</button>
-            </td>
-        `;
+        const cellOrder = row.insertCell();
+        cellOrder.className = 'drag-handle-cell';
+        const handleSpan = document.createElement('span');
+        handleSpan.className = 'drag-handle';
+        handleSpan.textContent = '⠿';
+        cellOrder.appendChild(handleSpan);
+
+        const cellTitle = row.insertCell();
+        cellTitle.textContent = `${news.title}${pinnedBadge}`;
+
+        const cellCategory = row.insertCell();
+        cellCategory.textContent = news.category;
+
+        const cellDate = row.insertCell();
+        cellDate.textContent = news.published_date;
+
+        const cellStatus = row.insertCell();
+        cellStatus.innerHTML = `<span style="color: ${statusColor};">${statusText}</span>`;
+
+        const cellActions = row.insertCell();
+        cellActions.className = 'actions-cell';
+        cellActions.innerHTML = `<button class="action-btn btn-edit-news" data-news-id="${news.id}" style="background-color: var(--warning-color); color: #000;">編輯</button>`;
+    });
+}
+
+/**
+ * 初始化情報列表的拖曳排序（與桌遊庫存同一套做法）
+ */
+function initializeNewsDragAndDrop() {
+    const tbody = document.getElementById('news-list-tbody');
+    if (sortableNews) sortableNews.destroy();
+    if (!tbody) return;
+
+    sortableNews = new Sortable(tbody, {
+        animation: 150,
+        handle: '.drag-handle',
+        onEnd: async (evt) => {
+            const orderedIds = Array.from(tbody.children).map(row => parseInt(row.dataset.newsId, 10));
+            allNews.sort((a, b) => orderedIds.indexOf(a.id) - orderedIds.indexOf(b.id));
+            try {
+                await api.updateNewsOrder(orderedIds);
+                ui.toast.success('順序已更新！');
+            } catch (error) {
+                ui.toast.error(`儲存順序失敗: ${error.message}`);
+                renderNewsList(allNews);
+                initializeNewsDragAndDrop();
+            }
+        }
     });
 }
 
@@ -88,18 +131,7 @@ function openEditNewsModal(newsId = null) {
         if (prevNewsImg) prevNewsImg.style.display = 'none';
     }
 
-    togglePinOrderVisibility();
     ui.showModal('#edit-news-modal');
-}
-
-/**
- * 「置頂顯示」勾選時才顯示排序欄位，沒勾就不需要管排序
- */
-function togglePinOrderVisibility() {
-    const checkbox = document.getElementById('edit-news-pinned');
-    const group = document.getElementById('edit-news-pin-order-group');
-    if (!checkbox || !group) return;
-    group.style.display = checkbox.checked ? 'block' : 'none';
 }
 
 /**
@@ -185,7 +217,6 @@ function setupEventListeners() {
 
     document.getElementById('edit-news-form').addEventListener('submit', handleNewsFormSubmit);
     document.getElementById('delete-news-btn').addEventListener('click', handleDeleteNews);
-    document.getElementById('edit-news-pinned').addEventListener('change', togglePinOrderVisibility);
 
     page.dataset.initialized = 'true';
 }
@@ -199,14 +230,15 @@ export const init = async (context, param) => {
     const tbody = document.getElementById('news-list-tbody');
     if (!page || !tbody) return;
 
-    tbody.innerHTML = '<tr><td colspan="5">正在載入情報...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6">正在載入情報...</td></tr>';
 
     try {
         allNews = await api.getAllNews();
         renderNewsList(allNews);
+        initializeNewsDragAndDrop();
         setupEventListeners();
     } catch (error) {
         console.error('載入情報失敗:', error);
-        tbody.innerHTML = `<tr><td colspan="5" style="color:red;">載入失敗: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="color:red;">載入失敗: ${error.message}</td></tr>`;
     }
 };
