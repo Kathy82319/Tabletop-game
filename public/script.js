@@ -422,6 +422,7 @@ function renderLiffLoadErrorUI(container, message = '無法載入資料') {
 
             handleNavigation();
             ensureBackBuffer();
+            checkInIfRequested();
 
         } catch (err) {
             console.error("LIFF 初始化或 Profile 獲取失敗", err);
@@ -429,6 +430,24 @@ function renderLiffLoadErrorUI(container, message = '無法載入資料') {
             // 如果使用者本來是點揪團分享連結進來的，hash 就這樣被洗掉，重新整理也救不回來，
             // 還以為「連結打不開」。現在改成保留原本的 hash，並用共用的錯誤畫面引導換瀏覽器開啟。
             renderLiffLoadErrorUI(appContent);
+        }
+    }
+
+    // 店內入場 QR Code 掃進來的連結會帶 ?checkin=1，掃到就自動打卡加經驗值，
+    // 每人每天限一次（後端用主鍵擋重複），這裡只負責觸發和顯示結果
+    async function checkInIfRequested() {
+        const params = new URLSearchParams(location.search);
+        if (params.get('checkin') !== '1') return;
+
+        // 清掉網址上的 checkin 參數，避免重新整理或把連結分享出去又誤觸發
+        history.replaceState(history.state, '', location.pathname + location.hash);
+
+        try {
+            const response = await fetch('/api/checkin', { method: 'POST', headers: getLiffAuthHeaders() });
+            const data = await response.json().catch(() => ({}));
+            alert(data.message || data.error || '打卡失敗，請稍後再試。');
+        } catch (err) {
+            console.error('入場打卡失敗', err);
         }
     }
     // =================================================================

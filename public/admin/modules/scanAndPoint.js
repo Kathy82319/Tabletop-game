@@ -5,6 +5,25 @@ import { ui, parseUtcTimestamp } from '../ui.js';
 
 let html5QrCode = null;
 
+// ── 入場打卡 QR Code（客人自己掃，固定連到同一個網址，不用每次重新產生）──────────
+
+const CHECKIN_URL = 'https://liff.line.me/2008076323-GN1e7naW?checkin=1';
+let checkinQrRendered = false;
+
+function toggleCheckinQr() {
+    const display = document.getElementById('checkin-qr-display');
+    if (!display) return;
+    const show = display.style.display === 'none';
+    display.style.display = show ? 'block' : 'none';
+    if (show && !checkinQrRendered) {
+        const qrEl = document.getElementById('checkin-qrcode');
+        qrEl.innerHTML = '';
+        new QRCode(qrEl, { text: CHECKIN_URL, width: 220, height: 220 });
+        document.getElementById('checkin-qr-url').textContent = CHECKIN_URL;
+        checkinQrRendered = true;
+    }
+}
+
 // ── 常用顧客（localStorage）──────────────────────────────────────────────────
 
 const PINNED_KEY = 'scan_pinned_users';
@@ -309,6 +328,7 @@ function setupEventListeners() {
     });
 
     document.getElementById('submit-exp-btn').addEventListener('click', handleSubmitExp);
+    document.getElementById('btn-show-checkin-qr')?.addEventListener('click', toggleCheckinQr);
     
     document.getElementById('rescan-btn').addEventListener('click', () => {
         stopScanner();

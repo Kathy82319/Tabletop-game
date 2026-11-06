@@ -550,6 +550,21 @@
 
 <div id="page-scan" class="page">
     <div class="page-header"><h2>掃碼加點</h2></div>
+
+    <div style="background:#f7f7f7; border-radius:10px; padding:1rem 1.2rem; margin-bottom:1.2rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+                <strong>入場打卡 QR Code</strong>
+                <p style="color:var(--text-light); font-size:0.85rem; margin:4px 0 0;">把這張 QR Code 印出來貼在店裡，客人自己用手機掃碼會跳出「開始冒險，獲得 2 經驗值」，每人每天限掃一次。特殊活動想額外加點，下面的掃碼加點功能一樣可以手動輸入，不受影響。</p>
+            </div>
+            <button type="button" id="btn-show-checkin-qr" class="action-btn btn-save">顯示 QR Code</button>
+        </div>
+        <div id="checkin-qr-display" style="display:none; text-align:center; margin-top:1rem;">
+            <div id="checkin-qrcode" style="display:inline-block; padding:12px; background:#fff; border-radius:8px;"></div>
+            <p style="font-size:0.85rem; color:var(--text-light); margin-top:8px; word-break:break-all;" id="checkin-qr-url"></p>
+        </div>
+    </div>
+
     <div id="scan-container">
         <div id="scan-user-panel" style="display: none;"></div>
         <div id="scan-form-panel">
@@ -1176,6 +1191,7 @@
 </div>
 
     <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <script src="admin/admin-panel-ui.js"></script>
