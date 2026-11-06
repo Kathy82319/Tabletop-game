@@ -20,14 +20,13 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({ error: '原因為必填，且長度不可超過 100 字。' }), { status: 400 });
     }
 
-    const userStmt = db.prepare('SELECT level, current_exp, perk_claimed_level, nickname, line_display_name FROM Users WHERE user_id = ?');
+    const userStmt = db.prepare('SELECT level, current_exp FROM Users WHERE user_id = ?');
     let user = await userStmt.bind(userId).first();
     if (!user) {
       return new Response(JSON.stringify({ error: `找不到使用者 ID: ${userId}` }), { status: 404 });
     }
 
     let originalLevel = user.level;
-    let perkClaimedLevel = user.perk_claimed_level || 0;
     let currentLevel = user.level;
     let currentExp = user.current_exp + exp;
     const requiredExp = 10;
@@ -45,14 +44,6 @@ export async function onRequest(context) {
     operations.push(
       db.prepare('INSERT INTO ExpHistory (user_id, exp_added, reason) VALUES (?, ?, ?)').bind(userId, exp, reason)
     );
-
-    if (currentLevel > originalLevel && currentLevel > 1 && currentLevel > perkClaimedLevel) {
-        const userName = user.nickname || user.line_display_name || userId.substring(0, 6);
-        const activityMessage = `${userName} 已升級至 LV ${currentLevel}！請記得提供升級福利。`;
-        operations.push(
-            db.prepare('INSERT INTO Activities (message, is_read) VALUES (?, 0)').bind(activityMessage)
-        );
-    }
 
     if (currentLevel > originalLevel) {
         operations.push(...await buildGoldLevelUpOps(db, userId, currentLevel - originalLevel));

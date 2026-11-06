@@ -23,14 +23,13 @@ export async function onRequest(context) {
         const today = nowTaiwanString().substring(0, 10);
 
         const user = await db.prepare(
-            'SELECT level, current_exp, perk_claimed_level, nickname, line_display_name FROM Users WHERE user_id = ?'
+            'SELECT level, current_exp FROM Users WHERE user_id = ?'
         ).bind(userId).first();
         if (!user) {
             return new Response(JSON.stringify({ error: '找不到會員資料，請先完整開啟過小程式一次。' }), { status: 404 });
         }
 
         const originalLevel = user.level;
-        const perkClaimedLevel = user.perk_claimed_level || 0;
         let currentLevel = user.level;
         let currentExp = user.current_exp + CHECKIN_EXP;
         while (currentExp >= REQUIRED_EXP) {
@@ -47,14 +46,6 @@ export async function onRequest(context) {
             db.prepare('INSERT INTO ExpHistory (user_id, exp_added, reason) VALUES (?, ?, ?)')
                 .bind(userId, CHECKIN_EXP, '每日入場掃碼'),
         ];
-
-        if (currentLevel > originalLevel && currentLevel > 1 && currentLevel > perkClaimedLevel) {
-            const userName = user.nickname || user.line_display_name || userId.substring(0, 6);
-            operations.push(
-                db.prepare('INSERT INTO Activities (message, is_read) VALUES (?, 0)')
-                    .bind(`${userName} 已升級至 LV ${currentLevel}！請記得提供升級福利。`)
-            );
-        }
 
         if (currentLevel > originalLevel) {
             operations.push(...await buildGoldLevelUpOps(db, userId, currentLevel - originalLevel));

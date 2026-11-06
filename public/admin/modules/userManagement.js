@@ -46,13 +46,7 @@ function renderUserList(users) {
 
         const displayName = user.nickname ? `${escapeHtml(user.line_display_name)} (${escapeHtml(user.nickname)})` : escapeHtml(user.line_display_name);
 
-        const needsPerk = user.level > 1 && user.level > (user.perk_claimed_level || 0);
-        const levelDisplay = needsPerk ? `${user.level} ⭐` : user.level;
-
         let actionsHTML = `<button class="action-btn btn-edit-user" data-userid="${user.user_id}" style="background-color: var(--warning-color); color: #000;">編輯</button>`;
-        if (needsPerk) {
-            actionsHTML += ` <button class="action-btn btn-claim-perk-list" data-userid="${user.user_id}" style="background-color: var(--success-color);">✅ 福利已給</button>`;
-        }
         if (user.gold_balance >= GOLD_SPEND_PER_USE) {
             actionsHTML += ` <button class="action-btn btn-use-gold" data-userid="${user.user_id}" data-balance="${user.gold_balance}" style="background-color:#f4b942; color:#000;">💰 使用金幣 (${user.gold_balance})</button>`;
         }
@@ -74,7 +68,7 @@ function renderUserList(users) {
             </td>
             <td>${escapeHtml(user.real_name) || '-'}</td>
             <td>${escapeHtml(user.phone) || '-'}</td>
-            <td>${levelDisplay}</td>
+            <td>${user.level}</td>
             <td>${user.current_exp} / 10</td>
             <td class="compound-cell" style="text-align: left;">
                 <div class="main-info">${escapeHtml(user.class) || '無'}</div>
@@ -83,10 +77,6 @@ function renderUserList(users) {
             <td><span class="tag-display ${tagCls}">${escapeHtml(user.tag) || '無'}</span>${noteHtml}</td>
             <td class="actions-cell">${actionsHTML}</td>
         `;
-
-        if (needsPerk) {
-            row.style.backgroundColor = 'rgba(255, 255, 0, 0.1)';
-        }
     });
 }
 
@@ -748,14 +738,6 @@ function setupEventListeners() {
             
             if (target.classList.contains('btn-edit-user')) {
                 openEditUserModal(row.dataset.userId);
-            } else if (target.classList.contains('btn-claim-perk-list')) {
-                const button = target;
-                if (!await ui.confirm('確定已給予福利？')) return;
-                try {
-                    await api.claimPerk(row.dataset.userId);
-                    ui.toast.success('狀態更新成功');
-                    init();
-                } catch (e) { ui.toast.error(e.message); }
             } else if (target.classList.contains('btn-use-gold')) {
                 openUseGoldModal(row.dataset.userId, target.dataset.balance);
             } else {
