@@ -1,6 +1,9 @@
 // public/admin/modules/userManagement.js
 import { api } from '../api.js';
-import { ui } from '../ui.js';
+import { ui, parseUtcTimestamp } from '../ui.js';
+
+// 每次使用金幣固定扣的金額，跟後端 functions/api/_lib/gold.js 的 GOLD_SPEND_PER_USE 保持一致
+const GOLD_SPEND_PER_USE = 100;
 
 let allUsers = [];
 let allAssets = []; // 儲存職業、技能、裝備設定
@@ -49,6 +52,9 @@ function renderUserList(users) {
         let actionsHTML = `<button class="action-btn btn-edit-user" data-userid="${user.user_id}" style="background-color: var(--warning-color); color: #000;">編輯</button>`;
         if (needsPerk) {
             actionsHTML += ` <button class="action-btn btn-claim-perk-list" data-userid="${user.user_id}" style="background-color: var(--success-color);">✅ 福利已給</button>`;
+        }
+        if (user.gold_balance >= GOLD_SPEND_PER_USE) {
+            actionsHTML += ` <button class="action-btn btn-use-gold" data-userid="${user.user_id}" data-balance="${user.gold_balance}" style="background-color:#f4b942; color:#000;">💰 使用金幣 (${user.gold_balance})</button>`;
         }
 
         const classSubLine = [
@@ -444,6 +450,68 @@ async function handleEditUserFormSubmit(event) {
     }
 }
 
+/**
+ * 開啟「使用金幣」彈窗，順便載入這個人的異動紀錄方便確認有沒有誤觸
+ */
+async function openUseGoldModal(userId, balance) {
+    const modal = document.getElementById('use-gold-modal');
+    const form = document.getElementById('use-gold-form');
+    if (!modal || !form) return;
+
+    form.reset();
+    form.querySelector('#use-gold-user-id').value = userId;
+    form.querySelector('#use-gold-balance').textContent = balance;
+
+    const historyEl = document.getElementById('use-gold-history');
+    historyEl.textContent = '載入紀錄中...';
+    ui.showModal('#use-gold-modal');
+
+    try {
+        const ledger = await api.getGoldLedger(userId);
+        if (!ledger.length) {
+            historyEl.textContent = '尚無金幣異動紀錄';
+        } else {
+            historyEl.innerHTML = ledger.map(entry => {
+                const sign = entry.change_amount > 0 ? '+' : '';
+                const color = entry.change_amount > 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                const date = parseUtcTimestamp(entry.created_at).toLocaleString();
+                return `<div>${date}　<span style="color:${color}; font-weight:bold;">${sign}${entry.change_amount}</span>　餘${entry.balance_after}　${escapeHtml(entry.reason || '')}</div>`;
+            }).join('');
+        }
+    } catch (e) {
+        historyEl.textContent = '紀錄載入失敗';
+    }
+}
+
+async function handleUseGoldFormSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const userId = form.querySelector('#use-gold-user-id').value;
+    const reason = form.querySelector('#use-gold-reason').value.trim();
+    const currentBalance = parseInt(form.querySelector('#use-gold-balance').textContent, 10) || 0;
+
+    if (GOLD_SPEND_PER_USE > currentBalance) {
+        return ui.toast.error(`金幣不足，目前剩餘 ${currentBalance} 元！`);
+    }
+
+    const confirmed = await ui.confirm(`確定要使用 ${GOLD_SPEND_PER_USE} 元嗎？目前剩餘 ${currentBalance} 元，使用後會變成 ${currentBalance - GOLD_SPEND_PER_USE} 元，此操作無法復原。`);
+    if (!confirmed) return;
+
+    const btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    try {
+        const result = await api.useGold({ userId, reason });
+        ui.toast.success(result.message);
+        ui.hideModal('#use-gold-modal');
+        allUsers = await api.getUsers();
+        handleUserSearch();
+    } catch (e) {
+        ui.toast.error(e.message);
+    } finally {
+        btn.disabled = false;
+    }
+}
+
 // ============================================================
 // ============================================================
 
@@ -688,6 +756,8 @@ function setupEventListeners() {
                     ui.toast.success('狀態更新成功');
                     init();
                 } catch (e) { ui.toast.error(e.message); }
+            } else if (target.classList.contains('btn-use-gold')) {
+                openUseGoldModal(row.dataset.userId, target.dataset.balance);
             } else {
                 openUserDetailsModal(row.dataset.userId);
             }
@@ -714,6 +784,9 @@ function setupEventListeners() {
 
     const editUserForm = document.getElementById('edit-user-form');
     if(editUserForm) editUserForm.onsubmit = handleEditUserFormSubmit;
+
+    const useGoldForm = document.getElementById('use-gold-form');
+    if(useGoldForm) useGoldForm.onsubmit = handleUseGoldFormSubmit;
     
     const assetsTbody = document.getElementById('assets-list-tbody');
     if(assetsTbody) {

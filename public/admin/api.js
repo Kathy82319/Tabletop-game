@@ -85,6 +85,8 @@ bulkCreateGames: (data) => request('/api/admin/bulk-create-games', { method: 'PO
     deleteBookingDateOverride: (date) => request('/api/admin/booking-date-overrides', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date }) }),
 
     getRecentPointedUsers: () => request('/api/admin/recent-pointed-users'),
+    useGold: (data) => request('/api/admin/use-gold', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+    getGoldLedger: (userId) => request(`/api/admin/gold-ledger?userId=${encodeURIComponent(userId)}`),
     getExpHistory: () => request('/api/admin/exp-history-list'),
     deleteExpRecord: (history_id) => request('/api/admin/exp-history-list', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ history_id }) }),
     addPoints: (data) => request('/api/admin/add-exp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),

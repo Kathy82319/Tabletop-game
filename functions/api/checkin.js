@@ -3,6 +3,7 @@
 // 特殊活動想額外加點，後台「掃碼加點」的手動流程不受影響，照舊可用。
 import { verifyLiffUser } from './_lib/auth.js';
 import { nowTaiwanString } from './_lib/time.js';
+import { buildGoldLevelUpOps } from './_lib/gold.js';
 
 const CHECKIN_EXP = 2;
 const REQUIRED_EXP = 10;
@@ -53,6 +54,10 @@ export async function onRequest(context) {
                 db.prepare('INSERT INTO Activities (message, is_read) VALUES (?, 0)')
                     .bind(`${userName} 已升級至 LV ${currentLevel}！請記得提供升級福利。`)
             );
+        }
+
+        if (currentLevel > originalLevel) {
+            operations.push(...await buildGoldLevelUpOps(db, userId, currentLevel - originalLevel));
         }
 
         try {

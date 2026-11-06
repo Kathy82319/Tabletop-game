@@ -800,6 +800,29 @@
     </div>
 </div>
 
+<div id="use-gold-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 420px;">
+        <div class="modal-header">
+            <h3 id="use-gold-title">使用金幣</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <form id="use-gold-form">
+            <input type="hidden" id="use-gold-user-id">
+            <p style="margin:0 0 12px;">目前剩餘：<strong id="use-gold-balance" style="color:var(--primary-color); font-size:1.1rem;">0</strong> 元</p>
+            <p style="margin:0 0 12px; color:var(--text-light); font-size:0.88rem;">每次固定使用 100 元。</p>
+            <div class="form-group">
+                <label for="use-gold-reason">用途（選填，只會記在後台歷史紀錄，客人看不到）</label>
+                <input type="text" id="use-gold-reason" placeholder="例如：折抵租借費用">
+            </div>
+            <div id="use-gold-history" style="font-size:0.82rem; color:var(--text-light); max-height:140px; overflow-y:auto; border-top:1px solid var(--border-color); margin-top:10px; padding-top:8px;"></div>
+            <div class="form-actions">
+                <button type="button" class="action-btn btn-cancel">取消</button>
+                <button type="submit" class="action-btn btn-save">確認使用 100 元</button>
+            </div>
+        </form>
+    </div>
+</div>
+
     <div id="edit-news-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header"><h3 id="modal-news-title">新增情報</h3><button class="modal-close">&times;</button></div>

@@ -1,4 +1,5 @@
 // functions/api/add-exp.js
+import { buildGoldLevelUpOps } from '../_lib/gold.js';
 
 export async function onRequest(context) {
   try {
@@ -51,6 +52,10 @@ export async function onRequest(context) {
         operations.push(
             db.prepare('INSERT INTO Activities (message, is_read) VALUES (?, 0)').bind(activityMessage)
         );
+    }
+
+    if (currentLevel > originalLevel) {
+        operations.push(...await buildGoldLevelUpOps(db, userId, currentLevel - originalLevel));
     }
 
     await db.batch(operations);
